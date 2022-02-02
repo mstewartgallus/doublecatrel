@@ -38,6 +38,7 @@
 \setlength{\mathindent}{0pt}
 
 \newcommand{\Rel}{\textbf{Rel}}
+\newcommand{\lk}{\(\bar{\lambda}\mu\tilde{\mu}\,\)}
 
 \newcommand{\bnfdef}{\mathbin{::=}}
 
@@ -52,13 +53,14 @@
 \DeclareMathOperator{\lft}{\textbf{left}}
 \DeclareMathOperator{\rgt}{\textbf{right}}
 
-\DeclareMathOperator{\type}{\textbf{type}}
+\DeclareMathOperator{\type}{\Box}
+\DeclareMathOperator{\prop}{*}
+
+\DeclareMathOperator{\Mu}{\textbf{M}}
 
 \DeclareMathOperator{\update}{:=}
 
 \DeclareMathOperator{\case}{\textbf{match}}
-\DeclareMathOperator{\with}{\textbf{with}}
-\DeclareMathOperator{\esac}{\textbf{end}}
 
 \begin{document}
 
@@ -85,14 +87,14 @@ give a few possible extensions.
 \begin{description}
 \item[Types] \( t \bnfdef \top \mid t \times t \)
 \item[Sorts] \( s \bnfdef t ? \mid t ! \)
-\item[Values] \( v \bnfdef x \mid \fst(v) \mid \snd(v) \mid ( v , v )  \)
+\item[Values] \( v \bnfdef x \mid \coin \mid \fst(v) \mid \snd(v) \mid ( v , v )  \)
 \item[Predicates] \( p \bnfdef x \mid p \, p \mid \mu (x \colon t ?) . p \)
 \item[Environment] \( \Gamma \bnfdef \cdot \Gamma , \, \mid x \colon s  \)
-\item[Substitutions] \( \sigma \bnfdef \cdot \sigma , \, \mid v \models x  \)
+\item[Substitutions] \( \sigma \bnfdef \cdot \mid \sigma , \, v \models x  \)
 \end{description}
 
 I need a better name for the abstraction for predicates. It's a little
-like the \(\mu\) abstraction \(\bar{\lambda} \mu \tilde{\mu}\) but
+like the \(\mu\) abstraction from the \lk calculus but
 different.
 
 Typing judgments.
@@ -135,37 +137,39 @@ When a value satisfies a predicate (I need a better symbol here.)
 
 \begin{multline*}
 \frac{
-  v_0 \models p \; [\sigma]
+  v_0 \models p \quad [\sigma]
 }{
-  \fst ( v_0 , v_1 ) \models p \; [\sigma]
+  \fst ( v_0 , v_1 ) \models p \quad [\sigma]
 }\\
 \frac{
-  v_1 \models p \; [\sigma]
+  v_1 \models p \quad [\sigma]
 }{
-  \snd ( v_0 , v_1 ) \models p \; [\sigma]
+  \snd ( v_0 , v_1 ) \models p \quad [\sigma]
 }\\
 \frac{
-  v \models [x \colon= p_1] p_0 \; [\sigma]
+  v \models [x \colon= p_1] p_0 \quad [\sigma]
 }{
-  v \models ( \mu (x \colon t ?). p_0) \, p_1 \; [\sigma]
+  v \models ( \mu (x \colon t ?). p_0) \, p_1 \quad [\sigma]
 }\\
 \frac{
-  v_1 \models p \; [ \sigma , \, v_0 \models x]
+  v_1 \models p \quad [ \sigma , \, v_0 \models x]
 }{
-  ( v_0 , v_1 ) \models \mu (x \colon t ?). p \; [\sigma]
+  ( v_0 , v_1 ) \models \mu (x \colon t ?). p \quad [\sigma]
 }\\
 \end{multline*}
 
-Example
+\section*{Examples}
+
+Pattern matching on equality
 
 \begin{multline*}
-   ( v , v ) \models \mu (x \colon t ?). x \; [\sigma]\\
+   ( v , v ) \models \mu (x \colon t ?). x\\
 \end{multline*}
 
 Transposition
 
 \begin{multline*}
-   \textbf{M} (A \colon \type). \mu (p \colon A \times A \times \top) (x \colon A) (y \colon A). p \, y \, x\\
+   \mu (p \colon t \times t \times \top) (x \colon t) (y \colon t). p \, y \, x\\
 \end{multline*}
 
 \section*{Disjoint Unions}
@@ -238,7 +242,7 @@ Satisfies
 
 \begin{multline*}
 \frac{
-  [x_0 \update v_0] v_1 \models p \; [\sigma]
+  [x_0 \update v_0] v_1 \models p \quad [\sigma]
 }{
   \case \, \inl(t, v_0) \,
   \begin{cases}
@@ -248,7 +252,7 @@ Satisfies
  \models p \; [\sigma]
 }\\
 \frac{
-  [x_1 \update v_0] v_2 \models p \; [\sigma]
+  [x_1 \update v_0] v_2 \models p \quad [\sigma]
 }{
   \case \, \inr(t, v_0) \,
   \begin{cases}
@@ -260,22 +264,22 @@ Satisfies
 \frac{
   v \models p_0 \; [\sigma]
 }{
-  v \models \lft([ p_0 ; p_1 ]) \; [\sigma]
+  v \models \lft([ p_0 ; p_1 ]) \quad [\sigma]
 }\\
 \frac{
   v \models p_1 \; [\sigma]
 }{
-  v \models \rgt([ p_0 ; p_1 ])  \; [\sigma]
+  v \models \rgt([ p_0 ; p_1 ]) \quad [\sigma]
 }\\
 \frac{
   v \models p_0 \; [\sigma]
 }{
-  \inl(t, v) \models [ p_0 ; p_1 ]  \; [\sigma]
+  \inl(t, v) \models [ p_0 ; p_1 ] \quad [\sigma]
 }\\
 \frac{
   v \models p_1 \; [\sigma]
 }{
-  \inr(t, v) \models [ p_0 ; p_1 ]  \; [\sigma]
+  \inr(t, v) \models [ p_0 ; p_1 ] \quad [\sigma]
 }\\
 \end{multline*}
 
@@ -291,32 +295,32 @@ I also really can't figure out unpacking. It's messy if you don't want
 full dependent types.
 
 \begin{description}
-\item[Types] \( t \bnfdef \ldots \mid x \mid \Sigma (x \colon \type). t \)
-\item[Sorts] \( s \bnfdef \ldots \mid \type \)
+\item[Types] \( t \bnfdef \ldots \mid x \mid \Sigma (x \colon \prop). t \)
+\item[Sorts] \( s \bnfdef \ldots \mid \prop \)
 \item[Values] \( v \bnfdef \ldots \mid \langle x \colon= t , v \rangle \)
-\item[Predicates] \( p \bnfdef \ldots \mid p \, t \mid \textbf{M} (x \colon \type). p \)
-\item[Substitutions] \( \sigma \bnfdef \ldots \sigma , \, \mid t \models x \)
+\item[Predicates] \( p \bnfdef \ldots \mid p \, t \mid \Mu (x \colon \prop). p \)
+\item[Substitutions] \( \sigma \bnfdef \ldots \mid \sigma , \, t \models x \)
 \end{description}
 
 Not really good at the typing judgements for dependent sum types.
 
 \begin{multline*}
 \frac{
-  \Gamma \vdash t_0 \colon \type \quad
-  \Gamma , \, x \colon \type \vdash v \colon t_1 !
+  \Gamma \vdash t_0 \colon \prop \quad
+  \Gamma , \, x \colon \prop \vdash v \colon t_1 !
 }{
-  \Gamma \vdash \langle x \update t_0 , v \rangle \colon \Sigma (x \colon \type). t_0 !
+  \Gamma \vdash \langle x \update t_0 , v \rangle \colon \Sigma (x \colon \prop). t_0 !
 }\\
 \frac{
-  \Gamma \vdash p \colon \Sigma (x\colon \type). t_1 ? \quad
-  \Gamma \vdash t_0 \colon \type
+  \Gamma \vdash p \colon \Sigma (x\colon \prop). t_1 ? \quad
+  \Gamma \vdash t_0 \colon \prop
 }{
   \Gamma \vdash p_0 \, t_0 \colon [x \colon= t_0] t_1 ?
 }\\
 \frac{
-  \Gamma , \, x \colon \type \vdash p \colon t ?
+  \Gamma , \, x \colon \prop \vdash p \colon t ?
 }{
-  \Gamma \vdash \textbf{M} (x \colon \type). p \colon \Sigma (x\colon \type). t ?
+  \Gamma \vdash \Mu (x \colon \prop). p \colon \Sigma (x\colon \prop). t ?
 }\\
 \end{multline*}
 
@@ -324,14 +328,14 @@ I can't figure out satisfaction at all.
 
 \begin{multline*}
 \frac{
-  v \models [x \update t] p \; [\sigma]
+  v \models [x \update t] p \quad [\sigma]
 }{
-  v \models ( \textbf{M} (x \colon \type). p) \, t \; [\sigma]
+  v \models ( \textbf{M} (x \colon \prop). p) \, t \quad [\sigma]
 }\\
 \frac{
   v \models p \; [ \sigma , \, t \models x]
 }{
-  \langle x \update t , v \rangle \models \textbf{M} (x \colon \type). p \; [\sigma]
+  \langle x \update t , v \rangle \models \Mu (x \colon \prop). p \quad [\sigma]
 }\\
 \end{multline*}
 
