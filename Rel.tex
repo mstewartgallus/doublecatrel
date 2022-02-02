@@ -89,7 +89,7 @@ give a few possible extensions.
 \item[Sorts] \( s \bnfdef t ? \mid t ! \)
 \item[Values] \( v \bnfdef x \mid \coin \mid \fst(v) \mid \snd(v) \mid ( v , v )  \)
 \item[Predicates] \( p \bnfdef x \mid p \, p \mid \mu (x \colon t ?) . p \)
-\item[Environment] \( \Gamma \bnfdef \cdot \Gamma , \, \mid x \colon s  \)
+\item[Environment] \( \Gamma \bnfdef \cdot \mid \Gamma , \, x \colon s  \)
 \item[Substitutions] \( \sigma \bnfdef \cdot \mid \sigma , \, v \models x  \)
 \end{description}
 
@@ -147,7 +147,7 @@ When a value satisfies a predicate (I need a better symbol here.)
   \snd ( v_0 , v_1 ) \models p \quad [\sigma]
 }\\
 \frac{
-  v \models [x \colon= p_1] p_0 \quad [\sigma]
+  v \models [x \update p_1] p_0 \quad [\sigma]
 }{
   v \models ( \mu (x \colon t ?). p_0) \, p_1 \quad [\sigma]
 }\\
@@ -297,7 +297,7 @@ full dependent types.
 \begin{description}
 \item[Types] \( t \bnfdef \ldots \mid x \mid \Sigma (x \colon \prop). t \)
 \item[Sorts] \( s \bnfdef \ldots \mid \prop \)
-\item[Values] \( v \bnfdef \ldots \mid \langle x \colon= t , v \rangle \)
+\item[Values] \( v \bnfdef \ldots \mid \langle x \update t , v \rangle \)
 \item[Predicates] \( p \bnfdef \ldots \mid p \, t \mid \Mu (x \colon \prop). p \)
 \item[Substitutions] \( \sigma \bnfdef \ldots \mid \sigma , \, t \models x \)
 \end{description}
@@ -315,7 +315,7 @@ Not really good at the typing judgements for dependent sum types.
   \Gamma \vdash p \colon \Sigma (x\colon \prop). t_1 ? \quad
   \Gamma \vdash t_0 \colon \prop
 }{
-  \Gamma \vdash p_0 \, t_0 \colon [x \colon= t_0] t_1 ?
+  \Gamma \vdash p_0 \, t_0 \colon [x \update t_0] t_1 ?
 }\\
 \frac{
   \Gamma , \, x \colon \prop \vdash p \colon t ?
