@@ -1,0 +1,297 @@
+% Formatting
+\documentclass[oneside, twocolumn, fleqn]{scrartcl}
+
+%% Fixers
+\usepackage{fontspec}
+\usepackage{realscripts}
+\usepackage{xunicode}
+\usepackage{polyglossia}
+
+\usepackage[]{microtype}
+\usepackage[top=0.75in, bottom=0.755in, left=0.755in, right=0.75in]{geometry}
+\usepackage[english]{isodate}
+
+% Packages
+\usepackage{lastpage}
+\usepackage{scrlayer-scrpage}
+\usepackage{enumitem}
+\usepackage{amsmath}
+
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{multicol}
+
+%Load Last Fixers
+\usepackage{hyperref}
+
+% Settings
+
+\setdefaultlanguage{english}
+\setotherlanguage{latin}
+
+\setmainfont{Latin Modern Roman}[Ligatures=TeX,Fractions=On]
+\setsansfont{Latin Modern Sans}[Ligatures=TeX,Fractions=On]
+\setmonofont{Latin Modern Mono}[Ligatures=TeX,Fractions=On]
+
+\hypersetup{bookmarksopen=true,colorlinks=true,allcolors=blue}
+
+\setlength{\mathindent}{0pt}
+
+\begin{document}
+
+I wanted to try out making a programming language vaguely
+corresponding to the double category \(\text{Rel}\).
+
+You have a calculus of ``values'' corresponding to one edge of
+\(\text{Rel}\) and a sort of relational calculus of ``predicates''
+corresponding to the other edge. Satisfies judgements stating a value
+satisfies a predicate ought to correspond to squares.
+
+The language of ``predicates'' is based off the Simply Typed Lambda
+Calculus (in category theory terms is closed/has exponential objects)
+and the language of ``values'' has product types (in category theory
+terms is Cartesian.)
+
+This is the core framework.  I've been thinking about further
+extensions but I want to see how far I can get characterizing
+\(\text{Rel}\) with as few language features as possible.  Later on I
+give a few possible extensions.
+
+\section*{Core Calculus}
+
+\begin{description}
+\item[Types] \( t ::= 1 \mid t \times t \)
+\item[Sorts] \( s ::= t ? \mid t ! \)
+\item[Values] \( v ::= x \mid \pi_1 v \mid \pi_2 v \mid ( v , v )  \)
+\item[Predicates] \( p ::= x \mid p \, p \mid \mu (x : t ?) . p \)
+\item[Environment] \( \Gamma ::= \cdot \mid x : s , \Gamma  \)
+\item[Substitutions] \( \sigma ::= \cdot \mid v \models x , \sigma  \)
+\end{description}
+
+I need a better name for the abstraction for predicates. It's a little
+like the \(\mu\) abstraction \(\bar{\lambda} \mu \tilde{\mu}\) but
+different.
+
+Typing judgments.
+
+\begin{flalign*}
+\frac{
+}{
+  \Gamma \vdash \textbf{tt} : 1 !
+}\\
+\frac{
+  \Gamma \vdash v : t_0 \times t_1 !
+}{
+  \Gamma \vdash \pi_1 v : t_0 !
+}\\
+\frac{
+  \Gamma \vdash v : t_0 \times t_1 !
+}{
+  \Gamma \vdash \pi_2 v : t_1 !
+}\\
+\frac{
+  \Gamma \vdash v_0 : t_0 ! \quad
+  \Gamma \vdash v_1 : t_1 !
+}{
+  \Gamma \vdash ( v_0 , v_1 ) : t_0 \times t_1 !
+}\\
+\frac{
+  \Gamma \vdash p_0 : t_0 \times t_1 ? \quad
+  \Gamma \vdash p_1 : t_0 ?
+}{
+  \Gamma \vdash p_0 \, p_1 : t_1 ?
+}\\
+\frac{
+  x : t_0 ? , \, \Gamma \vdash p : t_1 ?
+}{
+  \Gamma \vdash \mu (x : t_0 ?). p : t_0 \times t_1 ?
+}
+&\end{flalign*}
+
+When a value satisfies a predicate (I need a better symbol here.)
+
+\begin{flalign*}
+\frac{
+  v_0 \models p \; [\sigma]
+}{
+  \pi_1 ( v_0 , v_1 ) \models p \; [\sigma]
+}\\
+\frac{
+  v_1 \models p \; [\sigma]
+}{
+  \pi_2 ( v_0 , v_1 ) \models p \; [\sigma]
+}\\
+\frac{
+  v \models [x := p_1] p_0 \; [\sigma]
+}{
+  v \models ( \mu (x : t ?). p_0) \, p_1 \; [\sigma]
+}\\
+\frac{
+  v_1 \models p \; [ v_0 \models x , \, \sigma]
+}{
+  ( v_0 , v_1 ) \models \mu (x : t ?). p \; [\sigma]
+}
+&\end{flalign*}
+
+Example
+
+\begin{flalign*}
+   ( v , v ) \models \mu (x : t ?). x \; [\sigma]
+&\end{flalign*}
+
+\section*{Disjoint Unions}
+
+I am fairly confident in a simple extension to disjoint unions
+of sets which are sum types in the value calculus and product types in
+the predicate calculus.
+
+\begin{description}
+\item[Types] \( t ::= \ldots \mid 0 \mid t + t \)
+\item[Values] \( v ::= \ldots \mid i_1 \, t \, v \mid i_2 \, t \, v \mid \textbf{match} \, v \, \textbf{with} \, \lvert i_1 x \Rightarrow v \; \lvert i_2 x \Rightarrow v \; \textbf{end} \)
+\item[Predicates] \( p ::= \ldots \mid \textbf{false} \mid \textbf{left}  \, p \mid \textbf{right} \, p \mid [ p ; p ] \)
+\end{description}
+
+Typing judgments.
+
+\begin{flalign*}
+\frac{
+  \Gamma \vdash v : t_0 !
+}{
+  \Gamma \vdash i_1 \, t_1 \, v : t_0 + t_1 !
+}\\
+\frac{
+  \Gamma \vdash v : t_1 !
+}{
+  \Gamma \vdash i_2 \, t_0 \, v : t_0 + t_1 !
+}\\
+\frac{
+  \Gamma \vdash v_0 : t_0 + t_1 ! \quad
+  x_0 : t_0 ! , \, \Gamma \vdash v_1 : t_2 ! \quad
+  x_1 : t_1 ! , \, \Gamma \vdash v_2 : t_2 !
+}{
+  \Gamma \vdash
+  \textbf{match} \, v_0 \, \textbf{with} \,
+  \lvert i_1 x_0 \Rightarrow v_1 \;
+  \lvert i_2 x_1 \Rightarrow v_2 \;
+  \textbf{end} : t_2 !
+}\\
+\frac{
+}{
+  \Gamma \vdash \textbf{false} : 0 ?
+}\\
+\frac{
+  \Gamma \vdash p : t_0 + t_1 ?
+}{
+  \Gamma \vdash \textbf{left} \, p : t_0 ?
+}\\
+\frac{
+  \Gamma \vdash p : t_0 + t_1 ?
+}{
+  \Gamma \vdash \textbf{right} \, p : t_1 ?
+}\\
+\frac{
+  \Gamma \vdash p_0 : t_0 ? \quad
+  \Gamma \vdash p_1 : t_1 ?
+}{
+  \Gamma \vdash [ p_0 ; p_1 ] : t_0 + t_1 ?
+}
+&\end{flalign*}
+
+Satisfies
+
+\begin{flalign*}
+\frac{
+  [x_0 := v_0] v_1 \models p \; [\sigma]
+}{
+  \textbf{match} \, i_1 \, t \, v_0 \, \textbf{with} \,
+  \lvert i_1 x_0 \Rightarrow v_1 \;
+  \lvert i_2 x_1 \Rightarrow v_2 \;
+  \textbf{end} \models p \; [\sigma]
+}\\
+\frac{
+  [x_1 := v_0] v_2 \models p \; [\sigma]
+}{
+  \textbf{match} \, i_2 \, t \, v_0 \, \textbf{with} \,
+  \lvert i_1 x_0 \Rightarrow v_1 \;
+  \lvert i_2 x_1 \Rightarrow v_2 \;
+  \textbf{end} \models p \; [\sigma]
+}\\
+\frac{
+  v \models p_0 \; [\sigma]
+}{
+  v \models \textbf{left} \, [ p_0 ; p_1 ]  \; [\sigma]
+}\\
+\frac{
+  v \models p_1 \; [\sigma]
+}{
+  v \models \textbf{right} \, [ p_0 ; p_1 ]  \; [\sigma]
+}\\
+\frac{
+  v \models p_0 \; [\sigma]
+}{
+  i_1 \, t \, v \models [ p_0 ; p_1 ]  \; [\sigma]
+}\\
+\frac{
+  v \models p_1 \; [\sigma]
+}{
+  i_2 \, t \, v \models [ p_0 ; p_1 ]  \; [\sigma]
+}
+&\end{flalign*}
+
+\section*{Dependent Sums}
+
+If product of sets becomes an exponential in the predicate calculus
+then dependent sums ought to become like \(\Pi\) types.  So the
+predicate calculus effectively becomes like System-F.
+
+Some things become awkward to interpret here though.
+
+I also really can't figure out unpacking. It's messy if you don't want
+full dependent types.
+
+\begin{description}
+\item[Types] \( t ::= \ldots \mid x \mid \Sigma (x : \textbf{type}). t \)
+\item[Sorts] \( s ::= \ldots \mid \textbf{type} \)
+\item[Values] \( v ::= \ldots \mid \langle x := t , v \rangle \)
+\item[Predicates] \( p ::= \ldots \mid p \, t \mid \textbf{M} (x : \textbf{type}). p \)
+\item[Substitutions] \( \sigma ::= \ldots \mid t \models x , \, \sigma \)
+\end{description}
+
+Not really good at the typing judgements for dependent sum types.
+
+\begin{flalign*}
+\frac{
+  \Gamma \vdash t_0 : \textbf{type} \quad
+  x : \textbf{type}, \, \Gamma \vdash v : t_1 !
+}{
+  \Gamma \vdash \langle x := t_0 , v \rangle : \Sigma (x : \textbf{type}). t_0 !
+}\\
+\frac{
+  \Gamma \vdash p : \Sigma (x: \textbf{type}). t_1 ? \quad
+  \Gamma \vdash t_0 : \textbf{type}
+}{
+  \Gamma \vdash p_0 \, t_0 : [x := t_0] t_1 ?
+}\\
+\frac{
+  x : \textbf{type} , \, \Gamma \vdash p : t ?
+}{
+  \Gamma \vdash \textbf{M} (x : \textbf{type}). p : \Sigma (x: \textbf{type}). t ?
+}
+&\end{flalign*}
+
+I can't figure out satisfaction at all.
+
+\begin{flalign*}
+\frac{
+  v \models [x := t] p \; [\sigma]
+}{
+  v \models ( \textbf{M} (x : \textbf{type}). p) \, t \; [\sigma]
+}\\
+\frac{
+  v \models p \; [ t \models x , \, \sigma]
+}{
+  \langle x := t , v \rangle \models \textbf{M} (x : \textbf{type}). p \; [\sigma]
+}
+&\end{flalign*}
+
+\end{document}
