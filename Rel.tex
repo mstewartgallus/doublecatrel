@@ -45,7 +45,9 @@
 \DeclareMathOperator{\coin}{\textbf{tt}}
 \DeclareMathOperator{\fst}{\textbf{fst}}
 \DeclareMathOperator{\snd}{\textbf{snd}}
+\DeclareMathOperator{\fail}{\textbf{fail}}
 
+\DeclareMathOperator{\absurd}{\textbf{absurd}}
 \DeclareMathOperator{\inl}{\textbf{inl}}
 \DeclareMathOperator{\inr}{\textbf{inr}}
 
@@ -56,21 +58,24 @@
 \DeclareMathOperator{\type}{\Box}
 \DeclareMathOperator{\prop}{*}
 
+\DeclareMathOperator{\head}{\textbf{head}}
+\DeclareMathOperator{\tail}{\textbf{tail}}
+
 \DeclareMathOperator{\Mu}{\textbf{M}}
 
-\DeclareMathOperator{\update}{:=}
+\DeclareMathOperator{\update}{\leftarrow}
 
 \DeclareMathOperator{\case}{\textbf{match}}
 
 \begin{document}
 
-I wanted to try out making a programming language vaguely
-corresponding to the double category \(\Rel\).
+I wanted to try out making a proof assistant corresponding to the
+double category \(\Rel\).
 
 You have a calculus of ``values'' corresponding to one edge of
 \(\Rel\) and a sort of relational calculus of ``predicates''
-corresponding to the other edge. Satisfies judgements stating a value
-satisfies a predicate ought to correspond to squares.
+corresponding to the other edge. Squares ought to correspond to
+judgements stating a value satisfies a predicate.
 
 The language of ``predicates'' is based off the Simply Typed Lambda
 Calculus (in category theory terms is closed/has exponential objects)
@@ -82,15 +87,16 @@ extensions but I want to see how far I can get characterizing
 \(\Rel\) with as few language features as possible.  Later on I
 give a few possible extensions.
 
+
 \section*{Core Calculus}
 
-\begin{description}
-\item[Types] \( t \bnfdef \top \mid t \times t \)
-\item[Sorts] \( s \bnfdef t ? \mid t ! \)
-\item[Values] \( v \bnfdef x \mid \coin \mid \fst(v) \mid \snd(v) \mid ( v , v )  \)
-\item[Predicates] \( p \bnfdef x \mid p \, p \mid \mu (x \colon t ?) . p \)
-\item[Environment] \( \Gamma \bnfdef \cdot \mid \Gamma , \, x \colon s  \)
-\item[Substitutions] \( \sigma \bnfdef \cdot \mid \sigma , \, v \models x  \)
+\begin{description}[nosep]
+\item[Types] \hfill \( t \bnfdef \top \mid t \times t \)
+\item[Sorts] \hfill \( s \bnfdef t ? \mid t ! \)
+\item[Values] \hfill \( v \bnfdef x \mid \coin \mid \fst(v) \mid \snd(v) \mid ( v , v ) \)
+\item[Predicates] \hfill \( p \bnfdef x \mid \fail(t, p) \mid p \, p \mid \mu (x \colon t ?) . p \)
+\item[Environment] \hfill \( \Gamma \bnfdef \cdot \mid \Gamma , \, x \colon s  \)
+\item[Substitutions] \hfill \( \sigma \bnfdef \cdot \mid \sigma , \, v \models x  \)
 \end{description}
 
 I need a better name for the abstraction for predicates. It's a little
@@ -121,6 +127,11 @@ Typing judgments.
     \Gamma \vdash ( v_0 , v_1 ) \colon t_0 \times t_1 !
   }\\
   \frac{
+    \Gamma \vdash p \colon \top ?
+  }{
+    \Gamma \vdash \fail(t, p) \colon t ?
+  }\\
+  \frac{
     \Gamma \vdash p_0 \colon t_0 \times t_1 ? \quad
     \Gamma \vdash p_1 \colon t_0 ?
   }{
@@ -129,7 +140,7 @@ Typing judgments.
   \frac{
     \Gamma , \, x \colon t_0 ? \vdash p \colon t_1 ?
   }{
-    \Gamma \vdash \mu x \colon t_0 ? . p \colon t_0 \times t_1 ?
+    \Gamma \vdash \mu ( x \colon t_0 ? ) . p \colon t_0 \times t_1 ?
   }\\
 \end{multline*}
 
@@ -145,6 +156,11 @@ When a value satisfies a predicate (I need a better symbol here.)
   v_1 \models p \quad [\sigma]
 }{
   \snd ( v_0 , v_1 ) \models p \quad [\sigma]
+}\\
+\frac{
+  \coin \models p \; [\sigma]
+}{
+  v \models \fail(t, p) \quad [\sigma]
 }\\
 \frac{
   v \models [x \update p_1] p_0 \quad [\sigma]
@@ -178,21 +194,26 @@ I am fairly confident in a simple extension to disjoint unions
 of sets which are sum types in the value calculus and product types in
 the predicate calculus.
 
-\begin{description}
-\item[Types] \( t \bnfdef \ldots \mid \bot \mid t + t \)
-\item[Values] \( v \bnfdef \ldots \mid \inl(t, v) \mid \inr(t, v) \mid
+\begin{description}[nosep]
+\item[Types] \hfill \( t \bnfdef \ldots \mid \bot \mid t + t \)
+\item[Values] \hfill \( v \bnfdef \ldots \mid \absurd(t, v) \mid \inl(t, v) \mid \inr(t, v) \mid
   \case \, v \,
   \begin{cases}
     v & \leftarrow \inl(x) \\
     v & \leftarrow \inr(x)
   \end{cases}
   \)
-\item[Predicates] \( p \bnfdef \ldots \mid \false \mid \lft(p) \mid \rgt(p) \mid [ p ; p ] \)
+\item[Predicates] \hfill \( p \bnfdef \ldots \mid \false \mid \lft(p) \mid \rgt(p) \mid [ p ; p ] \)
 \end{description}
 
 Typing judgments.
 
 \begin{multline*}
+\frac{
+  \Gamma \vdash v \colon \bot !
+}{
+  \Gamma \vdash \absurd(t, v) \colon t !
+}\\
 \frac{
   \Gamma \vdash v \colon t_0 !
 }{
@@ -272,6 +293,11 @@ Satisfies
   v \models \rgt([ p_0 ; p_1 ]) \quad [\sigma]
 }\\
 \frac{
+  v \models \false \; [\sigma]
+}{
+  \absurd(t, v) \models p \quad [\sigma]
+}\\
+\frac{
   v \models p_0 \; [\sigma]
 }{
   \inl(t, v) \models [ p_0 ; p_1 ] \quad [\sigma]
@@ -294,17 +320,27 @@ Some things become awkward to interpret here though.
 I also really can't figure out unpacking. It's messy if you don't want
 full dependent types.
 
-\begin{description}
-\item[Types] \( t \bnfdef \ldots \mid x \mid \Sigma (x \colon \prop). t \)
-\item[Sorts] \( s \bnfdef \ldots \mid \prop \)
-\item[Values] \( v \bnfdef \ldots \mid \langle x \update t , v \rangle \)
-\item[Predicates] \( p \bnfdef \ldots \mid p \, t \mid \Mu (x \colon \prop). p \)
-\item[Substitutions] \( \sigma \bnfdef \ldots \mid \sigma , \, t \models x \)
+\begin{description}[nosep]
+\item[Types] \hfill \( t \bnfdef \ldots \mid x \mid \head(v) \mid \Sigma (x \colon \prop). t \)
+\item[Sorts] \hfill \( s \bnfdef \ldots \mid \prop \)
+\item[Values] \hfill \( v \bnfdef \ldots \mid \tail(v) \mid \langle x \update t , v \rangle \)
+\item[Predicates] \hfill \( p \bnfdef \ldots \mid p \, t \mid \Mu (x \colon \prop). p \)
+\item[Substitutions] \hfill \( \sigma \bnfdef \ldots \mid \sigma , \, t \models x \)
 \end{description}
 
 Not really good at the typing judgements for dependent sum types.
 
 \begin{multline*}
+\frac{
+  \Gamma \vdash v \colon \Sigma (x \colon \prop). t !
+}{
+  \Gamma \vdash \head(v) \colon \prop
+}\\
+\frac{
+  \Gamma \vdash v \colon \Sigma (x \colon \prop). t !
+}{
+  \Gamma \vdash \tail(v) \colon [x \update \head(v)] t !
+}\\
 \frac{
   \Gamma \vdash t_0 \colon \prop \quad
   \Gamma , \, x \colon \prop \vdash v \colon t_1 !
@@ -327,6 +363,16 @@ Not really good at the typing judgements for dependent sum types.
 I can't figure out satisfaction at all.
 
 \begin{multline*}
+\frac{
+  t \models p \quad [\sigma]
+}{
+  \head(\langle x \update t , v \rangle) \models p \quad [\sigma]
+}\\
+\frac{
+  [x \update t] v \models p \quad [\sigma]
+}{
+  \tail(\langle x \update t , v \rangle) \models p \quad [\sigma]
+}\\
 \frac{
   v \models [x \update t] p \quad [\sigma]
 }{
