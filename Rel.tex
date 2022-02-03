@@ -37,6 +37,7 @@
 %% \setlength{\mathindent}{0pt}
 
 \newcommand{\Rel}{\textbf{Rel}}
+\newcommand{\Set}{\textbf{Set}}
 \newcommand{\lk}{\(\bar{\lambda}\mu\tilde{\mu}\,\)}
 
 \newcommand{\bnfdef}{\mathbin{::=}}
@@ -45,8 +46,8 @@
 \DeclareMathOperator{\prd}{\textbf{p}}
 
 \DeclareMathOperator{\coin}{\textbf{tt}}
-\DeclareMathOperator{\fst}{\textbf{fst}}
-\DeclareMathOperator{\snd}{\textbf{snd}}
+\DeclareMathOperator{\fst}{\textbf{p1}}
+\DeclareMathOperator{\snd}{\textbf{p2}}
 
 \DeclareMathOperator{\pass}{\textbf{pass}}
 
@@ -73,17 +74,17 @@
 \begin{document}
 
 I wanted to try figuring out a sort of internal language corresponding
-to the double category \(\Rel\).
+to the double category \Rel.
 
-You have a calculus of ``values'' corresponding to one edge of
-\(\Rel\) and a sort of relational calculus of ``predicates''
-corresponding to the other edge. Squares ought to correspond to
-judgements stating a value satisfies a predicate.
+You have a calculus of ``values'' corresponding to the \Set edge of
+\Rel and a sort of relational calculus of ``predicates'' corresponding
+to the other edge. Squares ought to correspond to judgements stating a
+value satisfies a predicate.
 
 The language of ``values'' handling Cartesian product of sets has
 product types (in category theory terms is Cartesian.)
 
-The language of ``predicates'' ought to be more complicated. \(\Rel\)
+The language of ``predicates'' ought to be more complicated. \Rel
 is a closed monoidal category over Cartesian product of sets.  One has
 an isomorphism \( \Rel(A, B \otimes C) \sim \Rel (A \otimes B, C) \).
 So some sort of linear type theory is required.
@@ -103,11 +104,11 @@ give a few possible extensions.
 \item[Substitutions] \hfill \( \sigma \bnfdef \cdot \mid \sigma , \, v \models x  \)
 \end{description}
 
-The core relational calculus is the linear lambda calculus modulo a
-few symbol changes.  The core value calculus has only product types.
+The core relational calculus is the linear lambda calculus with a few
+symbol changes.  The core value calculus has only product types.
 
 I'm not really sure small steps semantics make sense with respect to
-the relational calculus but the value calculus corresponding to Set
+the relational calculus but the value calculus corresponding to \Set
 ought to have simple deterministic semantics.
 
 \subsubsection*{Relational Calculus}
@@ -233,7 +234,7 @@ the predicate calculus.
 \begin{description}[nosep]
 \item[Types] \hfill \( t \bnfdef \ldots \mid \bot \mid t + t \)
 \item[Values] \hfill \( v \bnfdef \ldots \mid \absurd_t(v) \mid \inl_t(v) \mid \inr_t(v) \mid
-  \case \, v \, \{ x \mapsto v ; x \mapsto v \}
+  \case(v, x. v, x. v)
   \)
 \item[Predicates] \hfill \( p \bnfdef \ldots \mid \false \mid \lft(p) \mid \rgt(p) \mid [ p ; p ] \)
 \end{description}
@@ -263,7 +264,7 @@ the predicate calculus.
 \RightLabel{(\(+\)-ELIM)}
 \TrinaryInfC{\(
   \Gamma \vdash
-  \case \, v_0 \, \{ x_0 \mapsto v_1 ; x_1 \mapsto v_2 \}
+  \case(v_0, x_0. v_1, x_1. v_2)
   \colon t_2 
 \)}
 \DisplayProof
@@ -271,14 +272,14 @@ the predicate calculus.
 \AxiomC{}
 \RightLabel{(\(+\)-STEP-1)}
 \UnaryInfC{\(
-  \case \, \inl_t(v_0) \, \{ x_0 \mapsto v_1 ; x_1 \mapsto v_2 \} \rightarrow [x_0 \update v_0] v_1
+  \case(\inl_t(v_0), x_0. v_1, x_1. v_2) \rightarrow [x_0 \update v_0] v_1
   \)}
 \DisplayProof
 
 \AxiomC{}
 \RightLabel{(\(+\)-STEP-2)}
 \UnaryInfC{\(
-  \case \, \inr_t(v_0) \, \{ x_0 \mapsto v_1 ; x_1 \mapsto v_2 \} \rightarrow [x_1 \update v_0] v_2
+  \case(\inr_t(v_0), x_0. v_1, x_1. v_2) \} \rightarrow [x_1 \update v_0] v_2
   \)}
 \DisplayProof
 
@@ -301,7 +302,7 @@ the predicate calculus.
 
 \AxiomC{\( \Gamma \vdash p \colon t_0 + t_1 \)}
 \RightLabel{(\(+\)-ELIM-2)}
-\UnaryInfC{\( \Gamma \vdash \lft(p) \colon t_1 \)}
+\UnaryInfC{\( \Gamma \vdash \rgt(p) \colon t_1 \)}
 \DisplayProof
 
 \AxiomC{\( \Gamma \vdash p_0 \colon t_0 \)}
