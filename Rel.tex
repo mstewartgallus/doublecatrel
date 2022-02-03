@@ -91,9 +91,9 @@ give a few possible extensions.
 
 \begin{center}
   \begin{tikzcd}
-    \top \arrow{dd}[']{\sigma_p} \arrow{rr}{\sigma_v} & {} \arrow{dd}{v \models p} & \Gamma_v \arrow{dd}{v} \\
+    \top \arrow{dd}[']{\sigma_p} \arrow{rr}{\sigma_v} & {} \arrow{dd}{v \models p \, [\sigma_v , \sigma_p]} & \prod_{x\colon t ! \in \Gamma_v} t \arrow{dd}{v} \\
     &                               &                      \\
-    \Gamma_p \arrow{rr}[']{p}                           & {}                            & t                   
+    \sum_{x\colon t ? \in \Gamma_p} t \arrow{rr}[']{p}                           & {}                            & t                   
   \end{tikzcd}
 \end{center}
 
