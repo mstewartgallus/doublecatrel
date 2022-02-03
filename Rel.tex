@@ -1,5 +1,5 @@
 % Formatting
-\documentclass[twocolumn, fleqn]{scrartcl}
+\documentclass[twocolumn]{scrartcl}
 
 %% Fixers
 \usepackage{fontspec}
@@ -17,12 +17,10 @@
 \usepackage{enumitem}
 \usepackage{amsmath}
 
-\usepackage{graphicx}
-\usepackage{wrapfig}
-\usepackage{multicol}
+\usepackage{tikz}
+\usepackage{tikz-cd}
 
 %Load Last Fixers
-\usepackage{hyperref}
 
 % Settings
 
@@ -33,9 +31,9 @@
 \setsansfont{Latin Modern Sans}[Ligatures=TeX,Fractions=On]
 \setmonofont{Latin Modern Mono}[Ligatures=TeX,Fractions=On]
 
-\hypersetup{bookmarksopen=true,colorlinks=true,allcolors=blue}
+%% \hypersetup{bookmarksopen=true,colorlinks=true,allcolors=blue}
 
-\setlength{\mathindent}{0pt}
+%% \setlength{\mathindent}{0pt}
 
 \newcommand{\Rel}{\textbf{Rel}}
 \newcommand{\lk}{\(\bar{\lambda}\mu\tilde{\mu}\,\)}
@@ -87,6 +85,17 @@ extensions but I want to see how far I can get characterizing
 \(\Rel\) with as few language features as possible.  Later on I
 give a few possible extensions.
 
+%% Useful as hell, cite somewhere ?
+%% https://tikzcd.yichuanshen.de/
+
+
+\begin{center}
+  \begin{tikzcd}
+    \top \arrow{dd}[']{\sigma_p} \arrow{rr}{\sigma_v} & {} \arrow{dd}{v \models p} & \Gamma_v \arrow{dd}{v} \\
+    &                               &                      \\
+    \Gamma_p \arrow{rr}[']{p}                           & {}                            & t                   
+  \end{tikzcd}
+\end{center}
 
 \section*{Core Calculus}
 
@@ -94,7 +103,7 @@ give a few possible extensions.
 \item[Types] \hfill \( t \bnfdef \top \mid t \times t \)
 \item[Sorts] \hfill \( s \bnfdef t ? \mid t ! \)
 \item[Values] \hfill \( v \bnfdef x \mid \coin \mid \fst(v) \mid \snd(v) \mid ( v , v ) \)
-\item[Predicates] \hfill \( p \bnfdef x \mid \fail(t, p) \mid p \, p \mid \mu (x \colon t ?) . p \)
+\item[Predicates] \hfill \( p \bnfdef x \mid \fail_t(p) \mid p \, p \mid \mu (x \colon t ?) . p \)
 \item[Environment] \hfill \( \Gamma \bnfdef \cdot \mid \Gamma , \, x \colon s  \)
 \item[Substitutions] \hfill \( \sigma \bnfdef \cdot \mid \sigma , \, v \models x  \)
 \end{description}
@@ -106,6 +115,7 @@ different.
 Typing judgments.
 
 \begin{multline*}
+  \\
   \frac{
   }{
     \Gamma \vdash \coin \colon \top !
@@ -129,7 +139,7 @@ Typing judgments.
   \frac{
     \Gamma \vdash p \colon \top ?
   }{
-    \Gamma \vdash \fail(t, p) \colon t ?
+    \Gamma \vdash \fail_t(p) \colon t ?
   }\\
   \frac{
     \Gamma \vdash p_0 \colon t_0 \times t_1 ? \quad
@@ -147,6 +157,7 @@ Typing judgments.
 When a value satisfies a predicate (I need a better symbol here.)
 
 \begin{multline*}
+  \\
 \frac{
   v_0 \models p \quad [\sigma]
 }{
@@ -158,9 +169,9 @@ When a value satisfies a predicate (I need a better symbol here.)
   \snd ( v_0 , v_1 ) \models p \quad [\sigma]
 }\\
 \frac{
-  \coin \models p \; [\sigma]
+  v \models \fail_t(p) \quad [\sigma]
 }{
-  v \models \fail(t, p) \quad [\sigma]
+  \coin \models p \; [\sigma]
 }\\
 \frac{
   v \models [x \update p_1] p_0 \quad [\sigma]
@@ -179,12 +190,14 @@ When a value satisfies a predicate (I need a better symbol here.)
 Pattern matching on equality
 
 \begin{multline*}
+  \\
    ( v , v ) \models \mu (x \colon t ?). x\\
 \end{multline*}
 
 Transposition
 
 \begin{multline*}
+  \\
    \mu (p \colon t \times t \times \top) (x \colon t) (y \colon t). p \, y \, x\\
 \end{multline*}
 
@@ -196,7 +209,7 @@ the predicate calculus.
 
 \begin{description}[nosep]
 \item[Types] \hfill \( t \bnfdef \ldots \mid \bot \mid t + t \)
-\item[Values] \hfill \( v \bnfdef \ldots \mid \absurd(t, v) \mid \inl(t, v) \mid \inr(t, v) \mid
+\item[Values] \hfill \( v \bnfdef \ldots \mid \absurd_t(v) \mid \inl_t(v) \mid \inr_t(v) \mid
   \case \, v \,
   \begin{cases}
     v & \leftarrow \inl(x) \\
@@ -209,20 +222,21 @@ the predicate calculus.
 Typing judgments.
 
 \begin{multline*}
+  \\
 \frac{
   \Gamma \vdash v \colon \bot !
 }{
-  \Gamma \vdash \absurd(t, v) \colon t !
+  \Gamma \vdash \absurd_t(v) \colon t !
 }\\
 \frac{
   \Gamma \vdash v \colon t_0 !
 }{
-  \Gamma \vdash \inl(t_1, v) \colon t_0 + t_1 !
+  \Gamma \vdash \inl_{t_1}(v) \colon t_0 + t_1 !
 }\\
 \frac{
   \Gamma \vdash v \colon t_1 !
 }{
-  \Gamma \vdash \inr(t_0, v) \colon t_0 + t_1 !
+  \Gamma \vdash \inr_{t_0}(v) \colon t_0 + t_1 !
 }\\
 \frac{
   \Gamma \vdash v_0 \colon t_0 + t_1 ! \;
@@ -262,10 +276,11 @@ Typing judgments.
 Satisfies
 
 \begin{multline*}
+  \\
 \frac{
   [x_0 \update v_0] v_1 \models p \quad [\sigma]
 }{
-  \case \, \inl(t, v_0) \,
+  \case \, \inl_t(v_0) \,
   \begin{cases}
     v_1 & \leftarrow \inl(x_0) \\
     v_2 & \leftarrow \inr(x_1)
@@ -275,7 +290,7 @@ Satisfies
 \frac{
   [x_1 \update v_0] v_2 \models p \quad [\sigma]
 }{
-  \case \, \inr(t, v_0) \,
+  \case \, \inr_t(v_0) \,
   \begin{cases}
     v_1 & \leftarrow \inl(x_0) \\
     v_2 & \leftarrow \inr(x_1)
@@ -293,19 +308,19 @@ Satisfies
   v \models \rgt([ p_0 ; p_1 ]) \quad [\sigma]
 }\\
 \frac{
-  v \models \false \; [\sigma]
+  \absurd_t(v) \models p \quad [\sigma]
 }{
-  \absurd(t, v) \models p \quad [\sigma]
+  v \models \false \; [\sigma]
 }\\
 \frac{
   v \models p_0 \; [\sigma]
 }{
-  \inl(t, v) \models [ p_0 ; p_1 ] \quad [\sigma]
+  \inl_t(v) \models [ p_0 ; p_1 ] \quad [\sigma]
 }\\
 \frac{
   v \models p_1 \; [\sigma]
 }{
-  \inr(t, v) \models [ p_0 ; p_1 ] \quad [\sigma]
+  \inr_t(v) \models [ p_0 ; p_1 ] \quad [\sigma]
 }\\
 \end{multline*}
 
@@ -331,6 +346,7 @@ full dependent types.
 Not really good at the typing judgements for dependent sum types.
 
 \begin{multline*}
+  \\
 \frac{
   \Gamma \vdash v \colon \Sigma (x \colon \prop). t !
 }{
@@ -363,6 +379,7 @@ Not really good at the typing judgements for dependent sum types.
 I can't figure out satisfaction at all.
 
 \begin{multline*}
+  \\
 \frac{
   t \models p \quad [\sigma]
 }{
@@ -384,5 +401,12 @@ I can't figure out satisfaction at all.
   \langle x \update t , v \rangle \models \Mu (x \colon \prop). p \quad [\sigma]
 }\\
 \end{multline*}
+
+\section*{The Future?}
+
+Satisifies judgments correspond to thin squares. Moving to more
+generally categories such as \textbf{Span} or \textbf{Prof} or
+\textbf{Vect} for matrix math requires an interpretation of squares
+carrying constructive content.
 
 \end{document}
