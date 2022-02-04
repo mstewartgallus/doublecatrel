@@ -17,6 +17,7 @@
 \usepackage{enumitem}
 \usepackage{amsmath}
 \usepackage{bussproofs}
+\usepackage{stmaryrd}
 
 \usepackage{tikz}
 \usepackage{tikz-cd}
@@ -102,7 +103,7 @@ So some sort of linear type theory is required.
 
 This is the core framework.  I've been thinking about further
 extensions but I want to see how far I can get characterizing
-\(\Rel\) with as few language features as possible.  Later on I
+\Rel with as few language features as possible.  Later on I
 give a few possible extensions.
 
 \section*{Core Calculi}
@@ -373,15 +374,17 @@ the predicate calculus.
 
 \begin{flushleft}
 
+{
 \AxiomC{\( v \models p_0 \with [\sigma] \)}
 \name{\(+\text{S}_1\)}
 \UnaryInfC{\( \inl_t(v) \models [ p_0 \mid p_1 ] \with [\sigma] \)}
 \DisplayProof
-
+\hfill
 \AxiomC{\( v \models p_1 \with [\sigma] \)}
 \name{\(+\text{S}_2\)}
 \UnaryInfC{\( \inr_t(v) \models [ p_0 \mid p_1 ] \with [\sigma] \)}
 \DisplayProof
+}
 
 \AxiomC{\( \absurd_t(v) \models p \with [\sigma] \)}
 \name{\(\mt\)S}
@@ -504,6 +507,29 @@ follows.
     \times_{x\colon t \in \Gamma_p} t \arrow{rr}[']{p}                           & {}                            & t                   
   \end{tikzcd}
 \end{center}
+
+I have no idea about universe issues and such. Dependent sum is probably wrong.
+
+Really need to think about denotation again.
+
+\begin{multline*}
+  \\
+  \llbracket \unit \rrbracket = \{ \emptyset \} \\
+  \llbracket t_0 \times t_1 \rrbracket = \llbracket t_0 \rrbracket \times \llbracket t_1 \rrbracket \\
+  \llbracket \mt \rrbracket = \emptyset \\
+  \llbracket t_0 + t_1 \rrbracket = \llbracket t_0 \rrbracket \sqcup \llbracket t_1 \rrbracket \\
+  \llbracket \Sigma (x \colon \prop). t(x) \rrbracket = \bigsqcup_{ x \in \prop} \llbracket t(x) \rrbracket \\
+  \\
+  \llbracket \coin \rrbracket = \emptyset \\
+  \llbracket ( v_0 , v_1 ) \rrbracket = ( \llbracket v_0 \rrbracket , \llbracket v_1 \rrbracket ) \\
+  \\
+  \llbracket \success \rrbracket(y) = \top \\
+  \llbracket p_0 p_1 \rrbracket(y) = \exists z,  \llbracket p_1 \rrbracket (z) \wedge \llbracket p_0 \rrbracket (z, y)\\
+  \llbracket \forall (x \colon t). p \rrbracket(\langle x, y \rangle) = \llbracket p(x) \rrbracket (y)  \\
+\end{multline*}
+
+%% \item[Values] \hfill \( v \bnfdef x \mid \coin \mid \fst(v) \mid \snd(v) \mid ( v , v ) \)
+%% \item[Predicates] \hfill \( p \bnfdef x \mid \success \mid p \pass p \mid p \, p \mid \forall (x \colon t) . p \)
 
 \section*{The Future?}
 
