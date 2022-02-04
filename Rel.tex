@@ -43,13 +43,35 @@
 
 \newcommand{\name}[1]{\LeftLabel{\fbox{#1}}}
 
-\newcommand{\taut}{\AxiomC{\(\top\)}}
-
-
+%% \newcommand{\taut}{\AxiomC{\(\top\)}}
+\newcommand{\taut}{\AxiomC{}\noLine}
 \newcommand{\bnfdef}{\mathrel{::=}}
 
 \newcommand{\step}{\mathbin{\longrightarrow}}
 \newcommand{\with}{\;}
+
+\newcommand{\axiom}[2]{\fbox{#1}~#2}
+\newcommand{\judge}[3]{
+  \AxiomC{\(#2\)}
+  \name{#1}
+  \UnaryInfC{\(#3\)}
+  \DisplayProof
+}
+\newcommand{\bijudge}[4]{
+  \AxiomC{#2}
+  \AxiomC{#3}
+  \name{#1}
+  \BinaryInfC{#4}
+  \DisplayProof
+}
+\newcommand{\trijudge}[5]{
+  \AxiomC{#2}
+  \AxiomC{#3}
+  \AxiomC{#4}
+  \name{#1}
+  \TrinaryInfC{#5}
+  \DisplayProof
+}
 
 \DeclareMathOperator{\val}{\textbf{v}}
 \DeclareMathOperator{\prd}{\textbf{p}}
@@ -67,7 +89,7 @@
 \DeclareMathOperator{\inl}{\textbf{i}_1}
 \DeclareMathOperator{\inr}{\textbf{i}_2}
 
-\DeclareMathOperator{\false}{\textbf{fls}}
+\DeclareMathOperator{\false}{\textbf{fail}}
 \DeclareMathOperator{\lft}{\textbf{l}}
 \DeclareMathOperator{\rgt}{\textbf{r}}
 
@@ -127,42 +149,32 @@ ought to have simple deterministic semantics.
 
 \begin{flushleft}
 
-\AxiomC{\( x \colon t \in \Gamma \)}
-\name{V}
-\UnaryInfC{\(\Gamma \vdash x \colon t \)}
-\DisplayProof
+\judge{V}
+      {x \colon t \in \Gamma}
+      {\Gamma \vdash x \colon t}
 
-\taut
-\name{\(\unit\)I}
-\UnaryInfC{\(\Gamma \vdash \success \colon \unit\)}
-\DisplayProof
+\axiom{\(\unit\)I}
+      {\(\Gamma \vdash \success \colon \unit\)}
 
-\AxiomC{\(\Gamma \vdash p_0 \colon \unit \)}
-\AxiomC{\(\Delta \vdash p_1 \colon t \)}
-\name{\(\unit\)E}
-\BinaryInfC{\(\Gamma, \, \Delta \vdash p_0 \pass p_1 \colon t\)}
-\DisplayProof
+\bijudge{\(\unit\)E}
+        {\(\Gamma \vdash p_0 \colon \unit \)}
+        {\(\Delta \vdash p_1 \colon t \)}
+        {\(\Gamma, \, \Delta \vdash p_0 \pass p_1 \colon t\)}
   
-\AxiomC{\(\Gamma, x \colon t_0 \vdash p \colon t_1\)}
-\name{\(\times\)I}
-\UnaryInfC{\(\Gamma \vdash \forall (x \colon t_0). p \colon t_0 \times t_1\)}
-\DisplayProof
+\judge{\(\times\)I}
+      {\Gamma, x \colon t_0 \vdash p \colon t_1}
+      {\Gamma \vdash \forall (x \colon t_0). p \colon t_0 \times t_1}
 
-\AxiomC{\(\Gamma \vdash p_0 \colon t_0 \times t_1\)}
-\AxiomC{\(\Delta \vdash p_1 \colon t_1\)}
-\name{\(\times\)E}
-\BinaryInfC{\(\Gamma, \, \Delta \vdash p_0 p_1 \colon t_1\)}
-\DisplayProof
+\bijudge{\(\times\)E}
+        {\(\Gamma \vdash p_0 \colon t_0 \times t_1\)}
+        {\(\Delta \vdash p_1 \colon t_1\)}
+        {\(\Gamma, \, \Delta \vdash p_0 p_1 \colon t_1\)}
 
-\taut
-\name{\(\unit\)R}
-\UnaryInfC{\( \success \pass p \step p \)}
-\DisplayProof
+\axiom{\(\unit\)R}
+      {\( \success \pass p \step p \)}
 
-\taut
-\name{\(\times\)R}
-\UnaryInfC{\( ( \forall (x \colon t ). p_0) \, p_1 \step [x \update p_1] p_0 \)}
-\DisplayProof
+\axiom{\(\times\)R}
+      {\( ( \forall (x \colon t ). p_0) \, p_1 \step [x \update p_1] p_0 \)}
 
 \end{flushleft}
 
@@ -174,42 +186,33 @@ extensions.
 
 \begin{flushleft}
 
-\AxiomC{\( x \colon t \in \Gamma \)}
-\name{V}
-\UnaryInfC{\(\Gamma \vdash x \colon t \)}
-\DisplayProof
+\judge{V}
+      {x \colon t \in \Gamma}
+      {\Gamma \vdash x \colon t}
 
-\taut
-\name{\(\unit\)I}
-\UnaryInfC{\(\Gamma \vdash \coin \colon \unit \)}
-\DisplayProof
+\axiom{\(\unit\)I}
+      {\(\Gamma \vdash \coin \colon \unit \)}
 
-{\AxiomC{\(\Gamma \vdash v \colon t_0 \times t_1\)}
-\name{\(\times\text{E}_1\)}
-\UnaryInfC{\(\Gamma \vdash \fst(v) \colon t_0 \)}
-\DisplayProof
+{\judge{\(\times\text{E}_1\)}
+       {\Gamma \vdash v \colon t_0 \times t_1}
+       {\Gamma \vdash \fst(v) \colon t_0}
 \hfill
-\AxiomC{\(\Gamma \vdash v \colon t_0 \times t_1\)}
-\name{\(\times\text{E}_2\)}
-\UnaryInfC{\(\Gamma \vdash \snd(v) \colon t_1 \)}
-\DisplayProof
+\judge{\(\times\text{E}_2\)}
+      {\Gamma \vdash v \colon t_0 \times t_1}
+      {\Gamma \vdash \snd(v) \colon t_1 }
 }
 
-\AxiomC{\(\Gamma \vdash v_0 \colon t_0\)}
-\AxiomC{\(\Gamma \vdash v_1 \colon t_1\)}
-\name{\(\times\)I}
-\BinaryInfC{\(\Gamma \vdash (v_0, v_1) \colon t_0 \times t_1 \)}
-\DisplayProof
+\bijudge{\(\times\)I}
+        {\(\Gamma \vdash v_0 \colon t_0\)}
+        {\(\Gamma \vdash v_1 \colon t_1\)}
+        {\(\Gamma \vdash (v_0, v_1) \colon t_0 \times t_1 \)}
 
-{\taut
-\name{\(\times\text{R}_1\)}
-\UnaryInfC{\(\fst (v_0 , v_1 ) \step v_0 \)}
-\DisplayProof
+{\axiom{\(\times\text{R}_1\)}
+       {\(\fst (v_0 , v_1 ) \step v_0 \)}
+
 \hfill
-\taut
-\name{\(\times\text{R}_2\)}
-\UnaryInfC{\(\snd (v_0 , v_1 ) \step v_1 \)}
-\DisplayProof
+\axiom{\(\times\text{R}_2\)}
+      {\(\snd (v_0 , v_1 ) \step v_1 \)}
 }
 
 \end{flushleft}
@@ -220,33 +223,27 @@ I need a better symbol here.
 
 \begin{flushleft}
 
-\AxiomC{\(v \models x \in \sigma\)}
-\name{VAR-S}
-\UnaryInfC{\( v \models x \with [\sigma] \)}
-\DisplayProof
+\judge{VAR-S}
+      {v \models x \in \sigma}
+      {v \models x \with [\sigma]}
 
-\AxiomC{\(v_0 \step v_1\)}
-\AxiomC{\(v_0 \models p \with [\sigma]\)}
-\name{vR-S}
-\BinaryInfC{\( v_1 \models p \with [\sigma] \)}
-\DisplayProof
+\bijudge{vR-S}
+        {\(v_0 \step v_1\)}
+        {\(v_0 \models p \with [\sigma]\)}
+        {\( v_1 \models p \with [\sigma] \)}
 
-\AxiomC{\(p_0 \step p_1\)}
-\AxiomC{\(v \models p_0 \with [\sigma]\)}
-\name{pR-S}
-\BinaryInfC{\(v \models p_1 \with [\sigma] \)}
-\DisplayProof
+\bijudge{pR-S}
+        {\(p_0 \step p_1\)}
+        {\(v \models p_0 \with [\sigma]\)}
+        {\(v \models p_1 \with [\sigma] \)}
 
-\taut
-\name{\(\unit\)S}
-\UnaryInfC{\(
-  \coin \models \success \with [\sigma] \)}
-\DisplayProof
+\axiom{\(\unit\)S}
+      {\(\coin \models \success \with [\sigma] \)}
 
-\AxiomC{\( v_1 \models p \with [ \sigma , \, v_0 \models x] \)}
-\name{\(\times\)S}
-\UnaryInfC{\(( v_0 , v_1 ) \models \forall (x \colon t ). p \with [\sigma] \)}
-\DisplayProof
+\judge{\(\times\)S}
+      {v_1 \models p \with [ \sigma , \, v_0 \models x]}
+      {( v_0 , v_1 ) \models \forall (x \colon t ). p \with [\sigma]}
+
 \end{flushleft}
 
 \section*{Examples}
@@ -269,64 +266,63 @@ Transposition
 
 \section*{Disjoint Unions}
 
-Disjoint unions in set become Cartesian product/coproduct in \Rel.
+Disjoint unions in \Set become Cartesian product/coproduct in \Rel.
+It might make sense to use different notations for coproduct in \Rel.
 
-I am fairly confident in a simple extension to disjoint unions
-of sets which are sum types in the value calculus and product types in
-the predicate calculus.
+I decided against rules for mapping from \Set to \Rel because I wanted
+to see how far \Rel could go on its own and also wanted to see if
+these could be defined later.
+
+I have a hunch it is proper for the combination of product/coproduct
+to introduce nondeterminism in the operational semantics but I need to
+think more about the issue.
 
 \begin{description}[nosep]
 \item[Types] \hfill \( t \bnfdef \ldots \mid \mt \mid t + t \)
 \item[Values] \hfill \( v \bnfdef \ldots \mid \absurd_t(v) \mid \inl_t(v) \mid \inr_t(v) \mid
   \case(v, x. v, x. v)
   \)
-\item[Predicates] \hfill \( p \bnfdef \ldots \mid \false \mid \lft(p) \mid \rgt(p) \mid [ p \mid p ] \)
+\item[Predicates] \hfill \( p \bnfdef \ldots \mid
+  \absurd_t(p) \mid \inl_t(p) \mid \inr_t(p) \mid \case(v, x. v, x. v) \mid
+  \false \mid \lft(p) \mid \rgt(p) \mid [ p \mid p ] \)
 \end{description}
 
 \subsubsection*{Values}
 
 \begin{flushleft}
 
-\AxiomC{\( \Gamma \vdash v \colon \mt \)}
-\name{\(\mt\)E}
-\UnaryInfC{\( \Gamma \vdash \absurd_t(v) \colon t \)}
-\DisplayProof
+\judge{\(\mt\)E}
+        {\Gamma \vdash v \colon \mt}
+        {\Gamma \vdash \absurd_t(v) \colon t}
 
-{\AxiomC{\( \Gamma \vdash v \colon t_0 \)}
-\name{\(+\text{I}_1\)}
-\UnaryInfC{\( \Gamma \vdash \inl_{t_1}(v) \colon t_0 + t_1  \)}
-\DisplayProof
+{\judge{\(+\text{I}_1\)}
+       {\Gamma \vdash v \colon t_0}
+       {\Gamma \vdash \inl_{t_1}(v) \colon t_0 + t_1}
 \hfill
-\AxiomC{\( \Gamma \vdash v \colon t_1 \)}
-\name{\(+\text{I}_2\)}
-\UnaryInfC{\( \Gamma \vdash \inr_{t_0}(v) \colon t_0 + t_1  \)}
-\DisplayProof
+\judge{\(+\text{I}_2\)}
+      {\Gamma \vdash v \colon t_1}
+      {\Gamma \vdash \inr_{t_0}(v) \colon t_0 + t_1}
 }
 
-\AxiomC{\( \Gamma \vdash v_0 \colon t_0 + t_1 \)}
-\AxiomC{\( \Gamma , \, x_0 \colon t_0 \vdash v_1 \colon t_2 \)}
-\AxiomC{\( \Gamma , \, x_1 \colon t_1 \vdash v_1 \colon t_2 \)}
-\name{\(+\)E}
-\TrinaryInfC{\(
+\trijudge{\(+\)E}
+         {\( \Gamma \vdash v_0 \colon t_0 + t_1 \)}
+         {\( \Gamma , \, x_0 \colon t_0 \vdash v_1 \colon t_2 \)}
+         {\( \Gamma , \, x_1 \colon t_1 \vdash v_1 \colon t_2 \)}
+         {\(
   \Gamma \vdash
   \case(v_0, x_0. v_1, x_1. v_2)
   \colon t_2 
 \)}
-\DisplayProof
 
-\taut
-\name{\(+\text{R}_1\)}
-\UnaryInfC{\(
+\axiom{\(+\text{R}_1\)}
+      {\(
   \case(\inl_t(v_0), x_0. v_1, x_1. v_2) \step [x_0 \update v_0] v_1
   \)}
-\DisplayProof
 
-\taut
-\name{\(+\text{R}_2\)}
-\UnaryInfC{\(
+\axiom{\(+\text{R}_2\)}
+      {\(
   \case(\inr_t(v_0), x_0. v_1, x_1. v_2) \step [x_1 \update v_0] v_2
   \)}
-\DisplayProof
 
 \end{flushleft}
 
@@ -335,38 +331,93 @@ the predicate calculus.
 
 \begin{flushleft}
 
-\taut
-\name{\(\mt\)I}
-\UnaryInfC{\( \Gamma \vdash \false \colon \mt \)}
-\DisplayProof
+\judge{\(\mt\text{E}^\text{T}\)}
+      {\Gamma \vdash p \colon \mt}
+      {\Gamma \vdash \absurd_t(v) \colon t}
 
-{\AxiomC{\( \Gamma \vdash p \colon t_0 + t_1 \)}
-\name{\(+\text{E}_1\)}
-\UnaryInfC{\( \Gamma \vdash \lft(p) \colon t_0 \)}
-\DisplayProof
+{\judge{\(+\text{I}^\text{T}_1\)}
+       {\Gamma \vdash p \colon t_0}
+       {\Gamma \vdash \inl_{t_1}(v) \colon t_0 + t_1}
 \hfill
-\AxiomC{\( \Gamma \vdash p \colon t_0 + t_1 \)}
-\name{\(+\text{E}_2\)}
-\UnaryInfC{\( \Gamma \vdash \rgt(p) \colon t_1 \)}
-\DisplayProof
+\judge{\(+\text{I}^\text{T}_2\)}
+      {\Gamma \vdash p \colon t_1}
+      {\Gamma \vdash \inr_{t_0}(v) \colon t_0 + t_1}
 }
 
-\AxiomC{\( \Gamma \vdash p_0 \colon t_0 \)}
-\AxiomC{\( \Gamma \vdash p_1 \colon t_1 \)}
-\name{\(+\)I}
-\BinaryInfC{\( \Gamma \vdash [p_0 \mid p_1] \colon t_0 + t_1 \)}
-\DisplayProof
+\bijudge{\(+\text{E}^\text{T}\)}
+        {\( \Gamma \vdash p_0 \colon t_0 + t_1 \)}
+        {\( \Gamma , \, x_0 \colon t_0 \vdash p_1 \colon t_2 \)}
+        {\( \Gamma , \, x_1 \colon t_1 \vdash p_1 \colon t_2 \)}
+        {\(
+  \Gamma \vdash
+  \case(p_0, x_0. p_1, x_1. p_2)
+  \colon t_2 
+\)}
 
-{\taut
-\name{\(+\text{R}_1\)}
-\UnaryInfC{\( \lft([ p_0 \mid p_1 ]) \step p_0 \)}
-\DisplayProof
+\axiom{\(\mt\)I}
+      {\( \Gamma \vdash \false \colon \mt \)}
+
+{\judge{\(+\text{E}_1\)}
+       {\Gamma \vdash p \colon t_0 + t_1}
+       {\Gamma \vdash \lft(p) \colon t_0}
 \hfill
-\taut
-\name{\(+\text{R}_2\)}
-\UnaryInfC{\( \rgt([ p_0 \mid p_1 ]) \step p_1 \)}
-\DisplayProof
+\judge{\(+\text{E}_2\)}
+      {\Gamma \vdash p \colon t_0 + t_1}
+      {\Gamma \vdash \rgt(p) \colon t_1)}
 }
+
+\bijudge{\(+\)I}
+        {\( \Gamma \vdash p_0 \colon t_0 \)}
+        {\( \Gamma \vdash p_1 \colon t_1 \)}
+        {\( \Gamma \vdash [p_0 \mid p_1] \colon t_0 + t_1 \)}
+
+\axiom{\(+\text{R}^\text{T}_1\)}
+      {\(
+  \case(\inl_t(p_0), x_0. p_1, x_1. p_2) \step [x_0 \update p_0] p_1
+  \)}
+
+\axiom{\(+\text{R}^\text{T}_2\)}
+      {\(
+  \case(\inr_t(p_0), x_0. p_1, x_1. p_2) \step [x_1 \update p_0] p_2
+  \)}
+
+{\axiom{\(+\text{R}_1\)}
+  {\( \lft([ p_0 \mid p_1 ]) \step p_0 \)}
+\axiom{\(+\text{R}_2\)}
+      {\( \rgt([ p_0 \mid p_1 ]) \step p_1 \)}
+}
+
+{
+\axiom{\(+\text{R}\text{R}^\text{T}_1\)}
+      {\( \lft(\inl_t(p)) \step p \)}
+\hfill
+\axiom{\(+\text{R}\text{R}^\text{T}_2\)}
+      {\( \rgt(\inr_t(p)) \step p \)}
+}
+
+{
+\axiom{\(+\text{R}\text{R}^\text{T}_3\)}
+      {\(
+  \lft(\inr_t(p)) \step \absurd_t(\false)
+  \)}
+\hfill
+\axiom{\(+\text{R}\text{R}^\text{T}_4\)}
+      {\(
+  \rgt(\inl_t(p)) \step \absurd_t(\false)
+  \)}
+}
+
+
+\axiom{\(+\text{R}^\text{T}\text{R}_1\)}
+      {\(
+  \case([p_0 \mid p_1 ], x_0. p_2, x_1. p_3) \step [x_0 := p_0] p_2
+  \)}
+
+\axiom{\(+\text{R}^\text{T}\text{R}_2\)}
+      {\(
+  \case([p_0 \mid p_1 ], x_0. p_2, x_1. p_3) \step [x_1 := p_1] p_3
+  \)}
+
 \end{flushleft}
 
 
@@ -375,21 +426,18 @@ the predicate calculus.
 \begin{flushleft}
 
 {
-\AxiomC{\( v \models p_0 \with [\sigma] \)}
-\name{\(+\text{S}_1\)}
-\UnaryInfC{\( \inl_t(v) \models [ p_0 \mid p_1 ] \with [\sigma] \)}
-\DisplayProof
+\judge{\(+\text{S}_1\)}
+      {v \models p_0 \with [\sigma]}
+      {\inl_t(v) \models [ p_0 \mid p_1 ] \with [\sigma]}
 \hfill
-\AxiomC{\( v \models p_1 \with [\sigma] \)}
-\name{\(+\text{S}_2\)}
-\UnaryInfC{\( \inr_t(v) \models [ p_0 \mid p_1 ] \with [\sigma] \)}
-\DisplayProof
+\judge{\(+\text{S}_2\)}
+      {v \models p_1 \with [\sigma]}
+      {\inr_t(v) \models [ p_0 \mid p_1 ] \with [\sigma]}
 }
 
-\AxiomC{\( \absurd_t(v) \models p \with [\sigma] \)}
-\name{\(\mt\)S}
-\UnaryInfC{\(  v \models \false \with [\sigma] \)}
-\DisplayProof
+\judge{\(\mt\)S}
+      {\absurd_t(v) \models p \with [\sigma]}
+      {v \models \false \with [\sigma]}
 
 \end{flushleft}
 
@@ -418,37 +466,27 @@ Not really good at the typing judgements for dependent sum types.
 
 \begin{flushleft}
   
-\AxiomC{\( \Gamma \vdash v \colon \Sigma (x \colon \prop). t \)}
-\name{\(\Sigma\text{E}_1\)}
-\UnaryInfC{\( \Gamma \vdash \head(v) \colon \prop \)}
-\DisplayProof
+\judge{\(\Sigma\text{E}_1\)}
+      {\Gamma \vdash v \colon \Sigma (x \colon \prop). t}
+      {\Gamma \vdash \head(v) \colon \prop}
 
-\AxiomC{\( \Gamma \vdash v \colon \Sigma (x \colon \prop). t  \)}
-\name{\(\Sigma\text{E}_2\)}
-\UnaryInfC{\(
-  \Gamma \vdash \tail(v) \colon [x \update \head(v)] t \)}
-\DisplayProof
+\judge{\(\Sigma\text{E}_2\)}
+      {\Gamma \vdash v \colon \Sigma (x \colon \prop). t}
+      {\Gamma \vdash \tail(v) \colon [x \update \head(v)] t}
 
 
-\AxiomC{\( \Gamma \vdash t_0 \colon \prop  \)}
-\AxiomC{\( \Gamma , \, x \colon \prop \vdash v \colon t_1 \)}
-\name{\(\Sigma\)I}
-\BinaryInfC{\(
+\bijudge{\(\Sigma\)I}
+        {\( \Gamma \vdash t_0 \colon \prop  \)}
+        {\( \Gamma , \, x \colon \prop \vdash v \colon t_1 \)}
+        {\(
   \Gamma \vdash \langle x \update t_0 , v \rangle \colon \Sigma (x \colon \prop). t_0  \)}
-\DisplayProof
 
 
-{\taut
-\name{\(\Sigma\text{S}_1\)}
-\UnaryInfC{\(
-  \head(\langle x \update t , v \rangle) \step t
-  \)}
+{\axiom{\(\Sigma\text{S}_1\)}
+  {\( \head(\langle x \update t , v \rangle) \step t \)}
 \hfill
-\taut
-\name{\(\Sigma\text{S}_2\)}
-\UnaryInfC{\(
-  \tail( \langle x \update t , v \rangle) \step [x \update t] v
-  \)}
+\axiom{\(\Sigma\text{S}_2\)}
+      {\( \tail( \langle x \update t , v \rangle) \step [x \update t] v \)}
 }
 \end{flushleft}
 
@@ -456,25 +494,17 @@ Not really good at the typing judgements for dependent sum types.
 
 \begin{flushleft}
 
-\AxiomC{\( \Gamma \vdash p \colon \Sigma (x\colon \prop). t_1  \)}
-\AxiomC{\( \Delta \vdash t_0 \colon \prop \)}
-\name{\(\Sigma\)E}
-\BinaryInfC{\(
-  \Gamma, \, \Delta \vdash p_0 \, t_0 \colon [x \update t_0] t_1 \)}
-\DisplayProof
+\bijudge{\(\Sigma\)E}
+        {\( \Gamma \vdash p \colon \Sigma (x\colon \prop). t_1  \)}
+        {\( \Delta \vdash t_0 \colon \prop \)}
+        {\( \Gamma, \, \Delta \vdash p_0 \, t_0 \colon [x \update t_0] t_1 \)}
 
-\AxiomC{\( \Gamma , \, x \colon \prop \vdash p \colon t  \)}
-\name{\(\Sigma\)I}
-\UnaryInfC{\(
-  \Gamma \vdash \Forall (x \colon \prop). p \colon \Sigma (x \colon \prop). t \)}
-\DisplayProof
+\judge{\(\Sigma\)I}
+      {\Gamma , \, x \colon \prop \vdash p \colon t}
+      {\Gamma \vdash \Forall (x \colon \prop). p \colon \Sigma (x \colon \prop). t}
 
-\taut
-\name{\(\Sigma\)R}
-\UnaryInfC{\(
-  ( \Forall (x \colon \prop). p) \, t \step [x \update t] p
-  \)}
-\DisplayProof
+\axiom{\(\Sigma\)R}
+      {\( ( \Forall (x \colon \prop). p) \, t \step [x \update t] p \)}
 
 \end{flushleft}
 
@@ -482,12 +512,11 @@ Not really good at the typing judgements for dependent sum types.
 I can't figure out satisfaction at all.
 
 \begin{flushleft}
-\AxiomC{\(  v \models p \with [ \sigma , \, t \models x]\)}
-\name{\(\Sigma\)S}
-\UnaryInfC{\(
+\judge{\(\Sigma\)S}
+      {v \models p \with [ \sigma , \, t \models x]}
+      {
   \langle x \update t , v \rangle \models \Forall (x \colon \prop). p \with [\sigma]
-  \)}
-\DisplayProof
+  }
 \end{flushleft}
 
 \section*{Categorical Semantics}
@@ -534,7 +563,7 @@ Really need to think about denotation again.
 \section*{The Future?}
 
 Satisifies judgments correspond to thin squares. Moving to more
-generally categories such as \textbf{Span} or \textbf{Prof} or
+general categories such as \textbf{Span} or \textbf{Prof} or
 \textbf{Vect} for matrix math requires an interpretation of squares
 carrying constructive content.
 
