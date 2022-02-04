@@ -8,7 +8,7 @@
 \usepackage{polyglossia}
 
 \usepackage[]{microtype}
-\usepackage[top=0.7in, bottom=0.75in, left=0.75in, right=0.7in]{geometry}
+\usepackage[top=0.7in, bottom=0.7in, left=0.7in, right=0.7in]{geometry}
 \usepackage[english]{isodate}
 
 % Packages
@@ -16,6 +16,7 @@
 \usepackage{scrlayer-scrpage}
 \usepackage{enumitem}
 \usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage{bussproofs}
 \usepackage{stmaryrd}
 
@@ -43,11 +44,10 @@
 
 \newcommand{\name}[1]{\LeftLabel{\fbox{#1}}}
 
-%% \newcommand{\taut}{\AxiomC{\(\top\)}}
-\newcommand{\taut}{\AxiomC{}\noLine}
+\newcommand{\taut}{\AxiomC{\(\top\)}}
 \newcommand{\bnfdef}{\mathrel{::=}}
 
-\newcommand{\step}{\mathbin{\longrightarrow}}
+\newcommand{\step}{\mathrel{\rightsquigarrow}}
 \newcommand{\with}{\;}
 
 \newcommand{\axiom}[2]{\fbox{#1}~#2}
@@ -78,14 +78,14 @@
 
 \DeclareMathOperator{\unit}{\top}
 \DeclareMathOperator{\mt}{\emptyset}
-\DeclareMathOperator{\coin}{\textbf{tt}}
+\DeclareMathOperator{\coin}{\textbf{!}}
 \DeclareMathOperator{\fst}{\pi_1}
 \DeclareMathOperator{\snd}{\pi_2}
 
 \DeclareMathOperator{\success}{\textbf{success}}
 \newcommand{\pass}{;}
 
-\DeclareMathOperator{\absurd}{\textbf{absrd}}
+\DeclareMathOperator{\absurd}{\textbf{abort}}
 \DeclareMathOperator{\inl}{\textbf{i}_1}
 \DeclareMathOperator{\inr}{\textbf{i}_2}
 
@@ -133,7 +133,7 @@ give a few possible extensions.
 \begin{description}[nosep]
 \item[Types] \hfill \( t \bnfdef \unit \mid t \times t \)
 \item[Values] \hfill \( v \bnfdef x \mid \coin \mid \fst(v) \mid \snd(v) \mid ( v , v ) \)
-\item[Predicates] \hfill \( p \bnfdef x \mid \success \mid p \pass p \mid p \, p \mid \forall (x \colon t) . p \)
+\item[Predicates] \hfill \( p \bnfdef x_t \mid \success \mid p \pass p \mid p \, p \mid \forall (x \colon t) . p \)
 \item[Environment] \hfill \( \Gamma \bnfdef \cdot \mid \Gamma , \, x \colon t  \)
 \item[Substitutions] \hfill \( \sigma \bnfdef \cdot \mid \sigma , \, v \models x  \)
 \end{description}
@@ -147,14 +147,18 @@ ought to have simple deterministic semantics.
 
 \subsubsection*{Relational Calculus}
 
+The relational calculus has a linear variable rule.  As a hack to make
+mechanization easier linear variables are explicitly indexed by their
+types.
+
 \begin{flushleft}
 
 \judge{V}
       {x \colon t \in \Gamma}
-      {\Gamma \vdash x \colon t}
+      {\cdot , \, x \colon t \vdash x_t \colon t}
 
 \axiom{\(\unit\)I}
-      {\(\Gamma \vdash \success \colon \unit\)}
+      {\(\cdot \vdash \success \colon \unit\)}
 
 \bijudge{\(\unit\)E}
         {\(\Gamma \vdash p_0 \colon \unit \)}
@@ -174,15 +178,12 @@ ought to have simple deterministic semantics.
       {\( \success \pass p \step p \)}
 
 \axiom{\(\times\)R}
-      {\( ( \forall (x \colon t ). p_0) \, p_1 \step [x \update p_1] p_0 \)}
+      {\( ( \forall (x \colon t ). p_0) \, p_1 \step [x_t \update p_1] p_0 \)}
 
 \end{flushleft}
 
 
 \subsubsection*{Value Calculus}
-
-The variable rule is useless here but becomes important in later
-extensions.
 
 \begin{flushleft}
 
@@ -224,8 +225,8 @@ I need a better symbol here.
 \begin{flushleft}
 
 \judge{VAR-S}
-      {v \models x \in \sigma}
-      {v \models x \with [\sigma]}
+      {v \models x_t \in \sigma}
+      {v \models x_t \with [\sigma]}
 
 \bijudge{vR-S}
         {\(v_0 \step v_1\)}
@@ -241,7 +242,7 @@ I need a better symbol here.
       {\(\coin \models \success \with [\sigma] \)}
 
 \judge{\(\times\)S}
-      {v_1 \models p \with [ \sigma , \, v_0 \models x]}
+      {v_1 \models p \with [ \sigma , \, v_0 \models x_t]}
       {( v_0 , v_1 ) \models \forall (x \colon t ). p \with [\sigma]}
 
 \end{flushleft}
@@ -254,15 +255,15 @@ Pattern matching on equality
 
   \taut
   \RightLabel{\scriptsize{(VAR-S)}}
-  \UnaryInfC{\( v \models x \with [ \sigma , \, v \models x] \)}
+  \UnaryInfC{\( v \models x_t \with [ \sigma , \, v \models x_t] \)}
   \RightLabel{\scriptsize{(\(\times\)S)}}
-  \UnaryInfC{\( ( v , v ) \models \forall (x \colon t). x \with [\sigma] \)}
+  \UnaryInfC{\( ( v , v ) \models \forall (x \colon t). x_t \with [\sigma] \)}
 
 \end{prooftree}
 
 Transposition
 
-\(  \forall (p \colon t \times t \times \unit) (x \colon t) (y \colon t). p \, y \, x \)
+\(  \forall (p \colon t \times t \times \unit) (x \colon t) (y \colon t). p_(t \times t \times \unit) \, y_t \, x_t \)
 
 \section*{Disjoint Unions}
 
@@ -277,6 +278,9 @@ I have a hunch it is proper for the combination of product/coproduct
 to introduce nondeterminism in the operational semantics but I need to
 think more about the issue.
 
+As a technical hack \(\false\) is explicitly indexed by the environment it ignores.
+This hack also requires inferring the environment in certain reduction rules.
+
 \begin{description}[nosep]
 \item[Types] \hfill \( t \bnfdef \ldots \mid \mt \mid t + t \)
 \item[Values] \hfill \( v \bnfdef \ldots \mid \absurd_t(v) \mid \inl_t(v) \mid \inr_t(v) \mid
@@ -284,7 +288,7 @@ think more about the issue.
   \)
 \item[Predicates] \hfill \( p \bnfdef \ldots \mid
   \absurd_t(p) \mid \inl_t(p) \mid \inr_t(p) \mid \case(v, x. v, x. v) \mid
-  \false \mid \lft(p) \mid \rgt(p) \mid [ p \mid p ] \)
+  \false_\Gamma \mid \lft(p) \mid \rgt(p) \mid [ p \mid p ] \)
 \end{description}
 
 \subsubsection*{Values}
@@ -355,7 +359,7 @@ think more about the issue.
 \)}
 
 \axiom{\(\mt\)I}
-      {\( \Gamma \vdash \false \colon \mt \)}
+      {\( \Gamma \vdash \false_\Gamma \colon \mt \)}
 
 {\judge{\(+\text{E}_1\)}
        {\Gamma \vdash p \colon t_0 + t_1}
@@ -396,15 +400,13 @@ think more about the issue.
 }
 
 {
-\axiom{\(+\text{R}\text{R}^\text{T}_3\)}
-      {\(
-  \lft(\inr_t(p)) \step \absurd_t(\false)
-  \)}
+\judge{\(+\text{R}\text{R}^\text{T}_3\)}
+      {\Gamma \vdash p \colon t}
+      {\lft(\inr_t(p)) \step \absurd_t(\false_\Gamma)}
 \hfill
-\axiom{\(+\text{R}\text{R}^\text{T}_4\)}
-      {\(
-  \rgt(\inl_t(p)) \step \absurd_t(\false)
-  \)}
+\judge{\(+\text{R}\text{R}^\text{T}_4\)}
+      {\Gamma \vdash p \colon t}
+      {\rgt(\inl_t(p)) \step \absurd_t(\false_\Gamma)}
 }
 
 
