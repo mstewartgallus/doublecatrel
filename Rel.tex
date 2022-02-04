@@ -40,36 +40,47 @@
 \newcommand{\Set}{\textbf{Set}}
 \newcommand{\lk}{\(\bar{\lambda}\mu\tilde{\mu}\,\)}
 
-\newcommand{\bnfdef}{\mathbin{::=}}
+\newcommand{\name}[1]{\LeftLabel{\fbox{#1}}}
+
+\newcommand{\taut}{\AxiomC{\(\top\)}}
+
+
+\newcommand{\bnfdef}{\mathrel{::=}}
+
+\newcommand{\step}{\mathbin{\longrightarrow}}
+\newcommand{\with}{\;}
 
 \DeclareMathOperator{\val}{\textbf{v}}
 \DeclareMathOperator{\prd}{\textbf{p}}
 
+\DeclareMathOperator{\unit}{\top}
+\DeclareMathOperator{\mt}{\emptyset}
 \DeclareMathOperator{\coin}{\textbf{tt}}
-\DeclareMathOperator{\fst}{\textbf{p1}}
-\DeclareMathOperator{\snd}{\textbf{p2}}
+\DeclareMathOperator{\fst}{\pi_1}
+\DeclareMathOperator{\snd}{\pi_2}
 
-\DeclareMathOperator{\pass}{\textbf{pass}}
+\DeclareMathOperator{\success}{\textbf{success}}
+\newcommand{\pass}{;}
 
-\DeclareMathOperator{\absurd}{\textbf{absurd}}
-\DeclareMathOperator{\inl}{\textbf{i1}}
-\DeclareMathOperator{\inr}{\textbf{i2}}
+\DeclareMathOperator{\absurd}{\textbf{absrd}}
+\DeclareMathOperator{\inl}{\textbf{i}_1}
+\DeclareMathOperator{\inr}{\textbf{i}_2}
 
-\DeclareMathOperator{\false}{\textbf{false}}
-\DeclareMathOperator{\lft}{\textbf{left}}
-\DeclareMathOperator{\rgt}{\textbf{right}}
+\DeclareMathOperator{\false}{\textbf{fls}}
+\DeclareMathOperator{\lft}{\textbf{l}}
+\DeclareMathOperator{\rgt}{\textbf{r}}
 
 \DeclareMathOperator{\type}{\Box}
 \DeclareMathOperator{\prop}{*}
 
-\DeclareMathOperator{\head}{\textbf{head}}
-\DeclareMathOperator{\tail}{\textbf{tail}}
+\DeclareMathOperator{\head}{\textbf{h}}
+\DeclareMathOperator{\tail}{\textbf{t}}
 
-\DeclareMathOperator{\Forall}{\textbf{M}}
+\newcommand{\Forall}{\Pi}
 
-\DeclareMathOperator{\update}{:=}
+\newcommand{\update}{\mathbin{:=}}
 
-\DeclareMathOperator{\case}{\textbf{mtc}}
+\DeclareMathOperator{\case}{\textbf{m}}
 
 \begin{document}
 
@@ -97,9 +108,9 @@ give a few possible extensions.
 \section*{Core Calculi}
 
 \begin{description}[nosep]
-\item[Types] \hfill \( t \bnfdef \top \mid t \times t \)
+\item[Types] \hfill \( t \bnfdef \unit \mid t \times t \)
 \item[Values] \hfill \( v \bnfdef x \mid \coin \mid \fst(v) \mid \snd(v) \mid ( v , v ) \)
-\item[Predicates] \hfill \( p \bnfdef x \mid \pass(p, p) \mid p \, p \mid \forall (x \colon t) . p \)
+\item[Predicates] \hfill \( p \bnfdef x \mid \success \mid p \pass p \mid p \, p \mid \forall (x \colon t) . p \)
 \item[Environment] \hfill \( \Gamma \bnfdef \cdot \mid \Gamma , \, x \colon t  \)
 \item[Substitutions] \hfill \( \sigma \bnfdef \cdot \mid \sigma , \, v \models x  \)
 \end{description}
@@ -114,33 +125,42 @@ ought to have simple deterministic semantics.
 \subsubsection*{Relational Calculus}
 
 \begin{flushleft}
+
+\AxiomC{\( x \colon t \in \Gamma \)}
+\name{V}
+\UnaryInfC{\(\Gamma \vdash x \colon t \)}
+\DisplayProof
+
+\taut
+\name{\(\unit\)I}
+\UnaryInfC{\(\Gamma \vdash \success \colon \unit\)}
+\DisplayProof
+
+\AxiomC{\(\Gamma \vdash p_0 \colon \unit \)}
+\AxiomC{\(\Delta \vdash p_1 \colon t \)}
+\name{\(\unit\)E}
+\BinaryInfC{\(\Gamma, \, \Delta \vdash p_0 \pass p_1 \colon t\)}
+\DisplayProof
   
 \AxiomC{\(\Gamma, x \colon t_0 \vdash p \colon t_1\)}
-\RightLabel{(\(\times\)-INTRO)}
+\name{\(\times\)I}
 \UnaryInfC{\(\Gamma \vdash \forall (x \colon t_0). p \colon t_0 \times t_1\)}
 \DisplayProof
 
 \AxiomC{\(\Gamma \vdash p_0 \colon t_0 \times t_1\)}
 \AxiomC{\(\Delta \vdash p_1 \colon t_1\)}
-\RightLabel{(\(\times\)-ELIM)}
+\name{\(\times\)E}
 \BinaryInfC{\(\Gamma, \, \Delta \vdash p_0 p_1 \colon t_1\)}
 \DisplayProof
 
-\AxiomC{\(\Gamma \vdash p_0 \colon \top \)}
-\AxiomC{\(\Delta \vdash p_1 \colon t \)}
-\RightLabel{(\(\top\)-ELIM)}
-\BinaryInfC{\(\Gamma, \, \Delta \vdash \pass(p_0, p_1) \colon t\)}
+\taut
+\name{\(\unit\)R}
+\UnaryInfC{\( \success \pass p \step p \)}
 \DisplayProof
 
-\AxiomC{\(\Gamma \vdash p_0 \colon \top \)}
-\AxiomC{\(\Delta \vdash p_1 \colon t \)}
-\RightLabel{(\(\top\)-ELIM)}
-\BinaryInfC{\(\Gamma, \, \Delta \vdash \pass(p_0, p_1) \colon t\)}
-\DisplayProof
-
-\AxiomC{}
-\RightLabel{(\(\times\)-STEP)}
-\UnaryInfC{\( ( \forall (x \colon t ). p_0) \, p_1 \rightarrow [x \update p_1] p_0 \)}
+\taut
+\name{\(\times\)R}
+\UnaryInfC{\( ( \forall (x \colon t ). p_0) \, p_1 \step [x \update p_1] p_0 \)}
 \DisplayProof
 
 \end{flushleft}
@@ -148,38 +168,48 @@ ought to have simple deterministic semantics.
 
 \subsubsection*{Value Calculus}
 
+The variable rule is useless here but becomes important in later
+extensions.
+
 \begin{flushleft}
 
-\AxiomC{}
-\RightLabel{(\(\top\)-INTRO)}
-\UnaryInfC{\(\Gamma \vdash \coin \colon \top \)}
+\AxiomC{\( x \colon t \in \Gamma \)}
+\name{V}
+\UnaryInfC{\(\Gamma \vdash x \colon t \)}
 \DisplayProof
 
-\AxiomC{\(\Gamma \vdash v \colon t_0 \times t_1\)}
-\RightLabel{(\(\times\)-ELIM-1)}
+\taut
+\name{\(\unit\)I}
+\UnaryInfC{\(\Gamma \vdash \coin \colon \unit \)}
+\DisplayProof
+
+{\AxiomC{\(\Gamma \vdash v \colon t_0 \times t_1\)}
+\name{\(\times\text{E}_1\)}
 \UnaryInfC{\(\Gamma \vdash \fst(v) \colon t_0 \)}
 \DisplayProof
-
+\hfill
 \AxiomC{\(\Gamma \vdash v \colon t_0 \times t_1\)}
-\RightLabel{(\(\times\)-ELIM-2)}
+\name{\(\times\text{E}_2\)}
 \UnaryInfC{\(\Gamma \vdash \snd(v) \colon t_1 \)}
 \DisplayProof
+}
 
 \AxiomC{\(\Gamma \vdash v_0 \colon t_0\)}
 \AxiomC{\(\Gamma \vdash v_1 \colon t_1\)}
-\RightLabel{(\(\times\)-INTRO)}
+\name{\(\times\)I}
 \BinaryInfC{\(\Gamma \vdash (v_0, v_1) \colon t_0 \times t_1 \)}
 \DisplayProof
 
-\AxiomC{}
-\RightLabel{(\(\times\)-STEP-1)}
-\UnaryInfC{\(\fst (v_0 , v_1 ) \rightarrow v_0 \)}
+{\taut
+\name{\(\times\text{R}_1\)}
+\UnaryInfC{\(\fst (v_0 , v_1 ) \step v_0 \)}
 \DisplayProof
-
-\AxiomC{}
-\RightLabel{(\(\times\)-STEP-2)}
-\UnaryInfC{\(\snd (v_0 , v_1 ) \rightarrow v_1 \)}
+\hfill
+\taut
+\name{\(\times\text{R}_2\)}
+\UnaryInfC{\(\snd (v_0 , v_1 ) \step v_1 \)}
 \DisplayProof
+}
 
 \end{flushleft}
 
@@ -189,27 +219,32 @@ I need a better symbol here.
 
 \begin{flushleft}
 
-\AxiomC{\(v_0 \rightarrow v_1\)}
-\AxiomC{\(v_0 \models p \quad [\sigma]\)}
-\RightLabel{(v-STEP-SAT)}
-\BinaryInfC{\( v_1 \models p \quad [\sigma] \)}
+\AxiomC{\(v \models x \in \sigma\)}
+\name{VAR-S}
+\UnaryInfC{\( v \models x \with [\sigma] \)}
 \DisplayProof
 
-\AxiomC{\(p_0 \rightarrow p_1\)}
-\AxiomC{\(v \models p_0 \quad [\sigma]\)}
-\RightLabel{(p-STEP-SAT)}
-\BinaryInfC{\(v \models p_1 \quad [\sigma] \)}
+\AxiomC{\(v_0 \step v_1\)}
+\AxiomC{\(v_0 \models p \with [\sigma]\)}
+\name{vR-S}
+\BinaryInfC{\( v_1 \models p \with [\sigma] \)}
 \DisplayProof
 
-\AxiomC{\( v \models \pass(p_0, p_1) \quad [ \sigma ] \)}
-\RightLabel{(\(\top\)-SAT)}
+\AxiomC{\(p_0 \step p_1\)}
+\AxiomC{\(v \models p_0 \with [\sigma]\)}
+\name{pR-S}
+\BinaryInfC{\(v \models p_1 \with [\sigma] \)}
+\DisplayProof
+
+\taut
+\name{\(\unit\)S}
 \UnaryInfC{\(
-  \coin \models p_0 \quad [\sigma] \)}
+  \coin \models \success \with [\sigma] \)}
 \DisplayProof
 
-\AxiomC{\( v_1 \models p \quad [ \sigma , \, v_0 \models x] \)}
-\RightLabel{(\(\times\)-SAT)}
-\UnaryInfC{\(( v_0 , v_1 ) \models \forall (x \colon t ). p \quad [\sigma] \)}
+\AxiomC{\( v_1 \models p \with [ \sigma , \, v_0 \models x] \)}
+\name{\(\times\)S}
+\UnaryInfC{\(( v_0 , v_1 ) \models \forall (x \colon t ). p \with [\sigma] \)}
 \DisplayProof
 \end{flushleft}
 
@@ -217,11 +252,19 @@ I need a better symbol here.
 
 Pattern matching on equality
 
-\(   ( v , v ) \models \forall (x \colon t). x \)
+\begin{prooftree}
+
+  \taut
+  \RightLabel{\scriptsize{(VAR-S)}}
+  \UnaryInfC{\( v \models x \with [ \sigma , \, v \models x] \)}
+  \RightLabel{\scriptsize{(\(\times\)S)}}
+  \UnaryInfC{\( ( v , v ) \models \forall (x \colon t). x \with [\sigma] \)}
+
+\end{prooftree}
 
 Transposition
 
-\(  \forall (p \colon t \times t \times \top) (x \colon t) (y \colon t). p \, y \, x \)
+\(  \forall (p \colon t \times t \times \unit) (x \colon t) (y \colon t). p \, y \, x \)
 
 \section*{Disjoint Unions}
 
@@ -232,36 +275,37 @@ of sets which are sum types in the value calculus and product types in
 the predicate calculus.
 
 \begin{description}[nosep]
-\item[Types] \hfill \( t \bnfdef \ldots \mid \bot \mid t + t \)
+\item[Types] \hfill \( t \bnfdef \ldots \mid \mt \mid t + t \)
 \item[Values] \hfill \( v \bnfdef \ldots \mid \absurd_t(v) \mid \inl_t(v) \mid \inr_t(v) \mid
   \case(v, x. v, x. v)
   \)
-\item[Predicates] \hfill \( p \bnfdef \ldots \mid \false \mid \lft(p) \mid \rgt(p) \mid [ p ; p ] \)
+\item[Predicates] \hfill \( p \bnfdef \ldots \mid \false \mid \lft(p) \mid \rgt(p) \mid [ p \mid p ] \)
 \end{description}
 
 \subsubsection*{Values}
 
 \begin{flushleft}
 
-\AxiomC{\( \Gamma \vdash v \colon \bot \)}
-\RightLabel{(\(\bot\)-ELIM)}
+\AxiomC{\( \Gamma \vdash v \colon \mt \)}
+\name{\(\mt\)E}
 \UnaryInfC{\( \Gamma \vdash \absurd_t(v) \colon t \)}
 \DisplayProof
 
-\AxiomC{\( \Gamma \vdash v \colon t_0 \)}
-\RightLabel{(\(+\)-INTRO-1)}
+{\AxiomC{\( \Gamma \vdash v \colon t_0 \)}
+\name{\(+\text{I}_1\)}
 \UnaryInfC{\( \Gamma \vdash \inl_{t_1}(v) \colon t_0 + t_1  \)}
 \DisplayProof
-
+\hfill
 \AxiomC{\( \Gamma \vdash v \colon t_1 \)}
-\RightLabel{(\(+\)-INTRO-2)}
+\name{\(+\text{I}_2\)}
 \UnaryInfC{\( \Gamma \vdash \inr_{t_0}(v) \colon t_0 + t_1  \)}
 \DisplayProof
+}
 
 \AxiomC{\( \Gamma \vdash v_0 \colon t_0 + t_1 \)}
 \AxiomC{\( \Gamma , \, x_0 \colon t_0 \vdash v_1 \colon t_2 \)}
 \AxiomC{\( \Gamma , \, x_1 \colon t_1 \vdash v_1 \colon t_2 \)}
-\RightLabel{(\(+\)-ELIM)}
+\name{\(+\)E}
 \TrinaryInfC{\(
   \Gamma \vdash
   \case(v_0, x_0. v_1, x_1. v_2)
@@ -269,17 +313,17 @@ the predicate calculus.
 \)}
 \DisplayProof
 
-\AxiomC{}
-\RightLabel{(\(+\)-STEP-1)}
+\taut
+\name{\(+\text{R}_1\)}
 \UnaryInfC{\(
-  \case(\inl_t(v_0), x_0. v_1, x_1. v_2) \rightarrow [x_0 \update v_0] v_1
+  \case(\inl_t(v_0), x_0. v_1, x_1. v_2) \step [x_0 \update v_0] v_1
   \)}
 \DisplayProof
 
-\AxiomC{}
-\RightLabel{(\(+\)-STEP-2)}
+\taut
+\name{\(+\text{R}_2\)}
 \UnaryInfC{\(
-  \case(\inr_t(v_0), x_0. v_1, x_1. v_2) \} \rightarrow [x_1 \update v_0] v_2
+  \case(\inr_t(v_0), x_0. v_1, x_1. v_2) \step [x_1 \update v_0] v_2
   \)}
 \DisplayProof
 
@@ -290,37 +334,38 @@ the predicate calculus.
 
 \begin{flushleft}
 
-\AxiomC{}
-\RightLabel{(\(\bot\)-INTRO)}
-\UnaryInfC{\( \Gamma \vdash \false \colon \bot \)}
+\taut
+\name{\(\mt\)I}
+\UnaryInfC{\( \Gamma \vdash \false \colon \mt \)}
 \DisplayProof
 
-\AxiomC{\( \Gamma \vdash p \colon t_0 + t_1 \)}
-\RightLabel{(\(+\)-ELIM-1)}
+{\AxiomC{\( \Gamma \vdash p \colon t_0 + t_1 \)}
+\name{\(+\text{E}_1\)}
 \UnaryInfC{\( \Gamma \vdash \lft(p) \colon t_0 \)}
 \DisplayProof
-
+\hfill
 \AxiomC{\( \Gamma \vdash p \colon t_0 + t_1 \)}
-\RightLabel{(\(+\)-ELIM-2)}
+\name{\(+\text{E}_2\)}
 \UnaryInfC{\( \Gamma \vdash \rgt(p) \colon t_1 \)}
 \DisplayProof
+}
 
 \AxiomC{\( \Gamma \vdash p_0 \colon t_0 \)}
 \AxiomC{\( \Gamma \vdash p_1 \colon t_1 \)}
-\RightLabel{(\(+\)-INTRO)}
-\BinaryInfC{\( \Gamma \vdash [p_0 ; p_1] \colon t_0 + t_1 \)}
+\name{\(+\)I}
+\BinaryInfC{\( \Gamma \vdash [p_0 \mid p_1] \colon t_0 + t_1 \)}
 \DisplayProof
 
-\AxiomC{}
-\RightLabel{(\(+\)-STEP-1)}
-\UnaryInfC{\( \lft([ p_0 ; p_1 ]) \rightarrow p_0 \)}
+{\taut
+\name{\(+\text{R}_1\)}
+\UnaryInfC{\( \lft([ p_0 \mid p_1 ]) \step p_0 \)}
 \DisplayProof
-
-\AxiomC{}
-\RightLabel{(\(+\)-STEP-2)}
-\UnaryInfC{\( \rgt([ p_0 ; p_1 ]) \rightarrow p_1 \)}
+\hfill
+\taut
+\name{\(+\text{R}_2\)}
+\UnaryInfC{\( \rgt([ p_0 \mid p_1 ]) \step p_1 \)}
 \DisplayProof
-
+}
 \end{flushleft}
 
 
@@ -328,19 +373,19 @@ the predicate calculus.
 
 \begin{flushleft}
 
-\AxiomC{\( v \models p_0 \quad [\sigma] \)}
-\RightLabel{(\(+\)-SAT-1)}
-\UnaryInfC{\( \inl_t(v) \models [ p_0 ; p_1 ] \quad [\sigma] \)}
+\AxiomC{\( v \models p_0 \with [\sigma] \)}
+\name{\(+\text{S}_1\)}
+\UnaryInfC{\( \inl_t(v) \models [ p_0 \mid p_1 ] \with [\sigma] \)}
 \DisplayProof
 
-\AxiomC{\( v \models p_1 \quad [\sigma] \)}
-\RightLabel{(\(+\)-SAT-2)}
-\UnaryInfC{\( \inr_t(v) \models [ p_0 ; p_1 ] \quad [\sigma] \)}
+\AxiomC{\( v \models p_1 \with [\sigma] \)}
+\name{\(+\text{S}_2\)}
+\UnaryInfC{\( \inr_t(v) \models [ p_0 \mid p_1 ] \with [\sigma] \)}
 \DisplayProof
 
-\AxiomC{\( \absurd_t(v) \models p \quad [\sigma] \)}
-\RightLabel{(\(\bot\)-SAT)}
-\UnaryInfC{\(  v \models \false \quad [\sigma] \)}
+\AxiomC{\( \absurd_t(v) \models p \with [\sigma] \)}
+\name{\(\mt\)S}
+\UnaryInfC{\(  v \models \false \with [\sigma] \)}
 \DisplayProof
 
 \end{flushleft}
@@ -371,12 +416,12 @@ Not really good at the typing judgements for dependent sum types.
 \begin{flushleft}
   
 \AxiomC{\( \Gamma \vdash v \colon \Sigma (x \colon \prop). t \)}
-\RightLabel{(\(\Sigma\)-ELIM-1)}
+\name{\(\Sigma\text{E}_1\)}
 \UnaryInfC{\( \Gamma \vdash \head(v) \colon \prop \)}
 \DisplayProof
 
 \AxiomC{\( \Gamma \vdash v \colon \Sigma (x \colon \prop). t  \)}
-\RightLabel{(\(\Sigma\)-ELIM-2)}
+\name{\(\Sigma\text{E}_2\)}
 \UnaryInfC{\(
   \Gamma \vdash \tail(v) \colon [x \update \head(v)] t \)}
 \DisplayProof
@@ -384,24 +429,24 @@ Not really good at the typing judgements for dependent sum types.
 
 \AxiomC{\( \Gamma \vdash t_0 \colon \prop  \)}
 \AxiomC{\( \Gamma , \, x \colon \prop \vdash v \colon t_1 \)}
-\RightLabel{(\(\Sigma\)-INTRO)}
+\name{\(\Sigma\)I}
 \BinaryInfC{\(
   \Gamma \vdash \langle x \update t_0 , v \rangle \colon \Sigma (x \colon \prop). t_0  \)}
 \DisplayProof
 
 
-\AxiomC{}
-\RightLabel{(\(\Sigma\)-STEP-1)}
+{\taut
+\name{\(\Sigma\text{S}_1\)}
 \UnaryInfC{\(
-  \head(\langle x \update t , v \rangle) \rightarrow t
+  \head(\langle x \update t , v \rangle) \step t
   \)}
-
-\AxiomC{}
-\RightLabel{(\(\Sigma\)-STEP-2)}
+\hfill
+\taut
+\name{\(\Sigma\text{S}_2\)}
 \UnaryInfC{\(
-  \tail( \langle x \update t , v \rangle) \rightarrow [x \update t] v
+  \tail( \langle x \update t , v \rangle) \step [x \update t] v
   \)}
-
+}
 \end{flushleft}
 
 \subsubsection*{Predicates}
@@ -410,21 +455,21 @@ Not really good at the typing judgements for dependent sum types.
 
 \AxiomC{\( \Gamma \vdash p \colon \Sigma (x\colon \prop). t_1  \)}
 \AxiomC{\( \Delta \vdash t_0 \colon \prop \)}
-\RightLabel{(\(\Sigma\)-ELIM)}
+\name{\(\Sigma\)E}
 \BinaryInfC{\(
   \Gamma, \, \Delta \vdash p_0 \, t_0 \colon [x \update t_0] t_1 \)}
 \DisplayProof
 
 \AxiomC{\( \Gamma , \, x \colon \prop \vdash p \colon t  \)}
-\RightLabel{(\(\Sigma\)-INTRO)}
+\name{\(\Sigma\)I}
 \UnaryInfC{\(
   \Gamma \vdash \Forall (x \colon \prop). p \colon \Sigma (x \colon \prop). t \)}
 \DisplayProof
 
-\AxiomC{}
-\RightLabel{(\(\Sigma\)-STEP)}
+\taut
+\name{\(\Sigma\)R}
 \UnaryInfC{\(
-  ( \Forall (x \colon \prop). p) \, t \rightarrow [x \update t] p
+  ( \Forall (x \colon \prop). p) \, t \step [x \update t] p
   \)}
 \DisplayProof
 
@@ -434,10 +479,10 @@ Not really good at the typing judgements for dependent sum types.
 I can't figure out satisfaction at all.
 
 \begin{flushleft}
-\AxiomC{\(  v \models p \quad [ \sigma , \, t \models x]\)}
-\RightLabel{(\(\Sigma\)-SAT)}
+\AxiomC{\(  v \models p \with [ \sigma , \, t \models x]\)}
+\name{\(\Sigma\)S}
 \UnaryInfC{\(
-  \langle x \update t , v \rangle \models \Forall (x \colon \prop). p \quad [\sigma]
+  \langle x \update t , v \rangle \models \Forall (x \colon \prop). p \with [\sigma]
   \)}
 \DisplayProof
 \end{flushleft}
@@ -454,7 +499,7 @@ follows.
 
 \begin{center}
   \begin{tikzcd}
-    \top \arrow{dd}[']{\sigma_p} \arrow{rr}{\sigma_v} & {} \arrow[Rightarrow]{dd}{v \models p \, [\sigma_v , \sigma_p]} & \times_{x\colon t \in \Gamma_v} t \arrow{dd}{v} \\
+    \unit \arrow{dd}[']{\sigma_p} \arrow{rr}{\sigma_v} & {} \arrow[Rightarrow]{dd}{v \models p \, [\sigma_v , \sigma_p]} & \times_{x\colon t \in \Gamma_v} t \arrow{dd}{v} \\
     &                               &                      \\
     \times_{x\colon t \in \Gamma_p} t \arrow{rr}[']{p}                           & {}                            & t                   
   \end{tikzcd}
