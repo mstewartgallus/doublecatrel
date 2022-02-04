@@ -149,13 +149,12 @@ ought to have simple deterministic semantics.
 
 The relational calculus has a linear variable rule.  As a hack to make
 mechanization easier linear variables are explicitly indexed by their
-types.
+types and variable binding is more imperative.
 
 \begin{flushleft}
 
-\judge{V}
-      {x \colon t \in \Gamma}
-      {\cdot , \, x \colon t \vdash x_t \colon t}
+\axiom{V}
+      {\(\cdot , \, x \colon t \vdash x_t \colon t\)}
 
 \axiom{\(\unit\)I}
       {\(\cdot \vdash \success \colon \unit\)}
@@ -165,9 +164,10 @@ types.
         {\(\Delta \vdash p_1 \colon t \)}
         {\(\Gamma, \, \Delta \vdash p_0 \pass p_1 \colon t\)}
   
-\judge{\(\times\)I}
-      {\Gamma, x \colon t_0 \vdash p \colon t_1}
-      {\Gamma \vdash \forall (x \colon t_0). p \colon t_0 \times t_1}
+\bijudge{\(\times\)I}
+        {\( x \colon t_0 \in \Gamma \)}
+        {\( \Gamma \vdash p \colon t_1 \)}
+        {\( \Gamma \setminus x \vdash \forall (x \colon t_0). p \colon t_0 \times t_1 \)}
 
 \bijudge{\(\times\)E}
         {\(\Gamma \vdash p_0 \colon t_0 \times t_1\)}
