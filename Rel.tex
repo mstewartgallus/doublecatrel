@@ -43,6 +43,7 @@
 \newcommand{\lk}{\(\bar{\lambda}\mu\tilde{\mu}\,\)}
 
 \newcommand{\name}[1]{\LeftLabel{\fbox{#1}}}
+\newcommand{\side}[1]{\RightLabel{\scriptsize{\(\left\{#1\right\}\)}}}
 
 \newcommand{\taut}{\AxiomC{\(\top\)}}
 \newcommand{\bnfdef}{\mathrel{::=}}
@@ -153,8 +154,8 @@ types and variable binding is more imperative.
   
 \name{\(\times\)I}
 \Axiom$\Gamma \fCenter E \colon t_1$
-\AxiomC{\( x \colon t_0 \in \Gamma \)}
-\BinaryInf$\Gamma \setminus x \fCenter \forall (x \colon t_0). E \colon t_0 \times t_1$
+\side{ x \colon t_0 \in \Gamma }
+\UnaryInf$\Gamma \setminus x \fCenter \forall (x \colon t_0). E \colon t_0 \times t_1$
 \DisplayProof
 
 \name{\(\times\)E}
@@ -569,14 +570,14 @@ equivalence relation might be something like:
 
 \name{trans}
 \Axiom$ \cdot \fCenter  \forall (x\colon O). R \, (R \, x)  \sat o_0, o_1 $
-\Axiom$ \cdot \fCenter o_0, o_1 \colon O \times O $
-\BinaryInf$ \cdot \fCenter  R \sat o_0, o_1 $
+\side{\cdot \fCenter o_1, o_0 \colon O \times O}
+\UnaryInf$ \cdot \fCenter  R \sat o_0, o_1 $
 \DisplayProof
 
 \name{sym}
 \Axiom$ \cdot \fCenter  R \sat o_0, o_1  $
-\Axiom$ \cdot \fCenter o_1, o_0 \colon O \times O $
-\BinaryInf$ \cdot \fCenter  R \sat o_1, o_0 $
+\side{\cdot \fCenter o_1, o_0 \colon O \times O}
+\UnaryInf$ \cdot \fCenter  R \sat o_1, o_0 $
 \DisplayProof
       
 \end{flushleft}
