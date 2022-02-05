@@ -51,29 +51,9 @@
 \newcommand{\with}{\;}
 \newcommand{\sat}{\mathbin{\otimes}}
 
+\def\fCenter{\mathrel{\vdash}}
 
 \newcommand{\axiom}[2]{\fbox{#1}~#2}
-\newcommand{\judge}[3]{
-  \AxiomC{\(#2\)}
-  \name{#1}
-  \UnaryInfC{\(#3\)}
-  \DisplayProof
-}
-\newcommand{\bijudge}[4]{
-  \AxiomC{#2}
-  \AxiomC{#3}
-  \name{#1}
-  \BinaryInfC{#4}
-  \DisplayProof
-}
-\newcommand{\trijudge}[5]{
-  \AxiomC{#2}
-  \AxiomC{#3}
-  \AxiomC{#4}
-  \name{#1}
-  \TrinaryInfC{#5}
-  \DisplayProof
-}
 
 \DeclareMathOperator{\val}{\textbf{v}}
 \DeclareMathOperator{\prd}{\textbf{p}}
@@ -84,14 +64,14 @@
 \DeclareMathOperator{\fst}{\pi_1}
 \DeclareMathOperator{\snd}{\pi_2}
 
-\DeclareMathOperator{\success}{\textbf{success}}
+\DeclareMathOperator{\success}{\textbf{true}}
 \newcommand{\pass}{\mathbin{\gg}}
 
 \DeclareMathOperator{\absurd}{\textbf{abort}}
 \DeclareMathOperator{\inl}{\textbf{i}_1}
 \DeclareMathOperator{\inr}{\textbf{i}_2}
 
-\DeclareMathOperator{\false}{\textbf{fail}}
+\DeclareMathOperator{\false}{\textbf{false}}
 \DeclareMathOperator{\lft}{\textbf{l}}
 \DeclareMathOperator{\rgt}{\textbf{r}}
 
@@ -127,7 +107,7 @@ Cartesian product of sets.  One has an isomorphism \( \Rel(A, B
 theory is required.
 
 The language of ``squares'' is confusing. It ought to correspond to
-control expressions in \lk.
+commands in \lk.
 
 This is the core framework.  I've been thinking about further
 extensions but I want to see how far I can get characterizing
@@ -138,10 +118,10 @@ give a few possible extensions.
 
 \begin{description}[nosep]
 \item[Types] \hfill \( t \bnfdef \unit \mid t \times t \)
-\item[Values] \hfill \( v \bnfdef x \mid \coin \mid \fst(v) \mid \snd(v) \mid v , v \)
-\item[Predicates] \hfill \( p \bnfdef x_t \mid \success \mid p \pass p \mid p \, p \mid \forall (x \colon t) . p \)
+\item[Terms] \hfill \( v \bnfdef x \mid \coin \mid \fst(v) \mid \snd(v) \mid v , v \)
+\item[Contexts] \hfill \( E \bnfdef x_t \mid \success \mid E \pass E \mid E \, E \mid \forall (x \colon t) . E \)
 \item[Environment] \hfill \( \Gamma \bnfdef \cdot \mid \Gamma , \, x \colon t  \)
-\item[Control Environment] \hfill \( \Theta \bnfdef \cdot \mid \Theta , \, x \mid v  \)
+\item[Command Environment] \hfill \( \Delta \bnfdef \cdot \mid \Delta , \, x \mid v  \)
 \end{description}
 
 The core context calculus is the linear lambda calculus with a few
@@ -165,87 +145,96 @@ types and variable binding is more imperative.
 \axiom{\(\unit\)I}
       {\(\cdot \vdash \success \colon \unit\)}
 
-\bijudge{\(\unit\)E}
-        {\(\Gamma \vdash p_0 \colon \unit \)}
-        {\(\Delta \vdash p_1 \colon t \)}
-        {\(\Gamma, \, \Delta \vdash p_0 \pass p_1 \colon t\)}
+\name{\(\unit\)E}
+\Axiom$\Gamma_0 \fCenter p_0 \colon \unit$
+\Axiom$\Gamma_1 \fCenter p_1 \colon t$
+\BinaryInf$\Gamma_0, \, \Gamma_1 \fCenter E_0 \pass E_1 \colon t$
+\DisplayProof
   
-\bijudge{\(\times\)I}
-        {\( x \colon t_0 \in \Gamma \)}
-        {\( \Gamma \vdash p \colon t_1 \)}
-        {\( \Gamma \setminus x \vdash \forall (x \colon t_0). p \colon t_0 \times t_1 \)}
+\name{\(\times\)I}
+\Axiom$\Gamma \fCenter E \colon t_1$
+\AxiomC{\( x \colon t_0 \in \Gamma \)}
+\BinaryInf$\Gamma \setminus x \fCenter \forall (x \colon t_0). E \colon t_0 \times t_1$
+\DisplayProof
 
-\bijudge{\(\times\)E}
-        {\(\Gamma \vdash p_0 \colon t_0 \times t_1\)}
-        {\(\Delta \vdash p_1 \colon t_1\)}
-        {\(\Gamma, \, \Delta \vdash p_0 \, p_1 \colon t_1\)}
+\name{\(\times\)E}
+\Axiom$\Gamma_0 \fCenter E_0 \colon t_0 \times t_1$
+\Axiom$\Gamma_1 \fCenter E_1 \colon t_1$
+\BinaryInf$\Gamma_0, \, \Gamma_1 \fCenter E_0 \, E_1 \colon t_1$
+\DisplayProof
 
-\axiom{\(\unit\)R}
-      {\( \success \pass p \step p \)}
+\axiom{\(\unit\beta\)}
+      {\( \success \pass E \step E \)}
 
-\axiom{\(\times\)R}
-      {\( ( \forall (x \colon t ). p_0) \, p_1 \step [x_t \update p_1] p_0 \)}
+\axiom{\(\times\beta\)}
+      {\( ( \forall (x \colon t ). E_0) \, E_1 \step [x_t \update E_1] E_0 \)}
 
 \end{flushleft}
 
-
-\subsubsection*{Value Calculus}
+\subsubsection*{Term Calculus}
 
 \begin{flushleft}
 
-\judge{V}
-      {x \colon t \in \Gamma}
-      {\Gamma \vdash x \colon t}
+\name{V}
+\AxiomC{\(x \colon t \in \Gamma\)}
+\UnaryInf$\Gamma \fCenter x \colon t$
+\DisplayProof
 
 \axiom{\(\unit\)I}
-      {\(\Gamma \vdash \coin \colon \unit \)}
+      {\(\Gamma \fCenter \coin \colon \unit \)}
 
-{\judge{\(\times\text{E}_1\)}
-       {\Gamma \vdash v \colon t_0 \times t_1}
-       {\Gamma \vdash \fst(v) \colon t_0}
+{\name{\(\times\text{E}_1\)}
+\Axiom$\Gamma \fCenter v \colon t_0 \times t_1$
+\UnaryInf$\Gamma \fCenter \fst(v) \colon t_0$
+\DisplayProof
 \hfill
-\judge{\(\times\text{E}_2\)}
-      {\Gamma \vdash v \colon t_0 \times t_1}
-      {\Gamma \vdash \snd(v) \colon t_1 }
+\name{\(\times\text{E}_2\)}
+\Axiom$\Gamma \fCenter v \colon t_0 \times t_1$
+\UnaryInf$\Gamma \fCenter \snd(v) \colon t_1$
+\DisplayProof
 }
 
-\bijudge{\(\times\)I}
-        {\(\Gamma \vdash v_0 \colon t_0\)}
-        {\(\Gamma \vdash v_1 \colon t_1\)}
-        {\(\Gamma \vdash v_0, v_1 \colon t_0 \times t_1 \)}
+\name{\(\times\)I}
+\Axiom$\Gamma \fCenter v_0 \colon t_0$
+\Axiom$\Gamma \fCenter v_1 \colon t_1$
+\BinaryInf$\Gamma \fCenter v_0, v_1 \colon t_0 \times t_1$
+\DisplayProof
 
-{\axiom{\(\times\text{R}_1\)}
+{\axiom{\(\times\beta_1\)}
        {\(\fst (v_0 , v_1 ) \step v_0 \)}
 \hfill
-\axiom{\(\times\text{R}_2\)}
+\axiom{\(\times\beta_2\)}
       {\(\snd (v_0 , v_1 ) \step v_1 \)}
 }
 
 \end{flushleft}
 
-\subsubsection*{Control Calculus}
+\subsubsection*{Command Calculus}
 
 \begin{flushleft}
 
 \axiom{V}
-      {\(\cdot , \, x_t \sat v  \vdash  x_t \sat v \)}
+      {\(\cdot , \, x_t \sat v  \fCenter  x_t \sat v \)}
 
-\bijudge{vR}
-        {\(v_0 \step v_1\)}
-        {\(\Theta \vdash p \sat v_0  \)}
-        {\(\Theta \vdash p \sat v_1  \)}
+\name{vR}
+\Axiom$\Delta \fCenter E \sat v_0$
+\AxiomC{\(v_0 \step v_1\)}
+\BinaryInf$\Delta \fCenter E \sat v_1$
+\DisplayProof
 
-\bijudge{pR}
-        {\(p_0 \step p_1\)}
-        {\(\Theta \vdash  p_0 \sat v  \)}
-        {\(\Theta \vdash  p_1 \sat v  \)}
+\name{pR}
+\Axiom$\Delta \fCenter E_0 \sat v$
+\AxiomC{\(E_0 \step E_1\)}
+\BinaryInf$\Delta \fCenter E_1 \sat v$
+\DisplayProof
 
 \axiom{\(\unit\)I}
-      {\(\Theta \vdash  \coin \sat \success \)}
+      {\(\Delta \fCenter \coin \sat \success \)}
 
-\judge{\(\times\)I}
-      { \Theta , \,  x_t \sat v_0  \vdash  p \sat v_1 }
-      { \Theta \vdash  \forall (x \colon t ). p \sat  v_0 , v_1 }
+\name{\(\times\)I}
+\Axiom$ \Delta , \,  x_t \sat v_0  \fCenter E \sat v_1 $
+\UnaryInf$ \Delta \fCenter \forall (x \colon t ). E \sat  v_0 , v_1 $
+\DisplayProof
 
 \end{flushleft}
 
@@ -257,15 +246,16 @@ Pattern matching on equality
 
   \taut
   \RightLabel{\scriptsize{(V)}}
-  \UnaryInfC{\( \Theta , \,  x_t \sat v  \vdash  x_t \sat v  \)}
+  \UnaryInf$ \Delta , \,  x_t \sat v  \fCenter  x_t \sat v $
   \RightLabel{\scriptsize{(\(\times\)I)}}
-  \UnaryInfC{\( \Theta \vdash  \forall (x \colon t). x_t  \sat v , v \)}
+  \UnaryInf$ \Delta \fCenter  \forall (x \colon t). x_t  \sat v , v $
 
 \end{prooftree}
 
 Transposition
 
-\( \forall (p \colon t \times t \times \unit) (x \colon t) (y \colon t). p_{(t \times t \times \unit)} \, y_t \, x_t \)
+\[
+\forall (p \colon t \times t \times \unit) (x \colon t) (y \colon t). p_{(t \times t \times \unit)} \, y_t \, x_t \]
 
 \section*{Disjoint Unions}
 
@@ -285,50 +275,46 @@ This hack also requires inferring the environment in certain reduction rules.
 
 \begin{description}[nosep]
 \item[Types] \hfill \( t \bnfdef \ldots \mid \mt \mid t + t \)
-\item[Values] \hfill \( v \bnfdef \ldots \mid \absurd_t(v) \mid \inl_t(v) \mid \inr_t(v) \mid
+\item[Terms] \hfill \( v \bnfdef \ldots \mid \absurd_t(v) \mid \inl_t(v) \mid \inr_t(v) \mid
   \case(v, x. v, x. v)
   \)
-\item[Predicates] \hfill \( p \bnfdef \ldots \mid
-  \absurd_t(p) \mid \inl_t(p) \mid \inr_t(p) \mid \case(v, x. v, x. v) \mid
-  \false_\Gamma \mid \lft(p) \mid \rgt(p) \mid p ; p \)
+\item[Contexts] \hfill \( E \bnfdef \ldots \mid
+  \absurd_t(E) \mid \inl_t(E) \mid \inr_t(E) \mid \case(v, E. v, x. E) \mid
+  \false_\Gamma \mid \lft(E) \mid \rgt(E) \mid E ; E \)
 \end{description}
 
-\subsubsection*{Value Calculus}
+\subsubsection*{Term Calculus}
 
 \begin{flushleft}
 
-\judge{\(\mt\)E}
-        {\Gamma \vdash v \colon \mt}
-        {\Gamma \vdash \absurd_t(v) \colon t}
+\name{\(\mt\)E}
+\Axiom$\Gamma \fCenter v \colon \mt$
+\UnaryInf$\Gamma \fCenter \absurd_t(v) \colon t$
+\DisplayProof
 
-{\judge{\(+\text{I}_1\)}
-       {\Gamma \vdash v \colon t_0}
-       {\Gamma \vdash \inl_{t_1}(v) \colon t_0 + t_1}
+{\name{\(+\text{I}_1\)}
+\Axiom$\Gamma \fCenter v \colon t_0$
+\UnaryInf$\Gamma \fCenter \inl_{t_1}(v) \colon t_0 + t_1$
+\DisplayProof
 \hfill
-\judge{\(+\text{I}_2\)}
-      {\Gamma \vdash v \colon t_1}
-      {\Gamma \vdash \inr_{t_0}(v) \colon t_0 + t_1}
+\name{\(+\text{I}_2\)}
+\Axiom$\Gamma \fCenter v \colon t_1$
+\UnaryInf$\Gamma \fCenter \inr_{t_0}(v) \colon t_0 + t_1$
+\DisplayProof
 }
 
-\trijudge{\(+\)E}
-         {\( \Gamma \vdash v_0 \colon t_0 + t_1 \)}
-         {\( \Gamma , \, x_0 \colon t_0 \vdash v_1 \colon t_2 \)}
-         {\( \Gamma , \, x_1 \colon t_1 \vdash v_1 \colon t_2 \)}
-         {\(
-  \Gamma \vdash
-  \case(v_0, x_0. v_1, x_1. v_2)
-  \colon t_2 
-\)}
+\name{\(+\)E}
+\Axiom$ \Gamma \fCenter v_0 \colon t_0 + t_1 $
+\Axiom$ \Gamma , \, x_0 \colon t_0 \fCenter v_1 \colon t_2 $
+\Axiom$ \Gamma , \, x_1 \colon t_1 \fCenter v_1 \colon t_2 $
+\TrinaryInf$ \Gamma \fCenter \case(v_0, x_0. v_1, x_1. v_2) \colon t_2 $
+\DisplayProof
 
-\axiom{\(+\text{R}_1\)}
-      {\(
-  \case(\inl_t(v_0), x_0. v_1, x_1. v_2) \step [x_0 \update v_0] v_1
-  \)}
+\axiom{\(+\beta_1\)}
+      {\( \case(\inl_t(v_0), x_0. v_1, x_1. v_2) \step [x_0 \update v_0] v_1 \)}
 
-\axiom{\(+\text{R}_2\)}
-      {\(
-  \case(\inr_t(v_0), x_0. v_1, x_1. v_2) \step [x_1 \update v_0] v_2
-  \)}
+\axiom{\(+\beta_2\)}
+      {\( \case(\inr_t(v_0), x_0. v_1, x_1. v_2) \step [x_1 \update v_0] v_2 \)}
 
 \end{flushleft}
 
@@ -337,112 +323,108 @@ This hack also requires inferring the environment in certain reduction rules.
 
 \begin{flushleft}
 
-\judge{\(\mt\text{E}^\text{T}\)}
-      {\Gamma \vdash p \colon \mt}
-      {\Gamma \vdash \absurd_t(v) \colon t}
+\name{\(\mt\text{E}^\text{T}\)}
+\Axiom$\Gamma \fCenter E \colon \mt$
+\UnaryInf$\Gamma \fCenter \absurd_t(E) \colon t$
+\DisplayProof
 
-{\judge{\(+\text{I}^\text{T}_1\)}
-       {\Gamma \vdash p \colon t_0}
-       {\Gamma \vdash \inl_{t_1}(v) \colon t_0 + t_1}
+{\name{\(+\text{I}^\text{T}_1\)}
+\Axiom$\Gamma \fCenter E \colon t_0$
+\UnaryInf$\Gamma \fCenter \inl_{t_1}(E) \colon t_0 + t_1$
+\DisplayProof
 \hfill
-\judge{\(+\text{I}^\text{T}_2\)}
-      {\Gamma \vdash p \colon t_1}
-      {\Gamma \vdash \inr_{t_0}(v) \colon t_0 + t_1}
-}
+\name{\(+\text{I}^\text{T}_2\)}
+\Axiom$\Gamma \fCenter E \colon t_1$
+\UnaryInf$\Gamma \fCenter \inr_{t_0}(E) \colon t_0 + t_1$
+\DisplayProof}
 
-\trijudge{\(+\text{E}^\text{T}\)}
-        {\( \Gamma \vdash p_0 \colon t_0 + t_1 \)}
-        {\( \Gamma , \, x_0 \colon t_0 \vdash p_1 \colon t_2 \)}
-        {\( \Gamma , \, x_1 \colon t_1 \vdash p_1 \colon t_2 \)}
-        {\(
-  \Gamma \vdash
-  \case(p_0, x_0. p_1, x_1. p_2)
-  \colon t_2 
-\)}
+\name{\(+\text{E}^\text{T}\)}
+\Axiom$ \Gamma \fCenter E_0 \colon t_0 + t_1 $
+\Axiom$ \Gamma , \, x_0 \colon t_0 \fCenter E_1 \colon t_2 $
+\Axiom$ \Gamma , \, x_1 \colon t_1 \fCenter E_1 \colon t_2 $
+\TrinaryInf$ \Gamma \fCenter \case(E_0, x_0. E_1, x_1. E_2) \colon t_2 $
+\DisplayProof
 
 \axiom{\(\mt\)I}
-      {\( \Gamma \vdash \false_\Gamma \colon \mt \)}
+      {\( \Gamma \fCenter \false_\Gamma \colon \mt \)}
 
-{\judge{\(+\text{E}_1\)}
-       {\Gamma \vdash p \colon t_0 + t_1}
-       {\Gamma \vdash \lft(p) \colon t_0}
+{\name{\(+\text{E}_1\)}
+\Axiom$\Gamma \fCenter E \colon t_0 + t_1$
+\UnaryInf$\Gamma \fCenter \lft(E) \colon t_0$
+\DisplayProof
 \hfill
-\judge{\(+\text{E}_2\)}
-      {\Gamma \vdash p \colon t_0 + t_1}
-      {\Gamma \vdash \rgt(p) \colon t_1)}
+\name{\(+\text{E}_2\)}
+\Axiom$\Gamma \fCenter E \colon t_0 + t_1$
+\UnaryInf$\Gamma \fCenter \rgt(E) \colon t_1)$
+\DisplayProof
 }
 
-\bijudge{\(+\)I}
-        {\( \Gamma \vdash p_0 \colon t_0 \)}
-        {\( \Gamma \vdash p_1 \colon t_1 \)}
-        {\( \Gamma \vdash p_0 ; p_1 \colon t_0 + t_1 \)}
+\name{\(+\)I}
+\Axiom$ \Gamma \fCenter E_0 \colon t_0 $
+\Axiom$ \Gamma \fCenter E_1 \colon t_1 $
+\BinaryInf$ \Gamma \fCenter E_0 ; E_1 \colon t_0 + t_1 $
+\DisplayProof
 
-\axiom{\(+\text{R}^\text{T}_1\)}
+\axiom{\(+\beta^\text{T}_1\)}
       {\(
-  \case(\inl_t(p_0), x_0. p_1, x_1. p_2) \step [x_0 \update p_0] p_1
+  \case(\inl_t(E_0), x_0. E_1, x_1. E_2) \step [x_0 \update E_0] E_1
   \)}
 
-\axiom{\(+\text{R}^\text{T}_2\)}
+\axiom{\(+\beta^\text{T}_2\)}
       {\(
-  \case(\inr_t(p_0), x_0. p_1, x_1. p_2) \step [x_1 \update p_0] p_2
+  \case(\inr_t(E_0), x_0. E_1, x_1. E_2) \step [x_1 \update E_0] E_2
   \)}
 
-{\axiom{\(+\text{R}_1\)}
-  {\( \lft(p_0 ; p_1) \step p_0 \)}
+{\axiom{\(+\beta_1\)}{\( \lft(E_0 ; E_1) \step E_0 \)}
 \hfill
-  \axiom{\(+\text{R}_2\)}
-      {\( \rgt(p_0 ; p_1) \step p_1 \)}
-}
+\axiom{\(+\beta_2\)}{\( \rgt(E_0 ; E_1) \step E_1 \)}}
 
 {
-\axiom{\(+\text{R}\text{R}^\text{T}_1\)}
-      {\( \lft(\inl_t(p)) \step p \)}
+\axiom{\(+\beta\beta^\text{T}_1\)}
+      {\( \lft(\inl_t(E)) \step E \)}
 \hfill
-\axiom{\(+\text{R}\text{R}^\text{T}_2\)}
-      {\( \rgt(\inr_t(p)) \step p \)}
+\axiom{\(+\beta\beta^\text{T}_2\)}
+      {\( \rgt(\inr_t(E)) \step E \)}
 }
 
-{
-\judge{\(+\text{R}\text{R}^\text{T}_3\)}
-      {\Gamma \vdash p \colon t}
-      {\lft(\inr_t(p)) \step \absurd_t(\false_\Gamma)}
+{\name{\(+\text{R}\text{R}^\text{T}_3\)}
+\Axiom$\Gamma \fCenter E \colon t$
+\UnaryInfC{\(\lft(\inr_t(E)) \step \absurd_t(\false_\Gamma)\)}
+\DisplayProof
 \hfill
-\judge{\(+\text{R}\text{R}^\text{T}_4\)}
-      {\Gamma \vdash p \colon t}
-      {\rgt(\inl_t(p)) \step \absurd_t(\false_\Gamma)}
+\name{\(+\text{R}\text{R}^\text{T}_4\)}
+\Axiom$\Gamma \fCenter E \colon t$
+\UnaryInfC{\(\rgt(\inl_t(E)) \step \absurd_t(\false_\Gamma)\)}
+\DisplayProof
 }
-
 
 \axiom{\(+\text{R}^\text{T}\text{R}_1\)}
-      {\(
-  \case(p_0 ; p_1, x_0. p_2, x_1. p_3) \step [x_0 := p_0] p_2
-  \)}
+      {\(\case(E_0 ; E_1, x_0. E_2, x_1. E_3) \step [x_0 := E_0] E_2\)}
 
 \axiom{\(+\text{R}^\text{T}\text{R}_2\)}
-      {\(
-  \case(p_0 ; p_1, x_0. p_2, x_1. p_3) \step [x_1 := p_1] p_3
-  \)}
+      {\( \case(E_0 ; E_1, x_0. E_2, x_1. E_3) \step [x_1 := E_1] E_3 \)}
 
 \end{flushleft}
 
-
-\subsubsection*{Control Calculus}
+\subsubsection*{Command Calculus}
 
 \begin{flushleft}
 
-{
-\judge{\(+\text{I}_1\)}
-      {\Theta \vdash  p_0 \sat v }
-      {\Theta \vdash  p_0 ; p_1 \sat \inl_t(v) }
+{\name{\(+\text{I}_1\)}
+\Axiom$\Delta \fCenter E_0 \sat v $
+\UnaryInf$\Delta \fCenter E_0 ; E_1 \sat \inl_t(v) $
+\DisplayProof
 \hfill
-\judge{\(+\text{I}_2\)}
-      {\Theta \vdash  p_1 \sat v }
-      {\Theta \vdash  p_0 ; p_1 \sat \inr_t(v)  }
+\name{\(+\text{I}_2\)}
+\Axiom$\Delta \fCenter  E_1 \sat v$
+\UnaryInf$\Delta \fCenter  E_0 ; E_1 \sat \inr_t(v) $
+\DisplayProof
 }
 
-\judge{\(\mt\)I}
-      {\Theta \vdash  p \sat \absurd_t(v) }
-      {\Theta \vdash  \false_\Gamma \sat v }
+\name{\(\mt\)I}
+\Axiom$\Delta \fCenter E \sat \absurd_t(v) $
+\UnaryInf$\Delta \fCenter \false_\Gamma \sat v $
+\DisplayProof
 
 \end{flushleft}
 
@@ -459,39 +441,37 @@ full dependent types.
 
 \begin{description}[nosep]
 \item[Types] \hfill  \( t \bnfdef \ldots \mid x \mid \prop \mid \head(v) \mid \Sigma (x \colon \prop). t \)
-\item[Values] \hfill  \( v \bnfdef \ldots \mid \tail(v) \mid \langle x \update t , v \rangle \)
-\item[Predicates] \hfill  \( p \bnfdef \ldots \mid p \, t \mid \Forall (x \colon \prop). p \)
-\item[Control Environment] \hfill  \( \Theta \bnfdef \ldots \mid \Theta , \, x \sat t \)
+\item[Terms] \hfill  \( v \bnfdef \ldots \mid \tail(v) \mid \langle x \update t , v \rangle \)
+\item[Contexts] \hfill  \( E \bnfdef \ldots \mid E \, t \mid \Forall (x \colon \prop). E \)
+\item[Command Environment] \hfill  \( \Delta \bnfdef \ldots \mid \Delta , \, x \sat t \)
 \end{description}
 
 Not really good at the typing judgements for dependent sum types.
 
 
-\subsubsection*{Values}
+\subsubsection*{Terms}
 
 \begin{flushleft}
   
-\judge{\(\Sigma\text{E}_1\)}
-      {\Gamma \vdash v \colon \Sigma (x \colon \prop). t}
-      {\Gamma \vdash \head(v) \colon \prop}
+\name{\(\Sigma\text{E}_1\)}
+\Axiom$\Gamma \fCenter E \colon \Sigma (x \colon \prop). t$
+\UnaryInf$\Gamma \fCenter \head(v) \colon \prop$
+\DisplayProof
 
-\judge{\(\Sigma\text{E}_2\)}
-      {\Gamma \vdash v \colon \Sigma (x \colon \prop). t}
-      {\Gamma \vdash \tail(v) \colon [x \update \head(v)] t}
+\name{\(\Sigma\text{E}_2\)}
+\Axiom$\Gamma \fCenter v \colon \Sigma (x \colon \prop). t$
+\UnaryInf$\Gamma \fCenter \tail(v) \colon [x \update \head(v)] t$
+\DisplayProof
 
+\name{\(\Sigma\)I}
+\Axiom$ \Gamma \fCenter t_0 \colon \prop $
+\Axiom$ \Gamma , \, x \colon \prop \fCenter v \colon t_1 $
+\BinaryInf$\Gamma \fCenter \langle x \update t_0 , v \rangle \colon \Sigma (x \colon \prop). t_0 $
+\DisplayProof
 
-\bijudge{\(\Sigma\)I}
-        {\( \Gamma \vdash t_0 \colon \prop  \)}
-        {\( \Gamma , \, x \colon \prop \vdash v \colon t_1 \)}
-        {\(
-  \Gamma \vdash \langle x \update t_0 , v \rangle \colon \Sigma (x \colon \prop). t_0  \)}
-
-
-{\axiom{\(\Sigma\text{S}_1\)}
-  {\( \head(\langle x \update t , v \rangle) \step t \)}
+{\axiom{\(\Sigma\beta_1\)}{\( \head(\langle x \update t , v \rangle) \step t \)}
 \hfill
-\axiom{\(\Sigma\text{S}_2\)}
-      {\( \tail( \langle x \update t , v \rangle) \step [x \update t] v \)}
+\axiom{\(\Sigma\beta_2\)}{\( \tail( \langle x \update t , v \rangle) \step [x \update t] v \)}
 }
 \end{flushleft}
 
@@ -499,29 +479,31 @@ Not really good at the typing judgements for dependent sum types.
 
 \begin{flushleft}
 
-\bijudge{\(\Sigma\)E}
-        {\( \Gamma \vdash p \colon \Sigma (x\colon \prop). t_1  \)}
-        {\( \Delta \vdash t_0 \colon \prop \)}
-        {\( \Gamma, \, \Delta \vdash p_0 \, t_0 \colon [x \update t_0] t_1 \)}
+\name{\(\Sigma\)E}
+\Axiom$ \Gamma_0 \fCenter E \colon \Sigma (x\colon \prop). t_1 $
+\Axiom$ \Gamma_1 \fCenter t_0 \colon \prop $
+\BinaryInf$ \Gamma_0, \, \Gamma_1 \fCenter E_0 \, t_0 \colon [x \update t_0] t_1 $
+\DisplayProof
 
-\judge{\(\Sigma\)I}
-      {\Gamma , \, x \colon \prop \vdash p \colon t}
-      {\Gamma \vdash \Forall (x \colon \prop). p \colon \Sigma (x \colon \prop). t}
+\name{\(\Sigma\)I}
+\Axiom$ \Gamma , \, x \colon \prop \fCenter E \colon t $
+\UnaryInf$ \Gamma \fCenter \Forall (x \colon \prop). E \colon \Sigma (x \colon \prop). t $
+\DisplayProof
 
-\axiom{\(\Sigma\)R}
-      {\( ( \Forall (x \colon \prop). p) \, t \step [x \update t] p \)}
+\axiom{\(\Sigma\beta\)}{\( ( \Forall (x \colon \prop). E) \, t \step [x \update t] E \)}
 
 \end{flushleft}
 
-\subsubsection*{Control Calculus}
+\subsubsection*{Command Calculus}
 
 I can't figure out satisfaction at all.
 
 \begin{flushleft}
-\judge{\(\Sigma\)I}
-      {\Theta , \,  x \sat t  \vdash  p \sat v }
-      {\Theta \vdash  \Forall (x \colon \prop). p \sat \langle x \update t , v \rangle 
-  }
+\name{\(\Sigma\)I}
+\Axiom$ \Delta , \,  x \sat t  \fCenter E \sat v $
+\UnaryInf$ \Delta \fCenter  \Forall (x \colon \prop). E \sat \langle x \update t , v \rangle $
+\DisplayProof
+
 \end{flushleft}
 
 \section*{Categorical Semantics}
@@ -534,11 +516,13 @@ double category \Rel.
 If this is successful then terms and types ought to map to \Rel as
 follows.
 
+I think you want pullbacks for the environment arrows?
+
 \begin{center}
   \begin{tikzcd}
-    \unit \arrow{dd}[']{\Theta_p} \arrow{rr}{\Theta_v} & {} \arrow[Rightarrow]{dd}{\Theta_p , \Theta_v \vdash p \sat v} & \times_{x\colon t \in \Gamma_v} t \arrow{dd}{v} \\
+   ? \arrow{dd}[']{?} \arrow{rr}{?} & {} \arrow[Rightarrow]{dd}{\Delta \fCenter E \sat v} & \times_{x\colon t \in \Gamma_v} t \arrow{dd}{v} \\
     &                               &                      \\
-    \times_{x\colon t \in \Gamma_p} t \arrow{rr}[']{p}                           & {}                            & t                   
+    \times_{x\colon t \in \Gamma_E} t \arrow{rr}[']{E}                           & {}                            & t                   
   \end{tikzcd}
 \end{center}
 
@@ -555,11 +539,11 @@ Really need to think about denotation again.
   \llbracket \Sigma (x \colon \prop). t(x) \rrbracket = \bigsqcup_{ x \in \prop} \llbracket t(x) \rrbracket \\
   \\
   \llbracket \coin \rrbracket = \emptyset \\
-  \llbracket ( v_0 , v_1 ) \rrbracket = ( \llbracket v_0 \rrbracket , \llbracket v_1 \rrbracket ) \\
+  \llbracket v_0 , v_1 \rrbracket = ( \llbracket v_0 \rrbracket , \llbracket v_1 \rrbracket ) \\
   \\
   \llbracket \success \rrbracket(y) = \top \\
-  \llbracket p_0 p_1 \rrbracket(y) = \exists z,  \llbracket p_1 \rrbracket (z) \wedge \llbracket p_0 \rrbracket (z, y)\\
-  \llbracket \forall (x \colon t). p \rrbracket(\langle x, y \rangle) = \llbracket p(x) \rrbracket (y)  \\
+  \llbracket E_0 \, E_1 \rrbracket(y) = \exists z,  \llbracket E_1 \rrbracket (z) \wedge \llbracket E_0 \rrbracket (z, y)\\
+  \llbracket \forall (x \colon t). E \rrbracket(\langle x, y \rangle) = \llbracket E(x) \rrbracket (y)  \\
 \end{multline*}
 
 \section*{Synthetic Category Theory}
@@ -573,24 +557,27 @@ equivalence relation might be something like:
 \begin{flushleft}
 
 \axiom{object}
-      {\( \cdot \vdash O \colon \prop \)}
+      {\( \cdot \fCenter O \colon \prop \)}
 
 \axiom{arrow}
-      {\( \cdot \vdash R \colon O \times O \)}
+      {\( \cdot \fCenter R \colon O \times O \)}
 
-\judge{refl}
-      {\cdot \vdash o \colon O}
-      {\cdot \vdash  R \sat o, o }
+\name{refl}
+\Axiom$\cdot \fCenter o \colon O$
+\UnaryInf$\cdot \fCenter R \sat o, o $
+\DisplayProof
 
-\bijudge{trans}
-       {\( \cdot \vdash o_0, o_1 \colon O \times O \)} 
-      {\( \cdot \vdash  \forall (x\colon O). R \, (R \, x)  \sat o_0, o_1 \)}
-      {\( \cdot \vdash  R \sat o_0, o_1  \)}
+\name{trans}
+\Axiom$ \cdot \fCenter  \forall (x\colon O). R \, (R \, x)  \sat o_0, o_1 $
+\Axiom$ \cdot \fCenter o_0, o_1 \colon O \times O $
+\BinaryInf$ \cdot \fCenter  R \sat o_0, o_1 $
+\DisplayProof
 
-\bijudge{sym}
-      {\( \cdot \vdash o_1, o_0 \colon O \times O \)}
-      {\( \cdot \vdash  R \sat o_0, o_1  \)}
-      {\( \cdot \vdash  R \sat o_1, o_0  \)}
+\name{sym}
+\Axiom$ \cdot \fCenter  R \sat o_0, o_1  $
+\Axiom$ \cdot \fCenter o_1, o_0 \colon O \times O $
+\BinaryInf$ \cdot \fCenter  R \sat o_1, o_0 $
+\DisplayProof
       
 \end{flushleft}
 
