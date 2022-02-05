@@ -1,5 +1,5 @@
 % Formatting
-\documentclass[twocolumn]{scrartcl}
+\documentclass{scrartcl}
 
 %% Fixers
 \usepackage{fontspec}
@@ -8,7 +8,7 @@
 \usepackage{polyglossia}
 
 \usepackage[]{microtype}
-\usepackage[top=0.7in, bottom=0.7in, left=0.7in, right=0.7in]{geometry}
+%% \usepackage[top=0.7in, bottom=0.7in, left=0.6in, right=0.6in]{geometry}
 \usepackage[english]{isodate}
 
 % Packages
@@ -40,6 +40,9 @@
 
 \newcommand{\Rel}{\textbf{Rel}}
 \newcommand{\Set}{\textbf{Set}}
+\newcommand{\Span}{\textbf{Span}}
+\newcommand{\Vect}{\textbf{Vect}}
+\newcommand{\Prof}{\textbf{Prof}}
 \newcommand{\lk}{\(\bar{\lambda}\mu\tilde{\mu}\,\)}
 
 \newcommand{\name}[1]{\LeftLabel{\fbox{#1}}}
@@ -78,6 +81,7 @@
 
 \DeclareMathOperator{\type}{\Box}
 \DeclareMathOperator{\prop}{*}
+\newcommand{\Type}{\textbf{Type}}
 
 \DeclareMathOperator{\head}{\textbf{h}}
 \DeclareMathOperator{\tail}{\textbf{t}}
@@ -90,55 +94,49 @@
 
 \begin{document}
 
-I wanted to try figuring out a sort of internal language corresponding
-to the double category \Rel.
+\title{Internal Language of Rel}
+\author{Molly Stewart-Gallus}
 
-You have a calculus of ``values'' corresponding to the \Set edge of
-\Rel and a sort of relational calculus of ``predicates'' corresponding
-to the other edge. Squares ought to correspond to judgements stating a
-value satisfies a predicate.
+\maketitle
 
-The language of ``values'' handling Cartesian product of sets has
-product types (in category theory terms is Cartesian.)
+I wanted an internal language corresponding to the double category
+\Rel{}. Recall \Rel{} is the double category with sets as objects,
+relations as horizontal arrows and functions as vertical arrows.
 
-The language of ``predicates'' which we call the ``context calculus''
-ought to be more complicated. \Rel is a closed monoidal category over
-Cartesian product of sets.  One has an isomorphism \( \Rel(A, B
-\otimes C) \sim \Rel (A \otimes B, C) \).  So some sort of linear type
-theory is required.
+I present three different calculi: a substructural ``context
+calculus'' corresponding to the horizontal edge of \Rel{}; a ``term
+calculus'' corresponding to \Set{}, the vertical edge category of
+\Rel{}; and a simple ``command'' calculus encoding commuting squares
+of \Rel{}.
 
-The language of ``squares'' is confusing. It ought to correspond to
-commands in \lk.
-
-This is the core framework.  I've been thinking about further
-extensions but I want to see how far I can get characterizing
-\Rel with as few language features as possible.  Later on I
-give a few possible extensions.
+First, I give the basic framework of the calculi. Then I discuss
+semantics and applications. And later I list a few possible extensions
+such as coproduct and depedent sum types.
 
 \section*{Core Calculi}
 
-\begin{description}[nosep]
-\item[Types] \hfill \( t \bnfdef \unit \mid t \times t \)
-\item[Terms] \hfill \( v \bnfdef x \mid \coin \mid \fst(v) \mid \snd(v) \mid v , v \)
-\item[Contexts] \hfill \( E \bnfdef x_t \mid \success \mid E \pass E \mid E \, E \mid \forall (x \colon t) . E \)
-\item[Environment] \hfill \( \Gamma \bnfdef \cdot \mid \Gamma , \, x \colon t  \)
-\item[Command Environment] \hfill \( \Delta \bnfdef \cdot \mid \Delta , \, x \mid v  \)
-\end{description}
-
 The core context calculus is the linear lambda calculus with a few
-symbol changes.  The core value calculus has only product types.
+symbol changes and models the closed monoidal structure of the
+horizontal edge of \Rel{}.
 
-I'm not really sure small steps semantics make sense with respect to
-the context calculus but the value calculus corresponding to \Set
-ought to have simple deterministic semantics.
+The core term calculus is a little language with only product types
+and models the Cartesian structure of \Set{}.
+
+The core command calculus models commuting squares in \Rel{}.
+
+
+\begin{center}
+
+\[\begin{aligned}
+&\textbf{Types} &  t & \bnfdef \prop \mid \unit \mid t \times t  \\
+&\textbf{Contexts}  & E & \bnfdef x_t \mid \success \mid E \pass E \mid E \, E \mid \forall (x \colon t) . E  \\
+&\textbf{Terms} &  v & \bnfdef x \mid \coin \mid \fst(v) \mid \snd(v) \mid v , v  \\
+&\textbf{Environment}  &  \Gamma & \bnfdef \cdot \mid \Gamma , \, x \colon t   \\
+&\textbf{Command Env}  &  \Delta & \bnfdef \cdot \mid \Delta , \, x \mid v  
+\end{aligned}\]
+
 
 \subsubsection*{Context Calculus}
-
-The context calculus has a linear variable rule.  As a hack to make
-mechanization easier linear variables are explicitly indexed by their
-types and variable binding is more imperative.
-
-\begin{flushleft}
 
 \axiom{V}
       {\(\cdot , \, x \colon t \vdash x_t \colon t\)}
@@ -170,11 +168,7 @@ types and variable binding is more imperative.
 \axiom{\(\times\beta\)}
       {\( ( \forall (x \colon t ). E_0) \, E_1 \step [x_t \update E_1] E_0 \)}
 
-\end{flushleft}
-
 \subsubsection*{Term Calculus}
-
-\begin{flushleft}
 
 \name{V}
 \AxiomC{\(x \colon t \in \Gamma\)}
@@ -208,22 +202,18 @@ types and variable binding is more imperative.
       {\(\snd (v_0 , v_1 ) \step v_1 \)}
 }
 
-\end{flushleft}
-
 \subsubsection*{Command Calculus}
-
-\begin{flushleft}
 
 \axiom{V}
       {\(\cdot , \, x_t \sat v  \fCenter  x_t \sat v \)}
 
-\name{vR}
+\name{v}
 \Axiom$\Delta \fCenter E \sat v_0$
 \AxiomC{\(v_0 \step v_1\)}
 \BinaryInf$\Delta \fCenter E \sat v_1$
 \DisplayProof
 
-\name{pR}
+\name{E}
 \Axiom$\Delta \fCenter E_0 \sat v$
 \AxiomC{\(E_0 \step E_1\)}
 \BinaryInf$\Delta \fCenter E_1 \sat v$
@@ -237,11 +227,24 @@ types and variable binding is more imperative.
 \UnaryInf$ \Delta \fCenter \forall (x \colon t ). E \sat  v_0 , v_1 $
 \DisplayProof
 
-\end{flushleft}
+\end{center}
 
-\section*{Examples}
+The context calculus has a linear variable rule.  To make
+mechanization easier linear variables are explicitly indexed by their
+types and variable binding is more imperative and so ensuring the
+typing environment can be directly inferred from context expressions.
 
-Pattern matching on equality
+\section*{Discussion}
+
+%% Technical choices
+
+%% I decided against rules for mapping from \Set{} to \Rel{} because I wanted
+%% to see how far \Rel{} could go on its own and also wanted to see if
+%% these could be defined later.
+
+\subsection*{Examples}
+
+\noindent Identity:
 
 \begin{prooftree}
 
@@ -253,76 +256,110 @@ Pattern matching on equality
 
 \end{prooftree}
 
-Transposition
+\noindent Transposition:
+
+\[ \textbf{trans} = \forall (p \colon t_0 \times t_1 \times t_2) (x \colon t_1) (y \colon t_0). p_{(t_0 \times t_1 \times t_2)} \, y_t \, x_t \]
+
+\section*{Categorical Semantics}
+%% Useful as hell, cite somewhere ?
+%% https://tikzcd.yichuanshen.de/
+
+The intent is to create calculi encoding the core features of the
+double category \Rel{}.
+
+If this is successful then terms and types ought to map to \Rel{} as
+follows.
+
+I think you want pullbacks for the environment arrows?
+
+\begin{center}
+  \begin{tikzcd}
+   ? \arrow{dd}[']{?} \arrow{rr}{?} & {} \arrow[Rightarrow]{dd}{\Delta \fCenter E \sat v} & \times_{x\colon t \in \Gamma_v} t \arrow{dd}{v} \\
+    &                               &                      \\
+    \times_{x\colon t \in \Gamma_E} t \arrow{rr}[']{E}                           & {}                            & t                   
+  \end{tikzcd}
+\end{center}
+
+I have no idea about universe issues and such. Dependent sum is probably wrong.
+
+Really need to think about denotation again.
 
 \[
-\forall (p \colon t \times t \times \unit) (x \colon t) (y \colon t). p_{(t \times t \times \unit)} \, y_t \, x_t \]
+\begin{aligned}
+  \llbracket \unit \rrbracket & =\{ \emptyset \} \\
+  \llbracket t_0 \times t_1 \rrbracket & =\llbracket t_0 \rrbracket \times \llbracket t_1 \rrbracket \\
+  \llbracket \mt \rrbracket & =\emptyset \\
+  %% \llbracket t_0 + t_1 \rrbracket & =\llbracket t_0 \rrbracket \sqcup \llbracket t_1 \rrbracket \\
+  %% \llbracket \Sigma (x \colon \prop). t(x) \rrbracket & =\bigsqcup_{ x \in \prop} \llbracket t(x) \rrbracket \\
+  \\
+  \llbracket \coin \rrbracket & =\emptyset \\
+  \llbracket v_0 , v_1 \rrbracket & =( \llbracket v_0 \rrbracket , \llbracket v_1 \rrbracket ) \\
+  \\
+  \llbracket \success \rrbracket(y) & =\top \\
+  \llbracket E_0 \, E_1 \rrbracket(y) & =\exists z,  \llbracket E_1 \rrbracket (z) \wedge \llbracket E_0 \rrbracket (z, y)\\
+  \llbracket \forall (x \colon t). E \rrbracket(\langle x, y \rangle) & = \llbracket E(x) \rrbracket (y) 
+\end{aligned}
+\]
+
+\section*{Synthetic Category Theory}
+
+A category is a monad in \Span{}.  Once this system has been generalized
+to \Span{} we can define monads internal to \Span{}.
+
+This is not fully internal but a simple approach to defining an
+equivalence relation might be something like:
+
+\begin{center}
+
+{\axiom{object}{\( \cdot \fCenter O \colon \prop \)}\hfill
+\axiom{arrow}{\( \cdot \fCenter R \colon O \times O \)}}
+
+\name{refl}
+\Axiom$\cdot \fCenter o \colon O$
+\UnaryInf$\cdot \fCenter R \sat o, o $
+\DisplayProof
+
+\name{trans}
+\Axiom$ \cdot \fCenter  \forall (x\colon O). R \, (R \, x)  \sat o_0, o_1 $
+\side{\cdot \fCenter o_1, o_0 \colon O \times O}
+\UnaryInf$ \cdot \fCenter  R \sat o_0, o_1 $
+\DisplayProof
+
+\name{sym}
+\Axiom$ \cdot \fCenter  R \sat o_0, o_1  $
+\side{\cdot \fCenter o_1, o_0 \colon O \times O}
+\UnaryInf$ \cdot \fCenter  R \sat o_1, o_0 $
+\DisplayProof
+      
+\end{center}
+
+Generalizing to a constructive interpretation in terms of spans and
+groupoids is future work.
 
 \section*{Disjoint Unions}
 
-Disjoint unions in \Set become Cartesian product/coproduct in \Rel.
-It might make sense to use different notations for coproduct in \Rel.
+Disjoint unions in \Set{} become Cartesian products/coproducts in
+\Rel{}.
 
-I decided against rules for mapping from \Set to \Rel because I wanted
-to see how far \Rel could go on its own and also wanted to see if
-these could be defined later.
-
-I have a hunch it is proper for the combination of product/coproduct
-to introduce nondeterminism in the operational semantics but I need to
-think more about the issue.
+%% I have a hunch it is proper for the combination of product/coproduct
+%% to introduce nondeterminism in the operational semantics but I need to
+%% think more about the issue.
 
 As a technical hack \(\false\) is explicitly indexed by the environment it ignores.
 This hack also requires inferring the environment in certain reduction rules.
 
-\begin{description}[nosep]
-\item[Types] \hfill \( t \bnfdef \ldots \mid \mt \mid t + t \)
-\item[Terms] \hfill \( v \bnfdef \ldots \mid \absurd_t(v) \mid \inl_t(v) \mid \inr_t(v) \mid
+\begin{center}
+
+\[\begin{aligned}
+& \textbf{Types} & t & \bnfdef \ldots \mid \mt \mid t + t \\
+& \textbf{Contexts} & E & \bnfdef \ldots \mid
+  \absurd_t(E) \mid \inl_t(E) \mid \inr_t(E) \mid \\
+&                     & & \case(v, E. v, x. E) \mid \false_\Gamma \mid \lft(E) \mid \rgt(E) \mid E ; E  \\
+& \textbf{Terms} & v & \bnfdef \ldots \mid \absurd_t(v) \mid \inl_t(v) \mid \inr_t(v) \mid
   \case(v, x. v, x. v)
-  \)
-\item[Contexts] \hfill \( E \bnfdef \ldots \mid
-  \absurd_t(E) \mid \inl_t(E) \mid \inr_t(E) \mid \case(v, E. v, x. E) \mid
-  \false_\Gamma \mid \lft(E) \mid \rgt(E) \mid E ; E \)
-\end{description}
-
-\subsubsection*{Term Calculus}
-
-\begin{flushleft}
-
-\name{\(\mt\)E}
-\Axiom$\Gamma \fCenter v \colon \mt$
-\UnaryInf$\Gamma \fCenter \absurd_t(v) \colon t$
-\DisplayProof
-
-{\name{\(+\text{I}_1\)}
-\Axiom$\Gamma \fCenter v \colon t_0$
-\UnaryInf$\Gamma \fCenter \inl_{t_1}(v) \colon t_0 + t_1$
-\DisplayProof
-\hfill
-\name{\(+\text{I}_2\)}
-\Axiom$\Gamma \fCenter v \colon t_1$
-\UnaryInf$\Gamma \fCenter \inr_{t_0}(v) \colon t_0 + t_1$
-\DisplayProof
-}
-
-\name{\(+\)E}
-\Axiom$ \Gamma \fCenter v_0 \colon t_0 + t_1 $
-\Axiom$ \Gamma , \, x_0 \colon t_0 \fCenter v_1 \colon t_2 $
-\Axiom$ \Gamma , \, x_1 \colon t_1 \fCenter v_1 \colon t_2 $
-\TrinaryInf$ \Gamma \fCenter \case(v_0, x_0. v_1, x_1. v_2) \colon t_2 $
-\DisplayProof
-
-\axiom{\(+\beta_1\)}
-      {\( \case(\inl_t(v_0), x_0. v_1, x_1. v_2) \step [x_0 \update v_0] v_1 \)}
-
-\axiom{\(+\beta_2\)}
-      {\( \case(\inr_t(v_0), x_0. v_1, x_1. v_2) \step [x_1 \update v_0] v_2 \)}
-
-\end{flushleft}
-
+\end{aligned}\]
 
 \subsubsection*{Context Calculus}
-
-\begin{flushleft}
 
 \name{\(\mt\text{E}^\text{T}\)}
 \Axiom$\Gamma \fCenter E \colon \mt$
@@ -405,11 +442,38 @@ This hack also requires inferring the environment in certain reduction rules.
 \axiom{\(+\text{R}^\text{T}\text{R}_2\)}
       {\( \case(E_0 ; E_1, x_0. E_2, x_1. E_3) \step [x_1 := E_1] E_3 \)}
 
-\end{flushleft}
+\subsubsection*{Term Calculus}
+
+\name{\(\mt\)E}
+\Axiom$\Gamma \fCenter v \colon \mt$
+\UnaryInf$\Gamma \fCenter \absurd_t(v) \colon t$
+\DisplayProof
+
+{\name{\(+\text{I}_1\)}
+\Axiom$\Gamma \fCenter v \colon t_0$
+\UnaryInf$\Gamma \fCenter \inl_{t_1}(v) \colon t_0 + t_1$
+\DisplayProof
+\hfill
+\name{\(+\text{I}_2\)}
+\Axiom$\Gamma \fCenter v \colon t_1$
+\UnaryInf$\Gamma \fCenter \inr_{t_0}(v) \colon t_0 + t_1$
+\DisplayProof
+}
+
+\name{\(+\)E}
+\Axiom$ \Gamma \fCenter v_0 \colon t_0 + t_1 $
+\Axiom$ \Gamma , \, x_0 \colon t_0 \fCenter v_1 \colon t_2 $
+\Axiom$ \Gamma , \, x_1 \colon t_1 \fCenter v_1 \colon t_2 $
+\TrinaryInf$ \Gamma \fCenter \case(v_0, x_0. v_1, x_1. v_2) \colon t_2 $
+\DisplayProof
+
+\axiom{\(+\beta_1\)}
+      {\( \case(\inl_t(v_0), x_0. v_1, x_1. v_2) \step [x_0 \update v_0] v_1 \)}
+
+\axiom{\(+\beta_2\)}
+      {\( \case(\inr_t(v_0), x_0. v_1, x_1. v_2) \step [x_1 \update v_0] v_2 \)}
 
 \subsubsection*{Command Calculus}
-
-\begin{flushleft}
 
 {\name{\(+\text{I}_1\)}
 \Axiom$\Delta \fCenter E_0 \sat v $
@@ -427,7 +491,7 @@ This hack also requires inferring the environment in certain reduction rules.
 \UnaryInf$\Delta \fCenter \false_\Gamma \sat v $
 \DisplayProof
 
-\end{flushleft}
+\end{center}
 
 \section*{Dependent Sums}
 
@@ -440,20 +504,50 @@ Some things become awkward to interpret here though.
 I also really can't figure out unpacking. It's messy if you don't want
 full dependent types.
 
-\begin{description}[nosep]
-\item[Types] \hfill  \( t \bnfdef \ldots \mid x \mid \prop \mid \head(v) \mid \Sigma (x \colon \prop). t \)
-\item[Terms] \hfill  \( v \bnfdef \ldots \mid \tail(v) \mid \langle x \update t , v \rangle \)
-\item[Contexts] \hfill  \( E \bnfdef \ldots \mid E \, t \mid \Forall (x \colon \prop). E \)
-\item[Command Environment] \hfill  \( \Delta \bnfdef \ldots \mid \Delta , \, x \sat t \)
-\end{description}
-
 Not really good at the typing judgements for dependent sum types.
 
+\begin{center}
 
-\subsubsection*{Terms}
+\[\begin{aligned}
+& \textbf{Types} & t & \bnfdef \ldots \mid x \mid \prop \mid \head(v) \mid \Sigma (x \colon \prop). t  \\
+& \textbf{Contexts} &  E & \bnfdef \ldots \mid E \, t \mid \Forall (x \colon \prop). E  \\
+& \textbf{Terms} &  v & \bnfdef \ldots \mid \tail(v) \mid \langle x \update t , v \rangle  \\
+& \textbf{Command Env} & \Delta & \bnfdef \ldots \mid \Delta , \, x \sat t 
+\end{aligned}\]
 
-\begin{flushleft}
-  
+\subsubsection*{Context Calculus}
+
+\name{\(\Sigma\)E}
+\Axiom$ \Gamma_0 \fCenter E \colon \Sigma (x\colon \prop). t_1 $
+\Axiom$ \Gamma_1 \fCenter t_0 \colon \prop $
+\BinaryInf$ \Gamma_0, \, \Gamma_1 \fCenter E_0 \, t_0 \colon [x \update t_0] t_1 $
+\DisplayProof
+
+\name{\(\Sigma\)I}
+\Axiom$ \Gamma , \, x \colon \prop \fCenter E \colon t $
+\UnaryInf$ \Gamma \fCenter \Forall (x \colon \prop). E \colon \Sigma (x \colon \prop). t $
+\DisplayProof
+
+\axiom{\(\Sigma\beta\)}{\( ( \Forall (x \colon \prop). E) \, t \step [x \update t] E \)}
+
+\subsubsection*{Term Calculus}
+
+%% \axiom{U}
+%%       {\(\Gamma \fCenter U_i \, \Type\)}
+
+%% \name{U}
+%% \Axiom$\Gamma \fCenter v \colon U_i$
+%% \UnaryInf$\Gamma \fCenter \llbracket v \rrbracket \, \Type$
+%% \DisplayProof
+
+%% \axiom{U}
+%%       {\(\Gamma \fCenter u_i : U_{i+1} \)}
+
+%% \name{U}
+%% \Axiom$\Gamma \fCenter v \colon U_i$
+%% \UnaryInf$\Gamma \fCenter \llbracket v \rrbracket \, \Type$
+%% \DisplayProof
+
 \name{\(\Sigma\text{E}_1\)}
 \Axiom$\Gamma \fCenter E \colon \Sigma (x \colon \prop). t$
 \UnaryInf$\Gamma \fCenter \head(v) \colon \prop$
@@ -474,122 +568,23 @@ Not really good at the typing judgements for dependent sum types.
 \hfill
 \axiom{\(\Sigma\beta_2\)}{\( \tail( \langle x \update t , v \rangle) \step [x \update t] v \)}
 }
-\end{flushleft}
-
-\subsubsection*{Context Calculus}
-
-\begin{flushleft}
-
-\name{\(\Sigma\)E}
-\Axiom$ \Gamma_0 \fCenter E \colon \Sigma (x\colon \prop). t_1 $
-\Axiom$ \Gamma_1 \fCenter t_0 \colon \prop $
-\BinaryInf$ \Gamma_0, \, \Gamma_1 \fCenter E_0 \, t_0 \colon [x \update t_0] t_1 $
-\DisplayProof
-
-\name{\(\Sigma\)I}
-\Axiom$ \Gamma , \, x \colon \prop \fCenter E \colon t $
-\UnaryInf$ \Gamma \fCenter \Forall (x \colon \prop). E \colon \Sigma (x \colon \prop). t $
-\DisplayProof
-
-\axiom{\(\Sigma\beta\)}{\( ( \Forall (x \colon \prop). E) \, t \step [x \update t] E \)}
-
-\end{flushleft}
 
 \subsubsection*{Command Calculus}
 
-I can't figure out satisfaction at all.
-
-\begin{flushleft}
 \name{\(\Sigma\)I}
 \Axiom$ \Delta , \,  x \sat t  \fCenter E \sat v $
 \UnaryInf$ \Delta \fCenter  \Forall (x \colon \prop). E \sat \langle x \update t , v \rangle $
 \DisplayProof
 
-\end{flushleft}
-
-\section*{Categorical Semantics}
-%% Useful as hell, cite somewhere ?
-%% https://tikzcd.yichuanshen.de/
-
-The intent is to create calculi encoding the core features of the
-double category \Rel.
-
-If this is successful then terms and types ought to map to \Rel as
-follows.
-
-I think you want pullbacks for the environment arrows?
-
-\begin{center}
-  \begin{tikzcd}
-   ? \arrow{dd}[']{?} \arrow{rr}{?} & {} \arrow[Rightarrow]{dd}{\Delta \fCenter E \sat v} & \times_{x\colon t \in \Gamma_v} t \arrow{dd}{v} \\
-    &                               &                      \\
-    \times_{x\colon t \in \Gamma_E} t \arrow{rr}[']{E}                           & {}                            & t                   
-  \end{tikzcd}
 \end{center}
 
-I have no idea about universe issues and such. Dependent sum is probably wrong.
-
-Really need to think about denotation again.
-
-\begin{multline*}
-  \\
-  \llbracket \unit \rrbracket = \{ \emptyset \} \\
-  \llbracket t_0 \times t_1 \rrbracket = \llbracket t_0 \rrbracket \times \llbracket t_1 \rrbracket \\
-  \llbracket \mt \rrbracket = \emptyset \\
-  \llbracket t_0 + t_1 \rrbracket = \llbracket t_0 \rrbracket \sqcup \llbracket t_1 \rrbracket \\
-  \llbracket \Sigma (x \colon \prop). t(x) \rrbracket = \bigsqcup_{ x \in \prop} \llbracket t(x) \rrbracket \\
-  \\
-  \llbracket \coin \rrbracket = \emptyset \\
-  \llbracket v_0 , v_1 \rrbracket = ( \llbracket v_0 \rrbracket , \llbracket v_1 \rrbracket ) \\
-  \\
-  \llbracket \success \rrbracket(y) = \top \\
-  \llbracket E_0 \, E_1 \rrbracket(y) = \exists z,  \llbracket E_1 \rrbracket (z) \wedge \llbracket E_0 \rrbracket (z, y)\\
-  \llbracket \forall (x \colon t). E \rrbracket(\langle x, y \rangle) = \llbracket E(x) \rrbracket (y)  \\
-\end{multline*}
-
-\section*{Synthetic Category Theory}
-
-A category is a monad in Span.  Once this system has been generalized
-to Span we can define monads internal to Span.
-
-This is not fully internal but a simple approach to defining an
-equivalence relation might be something like:
-
-\begin{flushleft}
-
-\axiom{object}
-      {\( \cdot \fCenter O \colon \prop \)}
-
-\axiom{arrow}
-      {\( \cdot \fCenter R \colon O \times O \)}
-
-\name{refl}
-\Axiom$\cdot \fCenter o \colon O$
-\UnaryInf$\cdot \fCenter R \sat o, o $
-\DisplayProof
-
-\name{trans}
-\Axiom$ \cdot \fCenter  \forall (x\colon O). R \, (R \, x)  \sat o_0, o_1 $
-\side{\cdot \fCenter o_1, o_0 \colon O \times O}
-\UnaryInf$ \cdot \fCenter  R \sat o_0, o_1 $
-\DisplayProof
-
-\name{sym}
-\Axiom$ \cdot \fCenter  R \sat o_0, o_1  $
-\side{\cdot \fCenter o_1, o_0 \colon O \times O}
-\UnaryInf$ \cdot \fCenter  R \sat o_1, o_0 $
-\DisplayProof
-      
-\end{flushleft}
-
-Generalizing to a constructive interpretation in terms of spans and
-groupoids is future work.
+I can't figure out commands here at all.
 
 \section*{The Future?}
 
 Satisifies judgments correspond to thin squares. Moving to more
-general categories such as \textbf{Span} or \textbf{Prof} or
-\textbf{Vect} for matrix math requires an interpretation of squares
+general categories such as \Span{} or \Prof{} or
+\Vect{} for matrix math requires an interpretation of squares
 carrying constructive content.
 
 \end{document}
