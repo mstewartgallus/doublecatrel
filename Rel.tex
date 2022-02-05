@@ -59,6 +59,8 @@
 
 \newcommand{\axiom}[2]{\fbox{#1}~#2}
 
+%% \newcommand{\axiom}[2]{\begin{prooftree}\name{#1}\AxiomC{\(\top\)}\UnaryInfC{#2}\end{prooftree}}
+
 \DeclareMathOperator{\val}{\textbf{v}}
 \DeclareMathOperator{\prd}{\textbf{p}}
 
@@ -141,26 +143,30 @@ The core command calculus models commuting squares in \Rel{}.
 \axiom{V}
       {\(\cdot , \, x \colon t \vdash x_t \colon t\)}
 
-\axiom{\(\unit\)I}
-      {\(\cdot \vdash \success \colon \unit\)}
 
+{\axiom{\(\unit\)I}
+      {\(\cdot \vdash \success \colon \unit\)}
+\hfill
+\begin{prooftree}
 \name{\(\unit\)E}
 \Axiom$\Gamma_0 \fCenter p_0 \colon \unit$
 \Axiom$\Gamma_1 \fCenter p_1 \colon t$
 \BinaryInf$\Gamma_0, \, \Gamma_1 \fCenter E_0 \pass E_1 \colon t$
-\DisplayProof
-  
+\end{prooftree}}
+
+\begin{prooftree}
 \name{\(\times\)I}
 \Axiom$\Gamma \fCenter E \colon t_1$
 \side{ x \colon t_0 \in \Gamma }
 \UnaryInf$\Gamma \setminus x \fCenter \forall (x \colon t_0). E \colon t_0 \times t_1$
-\DisplayProof
+\end{prooftree}
 
+\begin{prooftree}
 \name{\(\times\)E}
 \Axiom$\Gamma_0 \fCenter E_0 \colon t_0 \times t_1$
 \Axiom$\Gamma_1 \fCenter E_1 \colon t_1$
 \BinaryInf$\Gamma_0, \, \Gamma_1 \fCenter E_0 \, E_1 \colon t_1$
-\DisplayProof
+\end{prooftree}
 
 \axiom{\(\unit\beta\)}
       {\( \success \pass E \step E \)}
@@ -170,30 +176,33 @@ The core command calculus models commuting squares in \Rel{}.
 
 \subsubsection*{Term Calculus}
 
+\begin{prooftree}
 \name{V}
 \AxiomC{\(x \colon t \in \Gamma\)}
 \UnaryInf$\Gamma \fCenter x \colon t$
-\DisplayProof
+\end{prooftree}
 
 \axiom{\(\unit\)I}
       {\(\Gamma \fCenter \coin \colon \unit \)}
 
-{\name{\(\times\text{E}_1\)}
+{\begin{prooftree}
+\name{\(\times\text{E}_1\)}
 \Axiom$\Gamma \fCenter v \colon t_0 \times t_1$
 \UnaryInf$\Gamma \fCenter \fst(v) \colon t_0$
-\DisplayProof
+\end{prooftree}
 \hfill
+\begin{prooftree}
 \name{\(\times\text{E}_2\)}
 \Axiom$\Gamma \fCenter v \colon t_0 \times t_1$
 \UnaryInf$\Gamma \fCenter \snd(v) \colon t_1$
-\DisplayProof
-}
+\end{prooftree}}
 
+\begin{prooftree}
 \name{\(\times\)I}
 \Axiom$\Gamma \fCenter v_0 \colon t_0$
 \Axiom$\Gamma \fCenter v_1 \colon t_1$
 \BinaryInf$\Gamma \fCenter v_0, v_1 \colon t_0 \times t_1$
-\DisplayProof
+\end{prooftree}
 
 {\axiom{\(\times\beta_1\)}
        {\(\fst (v_0 , v_1 ) \step v_0 \)}
@@ -207,25 +216,44 @@ The core command calculus models commuting squares in \Rel{}.
 \axiom{V}
       {\(\cdot , \, x_t \sat v  \fCenter  x_t \sat v \)}
 
+\begin{prooftree}
 \name{v}
 \Axiom$\Delta \fCenter E \sat v_0$
 \AxiomC{\(v_0 \step v_1\)}
 \BinaryInf$\Delta \fCenter E \sat v_1$
-\DisplayProof
+\end{prooftree}
 
+\begin{prooftree}
 \name{E}
 \Axiom$\Delta \fCenter E_0 \sat v$
 \AxiomC{\(E_0 \step E_1\)}
 \BinaryInf$\Delta \fCenter E_1 \sat v$
-\DisplayProof
+\end{prooftree}
 
 \axiom{\(\unit\)I}
-      {\(\Delta \fCenter \coin \sat \success \)}
+      {\(\cdot \fCenter \success \sat \coin \)}
 
+\begin{prooftree}
 \name{\(\times\)I}
 \Axiom$ \Delta , \,  x_t \sat v_0  \fCenter E \sat v_1 $
 \UnaryInf$ \Delta \fCenter \forall (x \colon t ). E \sat  v_0 , v_1 $
-\DisplayProof
+\end{prooftree}
+
+
+\begin{prooftree}
+\name{\(\unit\)E}
+\Axiom$ \Delta_0 \fCenter \success \sat \coin $
+\Axiom$ \Delta_1 \fCenter E \sat v $
+\BinaryInf$ \Delta_0 , \, \Delta_1 \fCenter E \sat v $
+\end{prooftree}
+
+\begin{prooftree}
+\name{\(\times\)E}
+\Axiom$ \Delta_0 \fCenter \forall (x \colon t). E_0 \sat v_0 , v_1 $
+\Axiom$ \Delta_1 \fCenter E_1 \sat v_0 $
+\BinaryInf$ \Delta_0 , \, \Delta_1 \fCenter [ x \update E_1 ] E_0 \sat v_1 $
+\end{prooftree}
+
 
 \end{center}
 
@@ -247,7 +275,6 @@ typing environment can be directly inferred from context expressions.
 \noindent Identity:
 
 \begin{prooftree}
-
   \taut
   \RightLabel{\scriptsize{(V)}}
   \UnaryInf$ \Delta , \,  x_t \sat v  \fCenter  x_t \sat v $
