@@ -563,6 +563,41 @@ Really need to think about denotation again.
 %% \item[Values] \hfill \( v \bnfdef x \mid \coin \mid \fst(v) \mid \snd(v) \mid ( v , v ) \)
 %% \item[Predicates] \hfill \( p \bnfdef x \mid \success \mid p \pass p \mid p \, p \mid \forall (x \colon t) . p \)
 
+\section*{Synthetic Category Theory}
+
+A category is a monad in Span.  Once this system has been generalized
+to Span we can define monads internal to Span.
+
+This is not fully internal but a simple approach to defining an
+equivalence relation might be something like:
+
+\begin{flushleft}
+
+\axiom{object}
+      {\( \cdot \vdash O \colon \prop \)}
+
+\axiom{arrow}
+      {\( \cdot \vdash R \colon O \times O \)}
+
+\judge{refl}
+      {\cdot \vdash o \colon O}
+      {\langle o, o \mid R \rangle \with [\cdot]}
+
+\bijudge{trans}
+      {\( \cdot \vdash o_0, o_1 \colon O \times O \)}
+      {\( \langle o_0, o_1 \mid \forall (x\colon O). R \, (R \, x) \rangle \with [\cdot] \)}
+      {\( \langle o_0, o_1 \mid R \rangle \with [\cdot] \)}
+
+\bijudge{sym}
+      {\( \cdot \vdash o_1, o_0 \colon O \times O \)}
+      {\( \langle o_0, o_1 \mid R \rangle \with [\cdot] \)}
+      {\( \langle o_1, o_0 \mid R \rangle \with [\cdot] \)}
+      
+\end{flushleft}
+
+Generalizing to a constructive interpretation in terms of spans and
+groupoids is future work.
+
 \section*{The Future?}
 
 Satisifies judgments correspond to thin squares. Moving to more
