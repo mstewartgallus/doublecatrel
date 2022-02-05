@@ -83,7 +83,7 @@
 \DeclareMathOperator{\snd}{\pi_2}
 
 \DeclareMathOperator{\success}{\textbf{success}}
-\newcommand{\pass}{;}
+\newcommand{\pass}{\mathbin{\gg}}
 
 \DeclareMathOperator{\absurd}{\textbf{abort}}
 \DeclareMathOperator{\inl}{\textbf{i}_1}
@@ -123,6 +123,9 @@ is a closed monoidal category over Cartesian product of sets.  One has
 an isomorphism \( \Rel(A, B \otimes C) \sim \Rel (A \otimes B, C) \).
 So some sort of linear type theory is required.
 
+The language of ``squares'' is confusing. It ought to correspond to
+control expressions in \lk.
+
 This is the core framework.  I've been thinking about further
 extensions but I want to see how far I can get characterizing
 \Rel with as few language features as possible.  Later on I
@@ -132,10 +135,10 @@ give a few possible extensions.
 
 \begin{description}[nosep]
 \item[Types] \hfill \( t \bnfdef \unit \mid t \times t \)
-\item[Values] \hfill \( v \bnfdef x \mid \coin \mid \fst(v) \mid \snd(v) \mid ( v , v ) \)
+\item[Values] \hfill \( v \bnfdef x \mid \coin \mid \fst(v) \mid \snd(v) \mid v , v \)
 \item[Predicates] \hfill \( p \bnfdef x_t \mid \success \mid p \pass p \mid p \, p \mid \forall (x \colon t) . p \)
 \item[Environment] \hfill \( \Gamma \bnfdef \cdot \mid \Gamma , \, x \colon t  \)
-\item[Substitutions] \hfill \( \sigma \bnfdef \cdot \mid \sigma , \, v \models x  \)
+\item[Substitutions] \hfill \( \sigma \bnfdef \cdot \mid \sigma , \, \langle v \mid x \rangle  \)
 \end{description}
 
 The core relational calculus is the linear lambda calculus with a few
@@ -172,7 +175,7 @@ types and variable binding is more imperative.
 \bijudge{\(\times\)E}
         {\(\Gamma \vdash p_0 \colon t_0 \times t_1\)}
         {\(\Delta \vdash p_1 \colon t_1\)}
-        {\(\Gamma, \, \Delta \vdash p_0 p_1 \colon t_1\)}
+        {\(\Gamma, \, \Delta \vdash p_0 \, p_1 \colon t_1\)}
 
 \axiom{\(\unit\)R}
       {\( \success \pass p \step p \)}
@@ -206,7 +209,7 @@ types and variable binding is more imperative.
 \bijudge{\(\times\)I}
         {\(\Gamma \vdash v_0 \colon t_0\)}
         {\(\Gamma \vdash v_1 \colon t_1\)}
-        {\(\Gamma \vdash (v_0, v_1) \colon t_0 \times t_1 \)}
+        {\(\Gamma \vdash v_0, v_1 \colon t_0 \times t_1 \)}
 
 {\axiom{\(\times\text{R}_1\)}
        {\(\fst (v_0 , v_1 ) \step v_0 \)}
@@ -220,30 +223,28 @@ types and variable binding is more imperative.
 
 \subsubsection*{Satisfaction Judgements}
 
-I need a better symbol here.
-
 \begin{flushleft}
 
 \judge{VAR-S}
-      {v \models x_t \in \sigma}
-      {v \models x_t \with [\sigma]}
+      {\langle v \mid x_t \rangle \in \sigma}
+      {\langle v \mid x_t \rangle \with [\sigma]}
 
 \bijudge{vR-S}
         {\(v_0 \step v_1\)}
-        {\(v_0 \models p \with [\sigma]\)}
-        {\( v_1 \models p \with [\sigma] \)}
+        {\(\langle v_0 \mid p \rangle \with [\sigma]\)}
+        {\(\langle v_1 \mid p \rangle \with [\sigma] \)}
 
 \bijudge{pR-S}
         {\(p_0 \step p_1\)}
-        {\(v \models p_0 \with [\sigma]\)}
-        {\(v \models p_1 \with [\sigma] \)}
+        {\(\langle v \mid p_0 \rangle \with [\sigma]\)}
+        {\(\langle v \mid p_1 \rangle \with [\sigma] \)}
 
 \axiom{\(\unit\)S}
-      {\(\coin \models \success \with [\sigma] \)}
+      {\( \langle \coin \mid \success \rangle \with [\sigma] \)}
 
 \judge{\(\times\)S}
-      {v_1 \models p \with [ \sigma , \, v_0 \models x_t]}
-      {( v_0 , v_1 ) \models \forall (x \colon t ). p \with [\sigma]}
+      {\langle v_1 \mid p \rangle \with [ \sigma , \, \langle v_0 \mid x_t \rangle]}
+      {\langle v_0 , v_1 \mid \forall (x \colon t ). p \rangle \with [\sigma]}
 
 \end{flushleft}
 
@@ -255,15 +256,15 @@ Pattern matching on equality
 
   \taut
   \RightLabel{\scriptsize{(VAR-S)}}
-  \UnaryInfC{\( v \models x_t \with [ \sigma , \, v \models x_t] \)}
+  \UnaryInfC{\( \langle v \mid x_t \rangle \with [ \sigma , \, \langle v \mid x_t \rangle] \)}
   \RightLabel{\scriptsize{(\(\times\)S)}}
-  \UnaryInfC{\( ( v , v ) \models \forall (x \colon t). x_t \with [\sigma] \)}
+  \UnaryInfC{\( \langle ( v , v ) \mid \forall (x \colon t). x_t \rangle \with [\sigma] \)}
 
 \end{prooftree}
 
 Transposition
 
-\(  \forall (p \colon t \times t \times \unit) (x \colon t) (y \colon t). p_(t \times t \times \unit) \, y_t \, x_t \)
+\( \forall (p \colon t \times t \times \unit) (x \colon t) (y \colon t). p_{(t \times t \times \unit)} \, y_t \, x_t \)
 
 \section*{Disjoint Unions}
 
@@ -288,7 +289,7 @@ This hack also requires inferring the environment in certain reduction rules.
   \)
 \item[Predicates] \hfill \( p \bnfdef \ldots \mid
   \absurd_t(p) \mid \inl_t(p) \mid \inr_t(p) \mid \case(v, x. v, x. v) \mid
-  \false_\Gamma \mid \lft(p) \mid \rgt(p) \mid [ p \mid p ] \)
+  \false_\Gamma \mid \lft(p) \mid \rgt(p) \mid [ p ; p ] \)
 \end{description}
 
 \subsubsection*{Values}
@@ -348,7 +349,7 @@ This hack also requires inferring the environment in certain reduction rules.
       {\Gamma \vdash \inr_{t_0}(v) \colon t_0 + t_1}
 }
 
-\bijudge{\(+\text{E}^\text{T}\)}
+\trijudge{\(+\text{E}^\text{T}\)}
         {\( \Gamma \vdash p_0 \colon t_0 + t_1 \)}
         {\( \Gamma , \, x_0 \colon t_0 \vdash p_1 \colon t_2 \)}
         {\( \Gamma , \, x_1 \colon t_1 \vdash p_1 \colon t_2 \)}
@@ -373,7 +374,7 @@ This hack also requires inferring the environment in certain reduction rules.
 \bijudge{\(+\)I}
         {\( \Gamma \vdash p_0 \colon t_0 \)}
         {\( \Gamma \vdash p_1 \colon t_1 \)}
-        {\( \Gamma \vdash [p_0 \mid p_1] \colon t_0 + t_1 \)}
+        {\( \Gamma \vdash [p_0 ; p_1] \colon t_0 + t_1 \)}
 
 \axiom{\(+\text{R}^\text{T}_1\)}
       {\(
@@ -386,9 +387,9 @@ This hack also requires inferring the environment in certain reduction rules.
   \)}
 
 {\axiom{\(+\text{R}_1\)}
-  {\( \lft([ p_0 \mid p_1 ]) \step p_0 \)}
+  {\( \lft([ p_0 ; p_1 ]) \step p_0 \)}
 \axiom{\(+\text{R}_2\)}
-      {\( \rgt([ p_0 \mid p_1 ]) \step p_1 \)}
+      {\( \rgt([ p_0 ; p_1 ]) \step p_1 \)}
 }
 
 {
@@ -412,12 +413,12 @@ This hack also requires inferring the environment in certain reduction rules.
 
 \axiom{\(+\text{R}^\text{T}\text{R}_1\)}
       {\(
-  \case([p_0 \mid p_1 ], x_0. p_2, x_1. p_3) \step [x_0 := p_0] p_2
+  \case([p_0 ; p_1 ], x_0. p_2, x_1. p_3) \step [x_0 := p_0] p_2
   \)}
 
 \axiom{\(+\text{R}^\text{T}\text{R}_2\)}
       {\(
-  \case([p_0 \mid p_1 ], x_0. p_2, x_1. p_3) \step [x_1 := p_1] p_3
+  \case([p_0 ; p_1 ], x_0. p_2, x_1. p_3) \step [x_1 := p_1] p_3
   \)}
 
 \end{flushleft}
@@ -429,17 +430,17 @@ This hack also requires inferring the environment in certain reduction rules.
 
 {
 \judge{\(+\text{S}_1\)}
-      {v \models p_0 \with [\sigma]}
-      {\inl_t(v) \models [ p_0 \mid p_1 ] \with [\sigma]}
+      {\langle v \mid p_0 \rangle \with [\sigma]}
+      {\langle \inl_t(v) \mid [ p_0 ; p_1 ] \rangle \with [\sigma]}
 \hfill
 \judge{\(+\text{S}_2\)}
-      {v \models p_1 \with [\sigma]}
-      {\inr_t(v) \models [ p_0 \mid p_1 ] \with [\sigma]}
+      {\langle v \mid p_1 \rangle \with [\sigma]}
+      {\langle \inr_t(v) \mid [ p_0 ; p_1 ] \rangle \with [\sigma]}
 }
 
 \judge{\(\mt\)S}
-      {\absurd_t(v) \models p \with [\sigma]}
-      {v \models \false \with [\sigma]}
+      {\langle \absurd_t(v) \mid p \rangle \with [\sigma]}
+      {\langle v \mid \false_\Gamma \rangle \with [\sigma]}
 
 \end{flushleft}
 
@@ -458,7 +459,7 @@ full dependent types.
 \item[Types] \hfill  \( t \bnfdef \ldots \mid x \mid \prop \mid \head(v) \mid \Sigma (x \colon \prop). t \)
 \item[Values] \hfill  \( v \bnfdef \ldots \mid \tail(v) \mid \langle x \update t , v \rangle \)
 \item[Predicates] \hfill  \( p \bnfdef \ldots \mid p \, t \mid \Forall (x \colon \prop). p \)
-\item[Substitutions] \hfill  \( \sigma \bnfdef \ldots \mid \sigma , \, t \models x \)
+\item[Substitutions] \hfill  \( \sigma \bnfdef \ldots \mid \sigma , \, \langle t \mid x \rangle \)
 \end{description}
 
 Not really good at the typing judgements for dependent sum types.
@@ -515,9 +516,9 @@ I can't figure out satisfaction at all.
 
 \begin{flushleft}
 \judge{\(\Sigma\)S}
-      {v \models p \with [ \sigma , \, t \models x]}
+      {\langle v \mid p \rangle \with [ \sigma , \, \langle t \mid x \rangle]}
       {
-  \langle x \update t , v \rangle \models \Forall (x \colon \prop). p \with [\sigma]
+  \langle \langle x \update t , v \rangle \mid \Forall (x \colon \prop). p \rangle \with [\sigma]
   }
 \end{flushleft}
 
@@ -533,7 +534,7 @@ follows.
 
 \begin{center}
   \begin{tikzcd}
-    \unit \arrow{dd}[']{\sigma_p} \arrow{rr}{\sigma_v} & {} \arrow[Rightarrow]{dd}{v \models p \, [\sigma_v , \sigma_p]} & \times_{x\colon t \in \Gamma_v} t \arrow{dd}{v} \\
+    \unit \arrow{dd}[']{\sigma_p} \arrow{rr}{\sigma_v} & {} \arrow[Rightarrow]{dd}{\langle v \mid p \rangle \, [\sigma_v , \sigma_p]} & \times_{x\colon t \in \Gamma_v} t \arrow{dd}{v} \\
     &                               &                      \\
     \times_{x\colon t \in \Gamma_p} t \arrow{rr}[']{p}                           & {}                            & t                   
   \end{tikzcd}
