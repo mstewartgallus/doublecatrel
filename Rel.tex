@@ -51,6 +51,7 @@
 \newcommand{\with}{\;}
 \newcommand{\sat}{\mathbin{\otimes}}
 
+
 \newcommand{\axiom}[2]{\fbox{#1}~#2}
 \newcommand{\judge}[3]{
   \AxiomC{\(#2\)}
@@ -227,7 +228,7 @@ types and variable binding is more imperative.
 \begin{flushleft}
 
 \axiom{V}
-      {\(x_t \sat v  \vdash  x_t \sat v \)}
+      {\(\cdot , \, x_t \sat v  \vdash  x_t \sat v \)}
 
 \bijudge{vR}
         {\(v_0 \step v_1\)}
@@ -243,7 +244,7 @@ types and variable binding is more imperative.
       {\(\Theta \vdash  \coin \sat \success \)}
 
 \judge{\(\times\)I}
-      { \Theta , \,  x_t \sat v_1  \vdash  p \sat v_1 }
+      { \Theta , \,  x_t \sat v_0  \vdash  p \sat v_1 }
       { \Theta \vdash  \forall (x \colon t ). p \sat  v_0 , v_1 }
 
 \end{flushleft}
