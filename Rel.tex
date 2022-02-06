@@ -130,9 +130,9 @@ The core command calculus models commuting squares in \Rel{}.
 \begin{center}
 
 \[\begin{aligned}
-&\textbf{Types} &  t & \bnfdef \prop \mid \unit \mid t \times t  \\
-&\textbf{Contexts}  & E & \bnfdef x_t \mid \success \mid E \pass E \mid E \, E \mid \forall (x \colon t) . E  \\
-&\textbf{Terms} &  v & \bnfdef x \mid \coin \mid \fst(v) \mid \snd(v) \mid v , v  \\
+&\textbf{Types} &  t & \bnfdef \prop \mid t \times t  \\
+&\textbf{Contexts}  & E & \bnfdef x_t \mid E \, E \mid \forall (x \colon t) . E  \\
+&\textbf{Terms} &  v & \bnfdef x \coin \mid \fst(v) \mid \snd(v) \mid v , v  \\
 &\textbf{Environment}  &  \Gamma & \bnfdef \cdot \mid \Gamma , \, x \colon t   \\
 &\textbf{Command Env}  &  \Delta & \bnfdef \cdot \mid \Delta , \, x \mid v  
 \end{aligned}\]
@@ -143,33 +143,12 @@ The core command calculus models commuting squares in \Rel{}.
 \axiom{V}
       {\(\cdot , \, x \colon t \vdash x_t \colon t\)}
 
-
-{\axiom{\(\unit\)I}
-      {\(\cdot \vdash \success \colon \unit\)}
-\hfill
-\begin{prooftree}
-\name{\(\unit\)E}
-\Axiom$\Gamma_0 \fCenter p_0 \colon \unit$
-\Axiom$\Gamma_1 \fCenter p_1 \colon t$
-\BinaryInf$\Gamma_0, \, \Gamma_1 \fCenter E_0 \pass E_1 \colon t$
-\end{prooftree}}
-
-\begin{prooftree}
-\name{\(\times\)I}
-\Axiom$\Gamma \fCenter E \colon t_1$
-\side{ x \colon t_0 \in \Gamma }
-\UnaryInf$\Gamma \setminus x \fCenter \forall (x \colon t_0). E \colon t_0 \times t_1$
-\end{prooftree}
-
 \begin{prooftree}
 \name{\(\times\)E}
 \Axiom$\Gamma_0 \fCenter E_0 \colon t_0 \times t_1$
 \Axiom$\Gamma_1 \fCenter E_1 \colon t_1$
 \BinaryInf$\Gamma_0, \, \Gamma_1 \fCenter E_0 \, E_1 \colon t_1$
 \end{prooftree}
-
-\axiom{\(\unit\beta\)}
-      {\( \success \pass E \step E \)}
 
 \axiom{\(\times\beta\)}
       {\( ( \forall (x \colon t ). E_0) \, E_1 \step [x_t \update E_1] E_0 \)}
@@ -182,20 +161,15 @@ The core command calculus models commuting squares in \Rel{}.
 \UnaryInf$\Gamma \fCenter x \colon t$
 \end{prooftree}
 
-\axiom{\(\unit\)I}
-      {\(\Gamma \fCenter \coin \colon \unit \)}
-
-{\begin{prooftree}
-\name{\(\times\text{E}_1\)}
+{\name{\(\times\text{E}_1\)}
 \Axiom$\Gamma \fCenter v \colon t_0 \times t_1$
 \UnaryInf$\Gamma \fCenter \fst(v) \colon t_0$
-\end{prooftree}
+\DisplayProof
 \hfill
-\begin{prooftree}
 \name{\(\times\text{E}_2\)}
 \Axiom$\Gamma \fCenter v \colon t_0 \times t_1$
 \UnaryInf$\Gamma \fCenter \snd(v) \colon t_1$
-\end{prooftree}}
+\DisplayProof}
 
 \begin{prooftree}
 \name{\(\times\)I}
@@ -216,22 +190,17 @@ The core command calculus models commuting squares in \Rel{}.
 \axiom{V}
       {\(\cdot , \, x_t \sat v  \fCenter  x_t \sat v \)}
 
-\begin{prooftree}
-\name{v}
+{\name{v}
 \Axiom$\Delta \fCenter E \sat v_0$
 \AxiomC{\(v_0 \step v_1\)}
 \BinaryInf$\Delta \fCenter E \sat v_1$
-\end{prooftree}
-
-\begin{prooftree}
+\DisplayProof
+\hfill
 \name{E}
 \Axiom$\Delta \fCenter E_0 \sat v$
 \AxiomC{\(E_0 \step E_1\)}
 \BinaryInf$\Delta \fCenter E_1 \sat v$
-\end{prooftree}
-
-\axiom{\(\unit\)I}
-      {\(\cdot \fCenter \success \sat \coin \)}
+\DisplayProof}
 
 \begin{prooftree}
 \name{\(\times\)I}
@@ -239,13 +208,6 @@ The core command calculus models commuting squares in \Rel{}.
 \UnaryInf$ \Delta \fCenter \forall (x \colon t ). E \sat  v_0 , v_1 $
 \end{prooftree}
 
-
-\begin{prooftree}
-\name{\(\unit\)E}
-\Axiom$ \Delta_0 \fCenter \success \sat \coin $
-\Axiom$ \Delta_1 \fCenter E \sat v $
-\BinaryInf$ \Delta_0 , \, \Delta_1 \fCenter E \sat v $
-\end{prooftree}
 
 \begin{prooftree}
 \name{\(\times\)E}
@@ -313,18 +275,18 @@ Really need to think about denotation again.
 
 \[
 \begin{aligned}
-  \llbracket \unit \rrbracket & =\{ \emptyset \} \\
-  \llbracket t_0 \times t_1 \rrbracket & =\llbracket t_0 \rrbracket \times \llbracket t_1 \rrbracket \\
-  \llbracket \mt \rrbracket & =\emptyset \\
+  %% \llbracket \unit \rrbracket & =\{ \emptyset \} \\
+  \llbracket t_0 \times t_1 \rrbracket_v & =\llbracket t_0 \rrbracket \times \llbracket t_1 \rrbracket \\
+  %% \llbracket \mt \rrbracket & =\emptyset \\
   %% \llbracket t_0 + t_1 \rrbracket & =\llbracket t_0 \rrbracket \sqcup \llbracket t_1 \rrbracket \\
   %% \llbracket \Sigma (x \colon \prop). t(x) \rrbracket & =\bigsqcup_{ x \in \prop} \llbracket t(x) \rrbracket \\
   \\
-  \llbracket \coin \rrbracket & =\emptyset \\
+  %% \llbracket \coin \rrbracket & =\emptyset \\
   \llbracket v_0 , v_1 \rrbracket & =( \llbracket v_0 \rrbracket , \llbracket v_1 \rrbracket ) \\
   \\
-  \llbracket \success \rrbracket(y) & =\top \\
-  \llbracket E_0 \, E_1 \rrbracket(y) & =\exists z,  \llbracket E_1 \rrbracket (z) \wedge \llbracket E_0 \rrbracket (z, y)\\
-  \llbracket \forall (x \colon t). E \rrbracket(\langle x, y \rangle) & = \llbracket E(x) \rrbracket (y) 
+  %% \llbracket \success \rrbracket(y) & =\top \\
+  \llbracket E_0 \, E_1 \rrbracket(s_0) & = \exists s_1,  \llbracket E_1 \rrbracket (s_1) \wedge \llbracket E_0 \rrbracket (s_1, s_0)\\
+  \llbracket \forall (x \colon t). E_0 \rrbracket(s_0, s_1) & = \forall E_1, \llbracket E_1 \rrbracket = s_0 \rightarrow \llbracket [x \update E_1] E_0 \rrbracket (s_1) 
 \end{aligned}
 \]
 
@@ -362,6 +324,54 @@ equivalence relation might be something like:
 
 Generalizing to a constructive interpretation in terms of spans and
 groupoids is future work.
+
+\section*{Unit Type}
+
+\begin{center}
+
+\[\begin{aligned}
+&\textbf{Types} &  t & \bnfdef \ldots \mid 1  \\
+&\textbf{Contexts}  & E & \bnfdef \ldots \mid \success \mid E \pass E  \\
+&\textbf{Terms} &  v & \bnfdef \ldots \mid \coin 
+\end{aligned}\]
+
+\subsubsection*{Context Calculus}
+
+{\axiom{\(\unit\)I}
+      {\(\cdot \vdash \success \colon \unit\)}
+\hfill
+\begin{prooftree}
+\name{\(\unit\)E}
+\Axiom$\Gamma_0 \fCenter p_0 \colon \unit$
+\Axiom$\Gamma_1 \fCenter p_1 \colon t$
+\BinaryInf$\Gamma_0, \, \Gamma_1 \fCenter E_0 \pass E_1 \colon t$
+\end{prooftree}}
+
+\begin{prooftree}
+\name{\(\times\)I}
+\Axiom$\Gamma \fCenter E \colon t_1$
+\side{ x \colon t_0 \in \Gamma }
+\UnaryInf$\Gamma \setminus x \fCenter \forall (x \colon t_0). E \colon t_0 \times t_1$
+\end{prooftree}
+
+\subsubsection*{Term Calculus}
+
+\axiom{\(\unit\)I}
+      {\(\Gamma \fCenter \coin \colon \unit \)}
+
+\subsubsection*{Command Calculus}
+
+\axiom{\(\unit\)I}
+      {\(\cdot \fCenter \success \sat \coin \)}
+
+\begin{prooftree}
+\name{\(\unit\)E}
+\Axiom$ \Delta_0 \fCenter \success \sat \coin $
+\Axiom$ \Delta_1 \fCenter E \sat v $
+\BinaryInf$ \Delta_0 , \, \Delta_1 \fCenter E \sat v $
+\end{prooftree}
+
+\end{center}
 
 \section*{Disjoint Unions}
 
