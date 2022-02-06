@@ -143,6 +143,14 @@ The core command calculus models commuting squares in \Rel{}.
 \axiom{V}
       {\(\cdot , \, x \colon t \vdash x_t \colon t\)}
 
+      
+\begin{prooftree}
+\name{\(\times\)I}
+\Axiom$\Gamma \fCenter E \colon t_1$
+\side{ x \colon t_0 \in \Gamma }
+\UnaryInf$\Gamma \setminus x \fCenter \forall (x \colon t_0). E \colon t_0 \times t_1$
+\end{prooftree}
+
 \begin{prooftree}
 \name{\(\times\)E}
 \Axiom$\Gamma_0 \fCenter E_0 \colon t_0 \times t_1$
@@ -161,6 +169,13 @@ The core command calculus models commuting squares in \Rel{}.
 \UnaryInf$\Gamma \fCenter x \colon t$
 \end{prooftree}
 
+\begin{prooftree}
+\name{\(\times\)I}
+\Axiom$\Gamma \fCenter v_0 \colon t_0$
+\Axiom$\Gamma \fCenter v_1 \colon t_1$
+\BinaryInf$\Gamma \fCenter v_0, v_1 \colon t_0 \times t_1$
+\end{prooftree}
+
 {\name{\(\times\text{E}_1\)}
 \Axiom$\Gamma \fCenter v \colon t_0 \times t_1$
 \UnaryInf$\Gamma \fCenter \fst(v) \colon t_0$
@@ -170,13 +185,6 @@ The core command calculus models commuting squares in \Rel{}.
 \Axiom$\Gamma \fCenter v \colon t_0 \times t_1$
 \UnaryInf$\Gamma \fCenter \snd(v) \colon t_1$
 \DisplayProof}
-
-\begin{prooftree}
-\name{\(\times\)I}
-\Axiom$\Gamma \fCenter v_0 \colon t_0$
-\Axiom$\Gamma \fCenter v_1 \colon t_1$
-\BinaryInf$\Gamma \fCenter v_0, v_1 \colon t_0 \times t_1$
-\end{prooftree}
 
 {\axiom{\(\times\beta_1\)}
        {\(\fst (v_0 , v_1 ) \step v_0 \)}
@@ -342,13 +350,6 @@ groupoids is future work.
 \Axiom$\Gamma_1 \fCenter p_1 \colon t$
 \BinaryInf$\Gamma_0, \, \Gamma_1 \fCenter E_0 \pass E_1 \colon t$
 \end{prooftree}}
-
-\begin{prooftree}
-\name{\(\times\)I}
-\Axiom$\Gamma \fCenter E \colon t_1$
-\side{ x \colon t_0 \in \Gamma }
-\UnaryInf$\Gamma \setminus x \fCenter \forall (x \colon t_0). E \colon t_0 \times t_1$
-\end{prooftree}
 
 \subsubsection*{Term Calculus}
 
