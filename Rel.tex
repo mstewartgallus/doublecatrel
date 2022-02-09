@@ -46,6 +46,8 @@
 \newcommand{\lk}{\(\bar{\lambda}\mu\tilde{\mu}\,\)}
 
 \newcommand{\name}[1]{\LeftLabel{\fbox{#1}}}
+\newcommand{\apply}[1]{\RightLabel{\scriptsize{(#1)}}}
+
 \newcommand{\side}[1]{\RightLabel{\scriptsize{\(\left\{#1\right\}\)}}}
 
 \newcommand{\taut}{\AxiomC{\(\top\)}}
@@ -102,30 +104,35 @@
 \maketitle
 
 I wanted an internal language corresponding to the double category
-\Rel{}. Recall \Rel{} is the double category with sets as objects,
-relations as horizontal arrows and functions as vertical arrows.
+\Rel{} the double category with sets as objects, relations as
+horizontal arrows and functions as vertical arrows.
 
 I present three different calculi: a substructural ``context
 calculus'' corresponding to the horizontal edge of \Rel{}; a ``term
 calculus'' corresponding to \Set{}, the vertical edge category of
-\Rel{}; and a simple ``command'' calculus encoding commuting squares
-of \Rel{}.
+\Rel{}; and a simple ``command calculus'' corresponding to commuting
+squares of \Rel{}.
 
 First, I give the basic framework of the calculi. Then I discuss
-semantics and applications. And later I list a few possible extensions
-such as coproduct and depedent sum types.
+semantics and applications. And finally I list a few possible
+extensions such as coproduct and dependent sum types.
 
 \section*{Core Calculi}
 
 The core context calculus is the linear lambda calculus with a few
-symbol changes and models the closed monoidal structure of the
-horizontal edge of \Rel{}.
+symbol changes and corresponds to the closed monoidal structure of the
+horizontal edge of \Rel{}.  The core term calculus is a little
+language with only product types and corresponds to the Cartesian
+structure of \Set{}.  I am still figuring out the core command
+calculus which ought to correspond to commuting squares in \Rel{}.
 
-The core term calculus is a little language with only product types
-and models the Cartesian structure of \Set{}.
+The context calculus has a linear variable rule.  To make
+mechanization easier and ensure the typing environment can always be
+directly inferred from context expressions linear variables are
+explicitly indexed by their types and variable binding is more
+imperative.
 
-The core command calculus models commuting squares in \Rel{}.
-
+\subsection*{Grammar, Syntax and Reductions}
 
 \begin{center}
 
@@ -134,12 +141,12 @@ The core command calculus models commuting squares in \Rel{}.
 &\textbf{Contexts}  & E & \bnfdef x_t \mid E \, E \mid \forall (x \colon t) . E  \\
 &\textbf{Terms} &  v & \bnfdef x \mid \fst(v) \mid \snd(v) \mid v , v  \\
 &\textbf{Environment}  &  \Gamma & \bnfdef \cdot \mid \Gamma , \, x \colon t   \\
-&\textbf{Command Env}  &  \Delta & \bnfdef \cdot \mid \Delta , \, x \mid v  
+&\textbf{Command Env}  &  \Delta & \bnfdef \cdot \mid \Delta , \, x \sat v  
 \end{aligned}\]
 
 
 \subsubsection*{Context Calculus}
-
+ 
 \axiom{V}
       {\(\cdot , \, x \colon t \vdash x_t \colon t\)}
 
@@ -219,20 +226,15 @@ The core command calculus models commuting squares in \Rel{}.
 
 \begin{prooftree}
 \name{\(\times\)E}
-\Axiom$ \Delta_0 \fCenter \forall (x \colon t). E_0 \sat v_0 , v_1 $
-\Axiom$ \Delta_1 \fCenter E_1 \sat v_0 $
-\BinaryInf$ \Delta_0 , \, \Delta_1 \fCenter [ x \update E_1 ] E_0 \sat v_1 $
+\Axiom$ \Delta_0 \fCenter E_0 \sat v $
+\Axiom$ \Delta_1 \fCenter E_1 \sat \fst(v) $
+\BinaryInf$ \Delta_0 , \, \Delta_1 \fCenter E_0 \, E_1 \sat \snd(v) $
 \end{prooftree}
 
 
 \end{center}
 
-The context calculus has a linear variable rule.  To make
-mechanization easier linear variables are explicitly indexed by their
-types and variable binding is more imperative and so ensuring the
-typing environment can be directly inferred from context expressions.
-
-\section*{Discussion}
+\section*{Examples}
 
 %% Technical choices
 
@@ -240,32 +242,76 @@ typing environment can be directly inferred from context expressions.
 %% to see how far \Rel{} could go on its own and also wanted to see if
 %% these could be defined later.
 
-\subsection*{Examples}
+\subsection*{Identity}
 
-\noindent Identity:
+\( \textbf{id}_t = \forall (x \colon t). \, x_t \)
+{\taut
+  \apply{V}
+  \UnaryInf$ \cdot , \, x \colon t \fCenter x_t \colon t $
+  \apply{\(\times\)I}
+  \UnaryInf$ \cdot \fCenter  \forall (x \colon t). \, x_t \colon t \times t $
+  \DisplayProof}
+\hfill
+{\taut
+  \apply{V}
+  \UnaryInf$ \Delta , \,  x_t \sat v  \fCenter  x_t \sat v $
+  \apply{\(\times\)I}
+  \UnaryInf$ \Delta \fCenter  \forall (x \colon t). \, x_t  \sat v , v $
+  \DisplayProof}
+
+\subsection*{Composition}
+
+\begin{center}
+
+  \[ f \circ_t g = \forall (x \colon t). \, f \, (g \, x_t) \]
 
 \begin{prooftree}
+
+  \Axiom$ \cdot \fCenter f \colon t_1 \times t_2 $
+
+  \Axiom$ \cdot \fCenter g \colon t_0 \times t_1 $
   \taut
-  \RightLabel{\scriptsize{(V)}}
-  \UnaryInf$ \Delta , \,  x_t \sat v  \fCenter  x_t \sat v $
-  \RightLabel{\scriptsize{(\(\times\)I)}}
-  \UnaryInf$ \Delta \fCenter  \forall (x \colon t). x_t  \sat v , v $
+  \apply{\(\times\)V}
+  \UnaryInf$ \cdot , \, x \colon t_0 \fCenter x_{t_0} \colon t_0 $
+
+  \apply{\(\times\)E}
+  \BinaryInf$ \cdot , \, x \colon t_0 \fCenter g \, x_{t_0} \colon t_1 $
+
+  \apply{\(\times\)E}
+  \BinaryInf$ \cdot , \, x \colon t_0 \fCenter f \, (g \, x_{t_0}) \colon t_2 $
+  \apply{\(\times\)I}
+  \UnaryInf$ \cdot \fCenter \forall (x \colon t_0). \, f \, (g \, x_{t_0}) \colon t_0 \times t_2 $
 
 \end{prooftree}
 
-\noindent Transposition:
+\begin{prooftree}
 
-\[ \textbf{trans} = \forall (p \colon t_0 \times t_1 \times t_2) (x \colon t_1) (y \colon t_0). p_{(t_0 \times t_1 \times t_2)} \, y_t \, x_t \]
+  \Axiom$ \cdot \fCenter f \sat v_1 , \, v_2 $
+
+  \Axiom$ \cdot \fCenter g \sat v_0 , \, v_1 $
+
+  \taut
+  \apply{V}
+  \UnaryInf$ \cdot , \, x_{t_0} \sat v_0 \fCenter x_{t_0} \sat v_0  $
+
+  \apply{\(\times\)E}
+  \BinaryInf$ \cdot , \,  x_{t_0} \sat v_0 \fCenter g \, x_{t_0} \sat v_1 $
+
+  \apply{\(\times\)E}
+  \BinaryInf$ \cdot , \,  x_{t_0} \sat v_0  \fCenter  f \, (g \, x_{t_0})  \sat v_2 $
+  \apply{\(\times\)I}
+  \UnaryInf$ \cdot \fCenter \forall (x \colon t_0). \, f \, (g \, x_{t_0})  \sat v_0 , v_2 $
+\end{prooftree}
+
+\end{center}
 
 \section*{Categorical Semantics}
 %% Useful as hell, cite somewhere ?
 %% https://tikzcd.yichuanshen.de/
 
 The intent is to create calculi encoding the core features of the
-double category \Rel{}.
-
-If this is successful then terms and types ought to map to \Rel{} as
-follows.
+double category \Rel{}.  If this is successful then terms and types
+ought to map to \Rel{} as follows.
 
 I think you want pullbacks for the environment arrows?
 
@@ -294,7 +340,7 @@ Really need to think about denotation again.
 \end{aligned}
 \]
 
-\section*{Synthetic Category Theory}
+\section*{Applications to Synthetic Category Theory}
 
 A category is a monad in \Span{}.  Once this system has been generalized
 to \Span{} we can define monads internal to \Span{}.
@@ -329,7 +375,11 @@ equivalence relation might be something like:
 Generalizing to a constructive interpretation in terms of spans and
 groupoids is future work.
 
-\section*{Unit Type}
+\section*{Extensions}
+
+Singleton set, disjoint union and dependent sum types.
+
+\subsection*{Unit Type}
 
 \begin{center}
 
