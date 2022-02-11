@@ -154,7 +154,7 @@ Proof.
   all: reflexivity.
 Qed.
 
-Definition E_of_t t := { E | Env.empty _ ⊢ E in t }.
+Definition E_of_t t := { E | exists Γ, Env.is_empty Γ = true /\ (Γ ⊢ E in t) }.
 Definition v_of_t t := { v | ⊢ v in t }.
 
 Definition v_tc v: if typeof v is Some t
@@ -169,11 +169,6 @@ Proof.
   apply typeof_sound.
   auto.
 Defined.
-
-Lemma is_empty_sound (Γ: Map.map type): Env.is_empty Γ = true -> Γ = Env.empty _.
-Proof.
-  admit.
-Admitted.
 
 Definition E_tc E: if typecheck (Env.empty _) E is Some (Γ, t)
                    then
@@ -190,8 +185,10 @@ Proof.
   destruct (Env.is_empty Γ) eqn:q2.
   2: apply tt.
   exists E.
+  exists Γ.
+  split.
+  1:  auto.
   apply (typecheck_sound (Env.empty _) E).
   rewrite q1.
-  rewrite (is_empty_sound _ q2).
   reflexivity.
 Defined.
