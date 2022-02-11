@@ -59,7 +59,8 @@
 \ottprodline{|}{\forall \, \mathit{x}  \colon  \ottnt{t}  \ottsym{.}  \ottnt{E}}{}{\textsf{bind}\; \mathit{x}\; \textsf{in}\; \ottnt{E}}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{E} \, \ottnt{E'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{[}  \mathit{x}  \mathbin{:=}  \ottnt{E}  \ottsym{]}  \ottnt{E'}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottsym{[}  \ottnt{e_{{\mathrm{1}}}} \, .. \, \ottnt{e_{\ottmv{n}}}  \ottsym{]}  \ottsym{.}  \ottnt{E}} {\textsf{M}}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottsym{[}  \ottnt{e_{{\mathrm{1}}}} \, .. \, \ottnt{e_{\ottmv{n}}}  \ottsym{]}  \ottsym{\#}  \ottnt{E}} {\textsf{M}}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{e}  \ottsym{.}  \ottnt{E}} {\textsf{M}}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{(}  \ottnt{E}  \ottsym{)}} {\textsf{S}}{}{}{}}
 
 \newcommand{\ottenvironment}{
@@ -167,9 +168,9 @@
 
 \newcommand{\ottdruleJEXXabs}[1]{\ottdrule[#1]{%
 \ottpremise{\texttt{Map.find }\mathit{x}\texttt{ }\Gamma\texttt{ = Some }\ottnt{t_{{\mathrm{1}}}}\texttt{ }}%
-\ottpremise{\Gamma  \vdash  \ottsym{[}  \ottnt{e_{{\mathrm{1}}}} \, .. \, \ottnt{e_{\ottmv{n}}}  \ottsym{]}  \ottsym{.}  \mathit{x}  \colon  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\Gamma  \vdash  \ottsym{[}  \ottnt{e_{{\mathrm{1}}}} \, .. \, \ottnt{e_{\ottmv{n}}}  \ottsym{]}  \ottsym{\#}  \mathit{x}  \colon  \ottnt{t_{{\mathrm{2}}}}}%
 }{
-\Gamma  \setminus  \mathit{x}  \vdash  \forall \, \mathit{x}  \colon  \ottnt{t_{{\mathrm{1}}}}  \ottsym{.}  \ottsym{[}  \ottnt{e_{{\mathrm{1}}}} \, .. \, \ottnt{e_{\ottmv{n}}}  \ottsym{]}  \ottsym{.}  \mathit{x}  \colon  \ottnt{t_{{\mathrm{1}}}}  \times  \ottnt{t_{{\mathrm{2}}}}}{%
+\Gamma  \setminus  \mathit{x}  \vdash  \forall \, \mathit{x}  \colon  \ottnt{t_{{\mathrm{1}}}}  \ottsym{.}  \ottsym{[}  \ottnt{e_{{\mathrm{1}}}} \, .. \, \ottnt{e_{\ottmv{n}}}  \ottsym{]}  \ottsym{\#}  \mathit{x}  \colon  \ottnt{t_{{\mathrm{1}}}}  \times  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{JE\_abs}}{}%
 }}
 
@@ -256,21 +257,21 @@
 %% defn step_E
 \newcommand{\ottdrulestepEXXbeta}[1]{\ottdrule[#1]{%
 }{
-\ottsym{(}  \forall \, \mathit{x}  \colon  \ottnt{t}  \ottsym{.}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{)} \, \ottnt{E_{{\mathrm{2}}}}  \longrightarrow  \ottsym{[}  \mathit{x}  \mathbin{:=}  \ottnt{E_{{\mathrm{2}}}}  \ottsym{]}  \ottnt{E_{{\mathrm{1}}}}}{%
+\ottsym{(}  \forall \, \mathit{x}  \colon  \ottnt{t}  \ottsym{.}  \ottsym{[}  \ottnt{e_{{\mathrm{1}}}} \, .. \, \ottnt{e_{\ottmv{n}}}  \ottsym{]}  \ottsym{\#}  \mathit{x}  \ottsym{)} \, \ottnt{E}  \longrightarrow  \ottsym{[}  \ottnt{e_{{\mathrm{1}}}} \, .. \, \ottnt{e_{\ottmv{n}}}  \ottsym{]}  \ottsym{\#}  \ottnt{E}}{%
 {\ottdrulename{stepE\_beta}}{}%
 }}
 
 
-\newcommand{\ottdrulestepEXXapp}[1]{\ottdrule[#1]{%
-\ottpremise{\ottnt{E_{{\mathrm{1}}}}  \longrightarrow  \ottnt{E'_{{\mathrm{1}}}}}%
+\newcommand{\ottdrulestepEXXctx}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{E}  \longrightarrow  \ottnt{E'}}%
 }{
-\ottnt{E_{{\mathrm{1}}}} \, \ottnt{E_{{\mathrm{2}}}}  \longrightarrow  \ottnt{E'_{{\mathrm{1}}}} \, \ottnt{E_{{\mathrm{2}}}}}{%
-{\ottdrulename{stepE\_app}}{}%
+\ottnt{e}  \ottsym{.}  \ottnt{E}  \longrightarrow  \ottnt{e}  \ottsym{.}  \ottnt{E'}}{%
+{\ottdrulename{stepE\_ctx}}{}%
 }}
 
 \newcommand{\ottdefnstepXXE}[1]{\begin{ottdefnblock}[#1]{$\ottnt{E}  \longrightarrow  \ottnt{E'}$}{}
 \ottusedrule{\ottdrulestepEXXbeta{}}
-\ottusedrule{\ottdrulestepEXXapp{}}
+\ottusedrule{\ottdrulestepEXXctx{}}
 \end{ottdefnblock}}
 
 %% defn step_v

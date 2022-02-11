@@ -27,7 +27,8 @@ context, E :: 'E_' ::=
   | E E'              ::   :: app
   | [ x := E ] E'     :: M :: subst
                              {{ icho (subst_context [[E]] [[x]] [[E']]) }}
-  | [ e1 .. en ] . E      :: M :: ctx {{ icho (I [[e1 .. en]] [[E]]) }}
+  | [ e1 .. en ] # E  :: M :: I   {{ icho (I [[e1 .. en]] [[E]]) }}
+  | e . E             :: M :: ctx {{ icho (appctx_context_ctx_context [[e]] [[E]]) }}
   | ( E )             :: S :: paren {{ icho ([[E]]) }}
 
 environment, G {{ tex \Gamma }} :: 'G_' ::= {{ coq Map.map type }} {{ coq-universe Type }}
@@ -105,9 +106,9 @@ x : t |- x : t
 
 % FIXME
 {{ Map.find [[x]] [[G]] = Some [[t1]] }}
-G |- [ e1 .. en ] . x : t2
+G |- [ e1 .. en ] # x : t2
 -------------------------- :: abs
-G \ x |- forall x : t1 . [ e1 .. en ]  . x : t1 * t2
+G \ x |- forall x : t1 . [ e1 .. en ] # x : t1 * t2
 
 G1 |- E1 : t1 * t2
 G2 |- E2 : t1
@@ -156,11 +157,11 @@ E --> E' ::   :: step_E :: 'stepE_'
 by
 
 ------------------------------- :: beta
-(forall x : t . E1) E2 --> [x := E2] E1
+(forall x : t . [ e1 .. en ] # x) E --> [ e1 .. en] # E
 
-E1 --> E1'
------------------ :: app
-E1 E2 --> E1' E2
+E --> E'
+----------------- :: ctx
+e . E  --> e . E'
 
 defn
 v --> v' ::   :: step_v :: 'stepv_'

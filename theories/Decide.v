@@ -439,3 +439,68 @@ Proof.
         2: discriminate.
         reflexivity.
 Qed.
+
+Definition beta E :=
+  match E with
+  | E_app (E_all x _ E0) E1 =>
+      if D x E0 is Some E0'
+      then
+        Some (I E0' E1)
+      else
+        None
+  | _ => None
+  end.
+
+Function E_eval E :=
+  if beta E is Some E'
+  then
+    Some E'
+  else
+    match E with
+    | E_all x t E =>
+        if E_eval E is Some E'
+        then
+          Some (E_all x t E')
+        else
+          None
+    | E_app E0 E1 =>
+        if E_eval E0 is Some E0'
+        then
+          Some (E_app E0' E1)
+        else
+          if E_eval E1 is Some E1'
+          then
+            Some (E_app E0 E1')
+          else
+            None
+    | _ => None
+    end.
+
+Theorem E_eval_sound:
+  forall E E', E_eval E = Some E' -> step_E E E'.
+Proof using.
+  intros E.
+  functional induction (E_eval E).
+  all: cbn.
+  all: intros ? p.
+  all: inversion p.
+  all: subst.
+  all: try (econstructor;eauto).
+  - destruct E.
+    all: cbn in *.
+    all: inversion e.
+    destruct E1.
+    all: inversion e.
+    destruct (D x E1) eqn:q.
+    2: discriminate.
+    rewrite <- (I_D _ _ _ q).
+    inversion e.
+    subst.
+    econstructor.
+  - apply (stepE_ctx (e_forall _ _)).
+    auto.
+  - apply (stepE_ctx (e_app_r _)).
+    auto.
+  - apply (stepE_ctx (e_app_l _)).
+    auto.
+Qed.

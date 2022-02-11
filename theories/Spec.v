@@ -164,11 +164,11 @@ with sat : context -> term -> Prop :=    (* defn sat *)
 
 (* defns eval *)
 Inductive step_E : context -> context -> Prop :=    (* defn step_E *)
- | stepE_beta : forall (x:var) (t:type) (E1 E2:context),
-     step_E (E_app  ( (E_all x t E1) )  E2)  (subst_context  E2   x   E1 ) 
- | stepE_app : forall (E1 E2 E1':context),
-     step_E E1 E1' ->
-     step_E (E_app E1 E2) (E_app E1' E2)
+ | stepE_beta : forall (e_list:list context_ctx) (x:var) (t:type) (E:context),
+     step_E (E_app  ( (E_all x t  (I  e_list   (E_var x) ) ) )  E)  (I  e_list   E ) 
+ | stepE_ctx : forall (e:context_ctx) (E E':context),
+     step_E E E' ->
+     step_E  (appctx_context_ctx_context  e   E )   (appctx_context_ctx_context  e   E' ) 
 with step_v : term -> term -> Prop :=    (* defn step_v *)
  | stepv_beta1 : forall (v1 v2:term),
      step_v (v_fst  ( (v_fanout v1 v2) ) ) v1
