@@ -110,15 +110,21 @@ Inductive step_E : context -> context -> Prop :=    (* defn step_E *)
      step_E E1 E1' ->
      step_E (E_app E1 E2) (E_app E1' E2)
 with step_v : term -> term -> Prop :=    (* defn step_v *)
+ | stepv_beta1 : forall (v1 v2:term),
+     step_v (v_fst  ( (v_fanout v1 v2) ) ) v1
+ | stepv_beta2 : forall (v1 v2:term),
+     step_v (v_snd  ( (v_fanout v1 v2) ) ) v2
  | stepv_fanout1 : forall (v1 v2 v1':term),
      step_v v1 v1' ->
      step_v (v_fanout v1 v2) (v_fanout v1' v2)
  | stepv_fanout2 : forall (v1 v2 v2':term),
      step_v v2 v2' ->
      step_v (v_fanout v1 v2) (v_fanout v1 v2')
- | stepv_beta1 : forall (v1 v2:term),
-     step_v (v_fst  ( (v_fanout v1 v2) ) ) v1
- | stepv_beta2 : forall (v1 v2:term),
-     step_v (v_snd  ( (v_fanout v1 v2) ) ) v2.
+ | stepv_fst : forall (v v':term),
+     step_v v v' ->
+     step_v (v_fst v) (v_fst v')
+ | stepv_snd : forall (v v':term),
+     step_v v v' ->
+     step_v (v_snd v) (v_snd v').
 
 

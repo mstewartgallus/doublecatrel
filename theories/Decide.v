@@ -11,6 +11,8 @@ Module Import SpecNotations.
 
   Notation "Γ ⊢ E 'in' t" := (judge_E Γ E t) (at level 90).
   Notation "⊢ v 'in' t" := (judge_v v t) (at level 90).
+
+  Notation "v0 ~> v1" := (step_v v0 v1) (at level 90).
 End SpecNotations.
 
 Definition eq_type (x y: type): {x = y} + {x <> y}.
@@ -192,3 +194,37 @@ Proof.
   rewrite q1.
   reflexivity.
 Defined.
+
+
+Function eval v :=
+  match v with
+  | v_fst (v_fanout v _) => Some v
+  | v_snd (v_fanout _ v) => Some v
+
+  | v_tt => None
+  | v_fst v => if eval v is Some v' then Some (v_fst v') else None
+  | v_snd v => if eval v is Some v' then Some (v_snd v') else None
+  | v_fanout v0 v1 =>
+      if eval v0 is Some v0'
+      then
+        Some (v_fanout v0' v1)
+      else
+        if eval v1 is Some v1'
+        then
+          Some (v_fanout v0 v1')
+        else
+          None
+  end.
+
+Theorem eval_sound:
+  forall v v', eval v = Some v' -> v ~> v'.
+Proof.
+  intros v.
+  functional induction (eval v).
+  all: cbn.
+  all: intros ? p.
+  all: inversion p.
+  all: subst.
+  all: econstructor.
+  all: eauto.
+Qed.
