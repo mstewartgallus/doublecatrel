@@ -104,7 +104,7 @@ end.
 
 Definition is_context_whnf_of_context (E5:context) : bool :=
   match E5 with
-  | (E_var x) => (true)
+  | (E_var x) => false
   | (E_all x t E) => (true)
   | (E_app E E') => false
 end.

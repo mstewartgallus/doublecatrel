@@ -124,7 +124,7 @@ Theorem stepv_preserve:
   forall v v',
     v ~> v' ->
     forall t, ⊢ v in t -> ⊢ v' in t.
-Proof.
+Proof using.
   intros v v' p.
   induction p.
   all: intros ? q.
@@ -159,12 +159,12 @@ Proof.
 Qed.
 
 Instance multiv_Reflexive: Reflexive multi_v.
-Proof.
+Proof using.
   econstructor.
 Qed.
 
 Instance multiv_trans: Transitive multi_v.
-Proof.
+Proof using.
   intros v1 v2 v3 p.
   generalize  v3.
   induction p.
@@ -178,7 +178,7 @@ Qed.
 
 Lemma multiv_ctx:
   forall (v v' : term), v *~> v' -> forall V, appctx_term_ctx_term V v *~> appctx_term_ctx_term V v'.
-Proof.
+Proof using.
   intros ? ? p.
   induction p.
   all: intros.
@@ -193,7 +193,7 @@ Lemma multiv_preserve:
   forall v v',
     v *~> v' ->
     forall t, ⊢ v in t -> ⊢ v' in t.
-Proof.
+Proof using.
   intros v v' p.
   induction p.
   1: auto.
@@ -203,11 +203,66 @@ Proof.
   auto.
 Qed.
 
+Theorem stepv_progress:
+  forall v t,
+    ⊢ v in t ->
+    is_term_norm_of_term v = false -> exists v', v ~> v'.
+Proof using.
+  intros v t p.
+  induction p.
+  all: cbn.
+  all: intros q.
+  all: try discriminate.
+  - destruct (is_term_norm_of_term v1) eqn:q1,
+        (is_term_norm_of_term v2) eqn:q2.
+    all: try discriminate.
+    + destruct (IHp2 (eq_refl _)) as [v2' s2].
+      exists (v_fanout v1 v2').
+      apply (stepv_ctx (V_fanout_l v1)).
+      auto.
+    + destruct (IHp1 (eq_refl _)) as [v1' s1].
+      exists (v_fanout v1' v2).
+      apply (stepv_ctx (V_fanout_r v2)).
+      auto.
+    + destruct (IHp1 (eq_refl _)) as [v1' s1].
+      exists (v_fanout v1' v2).
+      apply (stepv_ctx (V_fanout_r v2)).
+      auto.
+  - destruct v.
+    all: cbn in IHp.
+    all: inversion p.
+    all: subst.
+    + destruct (IHp (eq_refl _)) as [v' s].
+      exists (v_fst v').
+      apply (stepv_ctx V_fst).
+      auto.
+    + destruct (IHp (eq_refl _)) as [v' s].
+      exists (v_fst v').
+      apply (stepv_ctx V_fst).
+      auto.
+    + exists v1.
+      econstructor.
+  - destruct v.
+    all: cbn in IHp.
+    all: inversion p.
+    all: subst.
+    + destruct (IHp (eq_refl _)) as [v' s].
+      exists (v_snd v').
+      apply (stepv_ctx V_snd).
+      auto.
+    + destruct (IHp (eq_refl _)) as [v' s].
+      exists (v_snd v').
+      apply (stepv_ctx V_snd).
+      auto.
+    + exists v2.
+      econstructor.
+Qed.
+
 Theorem multiv_normalizing:
   forall v t,
     ⊢ v in t ->
-           exists v', (v *~> v') /\ is_term_norm_of_term v' = true .
-Proof.
+   exists v', (v *~> v') /\ is_term_norm_of_term v' = true .
+Proof using.
   intros v t p.
   induction p.
   - exists v_tt.

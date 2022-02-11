@@ -54,7 +54,6 @@ context_ctx, e :: 'e_' ::=
   | __ E                ::  :: app_r
 
 context_whnf, J :: 'J_' ::=
-  | x                 ::   :: var
   | forall x : t . E  ::   :: all (+ bind x in E +)
 
 terminals :: 'terminals_' ::=

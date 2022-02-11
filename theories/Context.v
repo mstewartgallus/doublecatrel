@@ -309,3 +309,26 @@ Proof.
   refine (stepE_preserve _ _ _ _ _ q).
   auto.
 Qed.
+
+Theorem stepE_progress:
+  forall E t,
+    Env.empty _ ⊢ E in t ->
+    is_context_whnf_of_context E = false -> exists E', step_E E E'.
+Proof using.
+  remember (Env.empty _) as Γ.
+  intros E t p.
+  induction p.
+  all: cbn.
+  all: subst.
+  all: intros q.
+  all: try discriminate.
+  destruct (is_context_whnf_of_context E1) eqn:q1.
+  - destruct E1.
+    all: try discriminate.
+    destruct (D x E1) eqn:q2.
+    + rewrite <- (I_D _ _ _ q2).
+      exists (I l E2).
+      econstructor.
+    + admit.
+  - admit.
+Admitted.
