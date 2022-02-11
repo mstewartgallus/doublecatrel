@@ -1,0 +1,7 @@
+-R theories/ Blech
+-arg -w
+-arg all
+
+theories/Map.v
+theories/Spec.v
+theories/Decide.v
