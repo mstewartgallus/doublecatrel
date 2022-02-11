@@ -16,6 +16,7 @@ term, v :: 'v_' ::=
   | fst v        ::   :: fst
   | snd v        ::   :: snd
   | v , v'       ::   :: fanout
+  | V . v        :: M :: ctx {{ icho (appctx_term_ctx_term [[V]] [[v]]) }}
   | ( v )        :: S :: paren {{ coq ([[v]]) }}
 
 context, E :: 'E_' ::=
@@ -31,6 +32,17 @@ environment, G {{ tex \Gamma }} :: 'G_' ::= {{ coq Map.map type }} {{ coq-univer
   | G , G'        :: M :: merge {{ icho (Map.merge [[G]] [[G']]) }}
   | G \ x         :: M :: minus {{ icho (Map.minus [[x]] [[G]]) }}
 
+
+term_ctx, V :: 'V_' ::=
+  | fst __       ::  :: fst
+  | snd __       ::  :: snd
+  | v , __  ::  :: fanout_l
+  | __ , v  ::  :: fanout_r
+
+term_norm, N :: 'N_' ::=
+  | tt      ::  :: tt
+  | N , N'  ::  :: fanout
+
 terminals :: 'terminals_' ::=
   | \            ::   :: minus   {{ tex \setminus }}
   | :            ::   :: in     {{ tex \colon }}
@@ -39,15 +51,24 @@ terminals :: 'terminals_' ::=
   | ++           ::   :: app    {{ tex , }}
   | unit         ::   :: unit  {{ tex \top }}
   | *            ::   :: prod  {{ tex \times }}
+  | tt           ::   :: tt   {{ tex ! }}
   | fst          ::   :: fst  {{ tex \pi_1 }}
   | snd          ::   :: snd  {{ tex \pi_2 }}
+  | __           ::   :: hole    {{ tex [\cdot] }}
   | forall       ::   :: forall  {{ tex \forall }}
   | empty        ::   :: empty   {{ tex \bullet }}
   | @            ::   :: sat     {{ tex \otimes }}
-  | -->          ::   :: red     {{ tex \longrightarrow }}
+  | -->          ::   :: step     {{ tex \longrightarrow }}
+  | *->          ::   :: multi     {{ tex \Rightarrow }}
 
 substitutions
   single context var :: subst 
+
+contextrules
+  V _:: v :: v
+
+subrules
+  N <:: v
 
 freevars
   context var :: fv
@@ -132,18 +153,18 @@ fst (v1, v2) --> v1
 ------------------- :: beta2
 snd (v1, v2) --> v2
 
-v1 --> v1'
--------------------- :: fanout1
-v1, v2 --> v1', v2
-
-v2 --> v2'
--------------------- :: fanout2
-v1, v2 --> v1, v2'
-
 v --> v'
--------------------- :: fst
-fst v --> fst v'
+-------------------- :: ctx
+V . v --> V . v'
 
-v --> v'
--------------------- :: snd
-snd v --> snd v'
+defn
+v *-> v' ::   :: multi_v :: 'multiv_'
+by
+
+-------------------- :: id
+v *-> v
+
+v1 --> v2
+v2 *-> v3
+-------------------- :: then
+v1 *-> v3

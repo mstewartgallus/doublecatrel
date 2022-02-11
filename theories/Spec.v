@@ -32,6 +32,12 @@ Inductive term : Set :=
  | v_fanout (v:term) (v':term).
 
 Definition environment : Type := Map.map type.
+
+Inductive term_ctx : Set := 
+ | V_fst : term_ctx
+ | V_snd : term_ctx
+ | V_fanout_l (v:term)
+ | V_fanout_r (v:term).
 (** library functions *)
 Fixpoint list_mem A (eq:forall a b:A,{a=b}+{a<>b}) (x:A) (l:list A) {struct l} : bool :=
   match l with
@@ -47,6 +53,26 @@ Fixpoint subst_context (E5:context) (x5:var) (E_6:context) {struct E_6} : contex
   | (E_var x) => (if eq_var x x5 then E5 else (E_var x))
   | (E_all x t E) => E_all x t (if list_mem eq_var x5 (cons x nil) then E else (subst_context E5 x5 E))
   | (E_app E E') => E_app (subst_context E5 x5 E) (subst_context E5 x5 E')
+end.
+
+
+(** context application *)
+Definition appctx_term_ctx_term (term_ctx5:term_ctx) (term5:term) : term :=
+  match term_ctx5 with
+  | V_fst => (v_fst term5)
+  | V_snd => (v_snd term5)
+  | (V_fanout_l v) => (v_fanout v term5)
+  | (V_fanout_r v) => (v_fanout term5 v)
+end.
+
+
+(** subrules *)
+Fixpoint is_term_norm_of_term (v5:term) : bool :=
+  match v5 with
+  | v_tt => (true)
+  | (v_fst v) => false
+  | (v_snd v) => false
+  | (v_fanout v v') => ((is_term_norm_of_term v) && (is_term_norm_of_term v'))
 end.
 
 (** library functions *)
@@ -114,17 +140,15 @@ with step_v : term -> term -> Prop :=    (* defn step_v *)
      step_v (v_fst  ( (v_fanout v1 v2) ) ) v1
  | stepv_beta2 : forall (v1 v2:term),
      step_v (v_snd  ( (v_fanout v1 v2) ) ) v2
- | stepv_fanout1 : forall (v1 v2 v1':term),
-     step_v v1 v1' ->
-     step_v (v_fanout v1 v2) (v_fanout v1' v2)
- | stepv_fanout2 : forall (v1 v2 v2':term),
-     step_v v2 v2' ->
-     step_v (v_fanout v1 v2) (v_fanout v1 v2')
- | stepv_fst : forall (v v':term),
+ | stepv_ctx : forall (V:term_ctx) (v v':term),
      step_v v v' ->
-     step_v (v_fst v) (v_fst v')
- | stepv_snd : forall (v v':term),
-     step_v v v' ->
-     step_v (v_snd v) (v_snd v').
+     step_v  (appctx_term_ctx_term  V   v )   (appctx_term_ctx_term  V   v' ) 
+with multi_v : term -> term -> Prop :=    (* defn multi_v *)
+ | multiv_id : forall (v:term),
+     multi_v v v
+ | multiv_then : forall (v1 v3 v2:term),
+     step_v v1 v2 ->
+     multi_v v2 v3 ->
+     multi_v v1 v3.
 
 

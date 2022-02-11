@@ -1,6 +1,8 @@
 Require Import Blech.Spec.
 Require Import Blech.Map.
 
+Require Import Coq.Classes.SetoidClass.
+
 Require Import FunInd.
 
 
@@ -13,6 +15,7 @@ Module Import SpecNotations.
   Notation "⊢ v 'in' t" := (judge_v v t) (at level 90).
 
   Notation "v0 ~> v1" := (step_v v0 v1) (at level 90).
+  Notation "v0 *~> v1" := (multi_v v0 v1) (at level 90).
 End SpecNotations.
 
 Definition eq_type (x y: type): {x = y} + {x <> y}.
@@ -127,7 +130,7 @@ Function typeof (v: term): option type :=
 
 Theorem typeof_sound:
   forall v t, typeof v = Some t -> ⊢ v in t.
-Proof.
+Proof using .
   intros v.
   functional induction (typeof v).
   all: cbn.
@@ -140,7 +143,7 @@ Qed.
 
 Theorem typeof_complete:
   forall v t, ⊢ v in t -> typeof v = Some t.
-Proof.
+Proof using .
   intros ? ? p.
   induction p.
   all: cbn.
@@ -218,13 +221,113 @@ Function eval v :=
 
 Theorem eval_sound:
   forall v v', eval v = Some v' -> v ~> v'.
-Proof.
+Proof using.
   intros v.
   functional induction (eval v).
   all: cbn.
   all: intros ? p.
   all: inversion p.
   all: subst.
-  all: econstructor.
-  all: eauto.
+  all: try (econstructor;eauto).
+  - apply (stepv_ctx V_fst).
+    auto.
+  - apply (stepv_ctx V_snd).
+    auto.
+  - apply (stepv_ctx (V_fanout_r _)).
+    auto.
+  - apply (stepv_ctx (V_fanout_l _)).
+    auto.
 Qed.
+
+Theorem stepv_preserve:
+  forall v v',
+    v ~> v' ->
+    forall t, ⊢ v in t -> ⊢ v' in t.
+Proof.
+  intros v v' p.
+  induction p.
+  all: intros ? q.
+  - inversion q.
+    subst.
+    inversion H0.
+    subst.
+    auto.
+  - inversion q.
+    subst.
+    inversion H0.
+    subst.
+    auto.
+  - induction V.
+    all: cbn in *.
+    + inversion q.
+      subst.
+      econstructor.
+      apply (IHp _ H0).
+    + inversion q.
+      subst.
+      econstructor.
+      apply (IHp _ H0).
+    + inversion q.
+      subst.
+      econstructor.
+      all: eauto.
+    + inversion q.
+      subst.
+      econstructor.
+      all: eauto.
+Qed.
+
+Lemma multiv_trans:
+  forall v1 v2 v3, v1 *~> v2 -> v2 *~> v3 -> v1 *~> v3.
+Proof.
+  intros v1 v2 v3 p.
+  generalize v3.
+  induction p.
+  1: auto.
+  intros.
+  econstructor.
+  1: apply H.
+  apply IHp.
+  auto.
+Qed.
+
+Lemma multiv_ctx:
+  forall (v v' : term), v *~> v' -> forall V, appctx_term_ctx_term V v *~> appctx_term_ctx_term V v'.
+Proof.
+  intros ? ? p.
+  induction p.
+  all: intros.
+  1: constructor.
+  econstructor.
+  - econstructor.
+    eauto.
+  - apply IHp.
+Qed.
+
+Theorem normalizing:
+  forall v t,
+    ⊢ v in t ->
+    exists v', (v *~> v') /\ is_term_norm_of_term v' = true .
+Proof.
+  intros v t p.
+  induction p.
+  - exists v_tt.
+    split.
+    + econstructor.
+    + reflexivity.
+  - destruct IHp1 as [v1' [s1 n1]].
+    destruct IHp2 as [v2' [s2 n2]].
+    exists (v_fanout v1' v2').
+    split.
+    + apply (multiv_trans _ _ _ (multiv_ctx _ _ s1 (V_fanout_r v2))).
+      cbn.
+      apply (multiv_trans _ _ _ (multiv_ctx _ _ s2 (V_fanout_l v1'))).
+      cbn.
+      econstructor.
+    + cbn.
+      rewrite n1, n2.
+      cbn.
+      reflexivity.
+  - admit.
+  - admit.
+Admitted.
