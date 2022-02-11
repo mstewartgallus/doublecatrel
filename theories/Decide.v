@@ -277,11 +277,15 @@ Proof.
       all: eauto.
 Qed.
 
-Lemma multiv_trans:
-  forall v1 v2 v3, v1 *~> v2 -> v2 *~> v3 -> v1 *~> v3.
+Instance multiv_Reflexive: Reflexive multi_v.
+Proof.
+  econstructor.
+Qed.
+
+Instance multiv_trans: Transitive multi_v.
 Proof.
   intros v1 v2 v3 p.
-  generalize v3.
+  generalize  v3.
   induction p.
   1: auto.
   intros.
@@ -304,7 +308,21 @@ Proof.
   - apply IHp.
 Qed.
 
-Theorem normalizing:
+Lemma multiv_preserve:
+  forall v v',
+    v *~> v' ->
+    forall t, ⊢ v in t -> ⊢ v' in t.
+Proof.
+  intros v v' p.
+  induction p.
+  1: auto.
+  intros t q.
+  apply IHp.
+  refine (stepv_preserve _ _ _ _ q).
+  auto.
+Qed.
+
+Theorem multiv_normalizing:
   forall v t,
     ⊢ v in t ->
     exists v', (v *~> v') /\ is_term_norm_of_term v' = true .
@@ -313,21 +331,56 @@ Proof.
   induction p.
   - exists v_tt.
     split.
-    + econstructor.
-    + reflexivity.
+    all: reflexivity.
   - destruct IHp1 as [v1' [s1 n1]].
     destruct IHp2 as [v2' [s2 n2]].
     exists (v_fanout v1' v2').
     split.
-    + apply (multiv_trans _ _ _ (multiv_ctx _ _ s1 (V_fanout_r v2))).
-      cbn.
-      apply (multiv_trans _ _ _ (multiv_ctx _ _ s2 (V_fanout_l v1'))).
-      cbn.
-      econstructor.
+    + rewrite (multiv_ctx _ _ s1 (V_fanout_r v2)).
+      rewrite (multiv_ctx _ _ s2 (V_fanout_l v1')).
+      reflexivity.
     + cbn.
       rewrite n1, n2.
       cbn.
       reflexivity.
-  - admit.
-  - admit.
-Admitted.
+  - destruct IHp as [v' [s n]].
+    destruct v'.
+    all: cbn in *.
+    all: try discriminate.
+    + set (p1 := multiv_preserve _ _ s _ p).
+      inversion p1.
+    + set (p1 := multiv_preserve _ _ s _ p).
+      inversion p1.
+      subst.
+      exists v'1.
+      split.
+      * rewrite (multiv_ctx _ _ s V_fst).
+        cbn.
+        econstructor.
+        2: reflexivity.
+        econstructor.
+      * destruct (is_term_norm_of_term v'1) eqn:q2.
+        2: discriminate.
+        reflexivity.
+  - destruct IHp as [v' [s n]].
+    destruct v'.
+    all: cbn in *.
+    all: try discriminate.
+    + set (p1 := multiv_preserve _ _ s _ p).
+      inversion p1.
+    + set (p1 := multiv_preserve _ _ s _ p).
+      inversion p1.
+      subst.
+      exists v'2.
+      split.
+      * rewrite (multiv_ctx _ _ s V_snd).
+        cbn.
+        econstructor.
+        2: reflexivity.
+        econstructor.
+      * destruct (is_term_norm_of_term v'1) eqn:q1.
+        2: discriminate.
+        destruct (is_term_norm_of_term v'2) eqn:q2.
+        2: discriminate.
+        reflexivity.
+Qed.
