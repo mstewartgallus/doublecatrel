@@ -235,3 +235,77 @@ Proof using.
   - apply (stepE_ctx (e_app_l _)).
     auto.
 Qed.
+
+Theorem stepE_preserve:
+  forall E E',
+    step_E E E' ->
+    forall Γ t, Γ ⊢ E in t -> Γ ⊢ E' in t.
+Proof.
+  intros E E' p.
+  induction p.
+  all: intros ? ? q.
+  - inversion q.
+    subst.
+    inversion H2.
+    subst.
+    auto.
+    admit.
+  - induction e.
+    all: cbn in *.
+    + inversion q.
+      subst.
+      admit.
+    + inversion q.
+      subst.
+      econstructor.
+      all: eauto.
+    + inversion q.
+      subst.
+      econstructor.
+      all: eauto.
+Admitted.
+
+Instance multiE_Reflexive: Reflexive multi_E.
+Proof.
+  econstructor.
+Qed.
+
+Instance multiE_trans: Transitive multi_E.
+Proof.
+  intros v1 v2 v3 p.
+  generalize v3.
+  induction p.
+  1: auto.
+  intros.
+  econstructor.
+  1: apply H.
+  apply IHp.
+  auto.
+Qed.
+
+Lemma multiE_ctx:
+  forall E E', multi_E E E' -> forall e, multi_E (appctx_context_ctx_context e E) (appctx_context_ctx_context e E').
+Proof.
+  intros ? ? p.
+  induction p.
+  all: intros.
+  1: constructor.
+  econstructor.
+  - econstructor.
+    eauto.
+  - apply IHp.
+Qed.
+
+Lemma multiE_preserve:
+  forall E E',
+    multi_E E E' ->
+    forall Γ t, Γ ⊢ E in t -> Γ ⊢ E' in t.
+Proof.
+  intros E E' p.
+  induction p.
+  1: auto.
+  intros Γ t q.
+  apply IHp.
+  refine (stepE_preserve _ _ _ _ _ q).
+  auto.
+Qed.

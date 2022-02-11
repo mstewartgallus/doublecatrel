@@ -53,6 +53,10 @@ context_ctx, e :: 'e_' ::=
   | E __                ::  :: app_l
   | __ E                ::  :: app_r
 
+context_whnf, J :: 'J_' ::=
+  | x                 ::   :: var
+  | forall x : t . E  ::   :: all (+ bind x in E +)
+
 terminals :: 'terminals_' ::=
   | \            ::   :: minus   {{ tex \setminus }}
   | :            ::   :: in     {{ tex \colon }}
@@ -89,6 +93,7 @@ Function I (e: list _) E :=
 
 subrules
   N <:: v
+  J <:: E
 
 freevars
   context var :: fv
@@ -188,3 +193,15 @@ v1 --> v2
 v2 *-> v3
 -------------------- :: then
 v1 *-> v3
+
+defn
+E *-> E' ::   :: multi_E :: 'multiE_'
+by
+
+-------------------- :: id
+E *-> E
+
+E1 --> E2
+E2 *-> E3
+-------------------- :: then
+E1 *-> E3

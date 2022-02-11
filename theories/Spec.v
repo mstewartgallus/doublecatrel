@@ -102,6 +102,13 @@ Fixpoint is_term_norm_of_term (v5:term) : bool :=
   | (v_fanout v v') => ((is_term_norm_of_term v) && (is_term_norm_of_term v'))
 end.
 
+Definition is_context_whnf_of_context (E5:context) : bool :=
+  match E5 with
+  | (E_var x) => (true)
+  | (E_all x t E) => (true)
+  | (E_app E E') => false
+end.
+
 (** library functions *)
 Fixpoint list_minus A (eq:forall a b:A,{a=b}+{a<>b}) (l1:list A) (l2:list A) {struct l1} : list A :=
   match l1 with
@@ -183,6 +190,13 @@ with multi_v : term -> term -> Prop :=    (* defn multi_v *)
  | multiv_then : forall (v1 v3 v2:term),
      step_v v1 v2 ->
      multi_v v2 v3 ->
-     multi_v v1 v3.
+     multi_v v1 v3
+with multi_E : context -> context -> Prop :=    (* defn multi_E *)
+ | multiE_id : forall (E:context),
+     multi_E E E
+ | multiE_then : forall (E1 E3 E2:context),
+     step_E E1 E2 ->
+     multi_E E2 E3 ->
+     multi_E E1 E3.
 
 
