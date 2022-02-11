@@ -59,6 +59,7 @@
 \ottprodline{|}{\forall \, \mathit{x}  \colon  \ottnt{t}  \ottsym{.}  \ottnt{E}}{}{\textsf{bind}\; \mathit{x}\; \textsf{in}\; \ottnt{E}}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{E} \, \ottnt{E'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{[}  \mathit{x}  \mathbin{:=}  \ottnt{E}  \ottsym{]}  \ottnt{E'}} {\textsf{M}}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottsym{[}  \ottnt{e_{{\mathrm{1}}}} \, .. \, \ottnt{e_{\ottmv{n}}}  \ottsym{]}  \ottsym{.}  \ottnt{E}} {\textsf{M}}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{(}  \ottnt{E}  \ottsym{)}} {\textsf{S}}{}{}{}}
 
 \newcommand{\ottenvironment}{
@@ -78,6 +79,12 @@
 \ottrulehead{\ottnt{term\_norm}  ,\ \ottnt{N}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{!}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{N}  \ottsym{,}  \ottnt{N'}}{}{}{}{}}
+
+\newcommand{\ottcontextXXctx}{
+\ottrulehead{\ottnt{context\_ctx}  ,\ \ottnt{e}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\forall \, \mathit{x}  \colon  \ottnt{t}  \ottsym{.} \, [\cdot]}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{E} \, [\cdot]}{}{}{}{}\ottprodnewline
+\ottprodline{|}{[\cdot] \, \ottnt{E}}{}{}{}{}}
 
 \newcommand{\ottterminals}{
 \ottrulehead{\ottnt{terminals}}{::=}{}\ottprodnewline
@@ -129,6 +136,7 @@
 \ottprodline{|}{\ottnt{environment}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{term\_ctx}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{term\_norm}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{context\_ctx}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{terminals}}{}{}{}{}}
 
 \newcommand{\ottgrammar}{\ottgrammartabular{
@@ -138,6 +146,7 @@
 \ottenvironment\ottinterrule
 \otttermXXctx\ottinterrule
 \otttermXXnorm\ottinterrule
+\ottcontextXXctx\ottinterrule
 \ottterminals\ottinterrule
 \ottformula\ottinterrule
 \ottjudge\ottinterrule
@@ -158,9 +167,9 @@
 
 \newcommand{\ottdruleJEXXabs}[1]{\ottdrule[#1]{%
 \ottpremise{\texttt{Map.find }\mathit{x}\texttt{ }\Gamma\texttt{ = Some }\ottnt{t_{{\mathrm{1}}}}\texttt{ }}%
-\ottpremise{\Gamma  \vdash  \ottnt{E}  \colon  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\Gamma  \vdash  \ottsym{[}  \ottnt{e_{{\mathrm{1}}}} \, .. \, \ottnt{e_{\ottmv{n}}}  \ottsym{]}  \ottsym{.}  \mathit{x}  \colon  \ottnt{t_{{\mathrm{2}}}}}%
 }{
-\Gamma  \setminus  \mathit{x}  \vdash  \forall \, \mathit{x}  \colon  \ottnt{t_{{\mathrm{1}}}}  \ottsym{.}  \ottnt{E}  \colon  \ottnt{t_{{\mathrm{1}}}}  \times  \ottnt{t_{{\mathrm{2}}}}}{%
+\Gamma  \setminus  \mathit{x}  \vdash  \forall \, \mathit{x}  \colon  \ottnt{t_{{\mathrm{1}}}}  \ottsym{.}  \ottsym{[}  \ottnt{e_{{\mathrm{1}}}} \, .. \, \ottnt{e_{\ottmv{n}}}  \ottsym{]}  \ottsym{.}  \mathit{x}  \colon  \ottnt{t_{{\mathrm{1}}}}  \times  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{JE\_abs}}{}%
 }}
 

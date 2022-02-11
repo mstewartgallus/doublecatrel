@@ -1,6 +1,8 @@
 embed
 {{ coq
 Require Blech.Map.
+
+Require Import FunInd.
 }}
 
 metavar var, x ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[var]]} }}
@@ -25,6 +27,7 @@ context, E :: 'E_' ::=
   | E E'              ::   :: app
   | [ x := E ] E'     :: M :: subst
                              {{ icho (subst_context [[E]] [[x]] [[E']]) }}
+  | [ e1 .. en ] . E      :: M :: ctx {{ icho (I [[e1 .. en]] [[E]]) }}
   | ( E )             :: S :: paren {{ icho ([[E]]) }}
 
 environment, G {{ tex \Gamma }} :: 'G_' ::= {{ coq Map.map type }} {{ coq-universe Type }}
@@ -42,6 +45,12 @@ term_ctx, V :: 'V_' ::=
 term_norm, N :: 'N_' ::=
   | tt      ::  :: tt
   | N , N'  ::  :: fanout
+
+% FIXME give better name, symbols
+context_ctx, e :: 'e_' ::=
+  | forall x : t . __   ::  :: forall
+  | E __                ::  :: app_l
+  | __ E                ::  :: app_r
 
 terminals :: 'terminals_' ::=
   | \            ::   :: minus   {{ tex \setminus }}
@@ -66,6 +75,16 @@ substitutions
 
 contextrules
   V _:: v :: v
+  e _:: E :: E
+
+embed
+{{ coq
+Function I (e: list _) E :=
+  match e with
+  | cons h t => appctx_context_ctx_context h (I t E)
+  |  _ => E
+  end.
+}}
 
 subrules
   N <:: v
@@ -86,9 +105,9 @@ x : t |- x : t
 
 % FIXME
 {{ Map.find [[x]] [[G]] = Some [[t1]] }}
-G |- E : t2
+G |- [ e1 .. en ] . x : t2
 -------------------------- :: abs
-G \ x |- forall x : t1 . E : t1 * t2
+G \ x |- forall x : t1 . [ e1 .. en ]  . x : t1 * t2
 
 G1 |- E1 : t1 * t2
 G2 |- E2 : t1

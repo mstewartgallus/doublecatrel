@@ -8,6 +8,8 @@ Require Import Ott.ott_list_core.
 
 Require Blech.Map.
 
+Require Import FunInd.
+
 Definition var : Set := nat.
 Lemma eq_var: forall (x y : var), {x = y} + {x <> y}.
 Proof.
@@ -33,6 +35,11 @@ Inductive term : Set :=
 
 Definition environment : Type := Map.map type.
 
+Inductive context_ctx : Set := 
+ | e_forall (x:var) (t:type)
+ | e_app_l (E:context)
+ | e_app_r (E:context).
+
 Inductive term_ctx : Set := 
  | V_fst : term_ctx
  | V_snd : term_ctx
@@ -55,6 +62,13 @@ Fixpoint subst_context (E5:context) (x5:var) (E_6:context) {struct E_6} : contex
   | (E_app E E') => E_app (subst_context E5 x5 E) (subst_context E5 x5 E')
 end.
 
+Definition subst_context_ctx (E5:context) (x5:var) (e5:context_ctx) : context_ctx :=
+  match e5 with
+  | (e_forall x t) => e_forall x t
+  | (e_app_l E) => e_app_l (subst_context E5 x5 E)
+  | (e_app_r E) => e_app_r (subst_context E5 x5 E)
+end.
+
 
 (** context application *)
 Definition appctx_term_ctx_term (term_ctx5:term_ctx) (term5:term) : term :=
@@ -64,6 +78,19 @@ Definition appctx_term_ctx_term (term_ctx5:term_ctx) (term5:term) : term :=
   | (V_fanout_l v) => (v_fanout v term5)
   | (V_fanout_r v) => (v_fanout term5 v)
 end.
+
+Definition appctx_context_ctx_context (context_ctx5:context_ctx) (context5:context) : context :=
+  match context_ctx5 with
+  | (e_forall x t) => (E_all x t context5)
+  | (e_app_l E) => (E_app E context5)
+  | (e_app_r E) => (E_app context5 E)
+end.
+
+Function I (e: list _) E :=
+  match e with
+  | cons h t => appctx_context_ctx_context h (I t E)
+  |  _ => E
+  end.
 
 
 (** subrules *)
@@ -92,16 +119,23 @@ Fixpoint fv_context (E5:context) : list var :=
   | (E_app E E') => (app (fv_context E) (fv_context E'))
 end.
 
+Definition fv_context_ctx (e5:context_ctx) : list var :=
+  match e5 with
+  | (e_forall x t) => nil
+  | (e_app_l E) => ((fv_context E))
+  | (e_app_r E) => ((fv_context E))
+end.
+
 (** definitions *)
 
 (* defns judge *)
 Inductive judge_E : environment -> context -> type -> Prop :=    (* defn judge_E *)
  | JE_var : forall (x:var) (t:type),
      judge_E  (Map.one  x   t )  (E_var x) t
- | JE_abs : forall (G:environment) (x:var) (t1:type) (E:context) (t2:type),
+ | JE_abs : forall (e_list:list context_ctx) (G:environment) (x:var) (t1 t2:type),
      Map.find x G = Some t1  ->
-     judge_E G E t2 ->
-     judge_E  (Map.minus  x   G )  (E_all x t1 E) (t_prod t1 t2)
+     judge_E G  (I  e_list   (E_var x) )  t2 ->
+     judge_E  (Map.minus  x   G )  (E_all x t1  (I  e_list   (E_var x) ) ) (t_prod t1 t2)
  | JE_app : forall (G1 G2:environment) (E1 E2:context) (t2 t1:type),
      judge_E G1 E1 (t_prod t1 t2) ->
      judge_E G2 E2 t1 ->

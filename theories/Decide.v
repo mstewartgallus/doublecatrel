@@ -2,10 +2,11 @@ Require Import Blech.Spec.
 Require Import Blech.Map.
 
 Require Import Coq.Classes.SetoidClass.
+Require Coq.Lists.List.
 
 Require Import FunInd.
 
-
+Import List.ListNotations.
 Import IfNotations.
 
 Module Import SpecNotations.
@@ -23,6 +24,49 @@ Proof.
   decide equality.
 Defined.
 
+Function D x E: option (list _) :=
+  match E with
+  | E_var y =>
+      if eq_var x y then Some [] else None
+  | E_all y t E =>
+      if eq_var x y
+      then
+        None
+      else
+        if D x E is Some E'
+        then
+          Some (e_forall y t :: E')
+        else
+          None
+  | E_app E0 E1 =>
+      if D x E0 is Some E'
+      then
+        Some (e_app_r E1 :: E')
+      else
+        if D x E1 is Some E'
+        then
+          Some (e_app_l E0 :: E')
+        else
+          None
+  end%list.
+
+Lemma I_D: forall x E e', D x E = Some e' -> I e' (E_var x) = E.
+Proof using.
+  intros x E.
+  functional induction (D x E).
+  all: intros e' p.
+  all: inversion p.
+  all: cbn.
+  all: subst.
+  - reflexivity.
+  - rewrite (IHo _ e1).
+    reflexivity.
+  - rewrite (IHo _ e0).
+    reflexivity.
+  - rewrite (IHo0 _ e1).
+    reflexivity.
+Qed.
+
 Function typecheck (Γ: environment) (E: context): option (environment * type) :=
   match E with
   | E_var x =>
@@ -36,13 +80,17 @@ Function typecheck (Γ: environment) (E: context): option (environment * type) :
       else
         None
   | E_all x t1 E =>
-      if typecheck (Map.merge Γ (Map.one x t1)) E is Some (Γ', t2)
+      if D x E is Some E'
       then
-        if Env.find x Γ' is Some t1'
+        if typecheck (Map.merge Γ (Map.one x t1)) E is Some (Γ', t2)
         then
-          if eq_type t1 t1'
+          if Env.find x Γ' is Some t1'
           then
-            Some (Map.minus x Γ', t1 * t2)
+            if eq_type t1 t1'
+            then
+              Some (Map.minus x Γ', t1 * t2)
+            else
+              None
           else
             None
         else
@@ -75,8 +123,13 @@ Proof.
   all: intros ? ? p.
   all: inversion p.
   all: subst.
-  all: econstructor.
-  all: eauto.
+  all: try econstructor.
+  all: try eauto.
+  rewrite <- (I_D _ _ _ e0).
+  econstructor.
+  1: eauto.
+  rewrite (I_D _ _ _ e0).
+  auto.
 Qed.
 
 Theorem typecheck_complete:
@@ -92,7 +145,9 @@ Proof.
     rewrite H.
     destruct (eq_type t1 t1).
     2: contradiction.
-    reflexivity.
+    destruct (D x (I e_list (E_var x))) eqn:q.
+    1: reflexivity.
+    admit.
   - rewrite (IHp1 _).
     rewrite (IHp2 _).
     destruct (eq_type t1 t1).
