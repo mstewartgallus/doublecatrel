@@ -4,4 +4,6 @@
 
 theories/Map.v
 theories/Spec.v
-theories/Decide.v
+theories/SpecNotations.v
+theories/Term.v
+theories/Context.v
