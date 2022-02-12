@@ -16,33 +16,35 @@ Defined.
 Hint Resolve eq_var : ott_coq_equality.
 Definition index : Set := nat.
 
-Inductive type : Set := 
- | t_unit : type
- | t_prod (t:type) (t':type).
-
-Inductive context : Set := 
- | E_var (x:var)
- | E_all (x:var) (t:type) (E:context)
- | E_app (E:context) (E':context).
-
 Inductive term : Set := 
  | v_tt : term
  | v_fst (v:term)
  | v_snd (v:term)
  | v_fanout (v:term) (v':term).
 
-Definition environment : Type := Map.map type.
+Inductive type : Set := 
+ | t_unit : type
+ | t_prod (t:type) (t':type).
 
-Inductive context_ctx : Set := 
- | e_forall (x:var) (t:type)
- | e_app_l (E:context)
- | e_app_r (E:context).
+Definition satenv : Type := Map.map term.
+
+Inductive context : Set := 
+ | E_var (x:var)
+ | E_all (x:var) (t:type) (E:context)
+ | E_app (E:context) (E':context).
+
+Definition environment : Type := Map.map type.
 
 Inductive term_ctx : Set := 
  | V_fst : term_ctx
  | V_snd : term_ctx
  | V_fanout_l (v:term)
  | V_fanout_r (v:term).
+
+Inductive context_ctx : Set := 
+ | e_forall (x:var) (t:type)
+ | e_app_l (E:context)
+ | e_app_r (E:context).
 (** library functions *)
 Fixpoint list_mem A (eq:forall a b:A,{a=b}+{a<>b}) (x:A) (l:list A) {struct l} : bool :=
   match l with
@@ -151,11 +153,16 @@ with Jv : term -> type -> Prop :=    (* defn v *)
  | Jv_snd : forall (v:term) (t2 t1:type),
      Jv v (t_prod t1 t2) ->
      Jv (v_snd v) t2
-with Jsat : context -> term -> Prop :=    (* defn sat *)
- | Jsat_app : forall (E0 E1:context) (v:term),
-     Jsat E0 v ->
-     Jsat E1 (v_fst v) ->
-     Jsat (E_app E0 E1) (v_snd v).
+with Jsat : satenv -> context -> term -> Prop :=    (* defn sat *)
+ | Jsat_var : forall (x:var) (v:term),
+     Jsat  (Map.add  x   v    Map.empty  )  (E_var x) v
+ | Jsat_abs : forall (D:satenv) (x:var) (t1:type) (E:context) (v0 v1:term),
+     Jsat  (Map.add  x   v0   D )  E v1 ->
+     Jsat D  ( (E_all x t1 E) )  (v_fanout v0 v1)
+ | Jsat_app : forall (D D':satenv) (E0 E1:context) (v:term),
+     Jsat D E0 v ->
+     Jsat D' E1 (v_fst v) ->
+     Jsat  (Map.merge  D   D' )   ( (E_app E0 E1) )  (v_snd v).
 (** definitions *)
 
 (* defns eval *)

@@ -34,6 +34,11 @@ environment, G {{ tex \Gamma }} :: 'G_' ::= {{ coq Map.map type }} {{ coq-univer
   | G , x : t     :: M :: add {{ icho (Map.add [[x]] [[t]] [[G]]) }}
   | G ++ G'       :: M :: merge {{ icho (Map.merge [[G]] [[G']]) }}
 
+satenv, D {{ tex \Delta }} :: 'D_' ::= {{ coq Map.map term }} {{ coq-universe Type }}
+  | empty         :: M :: ofty {{ icho Map.empty }}
+  | D , x [ v ]   :: M :: add {{ icho (Map.add [[x]] [[v]] [[D]]) }}
+  | D ++ D'       :: M :: merge {{ icho (Map.merge [[D]] [[D']]) }}
+
 
 term_ctx, V :: 'V_' ::=
   | fst __     ::  :: fst
@@ -126,13 +131,22 @@ by
 
 
 defn
-|- E [ v ] ::   :: sat :: 'sat_'
+D |- E [ v ] ::   :: sat :: 'sat_'
 by
 
-|- E0 [ v ]
-|- E1 [ fst v ]
+% fixme seems off
+------------------- :: var
+empty , x [ v ] |- x [ v ]
+
+
+D , x [ v0 ] |- E [ v1 ]
+------------------ :: abs
+D |- (forall x : t1 . E) [ v0 , v1 ]
+
+D |- E0 [ v ]
+D' |- E1 [ fst v ]
 ------------------ :: app
-|- (E0 E1) [ snd v ]
+D ++ D' |- (E0 E1) [ snd v ]
 
 defns
 
