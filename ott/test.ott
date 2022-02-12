@@ -1,8 +1,6 @@
 embed
 {{ coq
 Require Blech.Map.
-
-Require Import FunInd.
 }}
 
 metavar var, x ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[var]]} }}
@@ -18,7 +16,7 @@ term, v :: 'v_' ::=
   | fst v        ::   :: fst
   | snd v        ::   :: snd
   | v , v'       ::   :: fanout
-  | V . v        :: M :: ctx {{ icho (appctx_term_ctx_term [[V]] [[v]]) }}
+  | V [ v ]      :: M :: fill_context {{ icho (appctx_term_ctx_term [[V]] [[v]]) }}
   | ( v )        :: S :: paren {{ coq ([[v]]) }}
 
 context, E :: 'E_' ::=
@@ -27,20 +25,21 @@ context, E :: 'E_' ::=
   | E E'              ::   :: app
   | [ x := E ] E'     :: M :: subst
                              {{ icho (subst_context [[E]] [[x]] [[E']]) }}
-  | e . E             :: M :: ctx {{ icho (appctx_context_ctx_context [[e]] [[E]]) }}
+  | e [ E ]           :: M :: fill_context
+                             {{ icho (appctx_context_ctx_context [[e]] [[E]]) }}
   | ( E )             :: S :: paren {{ icho ([[E]]) }}
 
 environment, G {{ tex \Gamma }} :: 'G_' ::= {{ coq Map.map type }} {{ coq-universe Type }}
   | empty         :: M :: ofty {{ icho Map.empty }}
   | G , x : t     :: M :: add {{ icho (Map.add [[x]] [[t]] [[G]]) }}
-  | G ++ G'        :: M :: merge {{ icho (Map.merge [[G]] [[G']]) }}
+  | G ++ G'       :: M :: merge {{ icho (Map.merge [[G]] [[G']]) }}
 
 
 term_ctx, V :: 'V_' ::=
-  | fst __       ::  :: fst
-  | snd __       ::  :: snd
-  | v , __  ::  :: fanout_l
-  | __ , v  ::  :: fanout_r
+  | fst __     ::  :: fst
+  | snd __     ::  :: snd
+  | v , __     ::  :: fanout_l
+  | __ , v     ::  :: fanout_r
 
 term_norm, N :: 'N_' ::=
   | tt      ::  :: tt
@@ -50,28 +49,27 @@ term_norm, N :: 'N_' ::=
 context_ctx, e :: 'e_' ::=
   | forall x : t . __   ::  :: forall
   | E __                ::  :: app_l
-  | __ E                 ::  :: app_r
+  | __ E                ::  :: app_r
 
 context_whnf, J :: 'J_' ::=
   | forall x : t . E  ::   :: all (+ bind x in E +)
 
 terminals :: 'terminals_' ::=
-  | \            ::   :: minus   {{ tex \setminus }}
-  | :            ::   :: in     {{ tex \colon }}
-  | |-           ::   :: turnstile   {{ tex \vdash }}
+  | :            ::   :: in     {{ tex \colon{} }}
+  | |-           ::   :: turnstile   {{ tex \vdash{} }}
   | :=           ::   :: update  {{ tex \mathbin{:=} }}
-  | ++           ::   :: app    {{ tex \cup }}
-  | unit         ::   :: unit  {{ tex \top }}
-  | *            ::   :: prod  {{ tex \times }}
-  | tt           ::   :: tt   {{ tex ! }}
-  | fst          ::   :: fst  {{ tex \pi_1 }}
-  | snd          ::   :: snd  {{ tex \pi_2 }}
-  | __           ::   :: hole    {{ tex [\cdot] }}
-  | forall       ::   :: forall  {{ tex \forall }}
-  | empty        ::   :: empty   {{ tex \bullet }}
-  | @            ::   :: sat     {{ tex \otimes }}
+  | ++           ::   :: merge   {{ tex \cup{} }}
+  | unit         ::   :: unit  {{ tex \top{} }}
+  | *            ::   :: prod  {{ tex \times{} }}
+  | tt           ::   :: tt   {{ tex \mathop{ \textbf ! } }}
+  | fst          ::   :: fst  {{ tex \pi{}_1 }}
+  | snd          ::   :: snd  {{ tex \pi{}_2 }}
+  | __           ::   :: hole    {{ tex [\cdot{}] }}
+  | forall       ::   :: forall  {{ tex \forall{} }}
+  | empty        ::   :: empty   {{ tex \bullet{} }}
+  | @            ::   :: sat     {{ tex \otimes{} }}
   | -->          ::   :: step     {{ tex \mathrel{\longrightarrow} }}
-  | *->          ::   :: multi     {{ tex \mathrel{\Rightarrow} }}
+  | *->          ::   :: multi     {{ tex \mathrel{\Longrightarrow} }}
 
 substitutions
   single context var :: subst 
@@ -89,10 +87,10 @@ freevars
 
 defns
 
-judge :: '' ::=
+judge :: 'J' ::=
 
 defn
-G |- E : t ::   :: judge_E :: 'JE_'
+G |- E : t ::   :: E :: 'E_'
 by
 
 ------------ :: var
@@ -108,7 +106,7 @@ G2 |- E2 : t1
 G1 ++ G2 |- E1 E2 : t2
 
 defn
-|- v : t ::   :: judge_v :: 'Jv_'
+|- v : t ::   :: v :: 'v_'
 by
 
 ------------ :: tt
@@ -149,8 +147,8 @@ by
 (forall x : t . E) E' --> [x := E'] E
 
 E --> E'
------------------ :: ctx
-e . E  --> e . E'
+-------------------- :: ctx
+e [ E ] --> e [ E' ]
 
 defn
 v --> v' ::   :: step_v :: 'stepv_'
@@ -164,7 +162,7 @@ snd (v1, v2) --> v2
 
 v --> v'
 -------------------- :: ctx
-V . v --> V . v'
+V [ v ] --> V [ v' ]
 
 defn
 v *-> v' ::   :: multi_v :: 'multiv_'

@@ -8,8 +8,6 @@ Require Import Ott.ott_list_core.
 
 Require Blech.Map.
 
-Require Import FunInd.
-
 Definition var : Set := nat.
 Lemma eq_var: forall (x y : var), {x = y} + {x <> y}.
 Proof.
@@ -130,34 +128,34 @@ end.
 (** definitions *)
 
 (* defns judge *)
-Inductive judge_E : environment -> context -> type -> Prop :=    (* defn judge_E *)
+Inductive JE : environment -> context -> type -> Prop :=    (* defn E *)
  | JE_var : forall (x:var) (t:type),
-     judge_E  (Map.add  x   t    Map.empty  )  (E_var x) t
+     JE  (Map.add  x   t    Map.empty  )  (E_var x) t
  | JE_abs : forall (G:environment) (x:var) (t1:type) (E:context) (t2:type),
-     judge_E  (Map.add  x   t1   G )  E t2 ->
-     judge_E G (E_all x t1 E) (t_prod t1 t2)
+     JE  (Map.add  x   t1   G )  E t2 ->
+     JE G (E_all x t1 E) (t_prod t1 t2)
  | JE_app : forall (G1 G2:environment) (E1 E2:context) (t2 t1:type),
-     judge_E G1 E1 (t_prod t1 t2) ->
-     judge_E G2 E2 t1 ->
-     judge_E  (Map.merge  G1   G2 )  (E_app E1 E2) t2
-with judge_v : term -> type -> Prop :=    (* defn judge_v *)
+     JE G1 E1 (t_prod t1 t2) ->
+     JE G2 E2 t1 ->
+     JE  (Map.merge  G1   G2 )  (E_app E1 E2) t2
+with Jv : term -> type -> Prop :=    (* defn v *)
  | Jv_tt : 
-     judge_v v_tt t_unit
+     Jv v_tt t_unit
  | Jv_fanout : forall (v1 v2:term) (t1 t2:type),
-     judge_v v1 t1 ->
-     judge_v v2 t2 ->
-     judge_v (v_fanout v1 v2) (t_prod t1 t2)
+     Jv v1 t1 ->
+     Jv v2 t2 ->
+     Jv (v_fanout v1 v2) (t_prod t1 t2)
  | Jv_fst : forall (v:term) (t1 t2:type),
-     judge_v v (t_prod t1 t2) ->
-     judge_v (v_fst v) t1
+     Jv v (t_prod t1 t2) ->
+     Jv (v_fst v) t1
  | Jv_snd : forall (v:term) (t2 t1:type),
-     judge_v v (t_prod t1 t2) ->
-     judge_v (v_snd v) t2
-with sat : context -> term -> Prop :=    (* defn sat *)
- | sat_app : forall (E0 E1:context) (v:term),
-     sat E0 v ->
-     sat E1 (v_fst v) ->
-     sat (E_app E0 E1) (v_snd v).
+     Jv v (t_prod t1 t2) ->
+     Jv (v_snd v) t2
+with Jsat : context -> term -> Prop :=    (* defn sat *)
+ | Jsat_app : forall (E0 E1:context) (v:term),
+     Jsat E0 v ->
+     Jsat E1 (v_fst v) ->
+     Jsat (E_app E0 E1) (v_snd v).
 (** definitions *)
 
 (* defns eval *)

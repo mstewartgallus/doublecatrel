@@ -33,73 +33,72 @@
 
 \newcommand{\otttype}{
 \ottrulehead{\ottnt{type}  ,\ \ottnt{t}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\top}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{t}  \times  \ottnt{t'}}{}{}{}{}}
+\ottfirstprodline{|}{\top{}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{t}  \times{}  \ottnt{t'}}{}{}{}{}}
 
 \newcommand{\ottterm}{
 \ottrulehead{\ottnt{term}  ,\ \ottnt{v}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{!}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\pi_1 \, \ottnt{v}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\pi_2 \, \ottnt{v}}{}{}{}{}\ottprodnewline
+\ottfirstprodline{|}{\mathop{ \textbf ! }}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\pi{}_1 \, \ottnt{v}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\pi{}_2 \, \ottnt{v}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{v}  \ottsym{,}  \ottnt{v'}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{V}  \ottsym{.}  \ottnt{v}} {\textsf{M}}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{V}  \ottsym{[}  \ottnt{v}  \ottsym{]}} {\textsf{M}}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{(}  \ottnt{v}  \ottsym{)}} {\textsf{S}}{}{}{}}
 
 \newcommand{\ottcontext}{
 \ottrulehead{\ottnt{context}  ,\ \ottnt{E}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\mathit{x}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\forall \, \mathit{x}  \colon  \ottnt{t}  \ottsym{.}  \ottnt{E}}{}{\textsf{bind}\; \mathit{x}\; \textsf{in}\; \ottnt{E}}{}{}\ottprodnewline
+\ottprodline{|}{\forall{} \, \mathit{x}  \colon{}  \ottnt{t}  \ottsym{.}  \ottnt{E}}{}{\textsf{bind}\; \mathit{x}\; \textsf{in}\; \ottnt{E}}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{E} \, \ottnt{E'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{[}  \mathit{x}  \mathbin{:=}  \ottnt{E}  \ottsym{]}  \ottnt{E'}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{e}  \ottsym{.}  \ottnt{E}} {\textsf{M}}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{e}  \ottsym{[}  \ottnt{E}  \ottsym{]}} {\textsf{M}}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{(}  \ottnt{E}  \ottsym{)}} {\textsf{S}}{}{}{}}
 
 \newcommand{\ottenvironment}{
 \ottrulehead{\ottnt{environment}  ,\ \Gamma}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\bullet} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\Gamma  \ottsym{,}  \mathit{x}  \colon  \ottnt{t}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\Gamma  \cup  \Gamma'} {\textsf{M}}{}{}{}}
+\ottfirstprodline{|}{\bullet{}} {\textsf{M}}{}{}{}\ottprodnewline
+\ottprodline{|}{\Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t}} {\textsf{M}}{}{}{}\ottprodnewline
+\ottprodline{|}{\Gamma  \cup{}  \Gamma'} {\textsf{M}}{}{}{}}
 
 \newcommand{\otttermXXctx}{
 \ottrulehead{\ottnt{term\_ctx}  ,\ \ottnt{V}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\pi_1 \, [\cdot]}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\pi_2 \, [\cdot]}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{v}  \ottsym{,} \, [\cdot]}{}{}{}{}\ottprodnewline
-\ottprodline{|}{[\cdot] \, \ottsym{,}  \ottnt{v}}{}{}{}{}}
+\ottfirstprodline{|}{\pi{}_1 \, [\cdot{}]}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\pi{}_2 \, [\cdot{}]}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{v}  \ottsym{,} \, [\cdot{}]}{}{}{}{}\ottprodnewline
+\ottprodline{|}{[\cdot{}] \, \ottsym{,}  \ottnt{v}}{}{}{}{}}
 
 \newcommand{\otttermXXnorm}{
 \ottrulehead{\ottnt{term\_norm}  ,\ \ottnt{N}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{!}{}{}{}{}\ottprodnewline
+\ottfirstprodline{|}{\mathop{ \textbf ! }}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{N}  \ottsym{,}  \ottnt{N'}}{}{}{}{}}
 
 \newcommand{\ottcontextXXctx}{
 \ottrulehead{\ottnt{context\_ctx}  ,\ \ottnt{e}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\forall \, \mathit{x}  \colon  \ottnt{t}  \ottsym{.} \, [\cdot]}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{E} \, [\cdot]}{}{}{}{}\ottprodnewline
-\ottprodline{|}{[\cdot] \, \ottnt{E}}{}{}{}{}}
+\ottfirstprodline{|}{\forall{} \, \mathit{x}  \colon{}  \ottnt{t}  \ottsym{.} \, [\cdot{}]}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{E} \, [\cdot{}]}{}{}{}{}\ottprodnewline
+\ottprodline{|}{[\cdot{}] \, \ottnt{E}}{}{}{}{}}
 
 \newcommand{\ottcontextXXwhnf}{
 \ottrulehead{\ottnt{context\_whnf}  ,\ \ottnt{J}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\forall \, \mathit{x}  \colon  \ottnt{t}  \ottsym{.}  \ottnt{E}}{}{\textsf{bind}\; \mathit{x}\; \textsf{in}\; \ottnt{E}}{}{}}
+\ottfirstprodline{|}{\forall{} \, \mathit{x}  \colon{}  \ottnt{t}  \ottsym{.}  \ottnt{E}}{}{\textsf{bind}\; \mathit{x}\; \textsf{in}\; \ottnt{E}}{}{}}
 
 \newcommand{\ottterminals}{
 \ottrulehead{\ottnt{terminals}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{ \setminus }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \colon }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \vdash }{}{}{}{}\ottprodnewline
+\ottfirstprodline{|}{ \colon{} }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ \vdash{} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathbin{:=} }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \cup }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \top }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \times }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ ! }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \pi_1 }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \pi_2 }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ [\cdot] }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \forall }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \bullet }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \otimes }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ \cup{} }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ \top{} }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ \times{} }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ \mathop{ \textbf ! } }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ \pi{}_1 }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ \pi{}_2 }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ [\cdot{}] }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ \forall{} }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ \bullet{} }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ \otimes{} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathrel{\longrightarrow} }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \mathrel{\Rightarrow} }{}{}{}{}}
+\ottprodline{|}{ \mathrel{\Longrightarrow} }{}{}{}{}}
 
 \newcommand{\ottformula}{
 \ottrulehead{\ottnt{formula}}{::=}{}\ottprodnewline
@@ -107,16 +106,16 @@
 
 \newcommand{\ottjudge}{
 \ottrulehead{\ottnt{judge}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\Gamma  \vdash  \ottnt{E}  \colon  \ottnt{t}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\vdash  \ottnt{v}  \colon  \ottnt{t}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\vdash  \ottnt{E}  \otimes  \ottnt{v}}{}{}{}{}}
+\ottfirstprodline{|}{\Gamma  \vdash{}  \ottnt{E}  \colon{}  \ottnt{t}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\vdash{}  \ottnt{v}  \colon{}  \ottnt{t}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\vdash{}  \ottnt{E}  \otimes{}  \ottnt{v}}{}{}{}{}}
 
 \newcommand{\otteval}{
 \ottrulehead{\ottnt{eval}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottnt{E}  \mathrel{\longrightarrow}  \ottnt{E'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{v}  \mathrel{\longrightarrow}  \ottnt{v'}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{v}  \mathrel{\Rightarrow}  \ottnt{v'}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{E}  \mathrel{\Rightarrow}  \ottnt{E'}}{}{}{}{}}
+\ottprodline{|}{\ottnt{v}  \mathrel{\Longrightarrow}  \ottnt{v'}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{E}  \mathrel{\Longrightarrow}  \ottnt{E'}}{}{}{}{}}
 
 \newcommand{\ottjudgement}{
 \ottrulehead{\ottnt{judgement}}{::=}{}\ottprodnewline
@@ -159,28 +158,28 @@
 %% defn judge_E
 \newcommand{\ottdruleJEXXvar}[1]{\ottdrule[#1]{%
 }{
-\bullet  \ottsym{,}  \mathit{x}  \colon  \ottnt{t}  \vdash  \mathit{x}  \colon  \ottnt{t}}{%
+\bullet{}  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t}  \vdash{}  \mathit{x}  \colon{}  \ottnt{t}}{%
 {\ottdrulename{JE\_var}}{}%
 }}
 
 
 \newcommand{\ottdruleJEXXabs}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \ottsym{,}  \mathit{x}  \colon  \ottnt{t_{{\mathrm{1}}}}  \vdash  \ottnt{E}  \colon  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \vdash{}  \ottnt{E}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}%
 }{
-\Gamma  \vdash  \forall \, \mathit{x}  \colon  \ottnt{t_{{\mathrm{1}}}}  \ottsym{.}  \ottnt{E}  \colon  \ottnt{t_{{\mathrm{1}}}}  \times  \ottnt{t_{{\mathrm{2}}}}}{%
+\Gamma  \vdash{}  \forall{} \, \mathit{x}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \ottsym{.}  \ottnt{E}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \times{}  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{JE\_abs}}{}%
 }}
 
 
 \newcommand{\ottdruleJEXXapp}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma_{{\mathrm{1}}}  \vdash  \ottnt{E_{{\mathrm{1}}}}  \colon  \ottnt{t_{{\mathrm{1}}}}  \times  \ottnt{t_{{\mathrm{2}}}}}%
-\ottpremise{\Gamma_{{\mathrm{2}}}  \vdash  \ottnt{E_{{\mathrm{2}}}}  \colon  \ottnt{t_{{\mathrm{1}}}}}%
+\ottpremise{\Gamma_{{\mathrm{1}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \times{}  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\Gamma_{{\mathrm{2}}}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}}%
 }{
-\Gamma_{{\mathrm{1}}}  \cup  \Gamma_{{\mathrm{2}}}  \vdash  \ottnt{E_{{\mathrm{1}}}} \, \ottnt{E_{{\mathrm{2}}}}  \colon  \ottnt{t_{{\mathrm{2}}}}}{%
+\Gamma_{{\mathrm{1}}}  \cup{}  \Gamma_{{\mathrm{2}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}} \, \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{JE\_app}}{}%
 }}
 
-\newcommand{\ottdefnjudgeXXE}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \vdash  \ottnt{E}  \colon  \ottnt{t}$}{}
+\newcommand{\ottdefnJjudgeXXE}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \vdash{}  \ottnt{E}  \colon{}  \ottnt{t}$}{}
 \ottusedrule{\ottdruleJEXXvar{}}
 \ottusedrule{\ottdruleJEXXabs{}}
 \ottusedrule{\ottdruleJEXXapp{}}
@@ -189,36 +188,36 @@
 %% defn judge_v
 \newcommand{\ottdruleJvXXtt}[1]{\ottdrule[#1]{%
 }{
-\vdash  !  \colon  \top}{%
+\vdash{}  \mathop{ \textbf ! }  \colon{}  \top{}}{%
 {\ottdrulename{Jv\_tt}}{}%
 }}
 
 
 \newcommand{\ottdruleJvXXfanout}[1]{\ottdrule[#1]{%
-\ottpremise{\vdash  \ottnt{v_{{\mathrm{1}}}}  \colon  \ottnt{t_{{\mathrm{1}}}}}%
-\ottpremise{\vdash  \ottnt{v_{{\mathrm{2}}}}  \colon  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\vdash{}  \ottnt{v_{{\mathrm{1}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}}%
+\ottpremise{\vdash{}  \ottnt{v_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}%
 }{
-\vdash  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \colon  \ottnt{t_{{\mathrm{1}}}}  \times  \ottnt{t_{{\mathrm{2}}}}}{%
+\vdash{}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \times{}  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{Jv\_fanout}}{}%
 }}
 
 
 \newcommand{\ottdruleJvXXfst}[1]{\ottdrule[#1]{%
-\ottpremise{\vdash  \ottnt{v}  \colon  \ottnt{t_{{\mathrm{1}}}}  \times  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\vdash{}  \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \times{}  \ottnt{t_{{\mathrm{2}}}}}%
 }{
-\vdash  \pi_1 \, \ottnt{v}  \colon  \ottnt{t_{{\mathrm{1}}}}}{%
+\vdash{}  \pi{}_1 \, \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{1}}}}}{%
 {\ottdrulename{Jv\_fst}}{}%
 }}
 
 
 \newcommand{\ottdruleJvXXsnd}[1]{\ottdrule[#1]{%
-\ottpremise{\vdash  \ottnt{v}  \colon  \ottnt{t_{{\mathrm{1}}}}  \times  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\vdash{}  \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \times{}  \ottnt{t_{{\mathrm{2}}}}}%
 }{
-\vdash  \pi_2 \, \ottnt{v}  \colon  \ottnt{t_{{\mathrm{2}}}}}{%
+\vdash{}  \pi{}_2 \, \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{Jv\_snd}}{}%
 }}
 
-\newcommand{\ottdefnjudgeXXv}[1]{\begin{ottdefnblock}[#1]{$\vdash  \ottnt{v}  \colon  \ottnt{t}$}{}
+\newcommand{\ottdefnJjudgeXXv}[1]{\begin{ottdefnblock}[#1]{$\vdash{}  \ottnt{v}  \colon{}  \ottnt{t}$}{}
 \ottusedrule{\ottdruleJvXXtt{}}
 \ottusedrule{\ottdruleJvXXfanout{}}
 \ottusedrule{\ottdruleJvXXfst{}}
@@ -226,27 +225,27 @@
 \end{ottdefnblock}}
 
 %% defn sat
-\newcommand{\ottdrulesatXXapp}[1]{\ottdrule[#1]{%
-\ottpremise{\vdash  \ottnt{E_{{\mathrm{0}}}}  \otimes  \ottnt{v}}%
-\ottpremise{\vdash  \ottnt{E_{{\mathrm{1}}}}  \otimes  \pi_1 \, \ottnt{v}}%
+\newcommand{\ottdruleJsatXXapp}[1]{\ottdrule[#1]{%
+\ottpremise{\vdash{}  \ottnt{E_{{\mathrm{0}}}}  \otimes{}  \ottnt{v}}%
+\ottpremise{\vdash{}  \ottnt{E_{{\mathrm{1}}}}  \otimes{}  \pi{}_1 \, \ottnt{v}}%
 }{
-\vdash  \ottnt{E_{{\mathrm{0}}}} \, \ottnt{E_{{\mathrm{1}}}}  \otimes  \pi_2 \, \ottnt{v}}{%
-{\ottdrulename{sat\_app}}{}%
+\vdash{}  \ottnt{E_{{\mathrm{0}}}} \, \ottnt{E_{{\mathrm{1}}}}  \otimes{}  \pi{}_2 \, \ottnt{v}}{%
+{\ottdrulename{Jsat\_app}}{}%
 }}
 
-\newcommand{\ottdefnsat}[1]{\begin{ottdefnblock}[#1]{$\vdash  \ottnt{E}  \otimes  \ottnt{v}$}{}
-\ottusedrule{\ottdrulesatXXapp{}}
+\newcommand{\ottdefnJsat}[1]{\begin{ottdefnblock}[#1]{$\vdash{}  \ottnt{E}  \otimes{}  \ottnt{v}$}{}
+\ottusedrule{\ottdruleJsatXXapp{}}
 \end{ottdefnblock}}
 
 
 \newcommand{\ottdefnsjudge}{
-\ottdefnjudgeXXE{}\ottdefnjudgeXXv{}\ottdefnsat{}}
+\ottdefnJjudgeXXE{}\ottdefnJjudgeXXv{}\ottdefnJsat{}}
 
 % defns eval
 %% defn step_E
 \newcommand{\ottdrulestepEXXbeta}[1]{\ottdrule[#1]{%
 }{
-\ottsym{(}  \forall \, \mathit{x}  \colon  \ottnt{t}  \ottsym{.}  \ottnt{E}  \ottsym{)} \, \ottnt{E'}  \mathrel{\longrightarrow}  \ottsym{[}  \mathit{x}  \mathbin{:=}  \ottnt{E'}  \ottsym{]}  \ottnt{E}}{%
+\ottsym{(}  \forall{} \, \mathit{x}  \colon{}  \ottnt{t}  \ottsym{.}  \ottnt{E}  \ottsym{)} \, \ottnt{E'}  \mathrel{\longrightarrow}  \ottsym{[}  \mathit{x}  \mathbin{:=}  \ottnt{E'}  \ottsym{]}  \ottnt{E}}{%
 {\ottdrulename{stepE\_beta}}{}%
 }}
 
@@ -254,7 +253,7 @@
 \newcommand{\ottdrulestepEXXctx}[1]{\ottdrule[#1]{%
 \ottpremise{\ottnt{E}  \mathrel{\longrightarrow}  \ottnt{E'}}%
 }{
-\ottnt{e}  \ottsym{.}  \ottnt{E}  \mathrel{\longrightarrow}  \ottnt{e}  \ottsym{.}  \ottnt{E'}}{%
+\ottnt{e}  \ottsym{[}  \ottnt{E}  \ottsym{]}  \mathrel{\longrightarrow}  \ottnt{e}  \ottsym{[}  \ottnt{E'}  \ottsym{]}}{%
 {\ottdrulename{stepE\_ctx}}{}%
 }}
 
@@ -266,14 +265,14 @@
 %% defn step_v
 \newcommand{\ottdrulestepvXXbetaOne}[1]{\ottdrule[#1]{%
 }{
-\pi_1 \, \ottsym{(}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \ottsym{)}  \mathrel{\longrightarrow}  \ottnt{v_{{\mathrm{1}}}}}{%
+\pi{}_1 \, \ottsym{(}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \ottsym{)}  \mathrel{\longrightarrow}  \ottnt{v_{{\mathrm{1}}}}}{%
 {\ottdrulename{stepv\_beta1}}{}%
 }}
 
 
 \newcommand{\ottdrulestepvXXbetaTwo}[1]{\ottdrule[#1]{%
 }{
-\pi_2 \, \ottsym{(}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \ottsym{)}  \mathrel{\longrightarrow}  \ottnt{v_{{\mathrm{2}}}}}{%
+\pi{}_2 \, \ottsym{(}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \ottsym{)}  \mathrel{\longrightarrow}  \ottnt{v_{{\mathrm{2}}}}}{%
 {\ottdrulename{stepv\_beta2}}{}%
 }}
 
@@ -281,7 +280,7 @@
 \newcommand{\ottdrulestepvXXctx}[1]{\ottdrule[#1]{%
 \ottpremise{\ottnt{v}  \mathrel{\longrightarrow}  \ottnt{v'}}%
 }{
-\ottnt{V}  \ottsym{.}  \ottnt{v}  \mathrel{\longrightarrow}  \ottnt{V}  \ottsym{.}  \ottnt{v'}}{%
+\ottnt{V}  \ottsym{[}  \ottnt{v}  \ottsym{]}  \mathrel{\longrightarrow}  \ottnt{V}  \ottsym{[}  \ottnt{v'}  \ottsym{]}}{%
 {\ottdrulename{stepv\_ctx}}{}%
 }}
 
@@ -294,20 +293,20 @@
 %% defn multi_v
 \newcommand{\ottdrulemultivXXid}[1]{\ottdrule[#1]{%
 }{
-\ottnt{v}  \mathrel{\Rightarrow}  \ottnt{v}}{%
+\ottnt{v}  \mathrel{\Longrightarrow}  \ottnt{v}}{%
 {\ottdrulename{multiv\_id}}{}%
 }}
 
 
 \newcommand{\ottdrulemultivXXthen}[1]{\ottdrule[#1]{%
 \ottpremise{\ottnt{v_{{\mathrm{1}}}}  \mathrel{\longrightarrow}  \ottnt{v_{{\mathrm{2}}}}}%
-\ottpremise{\ottnt{v_{{\mathrm{2}}}}  \mathrel{\Rightarrow}  \ottnt{v_{{\mathrm{3}}}}}%
+\ottpremise{\ottnt{v_{{\mathrm{2}}}}  \mathrel{\Longrightarrow}  \ottnt{v_{{\mathrm{3}}}}}%
 }{
-\ottnt{v_{{\mathrm{1}}}}  \mathrel{\Rightarrow}  \ottnt{v_{{\mathrm{3}}}}}{%
+\ottnt{v_{{\mathrm{1}}}}  \mathrel{\Longrightarrow}  \ottnt{v_{{\mathrm{3}}}}}{%
 {\ottdrulename{multiv\_then}}{}%
 }}
 
-\newcommand{\ottdefnmultiXXv}[1]{\begin{ottdefnblock}[#1]{$\ottnt{v}  \mathrel{\Rightarrow}  \ottnt{v'}$}{}
+\newcommand{\ottdefnmultiXXv}[1]{\begin{ottdefnblock}[#1]{$\ottnt{v}  \mathrel{\Longrightarrow}  \ottnt{v'}$}{}
 \ottusedrule{\ottdrulemultivXXid{}}
 \ottusedrule{\ottdrulemultivXXthen{}}
 \end{ottdefnblock}}
@@ -315,20 +314,20 @@
 %% defn multi_E
 \newcommand{\ottdrulemultiEXXid}[1]{\ottdrule[#1]{%
 }{
-\ottnt{E}  \mathrel{\Rightarrow}  \ottnt{E}}{%
+\ottnt{E}  \mathrel{\Longrightarrow}  \ottnt{E}}{%
 {\ottdrulename{multiE\_id}}{}%
 }}
 
 
 \newcommand{\ottdrulemultiEXXthen}[1]{\ottdrule[#1]{%
 \ottpremise{\ottnt{E_{{\mathrm{1}}}}  \mathrel{\longrightarrow}  \ottnt{E_{{\mathrm{2}}}}}%
-\ottpremise{\ottnt{E_{{\mathrm{2}}}}  \mathrel{\Rightarrow}  \ottnt{E_{{\mathrm{3}}}}}%
+\ottpremise{\ottnt{E_{{\mathrm{2}}}}  \mathrel{\Longrightarrow}  \ottnt{E_{{\mathrm{3}}}}}%
 }{
-\ottnt{E_{{\mathrm{1}}}}  \mathrel{\Rightarrow}  \ottnt{E_{{\mathrm{3}}}}}{%
+\ottnt{E_{{\mathrm{1}}}}  \mathrel{\Longrightarrow}  \ottnt{E_{{\mathrm{3}}}}}{%
 {\ottdrulename{multiE\_then}}{}%
 }}
 
-\newcommand{\ottdefnmultiXXE}[1]{\begin{ottdefnblock}[#1]{$\ottnt{E}  \mathrel{\Rightarrow}  \ottnt{E'}$}{}
+\newcommand{\ottdefnmultiXXE}[1]{\begin{ottdefnblock}[#1]{$\ottnt{E}  \mathrel{\Longrightarrow}  \ottnt{E'}$}{}
 \ottusedrule{\ottdrulemultiEXXid{}}
 \ottusedrule{\ottdrulemultiEXXthen{}}
 \end{ottdefnblock}}
