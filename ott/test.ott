@@ -31,10 +31,9 @@ context, E :: 'E_' ::=
   | ( E )             :: S :: paren {{ icho ([[E]]) }}
 
 environment, G {{ tex \Gamma }} :: 'G_' ::= {{ coq Map.map type }} {{ coq-universe Type }}
-  | x : t         :: M :: ofty {{ icho (Map.one [[x]] [[t]]) }}
+  | empty         :: M :: ofty {{ icho Map.empty }}
   | G , x : t     :: M :: add {{ icho (Map.add [[x]] [[t]] [[G]]) }}
   | G ++ G'        :: M :: merge {{ icho (Map.merge [[G]] [[G']]) }}
-  | G \ x         :: M :: minus {{ icho (Map.minus [[x]] [[G]]) }}
 
 
 term_ctx, V :: 'V_' ::=
@@ -61,7 +60,7 @@ terminals :: 'terminals_' ::=
   | :            ::   :: in     {{ tex \colon }}
   | |-           ::   :: turnstile   {{ tex \vdash }}
   | :=           ::   :: update  {{ tex \mathbin{:=} }}
-  | ++           ::   :: app    {{ tex , }}
+  | ++           ::   :: app    {{ tex \cup }}
   | unit         ::   :: unit  {{ tex \top }}
   | *            ::   :: prod  {{ tex \times }}
   | tt           ::   :: tt   {{ tex ! }}
@@ -71,8 +70,8 @@ terminals :: 'terminals_' ::=
   | forall       ::   :: forall  {{ tex \forall }}
   | empty        ::   :: empty   {{ tex \bullet }}
   | @            ::   :: sat     {{ tex \otimes }}
-  | -->          ::   :: step     {{ tex \longrightarrow }}
-  | *->          ::   :: multi     {{ tex \Rightarrow }}
+  | -->          ::   :: step     {{ tex \mathrel{\longrightarrow} }}
+  | *->          ::   :: multi     {{ tex \mathrel{\Rightarrow} }}
 
 substitutions
   single context var :: subst 
@@ -97,7 +96,7 @@ G |- E : t ::   :: judge_E :: 'JE_'
 by
 
 ------------ :: var
-x : t |- x : t
+empty , x : t |- x : t
 
 G , x : t1 |- E : t2
 -------------------------- :: abs
@@ -132,9 +131,6 @@ by
 defn
 |- E @ v ::   :: sat :: 'sat_'
 by
-
------------------- :: tt
-|- E @ tt
 
 |- E0 @ v
 |- E1 @ fst v

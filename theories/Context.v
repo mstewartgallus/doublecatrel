@@ -116,6 +116,8 @@ Proof using.
   induction p.
   - unfold typecheck.
     unfold one.
+    unfold empty.
+    unfold add.
     rewrite (find_add x t (Env.empty _)).
     rewrite always_empty.
     reflexivity.

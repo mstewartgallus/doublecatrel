@@ -132,7 +132,7 @@ end.
 (* defns judge *)
 Inductive judge_E : environment -> context -> type -> Prop :=    (* defn judge_E *)
  | JE_var : forall (x:var) (t:type),
-     judge_E  (Map.one  x   t )  (E_var x) t
+     judge_E  (Map.add  x   t    Map.empty  )  (E_var x) t
  | JE_abs : forall (G:environment) (x:var) (t1:type) (E:context) (t2:type),
      judge_E  (Map.add  x   t1   G )  E t2 ->
      judge_E G (E_all x t1 E) (t_prod t1 t2)
@@ -154,8 +154,6 @@ with judge_v : term -> type -> Prop :=    (* defn judge_v *)
      judge_v v (t_prod t1 t2) ->
      judge_v (v_snd v) t2
 with sat : context -> term -> Prop :=    (* defn sat *)
- | sat_tt : forall (E:context),
-     sat E v_tt
  | sat_app : forall (E0 E1:context) (v:term),
      sat E0 v ->
      sat E1 (v_fst v) ->

@@ -19,6 +19,7 @@
 \usepackage{amssymb}
 \usepackage{bussproofs}
 \usepackage{stmaryrd}
+\usepackage{supertabular}
 
 \usepackage{tikz}
 \usepackage{tikz-cd}
@@ -37,6 +38,8 @@
 %% \hypersetup{bookmarksopen=true,colorlinks=true,allcolors=blue}
 
 %% \setlength{\mathindent}{0pt}
+
+\input{tex/test.tex}
 
 \newcommand{\Rel}{\textbf{Rel}}
 \newcommand{\Set}{\textbf{Set}}
@@ -133,6 +136,28 @@ explicitly indexed by their types and variable binding is more
 imperative.
 
 \subsection*{Grammar, Syntax and Reductions}
+
+\begin{flushleft}
+\ottgrammartabular{
+\otttype\ottinterrule
+\ottterm\ottinterrule
+\ottcontext\ottinterrule
+\ottenvironment
+%% \otttermXXctx\ottinterrule
+%% \otttermXXnorm\ottinterrule
+%% \ottcontextXXctx\ottinterrule
+%% \ottcontextXXwhnf\ottinterrule
+%% \ottterminals\ottinterrule
+%% \ottformula\ottinterrule
+%% \ottjudge\ottinterrule
+%% \otteval\ottinterrule
+%% \ottjudgement\ottinterrule
+%% \ottuserXXsyntax
+\ottafterlastrule
+}
+
+\ottdefnss
+\end{flushleft}
 
 \begin{center}
 

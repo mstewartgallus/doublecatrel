@@ -18,6 +18,6 @@ theories/Spec.v: ott/test.ott
 	ott -i ott/test.ott -o $@
 
 tex/test.tex: ott/test.ott
-	ott -i ott/test.ott -o $@
-test.pdf: tex/test.tex
-	xelatex tex/test.tex -o $@
+	ott -tex_wrap false -i ott/test.ott -o $@
+Rel.pdf: Rel.tex tex/test.tex
+	xelatex Rel.tex -o $@
