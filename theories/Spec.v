@@ -14,7 +14,22 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_var : ott_coq_equality.
+Definition cvar : Set := nat.
+Lemma eq_cvar: forall (x y : cvar), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_cvar : ott_coq_equality.
 Definition index : Set := nat.
+
+Inductive type : Set := 
+ | t_unit : type
+ | t_prod (t:type) (t':type).
+
+Inductive context : Set := 
+ | E_var (x:var)
+ | E_all (x:var) (t:type) (E:context)
+ | E_app (E:context) (E':context).
 
 Inductive term : Set := 
  | v_tt : term
@@ -22,29 +37,25 @@ Inductive term : Set :=
  | v_snd (v:term)
  | v_fanout (v:term) (v':term).
 
-Inductive type : Set := 
- | t_unit : type
- | t_prod (t:type) (t':type).
+Definition seq : Type := (Map.map (context * term)).
 
-Definition satenv : Type := Map.map term.
+Inductive command : Set := 
+ | c_var (y:cvar)
+ | c_abs (x:var) (t:type) (y:cvar) (v0:term) (c:command)
+ | c_app (c:command) (c':command).
 
-Inductive context : Set := 
- | E_var (x:var)
- | E_all (x:var) (t:type) (E:context)
- | E_app (E:context) (E':context).
+Definition environment : Type := (Map.map type).
 
-Definition environment : Type := Map.map type.
+Inductive context_ctx : Set := 
+ | e_forall (x:var) (t:type)
+ | e_app_l (E:context)
+ | e_app_r (E:context).
 
 Inductive term_ctx : Set := 
  | V_fst : term_ctx
  | V_snd : term_ctx
  | V_fanout_l (v:term)
  | V_fanout_r (v:term).
-
-Inductive context_ctx : Set := 
- | e_forall (x:var) (t:type)
- | e_app_l (E:context)
- | e_app_r (E:context).
 (** library functions *)
 Fixpoint list_mem A (eq:forall a b:A,{a=b}+{a<>b}) (x:A) (l:list A) {struct l} : bool :=
   match l with
@@ -153,17 +164,21 @@ with Jv : term -> type -> Prop :=    (* defn v *)
  | Jv_snd : forall (v:term) (t2 t1:type),
      Jv v (t_prod t1 t2) ->
      Jv (v_snd v) t2
-with Jsat : satenv -> context -> term -> Prop :=    (* defn sat *)
- | Jsat_var : forall (x:var) (v:term),
-     Jsat  (Map.add  x   v    Map.empty  )  (E_var x) v
- | Jsat_abs : forall (D:satenv) (x:var) (t:type) (E:context) (v0 v1:term),
+with Jsat : environment -> seq -> command -> context -> term -> Prop :=    (* defn sat *)
+ | Jsat_var : forall (G:environment) (D:seq) (y:cvar) (E:context) (v:term) (t:type),
+     Jv v t ->
+     JE G E t ->
+     Jsat G  (Map.add  y  ( E ,  v )  D )  (c_var y) E v
+ | Jsat_abs : forall (G:environment) (D:seq) (x:var) (t:type) (y:cvar) (v0:term) (c:command) (E:context) (v1:term) (t':type),
      Jv v0 t ->
-     Jsat  (Map.add  x   v0   D )  E v1 ->
-     Jsat D  ( (E_all x t E) )  (v_fanout v0 v1)
- | Jsat_app : forall (D D':satenv) (E0 E1:context) (v:term),
-     Jsat D E0 v ->
-     Jsat D' E1 (v_fst v) ->
-     Jsat  (Map.merge  D   D' )   ( (E_app E0 E1) )  (v_snd v).
+     Jv v1 t' ->
+     JE  (Map.add  x   t   G )  E t' ->
+     Jsat  (Map.add  x   t   G )   (Map.add  y  ( (E_var x) ,  v0 )  D )  c E v1 ->
+     Jsat G D (c_abs x t y v0 c)  ( (E_all x t E) )  (v_fanout v0 v1)
+ | Jsat_app : forall (G1 G2:environment) (D:seq) (c0 c1:command) (E0 E1:context) (v:term),
+     Jsat G1 D c0 E0 v ->
+     Jsat G2 D c1 E1 (v_fst v) ->
+     Jsat  (Map.merge  G1   G2 )  D (c_app c0 c1)  ( (E_app E0 E1) )  (v_snd v).
 (** definitions *)
 
 (* defns eval *)

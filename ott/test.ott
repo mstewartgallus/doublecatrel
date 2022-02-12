@@ -4,7 +4,8 @@ Require Blech.Map.
 }}
 
 metavar var, x ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[var]]} }}
-indexvar index, i, n ::= {{ isa num }} {{ coq nat }}
+metavar cvar, y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[cvar]]} }}
+indexvar index, i, m, n ::= {{ isa num }} {{ coq nat }}
 
 grammar
 type, t :: 't_' ::=
@@ -29,16 +30,20 @@ context, E :: 'E_' ::=
   | e [ E ]           :: M :: fill_context
                              {{ icho (appctx_context_ctx_context [[e]] [[E]]) }}
 
-environment, G {{ tex \Gamma }} :: 'G_' ::= {{ coq Map.map type }} {{ coq-universe Type }}
-  | empty         :: M :: ofty {{ icho Map.empty }}
-  | G , x : t     :: M :: add {{ icho (Map.add [[x]] [[t]] [[G]]) }}
-  | G ++ G'       :: M :: merge {{ icho (Map.merge [[G]] [[G']]) }}
+command, c :: 'c_' ::=
+  | y                 ::   :: var
+  | abs ( x : t ) ( y : [ v0 ] ) . c  :: :: abs (+ bind y in c +)
+  | c c'              ::   :: app
+  | ( c )             :: S :: paren {{ icho ([[c]]) }}
 
-satenv, D {{ tex \Delta }} :: 'D_' ::= {{ coq Map.map term }} {{ coq-universe Type }}
-  | empty         :: M :: ofty {{ icho Map.empty }}
-  | D , x [ v ]   :: M :: add {{ icho (Map.add [[x]] [[v]] [[D]]) }}
-  | D ++ D'       :: M :: merge {{ icho (Map.merge [[D]] [[D']]) }}
+environment, G {{ tex \Gamma }} :: 'G_' ::= {{ coq (Map.map type) }} {{ coq-universe Type }}
+  | empty         ::   :: empty {{ coq Map.empty }}
+  | G , x : t     ::   :: add {{ coq (Map.add [[x]] [[t]] [[G]]) }}
+  | G ++ G'       ::   :: merge {{ coq (Map.merge [[G]] [[G']]) }}
 
+seq, D {{ tex \Delta }} :: 'D_'  ::= {{ coq (Map.map (context * term)) }} {{ coq-universe Type }}
+  | empty            ::   :: empty {{ coq Map.empty }}
+  | D , y : E [ v ]  ::   :: add {{ coq (Map.add [[y]] ([[E]], [[v]]) [[D]]) }}
 
 term_ctx, V :: 'V_' ::=
   | fst __     ::  :: fst
@@ -61,6 +66,7 @@ context_whnf, J :: 'J_' ::=
 
 terminals :: 'terminals_' ::=
   | :            ::   :: in     {{ tex \colon{} }}
+  | ,,           ::   :: and     {{ tex ; }}
   | |-           ::   :: turnstile   {{ tex \vdash{} }}
   | :=           ::   :: update  {{ tex \mathbin{:=} }}
   | ++           ::   :: merge   {{ tex \cup{} }}
@@ -131,23 +137,27 @@ by
 
 
 defn
-D |- E [ v ] ::   :: sat :: 'sat_'
+G ,, D |- c : E [ v ] ::   :: sat :: 'sat_'
 by
 
-% fixme seems off
-------------------- :: var
-empty , x [ v ] |- x [ v ]
+% structural rules
 
+|- v : t
+G |- E : t
+------------------ :: var
+G ,, D , y : E[v] |- y : E[v]
 
 |- v0 : t
-D , x [ v0 ] |- E [ v1 ]
------------------- :: abs
-D |- (forall x : t . E) [ v0 , v1 ]
+|- v1 : t'
+G , x : t |- E : t'
+G , x : t ,, D , y : x [ v0 ] |- c : E [ v1 ]
+------------------------------------------ :: abs
+G ,, D |- abs (x : t) (y : [ v0 ]). c : (forall x : t . E) [ v0 , v1 ]
 
-D |- E0 [ v ]
-D' |- E1 [ fst v ]
------------------- :: app
-D ++ D' |- (E0 E1) [ snd v ]
+G1 ,, D |- c0 : E0 [ v0, v1 ]
+G2 ,, D |- c1 : E1 [ v0 ]
+--------------------------------- :: app
+G1 ++ G2 ,, D |- c0 c1 : (E0 E1) [ v1 ]
 
 defns
 

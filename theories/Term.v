@@ -7,25 +7,25 @@ Import IfNotations.
 
 Require Import FunInd.
 
-Function typeof (v: term): option type :=
+Function typecheck (v: term): option type :=
   match v with
   | v_tt => Some t_unit
   | v_fst v =>
-      if typeof v is Some (t0 * _)
+      if typecheck v is Some (t0 * _)
       then
         Some t0
       else
         None
   | v_snd v =>
-      if typeof v is Some (_ * t1)
+      if typecheck v is Some (_ * t1)
       then
         Some t1
       else
         None
   | v_fanout v0 v1 =>
-      if typeof v0 is Some t0
+      if typecheck v0 is Some t0
       then
-        if typeof v1 is Some t1
+        if typecheck v1 is Some t1
         then
           Some (t0 * t1)
         else
@@ -34,11 +34,11 @@ Function typeof (v: term): option type :=
         None
   end.
 
-Theorem typeof_sound:
-  forall v t, typeof v = Some t -> ⊢ v in t.
+Theorem typecheck_sound:
+  forall v t, typecheck v = Some t -> ⊢ v in t.
 Proof using .
   intros v.
-  functional induction (typeof v).
+  functional induction (typecheck v).
   all: cbn.
   all: intros ? p.
   all: inversion p.
@@ -47,15 +47,15 @@ Proof using .
   all: eauto.
 Qed.
 
-Theorem typeof_complete:
-  forall v t, ⊢ v in t -> typeof v = Some t.
+Theorem typecheck_complete:
+  forall v t, ⊢ v in t -> typecheck v = Some t.
 Proof using .
   intros ? ? p.
   induction p.
   all: cbn.
-  all: try (destruct (typeof v) as [[]|]).
-  all: try (destruct (typeof v1)).
-  all: try (destruct (typeof v2)).
+  all: try (destruct (typecheck v) as [[]|]).
+  all: try (destruct (typecheck v1)).
+  all: try (destruct (typecheck v2)).
   all: try inversion IHp.
   all: subst.
   all: try inversion IHp1.
@@ -67,16 +67,16 @@ Qed.
 
 Definition of_t t := { v | ⊢ v in t }.
 
-Definition tc v: if typeof v is Some t
+Definition tc v: if typecheck v is Some t
                  then
                    of_t t
                  else
                    unit.
 Proof.
-  destruct (typeof v) eqn:q.
+  destruct (typecheck v) eqn:q.
   2: apply tt.
   exists v.
-  apply typeof_sound.
+  apply typecheck_sound.
   auto.
 Defined.
 

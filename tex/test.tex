@@ -28,7 +28,8 @@
 \newcommand{\ottmetavars}{
 \ottmetavartabular{
  $ \mathit{var} ,\, \mathit{x} $ &  \\
- $ \ottmv{index} ,\, \ottmv{i} ,\, \ottmv{n} $ &  \\
+ $ \mathit{cvar} ,\, \mathit{y} $ &  \\
+ $ \ottmv{index} ,\, \ottmv{i} ,\, \ottmv{m} ,\, \ottmv{n} $ &  \\
 }}
 
 \newcommand{\otttype}{
@@ -54,17 +55,23 @@
 \ottprodline{|}{\ottsym{[}  \mathit{x}  \mathbin{:=}  \ottnt{E}  \ottsym{]}  \ottnt{E'}} {\textsf{M}}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{e}  \ottsym{[}  \ottnt{E}  \ottsym{]}} {\textsf{M}}{}{}{}}
 
+\newcommand{\ottcommand}{
+\ottrulehead{\ottnt{command}  ,\ \ottnt{c}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\mathit{y}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottkw{abs} \, \ottsym{(}  \mathit{x}  \colon{}  \ottnt{t}  \ottsym{)}  \ottsym{(}  \mathit{y}  \colon{}  \ottsym{[}  \ottnt{v_{{\mathrm{0}}}}  \ottsym{]}  \ottsym{)}  \ottsym{.}  \ottnt{c}}{}{\textsf{bind}\; \mathit{y}\; \textsf{in}\; \ottnt{c}}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{c} \, \ottnt{c'}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottsym{(}  \ottnt{c}  \ottsym{)}} {\textsf{S}}{}{}{}}
+
 \newcommand{\ottenvironment}{
 \ottrulehead{\ottnt{environment}  ,\ \Gamma}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\bullet{}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\Gamma  \cup{}  \Gamma'} {\textsf{M}}{}{}{}}
+\ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\Gamma  \cup{}  \Gamma'}{}{}{}{}}
 
-\newcommand{\ottsatenv}{
-\ottrulehead{\ottnt{satenv}  ,\ \Delta}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\bullet{}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\Delta  \ottsym{,}  \mathit{x}  \ottsym{[}  \ottnt{v}  \ottsym{]}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\Delta  \cup{}  \Delta'} {\textsf{M}}{}{}{}}
+\newcommand{\ottseq}{
+\ottrulehead{\ottnt{seq}  ,\ \Delta}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\Delta  \ottsym{,}  \mathit{y}  \colon{}  \ottnt{E}  \ottsym{[}  \ottnt{v}  \ottsym{]}}{}{}{}{}}
 
 \newcommand{\otttermXXctx}{
 \ottrulehead{\ottnt{term\_ctx}  ,\ \ottnt{V}}{::=}{}\ottprodnewline
@@ -91,6 +98,7 @@
 \newcommand{\ottterminals}{
 \ottrulehead{\ottnt{terminals}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{ \colon{} }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ ; }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \vdash{} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathbin{:=} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \cup{} }{}{}{}{}\ottprodnewline
@@ -113,7 +121,7 @@
 \ottrulehead{\ottnt{judge}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\Gamma  \vdash{}  \ottnt{E}  \colon{}  \ottnt{t}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\vdash{}  \ottnt{v}  \colon{}  \ottnt{t}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\Delta  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{v}  \ottsym{]}}{}{}{}{}}
+\ottprodline{|}{\Gamma  ;  \Delta  \vdash{}  \ottnt{c}  \colon{}  \ottnt{E}  \ottsym{[}  \ottnt{v}  \ottsym{]}}{}{}{}{}}
 
 \newcommand{\otteval}{
 \ottrulehead{\ottnt{eval}}{::=}{}\ottprodnewline
@@ -130,12 +138,14 @@
 \newcommand{\ottuserXXsyntax}{
 \ottrulehead{\ottnt{user\_syntax}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\mathit{var}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\mathit{cvar}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottmv{index}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{type}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{term}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{context}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{command}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{environment}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{satenv}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{seq}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{term\_ctx}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{term\_norm}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{context\_ctx}}{}{}{}{}\ottprodnewline
@@ -146,8 +156,9 @@
 \otttype\ottinterrule
 \ottterm\ottinterrule
 \ottcontext\ottinterrule
+\ottcommand\ottinterrule
 \ottenvironment\ottinterrule
-\ottsatenv\ottinterrule
+\ottseq\ottinterrule
 \otttermXXctx\ottinterrule
 \otttermXXnorm\ottinterrule
 \ottcontextXXctx\ottinterrule
@@ -233,30 +244,34 @@
 
 %% defn sat
 \newcommand{\ottdruleJsatXXvar}[1]{\ottdrule[#1]{%
+\ottpremise{\vdash{}  \ottnt{v}  \colon{}  \ottnt{t}}%
+\ottpremise{\Gamma  \vdash{}  \ottnt{E}  \colon{}  \ottnt{t}}%
 }{
-\bullet{}  \ottsym{,}  \mathit{x}  \ottsym{[}  \ottnt{v}  \ottsym{]}  \vdash{}  \mathit{x}  \ottsym{[}  \ottnt{v}  \ottsym{]}}{%
+\Gamma  ;  \Delta  \ottsym{,}  \mathit{y}  \colon{}  \ottnt{E}  \ottsym{[}  \ottnt{v}  \ottsym{]}  \vdash{}  \mathit{y}  \colon{}  \ottnt{E}  \ottsym{[}  \ottnt{v}  \ottsym{]}}{%
 {\ottdrulename{Jsat\_var}}{}%
 }}
 
 
 \newcommand{\ottdruleJsatXXabs}[1]{\ottdrule[#1]{%
 \ottpremise{\vdash{}  \ottnt{v_{{\mathrm{0}}}}  \colon{}  \ottnt{t}}%
-\ottpremise{\Delta  \ottsym{,}  \mathit{x}  \ottsym{[}  \ottnt{v_{{\mathrm{0}}}}  \ottsym{]}  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{]}}%
+\ottpremise{\vdash{}  \ottnt{v_{{\mathrm{1}}}}  \colon{}  \ottnt{t'}}%
+\ottpremise{\Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t}  \vdash{}  \ottnt{E}  \colon{}  \ottnt{t'}}%
+\ottpremise{\Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t}  ;  \Delta  \ottsym{,}  \mathit{y}  \colon{}  \mathit{x}  \ottsym{[}  \ottnt{v_{{\mathrm{0}}}}  \ottsym{]}  \vdash{}  \ottnt{c}  \colon{}  \ottnt{E}  \ottsym{[}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{]}}%
 }{
-\Delta  \vdash{}  \ottsym{(}  \exists{} \, \mathit{x}  \colon{}  \ottnt{t}  \ottsym{.}  \ottnt{E}  \ottsym{)}  \ottsym{[}  \ottnt{v_{{\mathrm{0}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{]}}{%
+\Gamma  ;  \Delta  \vdash{}  \ottkw{abs} \, \ottsym{(}  \mathit{x}  \colon{}  \ottnt{t}  \ottsym{)}  \ottsym{(}  \mathit{y}  \colon{}  \ottsym{[}  \ottnt{v_{{\mathrm{0}}}}  \ottsym{]}  \ottsym{)}  \ottsym{.}  \ottnt{c}  \colon{}  \ottsym{(}  \exists{} \, \mathit{x}  \colon{}  \ottnt{t}  \ottsym{.}  \ottnt{E}  \ottsym{)}  \ottsym{[}  \ottnt{v_{{\mathrm{0}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{]}}{%
 {\ottdrulename{Jsat\_abs}}{}%
 }}
 
 
 \newcommand{\ottdruleJsatXXapp}[1]{\ottdrule[#1]{%
-\ottpremise{\Delta  \vdash{}  \ottnt{E_{{\mathrm{0}}}}  \ottsym{[}  \ottnt{v}  \ottsym{]}}%
-\ottpremise{\Delta'  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{[}  \pi{}_1 \, \ottnt{v}  \ottsym{]}}%
+\ottpremise{\Gamma_{{\mathrm{1}}}  ;  \Delta  \vdash{}  \ottnt{c_{{\mathrm{0}}}}  \colon{}  \ottnt{E_{{\mathrm{0}}}}  \ottsym{[}  \ottnt{v}  \ottsym{]}}%
+\ottpremise{\Gamma_{{\mathrm{2}}}  ;  \Delta  \vdash{}  \ottnt{c_{{\mathrm{1}}}}  \colon{}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{[}  \pi{}_1 \, \ottnt{v}  \ottsym{]}}%
 }{
-\Delta  \cup{}  \Delta'  \vdash{}  \ottsym{(}  \ottnt{E_{{\mathrm{0}}}} \, \ottnt{E_{{\mathrm{1}}}}  \ottsym{)}  \ottsym{[}  \pi{}_2 \, \ottnt{v}  \ottsym{]}}{%
+\Gamma_{{\mathrm{1}}}  \cup{}  \Gamma_{{\mathrm{2}}}  ;  \Delta  \vdash{}  \ottnt{c_{{\mathrm{0}}}} \, \ottnt{c_{{\mathrm{1}}}}  \colon{}  \ottsym{(}  \ottnt{E_{{\mathrm{0}}}} \, \ottnt{E_{{\mathrm{1}}}}  \ottsym{)}  \ottsym{[}  \pi{}_2 \, \ottnt{v}  \ottsym{]}}{%
 {\ottdrulename{Jsat\_app}}{}%
 }}
 
-\newcommand{\ottdefnJsat}[1]{\begin{ottdefnblock}[#1]{$\Delta  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{v}  \ottsym{]}$}{}
+\newcommand{\ottdefnJsat}[1]{\begin{ottdefnblock}[#1]{$\Gamma  ;  \Delta  \vdash{}  \ottnt{c}  \colon{}  \ottnt{E}  \ottsym{[}  \ottnt{v}  \ottsym{]}$}{}
 \ottusedrule{\ottdruleJsatXXvar{}}
 \ottusedrule{\ottdruleJsatXXabs{}}
 \ottusedrule{\ottdruleJsatXXapp{}}
