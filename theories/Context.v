@@ -15,49 +15,6 @@ Proof.
   decide equality.
 Defined.
 
-Function D x E: option (list _) :=
-  match E with
-  | E_var y =>
-      if eq_var x y then Some [] else None
-  | E_all y t E =>
-      if eq_var x y
-      then
-        None
-      else
-        if D x E is Some E'
-        then
-          Some (e_forall y t :: E')
-        else
-          None
-  | E_app E0 E1 =>
-      if D x E0 is Some E'
-      then
-        Some (e_app_r E1 :: E')
-      else
-        if D x E1 is Some E'
-        then
-          Some (e_app_l E0 :: E')
-        else
-          None
-  end%list.
-
-Lemma I_D: forall x E e', D x E = Some e' -> I e' (E_var x) = E.
-Proof using.
-  intros x E.
-  functional induction (D x E).
-  all: intros e' p.
-  all: inversion p.
-  all: cbn.
-  all: subst.
-  - reflexivity.
-  - rewrite (IHo _ e1).
-    reflexivity.
-  - rewrite (IHo _ e0).
-    reflexivity.
-  - rewrite (IHo0 _ e1).
-    reflexivity.
-Qed.
-
 Function typecheck (Γ: environment) (E: context): option (environment * type) :=
   match E with
   | E_var x =>
@@ -71,17 +28,13 @@ Function typecheck (Γ: environment) (E: context): option (environment * type) :
       else
         None
   | E_all x t1 E =>
-      if D x E is Some E'
+      if typecheck (Map.add x t1 Γ) E is Some (Γ', t2)
       then
-        if typecheck (Map.merge Γ (Map.one x t1)) E is Some (Γ', t2)
+        if Env.find x Γ' is Some t1'
         then
-          if Env.find x Γ' is Some t1'
+          if eq_type t1 t1'
           then
-            if eq_type t1 t1'
-            then
               Some (Map.minus x Γ', t1 * t2)
-            else
-              None
           else
             None
         else
@@ -105,45 +58,80 @@ Function typecheck (Γ: environment) (E: context): option (environment * type) :
   end
     %list.
 
+Lemma env_add_minus:
+  forall x (t: type) Γ,
+    Env.find x Γ = Some t ->
+    Map.add x t (Map.minus x Γ) = Γ.
+Proof.
+  intros x t Γ p.
+  unfold add, minus.
+  admit.
+Admitted.
+
+Lemma find_add:
+  forall x (t: type) Γ,
+    Env.find x (Env.add x t Γ) = Some t.
+Proof.
+  intros x t.
+  admit.
+Admitted.
+
+Lemma always_empty:
+  forall x (t: type), Env.is_empty (Env.remove x (Env.add x t (Env.empty _))) = true.
+Proof.
+  intros ? ?.
+  unfold one.
+  admit.
+Admitted.
+
+Lemma remove_add:
+  forall x (t: type) Γ,
+    Env.remove x (Env.add x t Γ) = Γ.
+Proof.
+  intros x t.
+  admit.
+Admitted.
+
 Theorem typecheck_sound:
   forall Γ E Δ t, typecheck Γ E = Some (Δ, t) -> Δ ⊢ E in t.
-Proof.
+Proof using.
   intros Γ E.
   functional induction (typecheck Γ E).
   all: cbn.
   all: intros ? ? p.
   all: inversion p.
   all: subst.
-  all: try econstructor.
-  all: try eauto.
-  rewrite <- (I_D _ _ _ e0).
-  econstructor.
-  1: eauto.
-  rewrite (I_D _ _ _ e0).
+  all: econstructor.
+  all: eauto.
+  apply IHo.
+  rewrite (env_add_minus x t1 Γ').
+  2: auto.
   auto.
 Qed.
 
 Theorem typecheck_complete:
-  forall E Γ t, Γ ⊢ E in t -> forall Δ, typecheck Δ E = Some (Γ, t).
-Proof.
+  forall E Γ t, Γ ⊢ E in t -> typecheck Γ E = Some (Γ, t).
+Proof using.
   intros ? ? ? p.
   induction p.
-  all: cbn.
-  all: intros ?.
-  - admit.
-  - rewrite (IHp _).
-    unfold find in H.
-    rewrite H.
-    destruct (eq_type t1 t1).
-    2: contradiction.
-    destruct (D x (I e_list (E_var x))) eqn:q.
-    1: reflexivity.
-    admit.
-  - rewrite (IHp1 _).
-    rewrite (IHp2 _).
-    destruct (eq_type t1 t1).
-    2: contradiction.
+  - unfold typecheck.
+    unfold one.
+    rewrite (find_add x t (Env.empty _)).
+    rewrite always_empty.
     reflexivity.
+  - cbn.
+    destruct (typecheck (add x t1 G) E) as [[]|] eqn:q1.
+    2: discriminate.
+    inversion IHp.
+    subst.
+    unfold add.
+    rewrite (find_add x t1 G).
+    destruct (eq_type t1 t1).
+    2: contradiction.
+    unfold minus.
+    rewrite remove_add.
+    reflexivity.
+  - admit.
 Admitted.
 
 Definition of_t t := { E | exists Γ, Env.is_empty Γ = true /\ (Γ ⊢ E in t) }.
@@ -166,19 +154,14 @@ Proof.
   exists Γ.
   split.
   1:  auto.
-  apply (typecheck_sound (Env.empty _) E).
+  apply (typecheck_sound (Env.empty _)).
   rewrite q1.
   reflexivity.
 Defined.
 
 Definition beta E :=
   match E with
-  | E_app (E_all x _ E0) E1 =>
-      if D x E0 is Some E0'
-      then
-        Some (I E0' E1)
-      else
-        None
+  | E_app (E_all x _ E0) E1 => Some (subst_context E1 x E0)
   | _ => None
   end.
 
@@ -216,17 +199,11 @@ Proof using.
   all: intros ? p.
   all: inversion p.
   all: subst.
-  all: try (econstructor;eauto).
   - destruct E.
     all: cbn in *.
     all: inversion e.
     destruct E1.
     all: inversion e.
-    destruct (D x E1) eqn:q.
-    2: discriminate.
-    rewrite <- (I_D _ _ _ q).
-    inversion e.
-    subst.
     econstructor.
   - apply (stepE_ctx (e_forall _ _)).
     auto.
@@ -242,13 +219,13 @@ Theorem stepE_preserve:
     forall Γ t, Γ ⊢ E in t -> Γ ⊢ E' in t.
 Proof.
   intros E E' p.
+  intros Γ ? q.
+  generalize dependent Γ.
+  generalize dependent t.
   induction p.
-  all: intros ? ? q.
+  all: intros ? Γ q.
   - inversion q.
     subst.
-    inversion H2.
-    subst.
-    auto.
     admit.
   - induction e.
     all: cbn in *.
@@ -325,10 +302,9 @@ Proof using.
   destruct (is_context_whnf_of_context E1) eqn:q1.
   - destruct E1.
     all: try discriminate.
-    destruct (D x E1) eqn:q2.
-    + rewrite <- (I_D _ _ _ q2).
-      exists (I l E2).
-      econstructor.
-    + admit.
-  - admit.
+    exists (subst_context E2 x E1).
+    econstructor.
+  - destruct IHp1.
+    all: auto.
+    all: admit.
 Admitted.

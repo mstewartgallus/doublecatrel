@@ -203,6 +203,29 @@ Proof using.
   auto.
 Qed.
 
+Theorem eval_nonnormal:
+  forall v t,
+    ⊢ v in t ->
+    forall v', eval v = Some v' -> is_term_norm_of_term v = false.
+Proof using.
+  intros v.
+  functional induction (eval v).
+  all: cbn.
+  all: intros t p.
+  all: inversion p.
+  all: subst.
+  all: try discriminate.
+  all: intros ? q.
+  all: try reflexivity.
+  all: inversion q.
+  all: subst.
+  - rewrite (IHo _ H1 _ e0).
+    reflexivity.
+  - rewrite (IHo0 _ H3 _ e1).
+    destruct (is_term_norm_of_term v0).
+    all: reflexivity.
+Qed.
+
 Theorem stepv_progress:
   forall v t,
     ⊢ v in t ->

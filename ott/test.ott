@@ -27,13 +27,13 @@ context, E :: 'E_' ::=
   | E E'              ::   :: app
   | [ x := E ] E'     :: M :: subst
                              {{ icho (subst_context [[E]] [[x]] [[E']]) }}
-  | [ e1 .. en ] # E  :: M :: I   {{ icho (I [[e1 .. en]] [[E]]) }}
   | e . E             :: M :: ctx {{ icho (appctx_context_ctx_context [[e]] [[E]]) }}
   | ( E )             :: S :: paren {{ icho ([[E]]) }}
 
 environment, G {{ tex \Gamma }} :: 'G_' ::= {{ coq Map.map type }} {{ coq-universe Type }}
   | x : t         :: M :: ofty {{ icho (Map.one [[x]] [[t]]) }}
-  | G , G'        :: M :: merge {{ icho (Map.merge [[G]] [[G']]) }}
+  | G , x : t     :: M :: add {{ icho (Map.add [[x]] [[t]] [[G]]) }}
+  | G ++ G'        :: M :: merge {{ icho (Map.merge [[G]] [[G']]) }}
   | G \ x         :: M :: minus {{ icho (Map.minus [[x]] [[G]]) }}
 
 
@@ -51,7 +51,7 @@ term_norm, N :: 'N_' ::=
 context_ctx, e :: 'e_' ::=
   | forall x : t . __   ::  :: forall
   | E __                ::  :: app_l
-  | __ E                ::  :: app_r
+  | __ E                 ::  :: app_r
 
 context_whnf, J :: 'J_' ::=
   | forall x : t . E  ::   :: all (+ bind x in E +)
@@ -81,15 +81,6 @@ contextrules
   V _:: v :: v
   e _:: E :: E
 
-embed
-{{ coq
-Function I (e: list _) E :=
-  match e with
-  | cons h t => appctx_context_ctx_context h (I t E)
-  |  _ => E
-  end.
-}}
-
 subrules
   N <:: v
   J <:: E
@@ -108,16 +99,14 @@ by
 ------------ :: var
 x : t |- x : t
 
-% FIXME
-{{ Map.find [[x]] [[G]] = Some [[t1]] }}
-G |- [ e1 .. en ] # x : t2
+G , x : t1 |- E : t2
 -------------------------- :: abs
-G \ x |- forall x : t1 . [ e1 .. en ] # x : t1 * t2
+G |- forall x : t1 . E : t1 * t2
 
 G1 |- E1 : t1 * t2
 G2 |- E2 : t1
 ------------------ :: app
-G1 , G2 |- E1 E2 : t2
+G1 ++ G2 |- E1 E2 : t2
 
 defn
 |- v : t ::   :: judge_v :: 'Jv_'
@@ -161,7 +150,7 @@ E --> E' ::   :: step_E :: 'stepE_'
 by
 
 ------------------------------- :: beta
-(forall x : t . [ e1 .. en ] # x) E --> [ e1 .. en] # E
+(forall x : t . E) E' --> [x := E'] E
 
 E --> E'
 ----------------- :: ctx

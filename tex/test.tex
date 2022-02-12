@@ -59,14 +59,14 @@
 \ottprodline{|}{\forall \, \mathit{x}  \colon  \ottnt{t}  \ottsym{.}  \ottnt{E}}{}{\textsf{bind}\; \mathit{x}\; \textsf{in}\; \ottnt{E}}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{E} \, \ottnt{E'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{[}  \mathit{x}  \mathbin{:=}  \ottnt{E}  \ottsym{]}  \ottnt{E'}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottsym{[}  \ottnt{e_{{\mathrm{1}}}} \, .. \, \ottnt{e_{\ottmv{n}}}  \ottsym{]}  \ottsym{\#}  \ottnt{E}} {\textsf{M}}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{e}  \ottsym{.}  \ottnt{E}} {\textsf{M}}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{(}  \ottnt{E}  \ottsym{)}} {\textsf{S}}{}{}{}}
 
 \newcommand{\ottenvironment}{
 \ottrulehead{\ottnt{environment}  ,\ \Gamma}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\mathit{x}  \colon  \ottnt{t}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\Gamma  \ottsym{,}  \Gamma'} {\textsf{M}}{}{}{}\ottprodnewline
+\ottprodline{|}{\Gamma  \ottsym{,}  \mathit{x}  \colon  \ottnt{t}} {\textsf{M}}{}{}{}\ottprodnewline
+\ottprodline{|}{\Gamma  ,  \Gamma'} {\textsf{M}}{}{}{}\ottprodnewline
 \ottprodline{|}{\Gamma  \setminus  \mathit{x}} {\textsf{M}}{}{}{}}
 
 \newcommand{\otttermXXctx}{
@@ -86,6 +86,10 @@
 \ottfirstprodline{|}{\forall \, \mathit{x}  \colon  \ottnt{t}  \ottsym{.} \, [\cdot]}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{E} \, [\cdot]}{}{}{}{}\ottprodnewline
 \ottprodline{|}{[\cdot] \, \ottnt{E}}{}{}{}{}}
+
+\newcommand{\ottcontextXXwhnf}{
+\ottrulehead{\ottnt{context\_whnf}  ,\ \ottnt{J}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\forall \, \mathit{x}  \colon  \ottnt{t}  \ottsym{.}  \ottnt{E}}{}{\textsf{bind}\; \mathit{x}\; \textsf{in}\; \ottnt{E}}{}{}}
 
 \newcommand{\ottterminals}{
 \ottrulehead{\ottnt{terminals}}{::=}{}\ottprodnewline
@@ -120,7 +124,8 @@
 \ottrulehead{\ottnt{eval}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottnt{E}  \longrightarrow  \ottnt{E'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{v}  \longrightarrow  \ottnt{v'}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{v}  \Rightarrow  \ottnt{v'}}{}{}{}{}}
+\ottprodline{|}{\ottnt{v}  \Rightarrow  \ottnt{v'}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{E}  \Rightarrow  \ottnt{E'}}{}{}{}{}}
 
 \newcommand{\ottjudgement}{
 \ottrulehead{\ottnt{judgement}}{::=}{}\ottprodnewline
@@ -138,6 +143,7 @@
 \ottprodline{|}{\ottnt{term\_ctx}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{term\_norm}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{context\_ctx}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{context\_whnf}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{terminals}}{}{}{}{}}
 
 \newcommand{\ottgrammar}{\ottgrammartabular{
@@ -148,6 +154,7 @@
 \otttermXXctx\ottinterrule
 \otttermXXnorm\ottinterrule
 \ottcontextXXctx\ottinterrule
+\ottcontextXXwhnf\ottinterrule
 \ottterminals\ottinterrule
 \ottformula\ottinterrule
 \ottjudge\ottinterrule
@@ -167,10 +174,9 @@
 
 
 \newcommand{\ottdruleJEXXabs}[1]{\ottdrule[#1]{%
-\ottpremise{\texttt{Map.find }\mathit{x}\texttt{ }\Gamma\texttt{ = Some }\ottnt{t_{{\mathrm{1}}}}\texttt{ }}%
-\ottpremise{\Gamma  \vdash  \ottsym{[}  \ottnt{e_{{\mathrm{1}}}} \, .. \, \ottnt{e_{\ottmv{n}}}  \ottsym{]}  \ottsym{\#}  \mathit{x}  \colon  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\Gamma  \ottsym{,}  \mathit{x}  \colon  \ottnt{t_{{\mathrm{1}}}}  \vdash  \ottnt{E}  \colon  \ottnt{t_{{\mathrm{2}}}}}%
 }{
-\Gamma  \setminus  \mathit{x}  \vdash  \forall \, \mathit{x}  \colon  \ottnt{t_{{\mathrm{1}}}}  \ottsym{.}  \ottsym{[}  \ottnt{e_{{\mathrm{1}}}} \, .. \, \ottnt{e_{\ottmv{n}}}  \ottsym{]}  \ottsym{\#}  \mathit{x}  \colon  \ottnt{t_{{\mathrm{1}}}}  \times  \ottnt{t_{{\mathrm{2}}}}}{%
+\Gamma  \vdash  \forall \, \mathit{x}  \colon  \ottnt{t_{{\mathrm{1}}}}  \ottsym{.}  \ottnt{E}  \colon  \ottnt{t_{{\mathrm{1}}}}  \times  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{JE\_abs}}{}%
 }}
 
@@ -179,7 +185,7 @@
 \ottpremise{\Gamma_{{\mathrm{1}}}  \vdash  \ottnt{E_{{\mathrm{1}}}}  \colon  \ottnt{t_{{\mathrm{1}}}}  \times  \ottnt{t_{{\mathrm{2}}}}}%
 \ottpremise{\Gamma_{{\mathrm{2}}}  \vdash  \ottnt{E_{{\mathrm{2}}}}  \colon  \ottnt{t_{{\mathrm{1}}}}}%
 }{
-\Gamma_{{\mathrm{1}}}  \ottsym{,}  \Gamma_{{\mathrm{2}}}  \vdash  \ottnt{E_{{\mathrm{1}}}} \, \ottnt{E_{{\mathrm{2}}}}  \colon  \ottnt{t_{{\mathrm{2}}}}}{%
+\Gamma_{{\mathrm{1}}}  ,  \Gamma_{{\mathrm{2}}}  \vdash  \ottnt{E_{{\mathrm{1}}}} \, \ottnt{E_{{\mathrm{2}}}}  \colon  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{JE\_app}}{}%
 }}
 
@@ -257,7 +263,7 @@
 %% defn step_E
 \newcommand{\ottdrulestepEXXbeta}[1]{\ottdrule[#1]{%
 }{
-\ottsym{(}  \forall \, \mathit{x}  \colon  \ottnt{t}  \ottsym{.}  \ottsym{[}  \ottnt{e_{{\mathrm{1}}}} \, .. \, \ottnt{e_{\ottmv{n}}}  \ottsym{]}  \ottsym{\#}  \mathit{x}  \ottsym{)} \, \ottnt{E}  \longrightarrow  \ottsym{[}  \ottnt{e_{{\mathrm{1}}}} \, .. \, \ottnt{e_{\ottmv{n}}}  \ottsym{]}  \ottsym{\#}  \ottnt{E}}{%
+\ottsym{(}  \forall \, \mathit{x}  \colon  \ottnt{t}  \ottsym{.}  \ottnt{E}  \ottsym{)} \, \ottnt{E'}  \longrightarrow  \ottsym{[}  \mathit{x}  \mathbin{:=}  \ottnt{E'}  \ottsym{]}  \ottnt{E}}{%
 {\ottdrulename{stepE\_beta}}{}%
 }}
 
@@ -323,9 +329,30 @@
 \ottusedrule{\ottdrulemultivXXthen{}}
 \end{ottdefnblock}}
 
+%% defn multi_E
+\newcommand{\ottdrulemultiEXXid}[1]{\ottdrule[#1]{%
+}{
+\ottnt{E}  \Rightarrow  \ottnt{E}}{%
+{\ottdrulename{multiE\_id}}{}%
+}}
+
+
+\newcommand{\ottdrulemultiEXXthen}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{E_{{\mathrm{1}}}}  \longrightarrow  \ottnt{E_{{\mathrm{2}}}}}%
+\ottpremise{\ottnt{E_{{\mathrm{2}}}}  \Rightarrow  \ottnt{E_{{\mathrm{3}}}}}%
+}{
+\ottnt{E_{{\mathrm{1}}}}  \Rightarrow  \ottnt{E_{{\mathrm{3}}}}}{%
+{\ottdrulename{multiE\_then}}{}%
+}}
+
+\newcommand{\ottdefnmultiXXE}[1]{\begin{ottdefnblock}[#1]{$\ottnt{E}  \Rightarrow  \ottnt{E'}$}{}
+\ottusedrule{\ottdrulemultiEXXid{}}
+\ottusedrule{\ottdrulemultiEXXthen{}}
+\end{ottdefnblock}}
+
 
 \newcommand{\ottdefnseval}{
-\ottdefnstepXXE{}\ottdefnstepXXv{}\ottdefnmultiXXv{}}
+\ottdefnstepXXE{}\ottdefnstepXXv{}\ottdefnmultiXXv{}\ottdefnmultiXXE{}}
 
 \newcommand{\ottdefnss}{
 \ottdefnsjudge
@@ -340,7 +367,7 @@
 \ottall
 
 \begin{verbatim}
-Definition rules:        16 good    0 bad
-Definition rule clauses: 30 good    0 bad
+Definition rules:        18 good    0 bad
+Definition rule clauses: 33 good    0 bad
 \end{verbatim}
 \end{document}
