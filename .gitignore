@@ -3,3 +3,4 @@
 *.vos
 *.vo
 *.aux
+.CoqMakefile.d

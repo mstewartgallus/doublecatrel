@@ -156,9 +156,10 @@ with Jv : term -> type -> Prop :=    (* defn v *)
 with Jsat : satenv -> context -> term -> Prop :=    (* defn sat *)
  | Jsat_var : forall (x:var) (v:term),
      Jsat  (Map.add  x   v    Map.empty  )  (E_var x) v
- | Jsat_abs : forall (D:satenv) (x:var) (t1:type) (E:context) (v0 v1:term),
+ | Jsat_abs : forall (D:satenv) (x:var) (t:type) (E:context) (v0 v1:term),
+     Jv v0 t ->
      Jsat  (Map.add  x   v0   D )  E v1 ->
-     Jsat D  ( (E_all x t1 E) )  (v_fanout v0 v1)
+     Jsat D  ( (E_all x t E) )  (v_fanout v0 v1)
  | Jsat_app : forall (D D':satenv) (E0 E1:context) (v:term),
      Jsat D E0 v ->
      Jsat D' E1 (v_fst v) ->

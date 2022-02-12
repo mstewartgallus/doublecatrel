@@ -6,7 +6,12 @@ Require Import Coq.Classes.SetoidClass.
 
 Import IfNotations.
 
-Theorem id_fanout t v: Map.empty ⊢ (E_all 0 t (E_var 0)) [ v_fanout v v ].
+Theorem id_fanout:
+  forall v t,
+  ⊢ v in t ->
+  let x := 0 in
+  Map.empty ⊢ (E_all x t (E_var x)) [ v_fanout v v ].
 Proof using.
   repeat econstructor.
+  auto.
 Qed.

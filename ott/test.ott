@@ -139,9 +139,10 @@ by
 empty , x [ v ] |- x [ v ]
 
 
+|- v0 : t
 D , x [ v0 ] |- E [ v1 ]
 ------------------ :: abs
-D |- (forall x : t1 . E) [ v0 , v1 ]
+D |- (forall x : t . E) [ v0 , v1 ]
 
 D |- E0 [ v ]
 D' |- E1 [ fst v ]

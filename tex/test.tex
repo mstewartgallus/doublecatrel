@@ -240,9 +240,10 @@
 
 
 \newcommand{\ottdruleJsatXXabs}[1]{\ottdrule[#1]{%
+\ottpremise{\vdash{}  \ottnt{v_{{\mathrm{0}}}}  \colon{}  \ottnt{t}}%
 \ottpremise{\Delta  \ottsym{,}  \mathit{x}  \ottsym{[}  \ottnt{v_{{\mathrm{0}}}}  \ottsym{]}  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{]}}%
 }{
-\Delta  \vdash{}  \ottsym{(}  \exists{} \, \mathit{x}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \ottsym{.}  \ottnt{E}  \ottsym{)}  \ottsym{[}  \ottnt{v_{{\mathrm{0}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{]}}{%
+\Delta  \vdash{}  \ottsym{(}  \exists{} \, \mathit{x}  \colon{}  \ottnt{t}  \ottsym{.}  \ottnt{E}  \ottsym{)}  \ottsym{[}  \ottnt{v_{{\mathrm{0}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{]}}{%
 {\ottdrulename{Jsat\_abs}}{}%
 }}
 
