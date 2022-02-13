@@ -5,127 +5,127 @@ Require Import Blech.SpecNotations.
 Require Blech.Context.
 Require Blech.Term.
 
+Require Coq.Lists.List.
+Require Import Coq.Classes.SetoidClass.
+
 Require Import FunInd.
 
 Import IfNotations.
 
-Definition eq_type (x y: type): {x = y} + {x <> y}.
+Definition denote E v := Map.empty ⊢ E[v].
+
+Notation "[[ E ]]" := (denote E).
+
+
+Definition leibniz E E' :=
+  forall v, [[ E ]] v <-> [[ E' ]] v.
+
+Instance leibniz_Reflexive: Reflexive leibniz.
 Proof.
-  decide equality.
+  exists.
+  all: auto.
 Defined.
+
+Instance leibniz_Transitive: Transitive leibniz.
+Proof.
+  exists.
+  - intro.
+    apply H0.
+    apply H.
+    auto.
+  - intro.
+    apply H.
+    apply H0.
+    auto.
+Defined.
+
+Instance leibniz_Symmetric: Symmetric leibniz.
+Proof.
+  exists.
+  all: apply H.
+Defined.
+
+Instance leibniz_Equivalence: Equivalence leibniz := { Equivalence_Reflexive := _ ; }.
+
+Instance leibniz_Setoid: Setoid context := { equiv := leibniz }.
 
 Definition eq_term (x y: term): {x = y} + {x <> y}.
 Proof.
   decide equality.
 Defined.
 
-Function typecheck (Γ: environment) (Δ: seq) (c: command): option (environment * context * term) :=
-  match c with
-  | c_var y =>
-      if Map.Env.find y Δ is Some (E, v)
-      then
-        Some (Γ, E, v)
-      else
-        None
-  | c_abs x t y v c =>
-      if typecheck (Map.add x t Γ) (Map.add y (E_var x, v) Δ) c is Some (Γ', E', v')
-      then
-        if Term.typecheck v is Some t'
-        then
-          if eq_type t t'
-          then
-            if Term.typecheck v' is Some t1
-            then
-              if Context.typecheck (Map.add x t Γ) E' is Some (Γ'', t1')
-              then
-                if eq_type t1 t1'
-                then
-                  Some (Map.minus x Γ', E_all x t E', v_fanout v v')
-                else
-                  None
-              else
-                None
-            else
-              None
-          else
-            None
-        else
-          None
-      else
-        None
-  | c_app c0 c1 =>
-      (* FIXME normalize ? *)
-      if typecheck Γ Δ c0 is Some (Γ', E0, v_fanout v0 v1)
-      then
-        if typecheck Γ Δ c1 is Some (Γ'', E1, v0')
-        then
-          if eq_term v0 v0'
-          then
-            Some (Map.merge Γ' Γ'', E_app E0 E1, v1)
-          else
-            None
-        else
-          None
-      else
-        None
-  end.
+Import List.ListNotations.
 
-Theorem typecheck_sound:
-  forall Γ Δ c Γ' E v,
-    typecheck Γ Δ c = Some (Γ', E, v) -> Jsat Γ Δ c E v.
+Check List.flat_map.
+
+Notation "'do' x <- e0 ; e1" := (List.flat_map (fun x => e1) e0) (x ident, at level 200, left associativity).
+
+(* FIXME normalize *)
+Fixpoint search (σ: Map.map term) E: list term :=
+  match E with
+  | E_var x => if Map.find x σ is Some v then [v] else []
+  | E_tt => [v_tt]
+  | E_step E E' =>
+      do p <- search σ E ;
+      do _ <- (if p is v_tt then [tt] else []) ;
+      search σ E'
+
+  | E_fanout E E' =>
+     do x <- search σ E ;
+     do y <- search σ E' ;
+     [v_fanout x y]
+
+  | E_let x y E E' =>
+      do tuple <- search σ E ;
+      do ab <- (if tuple is v_fanout a b then [(a, b)] else []) ;
+      search (Map.add x (fst ab) (Map.add y (snd ab) σ)) E'
+  | _ => []
+  end%list.
+
+Theorem search_sound:
+  forall σ E v, List.In v (search σ E) -> sat σ E v.
 Proof.
-  intros Γ Δ c.
-  generalize dependent Δ.
-  generalize dependent Γ.
-  induction c.
+  intros σ E.
+  generalize dependent σ.
+  induction E.
   all: cbn.
-  all: intros ? ? ? ? ? p.
-  - destruct (Map.Env.find y Δ).
-    2: discriminate.
-    destruct p0.
-    inversion p.
+  all: intros.
+  all: try contradiction.
+  - econstructor.
+    destruct (Map.find x σ).
+    2: inversion H.
+    inversion H.
+    2: inversion H0.
     subst.
-    admit.
-  - destruct (typecheck (Map.add x t Γ) (Map.add y (E_var x, v0) Δ) c) eqn:q0.
-    2: discriminate.
-    destruct p0.
-    destruct p0.
-    destruct (Term.typecheck v0) eqn:q1.
-    2: discriminate.
-    destruct (eq_type t t1).
-    2: discriminate.
-    subst.
-    destruct (Term.typecheck t0) eqn:q2.
-    2: discriminate.
-    destruct (Context.typecheck (Map.add x t1 Γ) c0) eqn:q3.
-    2: discriminate.
-    destruct p0.
-    destruct (eq_type t t2).
-    2: discriminate.
-    subst.
-    inversion p.
+    auto.
+  - destruct H.
+    2: contradiction.
     subst.
     econstructor.
-    all: eauto.
-    all: try apply Term.typecheck_sound.
-    all: eauto.
-    apply (Context.typecheck_sound (Map.add x t1 Γ)).
-    rewrite q3.
-    admit.
-  - destruct (typecheck Γ Δ c1) eqn:q1.
-    2: discriminate.
-    destruct p0.
-    destruct p0.
-    destruct t.
-    all: try discriminate.
-    destruct (typecheck Γ Δ c2) eqn:q2.
-    2: discriminate.
-    destruct p0.
-    destruct p0.
-    destruct (eq_term t1 t).
-    2: discriminate.
-    subst.
-    inversion p.
-    subst.
-    admit.
+  - admit.
+  - admit.
+  - admit.
+Admitted.
+
+Example id t :=
+  let x := 0 in
+  E_all x t (E_var x).
+
+Theorem id_sat t v: [[ id t ]] (v_fanout v v).
+Proof.
+  econstructor.
+  cbn.
+  econstructor.
+  cbn.
+  auto.
+Defined.
+
+Example conv E :=
+  let x := 0 in
+  let y := 1 in
+  E_let x y E (E_fanout (E_var y) (E_var x)).
+
+Theorem id_conv_id t: id t == conv (id t).
+Proof.
+  admit.
 Admitted.

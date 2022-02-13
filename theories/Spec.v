@@ -14,22 +14,7 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_var : ott_coq_equality.
-Definition cvar : Set := nat.
-Lemma eq_cvar: forall (x y : cvar), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-Hint Resolve eq_cvar : ott_coq_equality.
 Definition index : Set := nat.
-
-Inductive type : Set := 
- | t_unit : type
- | t_prod (t:type) (t':type).
-
-Inductive context : Set := 
- | E_var (x:var)
- | E_all (x:var) (t:type) (E:context)
- | E_app (E:context) (E':context).
 
 Inductive term : Set := 
  | v_tt : term
@@ -37,19 +22,22 @@ Inductive term : Set :=
  | v_snd (v:term)
  | v_fanout (v:term) (v':term).
 
-Definition seq : Type := (Map.map (context * term)).
+Inductive type : Set := 
+ | t_unit : type
+ | t_prod (t:type) (t':type).
 
-Inductive command : Set := 
- | c_var (y:cvar)
- | c_abs (x:var) (t:type) (y:cvar) (v0:term) (c:command)
- | c_app (c:command) (c':command).
+Definition seq : Type := (Map.map term).
+
+Inductive context : Set := 
+ | E_var (x:var)
+ | E_all (x:var) (t:type) (E:context)
+ | E_app (E:context) (E':context)
+ | E_tt : context
+ | E_step (E:context) (E':context)
+ | E_fanout (E:context) (E':context)
+ | E_let (x0:var) (x1:var) (E:context) (E':context).
 
 Definition environment : Type := (Map.map type).
-
-Inductive context_ctx : Set := 
- | e_forall (x:var) (t:type)
- | e_app_l (E:context)
- | e_app_r (E:context).
 
 Inductive term_ctx : Set := 
  | V_fst : term_ctx
@@ -66,18 +54,15 @@ Arguments list_mem [A] _ _ _.
 
 
 (** substitutions *)
-Fixpoint subst_context (E5:context) (x5:var) (E_6:context) {struct E_6} : context :=
+Fixpoint subst_context (E5:context) (x_5:var) (E_6:context) {struct E_6} : context :=
   match E_6 with
-  | (E_var x) => (if eq_var x x5 then E5 else (E_var x))
-  | (E_all x t E) => E_all x t (if list_mem eq_var x5 (cons x nil) then E else (subst_context E5 x5 E))
-  | (E_app E E') => E_app (subst_context E5 x5 E) (subst_context E5 x5 E')
-end.
-
-Definition subst_context_ctx (E5:context) (x5:var) (e5:context_ctx) : context_ctx :=
-  match e5 with
-  | (e_forall x t) => e_forall x t
-  | (e_app_l E) => e_app_l (subst_context E5 x5 E)
-  | (e_app_r E) => e_app_r (subst_context E5 x5 E)
+  | (E_var x) => (if eq_var x x_5 then E5 else (E_var x))
+  | (E_all x t E) => E_all x t (if list_mem eq_var x_5 (cons x nil) then E else (subst_context E5 x_5 E))
+  | (E_app E E') => E_app (subst_context E5 x_5 E) (subst_context E5 x_5 E')
+  | E_tt => E_tt 
+  | (E_step E E') => E_step (subst_context E5 x_5 E) (subst_context E5 x_5 E')
+  | (E_fanout E E') => E_fanout (subst_context E5 x_5 E) (subst_context E5 x_5 E')
+  | (E_let x0 x1 E E') => E_let x0 x1 (subst_context E5 x_5 E) (if list_mem eq_var x_5 (app (cons x0 nil) (cons x1 nil)) then E' else (subst_context E5 x_5 E'))
 end.
 
 
@@ -90,13 +75,6 @@ Definition appctx_term_ctx_term (term_ctx5:term_ctx) (term5:term) : term :=
   | (V_fanout_r v) => (v_fanout term5 v)
 end.
 
-Definition appctx_context_ctx_context (context_ctx5:context_ctx) (context5:context) : context :=
-  match context_ctx5 with
-  | (e_forall x t) => (E_all x t context5)
-  | (e_app_l E) => (E_app E context5)
-  | (e_app_r E) => (E_app context5 E)
-end.
-
 
 (** subrules *)
 Fixpoint is_term_norm_of_term (v5:term) : bool :=
@@ -105,13 +83,6 @@ Fixpoint is_term_norm_of_term (v5:term) : bool :=
   | (v_fst v) => false
   | (v_snd v) => false
   | (v_fanout v v') => ((is_term_norm_of_term v) && (is_term_norm_of_term v'))
-end.
-
-Definition is_context_whnf_of_context (E5:context) : bool :=
-  match E5 with
-  | (E_var x) => false
-  | (E_all x t E) => (true)
-  | (E_app E E') => false
 end.
 
 (** library functions *)
@@ -129,13 +100,10 @@ Fixpoint fv_context (E5:context) : list var :=
   | (E_var x) => (cons x nil)
   | (E_all x t E) => ((list_minus eq_var (fv_context E) (cons x nil)))
   | (E_app E E') => (app (fv_context E) (fv_context E'))
-end.
-
-Definition fv_context_ctx (e5:context_ctx) : list var :=
-  match e5 with
-  | (e_forall x t) => nil
-  | (e_app_l E) => ((fv_context E))
-  | (e_app_r E) => ((fv_context E))
+  | E_tt => nil
+  | (E_step E E') => (app (fv_context E) (fv_context E'))
+  | (E_fanout E E') => (app (fv_context E) (fv_context E'))
+  | (E_let x0 x1 E E') => (app (fv_context E) (list_minus eq_var (fv_context E') (app (cons x0 nil) (cons x1 nil))))
 end.
 
 (** definitions *)
@@ -151,6 +119,20 @@ Inductive JE : environment -> context -> type -> Prop :=    (* defn E *)
      JE G1 E1 (t_prod t1 t2) ->
      JE G2 E2 t1 ->
      JE  (Map.merge  G1   G2 )  (E_app E1 E2) t2
+ | JE_tt : 
+     JE  Map.empty  E_tt t_unit
+ | JE_step : forall (G:environment) (E1 E2:context) (t:type),
+     JE G E1 t_unit ->
+     JE G E2 t ->
+     JE G (E_step E1 E2) t
+ | JE_fanout : forall (G1 G2:environment) (E1 E2:context) (t2 t1:type),
+     JE G1 E1 t1 ->
+     JE G2 E2 t2 ->
+     JE  (Map.merge  G1   G2 )  (E_fanout E1 E2) t2
+ | JE_let : forall (G1 G2:environment) (x0 x1:var) (E1 E2:context) (t3 t1 t2:type),
+     JE G1 E1 (t_prod t1 t2) ->
+     JE  (Map.add  x1   t2    (Map.add  x0   t1   G2 )  )  E2 t3 ->
+     JE  (Map.merge  G1   G2 )  (E_let x0 x1 E1 E2) t3
 with Jv : term -> type -> Prop :=    (* defn v *)
  | Jv_tt : 
      Jv v_tt t_unit
@@ -163,32 +145,11 @@ with Jv : term -> type -> Prop :=    (* defn v *)
      Jv (v_fst v) t1
  | Jv_snd : forall (v:term) (t2 t1:type),
      Jv v (t_prod t1 t2) ->
-     Jv (v_snd v) t2
-with Jsat : environment -> seq -> command -> context -> term -> Prop :=    (* defn sat *)
- | Jsat_var : forall (G:environment) (D:seq) (y:cvar) (E:context) (v:term) (t:type),
-     Jv v t ->
-     JE G E t ->
-     Jsat G  (Map.add  y  ( E ,  v )  D )  (c_var y) E v
- | Jsat_abs : forall (G:environment) (D:seq) (x:var) (t:type) (y:cvar) (v0:term) (c:command) (E:context) (v1:term) (t':type),
-     Jv v0 t ->
-     Jv v1 t' ->
-     JE  (Map.add  x   t   G )  E t' ->
-     Jsat  (Map.add  x   t   G )   (Map.add  y  ( (E_var x) ,  v0 )  D )  c E v1 ->
-     Jsat G D (c_abs x t y v0 c)  ( (E_all x t E) )  (v_fanout v0 v1)
- | Jsat_app : forall (G1 G2:environment) (D:seq) (c0 c1:command) (E0 E1:context) (v:term),
-     Jsat G1 D c0 E0 v ->
-     Jsat G2 D c1 E1 (v_fst v) ->
-     Jsat  (Map.merge  G1   G2 )  D (c_app c0 c1)  ( (E_app E0 E1) )  (v_snd v).
+     Jv (v_snd v) t2.
 (** definitions *)
 
 (* defns eval *)
-Inductive step_E : context -> context -> Prop :=    (* defn step_E *)
- | stepE_beta : forall (x:var) (t:type) (E E':context),
-     step_E (E_app  ( (E_all x t E) )  E')  (subst_context  E'   x   E ) 
- | stepE_ctx : forall (e:context_ctx) (E E':context),
-     step_E E E' ->
-     step_E  (appctx_context_ctx_context  e   E )   (appctx_context_ctx_context  e   E' ) 
-with step_v : term -> term -> Prop :=    (* defn step_v *)
+Inductive step_v : term -> term -> Prop :=    (* defn step_v *)
  | stepv_beta1 : forall (v1 v2:term),
      step_v (v_fst  ( (v_fanout v1 v2) ) ) v1
  | stepv_beta2 : forall (v1 v2:term),
@@ -203,12 +164,34 @@ with multi_v : term -> term -> Prop :=    (* defn multi_v *)
      step_v v1 v2 ->
      multi_v v2 v3 ->
      multi_v v1 v3
-with multi_E : context -> context -> Prop :=    (* defn multi_E *)
- | multiE_id : forall (E:context),
-     multi_E E E
- | multiE_then : forall (E1 E3 E2:context),
-     step_E E1 E2 ->
-     multi_E E2 E3 ->
-     multi_E E1 E3.
+with sat : seq -> context -> term -> Prop :=    (* defn sat *)
+ | sat_var : forall (D:seq) (x:var) (v:term),
+     Map.find x D = Some v  ->
+     sat D (E_var x) v
+ | sat_tt : forall (D:seq),
+     sat D E_tt v_tt
+ | sat_step : forall (D:seq) (E0 E1:context) (v:term),
+     sat D E0 v_tt ->
+     sat D E1 v ->
+     sat D  ( (E_step E0 E1) )  v
+ | sat_fanout : forall (D:seq) (E0 E1:context) (v0 v1:term),
+     sat D E0 v0 ->
+     sat D E1 v1 ->
+     sat D  ( (E_fanout E0 E1) )  (v_fanout v0 v1)
+ | sat_let : forall (D:seq) (x0 x1:var) (E0 E1:context) (v1 v0:term),
+     sat D E0 v0 ->
+     sat  (Map.add  x1   (v_snd v0)    (Map.add  x0   (v_fst v0)   D )  )  E1 v1 ->
+     sat D  ( (E_let x0 x1 E0 E1) )  v1
+ | sat_abs : forall (D:seq) (x:var) (t:type) (E:context) (v0 v1:term),
+     sat  (Map.add  x   v0   D )  E v1 ->
+     sat D  ( (E_all x t E) )  (v_fanout v0 v1)
+ | sat_app : forall (D:seq) (E0 E1:context) (v1 v0:term),
+     sat D E0 (v_fanout v0 v1) ->
+     sat D E1 v0 ->
+     sat D  ( (E_app E0 E1) )  v1
+ | sat_sstep : forall (D:seq) (E:context) (v0 v1:term),
+     step_v v0 v1 ->
+     sat D E v1 ->
+     sat D E v0.
 
 

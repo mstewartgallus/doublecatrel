@@ -4,7 +4,6 @@ Require Blech.Map.
 }}
 
 metavar var, x ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[var]]} }}
-metavar cvar, y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[cvar]]} }}
 indexvar index, i, m, n ::= {{ isa num }} {{ coq nat }}
 
 grammar
@@ -21,29 +20,27 @@ term, v :: 'v_' ::=
   | V [ v ]      :: M :: fill_context {{ icho (appctx_term_ctx_term [[V]] [[v]]) }}
 
 context, E :: 'E_' ::=
-  | x                 ::   :: var
-  | forall x : t . E  ::   :: all (+ bind x in E +)
-  | E E'              ::   :: app
-  | ( E )             :: S :: paren {{ icho ([[E]]) }}
-  | [ x := E ] E'     :: M :: subst
-                             {{ icho (subst_context [[E]] [[x]] [[E']]) }}
-  | e [ E ]           :: M :: fill_context
-                             {{ icho (appctx_context_ctx_context [[e]] [[E]]) }}
-
-command, c :: 'c_' ::=
-  | y                 ::   :: var
-  | abs ( x : t ) ( y : [ v0 ] ) . c  :: :: abs (+ bind y in c +)
-  | c c'              ::   :: app
-  | ( c )             :: S :: paren {{ icho ([[c]]) }}
+  | x                        ::   :: var
+  | forall x : t . E         ::   :: all (+ bind x in E +)
+  | E E'                     ::   :: app
+  | tt                       ::   :: tt
+  | E ,, E'                  ::   :: step
+  | E , E'                   ::   :: fanout
+  | let ( x0 , x1 ) := E in E' ::   :: let (+ bind x0 union x1 in E' +)
+  | ( E )                    :: S :: paren {{ icho ([[E]]) }}
+  | [ x := E ] E'            :: M :: subst
+                                  {{ icho (subst_context [[E]] [[x]] [[E']]) }}
+  | e [ E ]                  :: M :: fill_context
+                                  {{ icho (appctx_context_ctx_context [[e]] [[E]]) }}
 
 environment, G {{ tex \Gamma }} :: 'G_' ::= {{ coq (Map.map type) }} {{ coq-universe Type }}
   | empty         ::   :: empty {{ coq Map.empty }}
   | G , x : t     ::   :: add {{ coq (Map.add [[x]] [[t]] [[G]]) }}
   | G ++ G'       ::   :: merge {{ coq (Map.merge [[G]] [[G']]) }}
 
-seq, D {{ tex \Delta }} :: 'D_'  ::= {{ coq (Map.map (context * term)) }} {{ coq-universe Type }}
-  | empty            ::   :: empty {{ coq Map.empty }}
-  | D , y : E [ v ]  ::   :: add {{ coq (Map.add [[y]] ([[E]], [[v]]) [[D]]) }}
+seq, D {{ tex \Delta }} :: 'D_'  ::= {{ coq (Map.map term) }} {{ coq-universe Type }}
+  | empty         ::   :: empty {{ coq Map.empty }}
+  | D , x [ v ]   ::   :: add {{ coq (Map.add [[x]] [[v]] [[D]]) }}
 
 term_ctx, V :: 'V_' ::=
   | fst __     ::  :: fst
@@ -55,23 +52,14 @@ term_norm, N :: 'N_' ::=
   | tt      ::  :: tt
   | N , N'  ::  :: fanout
 
-% FIXME give better name, symbols
-context_ctx, e :: 'e_' ::=
-  | forall x : t . __   ::  :: forall
-  | E __                ::  :: app_l
-  | __ E                ::  :: app_r
-
-context_whnf, J :: 'J_' ::=
-  | forall x : t . E  ::   :: all (+ bind x in E +)
-
 terminals :: 'terminals_' ::=
   | :            ::   :: in     {{ tex \colon{} }}
-  | ,,           ::   :: and     {{ tex ; }}
   | |-           ::   :: turnstile   {{ tex \vdash{} }}
   | :=           ::   :: update  {{ tex \mathbin{:=} }}
   | ++           ::   :: merge   {{ tex \cup{} }}
   | unit         ::   :: unit  {{ tex \top{} }}
   | *            ::   :: prod  {{ tex \times{} }}
+  | ,,           ::   :: then  {{ tex ; }}
   | tt           ::   :: tt   {{ tex \mathop{ \textbf ! } }}
   | fst          ::   :: fst  {{ tex \pi{}_1 }}
   | snd          ::   :: snd  {{ tex \pi{}_2 }}
@@ -86,11 +74,9 @@ substitutions
 
 contextrules
   V _:: v :: v
-  e _:: E :: E
 
 subrules
   N <:: v
-  J <:: E
 
 freevars
   context var :: fv
@@ -104,89 +90,72 @@ G |- E : t ::   :: E :: 'E_'
 by
 
 ------------ :: var
-empty , x : t |- x : t
+empty , x: t |- x: t
 
-G , x : t1 |- E : t2
+G , x: t1 |- E: t2
 -------------------------- :: abs
-G |- forall x : t1 . E : t1 * t2
+G |- forall x : t1 . E: t1 * t2
+
+G1 |- E1: t1 * t2
+G2 |- E2: t1
+------------------ :: app
+G1 ++ G2 |- E1 E2: t2
+
+------------------- :: tt
+empty |- tt: unit
+
+G |- E1: unit
+G |- E2: t
+------------------- :: step
+G |- E1,, E2: t
+
+G1 |- E1: t1
+G2 |- E2: t2
+------------------- :: fanout
+G1 ++ G2 |- E1, E2: t2
 
 G1 |- E1 : t1 * t2
-G2 |- E2 : t1
------------------- :: app
-G1 ++ G2 |- E1 E2 : t2
+G2, x0: t1, x1: t2 |- E2: t3
+------------------- :: let
+G1 ++ G2 |- let (x0, x1) := E1 in E2: t3
 
 defn
 |- v : t ::   :: v :: 'v_'
 by
 
 ------------ :: tt
-|- tt : unit
+|- tt: unit
 
-|- v1 : t1
-|- v2 : t2
+|- v1: t1
+|- v2: t2
 ------------------ :: fanout
-|- v1 , v2 : t1 * t2
+|- v1, v2: t1 * t2
 
-|- v : t1 * t2
+|- v: t1 * t2
 ------------------ :: fst
-|- fst v : t1
+|- fst v: t1
 
-|- v : t1 * t2
+|- v: t1 * t2
 ------------------ :: snd
-|- snd v : t2
-
-
-defn
-G ,, D |- c : E [ v ] ::   :: sat :: 'sat_'
-by
-
-% structural rules
-
-|- v : t
-G |- E : t
------------------- :: var
-G ,, D , y : E[v] |- y : E[v]
-
-|- v0 : t
-|- v1 : t'
-G , x : t |- E : t'
-G , x : t ,, D , y : x [ v0 ] |- c : E [ v1 ]
------------------------------------------- :: abs
-G ,, D |- abs (x : t) (y : [ v0 ]). c : (forall x : t . E) [ v0 , v1 ]
-
-G1 ,, D |- c0 : E0 [ v0, v1 ]
-G2 ,, D |- c1 : E1 [ v0 ]
---------------------------------- :: app
-G1 ++ G2 ,, D |- c0 c1 : (E0 E1) [ v1 ]
+|- snd v: t2
 
 defns
 
 eval :: '' ::=
 
 defn
-E --> E' ::   :: step_E :: 'stepE_'
-by
-
-------------------------------- :: beta
-(forall x : t . E) E' --> [x := E'] E
-
-E --> E'
--------------------- :: ctx
-e [ E ] --> e [ E' ]
-
-defn
 v --> v' ::   :: step_v :: 'stepv_'
 by
 
 -------------------- :: beta1
-fst (v1, v2) --> v1
+fst(v1, v2) --> v1
 
 ------------------- :: beta2
-snd (v1, v2) --> v2
+snd(v1, v2) --> v2
 
 v --> v'
 -------------------- :: ctx
-V [ v ] --> V [ v' ]
+V[v] --> V[v']
 
 defn
 v *-> v' ::   :: multi_v :: 'multiv_'
@@ -201,13 +170,44 @@ v2 *-> v3
 v1 *-> v3
 
 defn
-E *-> E' ::   :: multi_E :: 'multiE_'
+D |- E [ v ] ::   :: sat :: 'sat_'
 by
 
--------------------- :: id
-E *-> E
+% structural rules
 
-E1 --> E2
-E2 *-> E3
--------------------- :: then
-E1 *-> E3
+{{ Map.find [[x]] [[D]] = Some v }}
+--------------------- :: var
+D |- x[v]
+
+----------- :: tt
+D |- tt[tt]
+
+D |- E0[tt]
+D |- E1[v]
+--------------------- :: step
+D |- (E0,, E1)[v]
+
+D |- E0[v0]
+D |- E1[v1]
+--------------------- :: fanout
+D |- (E0, E1)[v0, v1]
+
+
+D |- E0[v0]
+D, x0[fst v0], x1[snd v0] |- E1[v1]
+--------------------- :: let
+D |- (let (x0, x1) := E0 in E1)[v1]
+
+D, x[v0] |- E[v1]
+------------------------------- :: abs
+D |- (forall x: t. E) [v0, v1]
+
+D |- E0[v0, v1]
+D |- E1[v0]
+------------------------ :: app
+D |- (E0 E1)[v1]
+
+v0 --> v1
+D |- E[v1]
+---------- :: sstep
+D |- E[v0]
