@@ -58,10 +58,32 @@ Import List.ListNotations.
 
 Notation "'do' x <- e0 ; e1" := (List.flat_map (fun x => e1) e0) (x ident, at level 200, left associativity).
 
+Fixpoint generate (t: type): list term :=
+  match t with
+  | t_unit => [v_tt]
+  | A * B =>
+      do v0 <- generate A ;
+      do v1 <- generate B ;
+      [ v_fanout v0 v1 ]
+  end%list.
+
 (* FIXME normalize *)
 Fixpoint search (σ: Map.map term) E: list term :=
   match E with
   | E_var x => if Map.find x σ is Some v then [v] else []
+
+  (* normalize ? *)
+  | E_all x t E =>
+      do v0 <- generate t ;
+      do v1 <- search (Map.add x v0 σ) E ;
+      [v_fanout v0 v1]
+
+  | E_app E E' =>
+      do tuple <- search σ E ;
+      do v0 <- search σ E' ;
+      do ab <- (if tuple is v_fanout a b then [(a, b)] else []) ;
+      if eq_term v0 (fst ab) then [snd ab] else []
+
   | E_tt => [v_tt]
   | E_step E E' =>
       do p <- search σ E ;
@@ -72,12 +94,10 @@ Fixpoint search (σ: Map.map term) E: list term :=
      do x <- search σ E ;
      do y <- search σ E' ;
      [v_fanout x y]
-
   | E_let x y E E' =>
       do tuple <- search σ E ;
       do ab <- (if tuple is v_fanout a b then [(a, b)] else []) ;
       search (Map.add x (fst ab) (Map.add y (snd ab) σ)) E'
-  | _ => []
   end%list.
 
 Theorem search_sound:
@@ -96,6 +116,8 @@ Proof.
     2: inversion H0.
     subst.
     auto.
+  - admit.
+  - admit.
   - destruct H.
     2: contradiction.
     subst.
