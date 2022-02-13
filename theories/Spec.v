@@ -121,14 +121,14 @@ Inductive JE : environment -> context -> type -> Prop :=    (* defn E *)
      JE  (Map.merge  G1   G2 )  (E_app E1 E2) t2
  | JE_tt : 
      JE  Map.empty  E_tt t_unit
- | JE_step : forall (G:environment) (E1 E2:context) (t:type),
-     JE G E1 t_unit ->
-     JE G E2 t ->
-     JE G (E_step E1 E2) t
- | JE_fanout : forall (G1 G2:environment) (E1 E2:context) (t2 t1:type),
+ | JE_step : forall (G1 G2:environment) (E1 E2:context) (t:type),
+     JE G1 E1 t_unit ->
+     JE G2 E2 t ->
+     JE  (Map.merge  G1   G2 )  (E_step E1 E2) t
+ | JE_fanout : forall (G1 G2:environment) (E1 E2:context) (t1 t2:type),
      JE G1 E1 t1 ->
      JE G2 E2 t2 ->
-     JE  (Map.merge  G1   G2 )  (E_fanout E1 E2) t2
+     JE  (Map.merge  G1   G2 )  (E_fanout E1 E2) (t_prod t1 t2)
  | JE_let : forall (G1 G2:environment) (x0 x1:var) (E1 E2:context) (t3 t1 t2:type),
      JE G1 E1 (t_prod t1 t2) ->
      JE  (Map.add  x1   t2    (Map.add  x0   t1   G2 )  )  E2 t3 ->

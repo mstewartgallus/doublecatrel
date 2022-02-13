@@ -56,8 +56,6 @@ Defined.
 
 Import List.ListNotations.
 
-Check List.flat_map.
-
 Notation "'do' x <- e0 ; e1" := (List.flat_map (fun x => e1) e0) (x ident, at level 200, left associativity).
 
 (* FIXME normalize *)

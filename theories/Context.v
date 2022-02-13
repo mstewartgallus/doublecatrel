@@ -55,7 +55,56 @@ Function typecheck (Γ: environment) (E: context): option (environment * type) :
           None
       else
         None
-  | _ => None
+
+  | E_tt => Some (Map.empty, t_unit)
+  | E_step E E' =>
+      if typecheck Γ E is Some (Γ', t_unit)
+      then
+        if typecheck Γ E' is Some (Δ, t)
+        then
+          Some (Map.merge Γ' Δ, t)
+        else
+          None
+      else
+        None
+
+  | E_fanout E E' =>
+      if typecheck Γ E is Some (Γ', t1)
+      then
+        if typecheck Γ E' is Some (Δ, t2)
+        then
+          Some (Map.merge Γ' Δ, t_prod t1 t2)
+        else
+          None
+      else
+        None
+
+  | E_let x y E E' =>
+      if typecheck Γ E is Some (Γ', t1 * t2)
+      then
+        if typecheck (Map.add x t1 (Map.add y t2 Γ)) E' is Some (Δ, t3)
+        then
+          if Env.find x (Env.remove y Δ) is Some t1'
+          then
+            if eq_type t1 t1'
+            then
+              if Env.find y Δ is Some t2'
+              then
+                if eq_type t2 t2'
+                then
+                  Some (Map.merge Γ' (Env.remove x (Env.remove y Δ)), t3)
+                else
+                  None
+              else
+                None
+            else
+              None
+          else
+            None
+        else
+          None
+      else
+        None
   end
     %list.
 
@@ -104,10 +153,14 @@ Proof using.
   all: subst.
   all: econstructor.
   all: eauto.
-  apply IHo.
-  rewrite (env_add_minus x t1 Γ').
-  2: auto.
-  auto.
+  - apply IHo.
+    rewrite (env_add_minus x t1 Γ').
+    2: auto.
+    auto.
+  - rewrite env_add_minus.
+    all: auto.
+    1: rewrite env_add_minus.
+    all: auto.
 Qed.
 
 Theorem typecheck_complete:
@@ -134,6 +187,10 @@ Proof using.
     unfold minus.
     rewrite remove_add.
     reflexivity.
+  - admit.
+  - reflexivity.
+  - admit.
+  - admit.
   - admit.
 Admitted.
 

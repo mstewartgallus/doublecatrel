@@ -183,10 +183,10 @@
 
 
 \newcommand{\ottdruleJEXXstep}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \colon{}  \top{}}%
-\ottpremise{\Gamma  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t}}%
+\ottpremise{\Gamma_{{\mathrm{1}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \colon{}  \top{}}%
+\ottpremise{\Gamma_{{\mathrm{2}}}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t}}%
 }{
-\Gamma  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  ;  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t}}{%
+\Gamma_{{\mathrm{1}}}  \cup{}  \Gamma_{{\mathrm{2}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  ;  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t}}{%
 {\ottdrulename{JE\_step}}{}%
 }}
 
@@ -195,7 +195,7 @@
 \ottpremise{\Gamma_{{\mathrm{1}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}}%
 \ottpremise{\Gamma_{{\mathrm{2}}}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}%
 }{
-\Gamma_{{\mathrm{1}}}  \cup{}  \Gamma_{{\mathrm{2}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}{%
+\Gamma_{{\mathrm{1}}}  \cup{}  \Gamma_{{\mathrm{2}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \times{}  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{JE\_fanout}}{}%
 }}
 
