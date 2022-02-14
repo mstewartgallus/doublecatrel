@@ -45,6 +45,7 @@ seq, D {{ tex \Delta }} :: 'D_'  ::= {{ coq (Map.map term) }} {{ coq-universe Ty
 term_norm, N :: 'N_' ::=
   | tt      ::  :: tt
   | N , N'  ::  :: fanout
+  | ( N )   :: S :: paren {{ coq ([[N]]) }}
 
 terminals :: 'terminals_' ::=
   | :            ::   :: in     {{ tex \colon{} }}
@@ -61,6 +62,7 @@ terminals :: 'terminals_' ::=
   | ==           ::   :: equiv  {{ tex \mathrel{\sim} }}
   | forall       ::   :: forall  {{ tex \exists{} }}
   | empty        ::   :: empty   {{ tex \bullet{} }}
+  | !            ::   :: big     {{ tex \mathrel{\Downarrow} }}
   | ~>           ::   :: beta     {{ tex \mathrel{\rightarrow} }}
   | -->          ::   :: step     {{ tex \mathrel{\rightarrow} }}
   | *->          ::   :: multi     {{ tex \mathrel{\longrightarrow} }}
@@ -76,7 +78,7 @@ freevars
 
 defns
 
-judge_context :: 'J' ::=
+judge_context :: 'J' ::= {{ coq-universe Type }}
 
 defn
 G |- E : t ::   :: E :: 'E_'
@@ -114,7 +116,7 @@ G1 ++ G2 |- let (x0, x1) := E1 in E2: t3
 
 defns
 
-judge_term :: 'J' ::=
+judge_term :: 'J' ::= {{ coq-universe Type }}
 
 defn
 |- v : t ::   :: v :: 'v_'
@@ -138,62 +140,27 @@ by
 
 defns
 
-beta :: '' ::=
+big :: '' ::= {{ coq-universe Type }}
 
 defn
-v ~> v' ::   :: beta :: 'beta_'
+v ! N ::   :: big :: 'big_'
 by
 
--------------------- :: fst
-fst(v1, v2) ~> v1
+-------------------- :: tt
+tt ! tt
 
+v1 ! N1'
+v2 ! N2'
+-------------------- :: fanout
+(v1, v2) ! (N1', N2')
+
+v ! N1, N2
+-------------------- :: fst
+fst v ! N1
+
+v ! N1, N2
 ------------------- :: snd
-snd(v1, v2) ~> v2
-
-defns
-
-step :: '' ::=
-
-defn
-v --> v' ::   :: step :: 'step_'
-by
-
-v --> v'
--------------------- :: fst
-fst v --> fst v'
-
-v --> v'
--------------------- :: snd
-snd v --> snd v'
-
-
-v0 --> v0'
--------------------- :: fanoutl
-v0, v1 --> v0', v1
-
-v1 --> v1'
--------------------- :: fanoutr
-v0, v1 --> v0, v1'
-
-v ~> v'
--------------------- :: beta
-v --> v'
-
-defns
-
-multi :: '' ::=
-
-defn
-v *-> v' ::   :: multi :: 'multi_'
-by
-
--------------------- :: id
-v *-> v
-
-v1 --> v2
-v2 *-> v3
--------------------- :: then
-v1 *-> v3
+snd v ! N2
 
 defns
 
@@ -203,12 +170,10 @@ defn
 v == v' ::   :: equiv :: 'equiv_'
 by
 
-
-v0 *-> v2
-v1 *-> v2
+v0 ! N2
+v1 ! N2
 -------------------- :: common
 v0 == v1
-
 
 defns
 

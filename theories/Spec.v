@@ -93,7 +93,7 @@ end.
 (** definitions *)
 
 (* defns judge_context *)
-Inductive JE : environment -> context -> type -> Prop :=    (* defn E *)
+Inductive JE : environment -> context -> type -> Type :=    (* defn E *)
  | JE_var : forall (x:var) (t:type),
      JE  (Map.add  x   t    Map.empty  )  (E_var x) t
  | JE_abs : forall (G:environment) (x:var) (t1:type) (E:context) (t2:type),
@@ -120,7 +120,7 @@ Inductive JE : environment -> context -> type -> Prop :=    (* defn E *)
 (** definitions *)
 
 (* defns judge_term *)
-Inductive Jv : term -> type -> Prop :=    (* defn v *)
+Inductive Jv : term -> type -> Type :=    (* defn v *)
  | Jv_tt : 
      Jv v_tt t_unit
  | Jv_fanout : forall (v1 v2:term) (t1 t2:type),
@@ -135,48 +135,27 @@ Inductive Jv : term -> type -> Prop :=    (* defn v *)
      Jv (v_snd v) t2.
 (** definitions *)
 
-(* defns beta *)
-Inductive beta : term -> term -> Prop :=    (* defn beta *)
- | beta_fst : forall (v1 v2:term),
-     beta (v_fst  ( (v_fanout v1 v2) ) ) v1
- | beta_snd : forall (v1 v2:term),
-     beta (v_snd  ( (v_fanout v1 v2) ) ) v2.
-(** definitions *)
-
-(* defns step *)
-Inductive step : term -> term -> Prop :=    (* defn step *)
- | step_fst : forall (v v':term),
-     step v v' ->
-     step (v_fst v) (v_fst v')
- | step_snd : forall (v v':term),
-     step v v' ->
-     step (v_snd v) (v_snd v')
- | step_fanoutl : forall (v0 v1 v0':term),
-     step v0 v0' ->
-     step (v_fanout v0 v1) (v_fanout v0' v1)
- | step_fanoutr : forall (v0 v1 v1':term),
-     step v1 v1' ->
-     step (v_fanout v0 v1) (v_fanout v0 v1')
- | step_beta : forall (v v':term),
-     beta v v' ->
-     step v v'.
-(** definitions *)
-
-(* defns multi *)
-Inductive multi : term -> term -> Prop :=    (* defn multi *)
- | multi_id : forall (v:term),
-     multi v v
- | multi_then : forall (v1 v3 v2:term),
-     step v1 v2 ->
-     multi v2 v3 ->
-     multi v1 v3.
+(* defns big *)
+Inductive big : term -> term -> Type :=    (* defn big *)
+ | big_tt : 
+     big v_tt v_tt
+ | big_fanout : forall (v1 v2 N1' N2':term),
+     big v1 N1' ->
+     big v2 N2' ->
+     big  ( (v_fanout v1 v2) )   ( (v_fanout N1' N2') ) 
+ | big_fst : forall (v N1 N2:term),
+     big v (v_fanout N1 N2) ->
+     big (v_fst v) N1
+ | big_snd : forall (v N2 N1:term),
+     big v (v_fanout N1 N2) ->
+     big (v_snd v) N2.
 (** definitions *)
 
 (* defns equiv *)
 Inductive equiv : term -> term -> Prop :=    (* defn equiv *)
- | equiv_common : forall (v0 v1 v2:term),
-     multi v0 v2 ->
-     multi v1 v2 ->
+ | equiv_common : forall (v0 v1 N2:term),
+     big v0 N2 ->
+     big v1 N2 ->
      equiv v0 v1.
 (** definitions *)
 

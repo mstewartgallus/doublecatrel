@@ -194,27 +194,3 @@ Proof using.
   - admit.
 Admitted.
 
-Definition of_t t := { E | exists Γ, Env.is_empty Γ = true /\ (Γ ⊢ E in t) }.
-
-Definition tc E: if typecheck (Env.empty _) E is Some (Γ, t)
-                   then
-                     if Env.is_empty Γ
-                     then
-                       of_t t
-                     else
-                       unit
-                   else
-                     unit.
-Proof.
-  destruct (typecheck (Env.empty _) E) as [[Γ t]|] eqn:q1.
-  2: apply tt.
-  destruct (Env.is_empty Γ) eqn:q2.
-  2: apply tt.
-  exists E.
-  exists Γ.
-  split.
-  1:  auto.
-  apply (typecheck_sound (Env.empty _)).
-  rewrite q1.
-  reflexivity.
-Defined.

@@ -79,15 +79,10 @@ Fixpoint search (σ: Map.map term) E: list term :=
       [v_fanout v0 v1]
 
   | E_app E E' =>
-      do v0 <- search σ E' ;
       do tuple <- search σ E ;
-      if tuple is v_fanout a b
-      then
-        if eq_term v0 a
-        then [b]
-        else []
-      else
-        []
+      do v0 <- search σ E' ;
+      do ab <- (if tuple is v_fanout a b then [(a, b)] else []) ;
+      if eq_term v0 (fst ab) then [snd ab] else []
 
   | E_tt => [v_tt]
   | E_step E E' =>
@@ -120,6 +115,37 @@ Proof.
   auto.
 Qed.
 
+Lemma Forall_concat':
+  forall {A} p (x: list (list A)), List.Forall p (List.concat x) -> List.Forall (List.Forall p) x.
+Proof.
+  intros ? ? x.
+  induction x.
+  all: intros.
+  1: constructor.
+  cbn in H.
+  - constructor.
+    2: apply IHx.
+    + induction a.
+      1: constructor.
+      constructor.
+      * cbn in H.
+        inversion H.
+        subst.
+        auto.
+      * cbn in H.
+        inversion H.
+        subst.
+        apply IHa.
+        auto.
+    + induction a.
+      1: auto.
+      cbn in *.
+      inversion H.
+      subst.
+      apply IHa.
+      auto.
+Qed.
+
 Theorem Forall_flat_map:
   forall {A B} p (f: A -> list B) x, List.Forall (fun x => List.Forall p (f x)) x -> List.Forall p (List.flat_map f x).
 Proof.
@@ -133,91 +159,32 @@ Proof.
   auto.
 Qed.
 
+Theorem Forall_flat_map':
+  forall {A B} p (f: A -> list B) x, List.Forall p (List.flat_map f x) -> List.Forall (fun x => List.Forall p (f x)) x.
+Proof.
+  intros ? ? ? ? ?.
+  induction x.
+  1: constructor.
+  intros q.
+  rewrite List.flat_map_concat_map in q.
+  set (q' := Forall_concat' _ _ q).
+  cbn in q'.
+  inversion q'.
+  subst.
+  constructor.
+  1: auto.
+  apply IHx.
+  rewrite List.flat_map_concat_map.
+  apply Forall_concat.
+  auto.
+Qed.
+
 Theorem search_sound:
   forall σ E, List.Forall (sat σ E) (search σ E).
 Proof.
   intros σ E.
   generalize dependent σ.
-  induction E.
-  all: cbn.
-  all: intros.
-  all: try contradiction.
-  - destruct (Map.find x σ) eqn:q.
-    2: econstructor.
-    econstructor.
-    2:  econstructor.
-    econstructor.
-    auto.
-  - apply Forall_flat_map.
-    induction (generate t).
-    1: econstructor.
-    econstructor.
-    2: auto.
-    apply Forall_flat_map.
-    induction (IHE (Map.add x a σ)).
-    1: econstructor.
-    econstructor.
-    2: auto.
-    econstructor.
-    2: econstructor.
-    econstructor.
-    apply H.
-  - apply Forall_flat_map.
-    induction (IHE2 σ).
-    1: econstructor.
-    econstructor.
-    2: auto.
-    apply Forall_flat_map.
-    induction (IHE1 σ).
-    1: econstructor.
-    cbn.
-    econstructor.
-    destruct x0.
-    all: try econstructor.
-    destruct (eq_term x x0_1).
-    2: constructor.
-    all: cbn.
-    2: apply IHf0.
-    2: auto.
-    1: subst.
-    1: constructor.
-    1: econstructor.
-    1: eauto.
-    1: auto.
-    1: econstructor.
-    admit.
-  - all: repeat constructor.
-  - apply Forall_flat_map.
-    induction (IHE1 σ).
-    1: constructor.
-    constructor.
-    2: apply IHf.
-    destruct x.
-    all: cbn.
-    all: try constructor.
-    rewrite List.app_nil_r.
-    induction (IHE2 σ).
-    1: constructor.
-    constructor.
-    + constructor.
-      all: auto.
-    + admit.
-  - apply Forall_flat_map.
-    induction (IHE1 σ).
-    1: constructor.
-    constructor.
-    2: auto.
-    apply Forall_flat_map.
-    induction (IHE2 σ).
-    1: constructor.
-    constructor.
-    2: apply IHf0.
-    + constructor.
-      2: constructor.
-      constructor.
-      all: auto.
-    + admit.
-  - admit.
+  admit.
 Admitted.
 
 Example id t :=
@@ -240,5 +207,6 @@ Example conv E :=
 
 Theorem id_conv_id t: id t == conv (id t).
 Proof.
+  cbn.
   admit.
 Admitted.
