@@ -7,7 +7,133 @@ Import IfNotations.
 
 Require Import FunInd.
 
-Function typecheck (v: term): option type :=
+Instance multi_Reflexive: Reflexive multi.
+Proof using.
+  econstructor.
+Qed.
+
+Instance multi_trans: Transitive multi.
+Proof using.
+  intros v1 v2 v3 p.
+  generalize  v3.
+  induction p.
+  1: auto.
+  intros.
+  econstructor.
+  1: apply H.
+  apply IHp.
+  auto.
+Qed.
+
+Instance fst_Proper: Proper (step ==> step) v_fst.
+Proof.
+  intros ? ? p.
+  induction p.
+  all: constructor.
+  all: constructor.
+  all: auto.
+Defined.
+
+Instance snd_Proper: Proper (step ==> step) v_fst.
+Proof.
+  intros ? ? p.
+  induction p.
+  all: constructor.
+  all: constructor.
+  all: auto.
+Defined.
+
+Instance fanout_l_Proper x: Proper (step ==> step) (v_fanout x).
+Proof.
+  intros ? ? p.
+  induction p.
+  all: constructor.
+  all: constructor.
+  all: auto.
+Qed.
+
+Instance fanout_r_Proper: Proper (step ==> eq ==> step) v_fanout.
+Proof.
+  intros ? ? p.
+  induction p.
+  all: intros ? ? q.
+  all: subst.
+  all: constructor.
+  all: constructor.
+  all: auto.
+Defined.
+
+Instance fst_multi_Proper: Proper (multi ==> multi) v_fst.
+Proof.
+  intros ? ? p.
+  induction p.
+  1: reflexivity.
+  econstructor.
+  2: apply IHp.
+  constructor.
+  auto.
+Defined.
+
+Instance snd_multi_Proper: Proper (multi ==> multi) v_snd.
+Proof.
+  intros ? ? p.
+  induction p.
+  1: reflexivity.
+  econstructor.
+  2: apply IHp.
+  constructor.
+  auto.
+Defined.
+
+Instance fanout_multi_Proper: Proper (multi ==> multi ==> multi) v_fanout.
+Proof.
+  intros ? ? p.
+  induction p.
+  - intros ? ? q.
+    induction q.
+    + reflexivity.
+    + econstructor.
+      * eapply step_fanoutr.
+        eauto.
+      * auto.
+  - intros ? ? q.
+    induction q.
+    + econstructor.
+      2: eapply IHp.
+      1: econstructor.
+      1: auto.
+      reflexivity.
+    + econstructor.
+      2: apply IHq.
+      eapply step_fanoutr.
+      auto.
+Qed.
+
+Instance equiv_Reflexive: Reflexive Spec.equiv.
+Proof.
+  intros.
+  econstructor.
+  all: reflexivity.
+Defined.
+
+Instance equiv_Symmetric: Symmetric Spec.equiv.
+Proof.
+  intros ? ? [p q s].
+  exists s.
+  all: auto.
+Defined.
+
+(* FIXME seems like a big hole *)
+Instance equiv_Transitive: Transitive Spec.equiv.
+Proof.
+  admit.
+Admitted.
+
+Instance equiv_Equivalence: Equivalence Spec.equiv := { Equivalence_Reflexive := _ }.
+
+Instance term_Setoid: Setoid term := { equiv := Spec.equiv }.
+
+  Function typecheck (v: term): option type :=
   match v with
   | v_tt => Some t_unit
   | v_fst v =>
@@ -80,12 +206,35 @@ Proof.
   auto.
 Defined.
 
-Function eval v :=
+Function beta v :=
   match v with
   | v_fst (v_fanout v _) => Some v
   | v_snd (v_fanout _ v) => Some v
 
   | v_tt => None
+  | _ => None
+  end.
+
+Lemma beta_sound:
+  forall v v', beta v = Some v' -> Spec.beta v v'.
+Proof using.
+  intros v.
+  functional induction (beta v).
+  all: intros ? p.
+  all: inversion p.
+  all: constructor.
+Qed.
+
+Lemma beta_complete:
+  forall v v', Spec.beta v v' -> beta v = Some v'.
+Proof using.
+  intros ? ? p.
+  induction p.
+  all: reflexivity.
+Qed.
+
+Function eval v :=
+  match v with
   | v_fst v => if eval v is Some v' then Some (v_fst v') else None
   | v_snd v => if eval v is Some v' then Some (v_snd v') else None
   | v_fanout v0 v1 =>
@@ -93,12 +242,24 @@ Function eval v :=
       then
         Some (v_fanout v0' v1)
       else
-        if eval v1 is Some v1'
-        then
-          Some (v_fanout v0 v1')
-        else
-          None
+          if eval v1 is Some v1'
+          then
+            Some (v_fanout v0 v1')
+          else
+            None
+  | _ => beta v
   end.
+
+Lemma beta_normal:
+  forall v, is_term_norm_of_term v = true -> beta v = None.
+Proof.
+  intros v.
+  functional induction (beta v).
+  all: cbn.
+  all: intros p.
+  all: inversion p.
+  all: reflexivity.
+Qed.
 
 Theorem eval_sound:
   forall v v', eval v = Some v' -> v ~> v'.
@@ -109,18 +270,31 @@ Proof using.
   all: intros ? p.
   all: inversion p.
   all: subst.
-  all: try (econstructor;eauto).
-  - apply (stepv_ctx V_fst).
+  all: econstructor.
+  all: eauto.
+  apply beta_sound.
+  auto.
+Qed.
+
+Theorem beta_preserve:
+  forall v v',
+    Spec.beta v v' ->
+    forall t, ⊢ v in t -> ⊢ v' in t.
+Proof using.
+  intros v v' p.
+  induction p.
+  all: intros ? q.
+  all: inversion q.
+  all: subst.
+  - inversion H0.
+    subst.
     auto.
-  - apply (stepv_ctx V_snd).
-    auto.
-  - apply (stepv_ctx (V_fanout_r _)).
-    auto.
-  - apply (stepv_ctx (V_fanout_l _)).
+  - inversion H0.
+    subst.
     auto.
 Qed.
 
-Theorem stepv_preserve:
+Theorem step_preserve:
   forall v v',
     v ~> v' ->
     forall t, ⊢ v in t -> ⊢ v' in t.
@@ -130,66 +304,25 @@ Proof using.
   all: intros ? q.
   - inversion q.
     subst.
-    inversion H0.
-    subst.
-    auto.
+    econstructor.
+    eauto.
   - inversion q.
     subst.
-    inversion H0.
-    subst.
-    auto.
-  - induction V.
-    all: cbn in *.
-    + inversion q.
-      subst.
-      econstructor.
-      apply (IHp _ H0).
-    + inversion q.
-      subst.
-      econstructor.
-      apply (IHp _ H0).
-    + inversion q.
-      subst.
-      econstructor.
-      all: eauto.
-    + inversion q.
-      subst.
-      econstructor.
-      all: eauto.
-Qed.
-
-Instance multiv_Reflexive: Reflexive multi_v.
-Proof using.
-  econstructor.
-Qed.
-
-Instance multiv_trans: Transitive multi_v.
-Proof using.
-  intros v1 v2 v3 p.
-  generalize  v3.
-  induction p.
-  1: auto.
-  intros.
-  econstructor.
-  1: apply H.
-  apply IHp.
-  auto.
-Qed.
-
-Lemma multiv_ctx:
-  forall (v v' : term), v *~> v' -> forall V, appctx_term_ctx_term V v *~> appctx_term_ctx_term V v'.
-Proof using.
-  intros ? ? p.
-  induction p.
-  all: intros.
-  1: constructor.
-  econstructor.
-  - econstructor.
+    econstructor.
     eauto.
-  - apply IHp.
+  - inversion q.
+    subst.
+    econstructor.
+    all: eauto.
+  - inversion q.
+    subst.
+    econstructor.
+    all: eauto.
+  - eapply beta_preserve.
+    all: eauto.
 Qed.
 
-Lemma multiv_preserve:
+Lemma multi_preserve:
   forall v v',
     v *~> v' ->
     forall t, ⊢ v in t -> ⊢ v' in t.
@@ -199,34 +332,11 @@ Proof using.
   1: auto.
   intros t q.
   apply IHp.
-  refine (stepv_preserve _ _ _ _ q).
+  refine (step_preserve _ _ _ _ q).
   auto.
 Qed.
 
-Theorem eval_nonnormal:
-  forall v t,
-    ⊢ v in t ->
-    forall v', eval v = Some v' -> is_term_norm_of_term v = false.
-Proof using.
-  intros v.
-  functional induction (eval v).
-  all: cbn.
-  all: intros t p.
-  all: inversion p.
-  all: subst.
-  all: try discriminate.
-  all: intros ? q.
-  all: try reflexivity.
-  all: inversion q.
-  all: subst.
-  - rewrite (IHo _ H1 _ e0).
-    reflexivity.
-  - rewrite (IHo0 _ H3 _ e1).
-    destruct (is_term_norm_of_term v0).
-    all: reflexivity.
-Qed.
-
-Theorem stepv_progress:
+Theorem step_progress:
   forall v t,
     ⊢ v in t ->
     is_term_norm_of_term v = false -> exists v', v ~> v'.
@@ -241,15 +351,15 @@ Proof using.
     all: try discriminate.
     + destruct (IHp2 (eq_refl _)) as [v2' s2].
       exists (v_fanout v1 v2').
-      apply (stepv_ctx (V_fanout_l v1)).
+      constructor.
       auto.
     + destruct (IHp1 (eq_refl _)) as [v1' s1].
       exists (v_fanout v1' v2).
-      apply (stepv_ctx (V_fanout_r v2)).
+      constructor.
       auto.
     + destruct (IHp1 (eq_refl _)) as [v1' s1].
       exists (v_fanout v1' v2).
-      apply (stepv_ctx (V_fanout_r v2)).
+      constructor.
       auto.
   - destruct v.
     all: cbn in IHp.
@@ -257,31 +367,33 @@ Proof using.
     all: subst.
     + destruct (IHp (eq_refl _)) as [v' s].
       exists (v_fst v').
-      apply (stepv_ctx V_fst).
+      constructor.
       auto.
     + destruct (IHp (eq_refl _)) as [v' s].
       exists (v_fst v').
-      apply (stepv_ctx V_fst).
+      constructor.
       auto.
     + exists v1.
       econstructor.
+      constructor.
   - destruct v.
     all: cbn in IHp.
     all: inversion p.
     all: subst.
     + destruct (IHp (eq_refl _)) as [v' s].
       exists (v_snd v').
-      apply (stepv_ctx V_snd).
+      constructor.
       auto.
     + destruct (IHp (eq_refl _)) as [v' s].
       exists (v_snd v').
-      apply (stepv_ctx V_snd).
+      constructor.
       auto.
     + exists v2.
       econstructor.
+      constructor.
 Qed.
 
-Theorem multiv_normalizing:
+Theorem multi_normalizing:
   forall v t,
     ⊢ v in t ->
    exists v', (v *~> v') /\ is_term_norm_of_term v' = true .
@@ -295,8 +407,7 @@ Proof using.
     destruct IHp2 as [v2' [s2 n2]].
     exists (v_fanout v1' v2').
     split.
-    + rewrite (multiv_ctx _ _ s1 (V_fanout_r v2)).
-      rewrite (multiv_ctx _ _ s2 (V_fanout_l v1')).
+    + rewrite s1, s2.
       reflexivity.
     + cbn.
       rewrite n1, n2.
@@ -306,17 +417,18 @@ Proof using.
     destruct v'.
     all: cbn in *.
     all: try discriminate.
-    + set (p1 := multiv_preserve _ _ s _ p).
+    + set (p1 := multi_preserve _ _ s _ p).
       inversion p1.
-    + set (p1 := multiv_preserve _ _ s _ p).
+    + set (p1 := multi_preserve _ _ s _ p).
       inversion p1.
       subst.
       exists v'1.
       split.
-      * rewrite (multiv_ctx _ _ s V_fst).
+      * rewrite s.
         cbn.
         econstructor.
         2: reflexivity.
+        econstructor.
         econstructor.
       * destruct (is_term_norm_of_term v'1) eqn:q2.
         2: discriminate.
@@ -325,17 +437,18 @@ Proof using.
     destruct v'.
     all: cbn in *.
     all: try discriminate.
-    + set (p1 := multiv_preserve _ _ s _ p).
+    + set (p1 := multi_preserve _ _ s _ p).
       inversion p1.
-    + set (p1 := multiv_preserve _ _ s _ p).
+    + set (p1 := multi_preserve _ _ s _ p).
       inversion p1.
       subst.
       exists v'2.
       split.
-      * rewrite (multiv_ctx _ _ s V_snd).
+      * rewrite s.
         cbn.
         econstructor.
         2: reflexivity.
+        econstructor.
         econstructor.
       * destruct (is_term_norm_of_term v'1) eqn:q1.
         2: discriminate.
