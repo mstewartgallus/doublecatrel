@@ -79,7 +79,7 @@ Proof using.
     2: contradiction.
     subst.
     constructor.
-    auto.
+    all: auto.
   - destruct v.
     all: try contradiction.
     cbn in p.
@@ -126,6 +126,24 @@ Proof using.
       reflexivity.
 Qed.
 
+Lemma sat_norm:
+  forall σ E v, sat σ E v -> is_term_norm_of_term v = true.
+Proof.
+  intros ? ? ? p.
+  induction p.
+  all: cbn in *.
+  all: auto.
+  - rewrite IHp1, IHp2.
+    reflexivity.
+  - rewrite IHp.
+    destruct (is_term_norm_of_term N0).
+    2: contradiction.
+    reflexivity.
+  - rewrite IHp2 in IHp1.
+    destruct (is_term_norm_of_term N1).
+    2: discriminate.
+    reflexivity.
+Qed.
 
 Theorem denote_complete:
   forall σ E v, is_term_norm_of_term v = true ->
@@ -155,8 +173,18 @@ Proof using.
     destruct (is_term_norm_of_term N0) eqn:r1, (is_term_norm_of_term N1) eqn:r2.
     all: try discriminate.
     auto.
-  - admit.
-Admitted.
+  - cbn in *.
+    destruct (is_term_norm_of_term N0) eqn:r1, (is_term_norm_of_term N1) eqn:r2.
+    all: try discriminate.
+    all: set (r := sat_norm _ _ _ q1).
+    all: cbn in r.
+    all: rewrite r1 in r.
+    all: rewrite r2 in r.
+    all: try discriminate.
+    exists N0.
+    all: repeat split.
+    all: auto.
+Qed.
 
 Import List.ListNotations.
 

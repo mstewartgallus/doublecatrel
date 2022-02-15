@@ -155,6 +155,7 @@ Inductive big : term -> term -> Type :=    (* defn big *)
 Inductive sat : seq -> context -> term -> Prop :=    (* defn sat *)
  | sat_var : forall (D:seq) (x:var) (N:term),
      Map.find x D = Some N  ->
+     is_term_norm_of_term N = true  ->
      sat D (E_var x) N
  | sat_tt : forall (D:seq),
      sat D E_tt v_tt

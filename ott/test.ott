@@ -171,6 +171,7 @@ D |- E [ N ] ::   :: sat :: 'sat_'
 by
 
 {{ Map.find [[x]] [[D]] = Some [[N]] }}
+{{ is_term_norm_of_term [[N]] = true }}
 --------------------- :: var
 D |- x[N]
 
