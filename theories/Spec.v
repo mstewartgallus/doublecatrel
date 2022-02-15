@@ -35,7 +35,7 @@ Inductive context : Set :=
  | E_tt : context
  | E_step (E:context) (E':context)
  | E_fanout (E:context) (E':context)
- | E_let (x0:var) (x1:var) (E:context) (E':context).
+ | E_let (x:var) (y:var) (E:context) (E':context).
 
 Definition environment : Type := (Map.map type).
 (** library functions *)
@@ -48,15 +48,15 @@ Arguments list_mem [A] _ _ _.
 
 
 (** substitutions *)
-Fixpoint subst_context (E5:context) (x_5:var) (E_6:context) {struct E_6} : context :=
+Fixpoint subst_context (E5:context) (x5:var) (E_6:context) {struct E_6} : context :=
   match E_6 with
-  | (E_var x) => (if eq_var x x_5 then E5 else (E_var x))
-  | (E_all x t E) => E_all x t (if list_mem eq_var x_5 (cons x nil) then E else (subst_context E5 x_5 E))
-  | (E_app E E') => E_app (subst_context E5 x_5 E) (subst_context E5 x_5 E')
+  | (E_var x) => (if eq_var x x5 then E5 else (E_var x))
+  | (E_all x t E) => E_all x t (if list_mem eq_var x5 (cons x nil) then E else (subst_context E5 x5 E))
+  | (E_app E E') => E_app (subst_context E5 x5 E) (subst_context E5 x5 E')
   | E_tt => E_tt 
-  | (E_step E E') => E_step (subst_context E5 x_5 E) (subst_context E5 x_5 E')
-  | (E_fanout E E') => E_fanout (subst_context E5 x_5 E) (subst_context E5 x_5 E')
-  | (E_let x0 x1 E E') => E_let x0 x1 (subst_context E5 x_5 E) (if list_mem eq_var x_5 (app (cons x0 nil) (cons x1 nil)) then E' else (subst_context E5 x_5 E'))
+  | (E_step E E') => E_step (subst_context E5 x5 E) (subst_context E5 x5 E')
+  | (E_fanout E E') => E_fanout (subst_context E5 x5 E) (subst_context E5 x5 E')
+  | (E_let x y E E') => E_let x y (subst_context E5 x5 E) (if list_mem eq_var x5 (app (cons x nil) (cons y nil)) then E' else (subst_context E5 x5 E'))
 end.
 
 
@@ -87,7 +87,7 @@ Fixpoint fv_context (E5:context) : list var :=
   | E_tt => nil
   | (E_step E E') => (app (fv_context E) (fv_context E'))
   | (E_fanout E E') => (app (fv_context E) (fv_context E'))
-  | (E_let x0 x1 E E') => (app (fv_context E) (list_minus eq_var (fv_context E') (app (cons x0 nil) (cons x1 nil))))
+  | (E_let x y E E') => (app (fv_context E) (list_minus eq_var (fv_context E') (app (cons x nil) (cons y nil))))
 end.
 
 (** definitions *)
@@ -159,27 +159,25 @@ Inductive sat : seq -> context -> term -> Prop :=    (* defn sat *)
      sat D (E_var x) N
  | sat_tt : forall (D:seq),
      sat D E_tt v_tt
- | sat_step : forall (D:seq) (E0 E1:context) (N:term),
-     sat D E0 v_tt ->
-     sat D E1 N ->
-     sat D  ( (E_step E0 E1) )  N
- | sat_fanout : forall (D:seq) (E0 E1:context) (N0 N1:term),
-     sat D E0 N0 ->
-     sat D E1 N1 ->
-     sat D  ( (E_fanout E0 E1) )  (v_fanout N0 N1)
- | sat_let : forall (D:seq) (x0 x1:var) (E0 E1:context) (N2 N0 N1:term),
-     Is_true (is_term_norm_of_term N0) ->
-     Is_true (is_term_norm_of_term N1) ->
-     sat D E0 (v_fanout N0 N1) ->
-     sat  (Map.add  x1   N1    (Map.add  x0   N0   D )  )  E1 N2 ->
-     sat D  ( (E_let x0 x1 E0 E1) )  N2
- | sat_abs : forall (D:seq) (x:var) (t:type) (E:context) (N1 N0:term),
-     Is_true (is_term_norm_of_term N0) ->
-     sat  (Map.add  x   N0   D )  E N1 ->
-     sat D  ( (E_all x t E) )  (v_fanout N0 N1)
- | sat_app : forall (D:seq) (E0 E1:context) (N1 N0:term),
-     sat D E0 (v_fanout N0 N1) ->
-     sat D E1 N0 ->
-     sat D  ( (E_app E0 E1) )  N1.
+ | sat_step : forall (D:seq) (E E':context) (N:term),
+     sat D E v_tt ->
+     sat D E' N ->
+     sat D  ( (E_step E E') )  N
+ | sat_fanout : forall (D:seq) (E E':context) (N N':term),
+     sat D E N ->
+     sat D E' N' ->
+     sat D  ( (E_fanout E E') )  (v_fanout N N')
+ | sat_let : forall (D:seq) (x0 x1:var) (E E':context) (N2 N0 N1:term),
+     sat D E (v_fanout N0 N1) ->
+     sat  (Map.add  x1   N1    (Map.add  x0   N0   D )  )  E' N2 ->
+     sat D  ( (E_let x0 x1 E E') )  N2
+ | sat_abs : forall (D:seq) (x:var) (t:type) (E:context) (N N':term),
+     is_term_norm_of_term N = true  ->
+     sat  (Map.add  x   N   D )  E N' ->
+     sat D  ( (E_all x t E) )  (v_fanout N N')
+ | sat_app : forall (D:seq) (E E':context) (N' N:term),
+     sat D E (v_fanout N N') ->
+     sat D E' N ->
+     sat D  ( (E_app E E') )  N'.
 
 

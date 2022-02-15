@@ -17,12 +17,6 @@ Proof.
   decide equality.
 Defined.
 
-Definition big_eq x y :=
-  match Term.big x, Term.big y with
-  | Some x', Some y' => x' = y'
-  | _, _ => False
-  end.
-
 Fixpoint denote (σ: Map.map term) (E: context) (v: term) {struct E}: Prop :=
   match E, v with
   | E_var x, _ => if Map.find x σ is Some v' then v = v' else False
@@ -86,9 +80,7 @@ Proof using.
     destruct (is_term_norm_of_term v1) eqn:q1, (is_term_norm_of_term v2) eqn:q2.
     all: try discriminate.
     constructor.
-    1: rewrite q1.
-    1: apply I.
-    auto.
+    all: auto.
   - destruct q as [? [? [? ?]]].
     econstructor.
     all: eauto.
@@ -114,16 +106,12 @@ Proof using.
   - destruct q as [? [? [? [? [? ?]]]]].
     econstructor.
     all: eauto.
-    + rewrite H.
-      reflexivity.
-    + rewrite H0.
-      reflexivity.
-    + apply IHE1.
-      2: auto.
-      cbn.
-      rewrite H.
-      rewrite H0.
-      reflexivity.
+    apply IHE1.
+    2: auto.
+    cbn.
+    rewrite H.
+    rewrite H0.
+    reflexivity.
 Qed.
 
 Lemma sat_norm:
@@ -136,11 +124,10 @@ Proof.
   - rewrite IHp1, IHp2.
     reflexivity.
   - rewrite IHp.
-    destruct (is_term_norm_of_term N0).
-    2: contradiction.
+    rewrite H.
     reflexivity.
   - rewrite IHp2 in IHp1.
-    destruct (is_term_norm_of_term N1).
+    destruct (is_term_norm_of_term N').
     2: discriminate.
     reflexivity.
 Qed.
@@ -156,32 +143,33 @@ Proof using.
   - rewrite H.
     reflexivity.
   - cbn in p.
-    destruct (is_term_norm_of_term N0) eqn:r1, (is_term_norm_of_term N1) eqn:r2.
+    destruct (is_term_norm_of_term N) eqn:r1, (is_term_norm_of_term N') eqn:r2.
     split.
     all: auto.
-  - exists N0.
+  - rewrite p in *.
+    exists N0.
     exists N1.
+    cbn in *.
     destruct (is_term_norm_of_term N0) eqn:r1, (is_term_norm_of_term N1) eqn:r2.
-    all: try contradiction.
+    all: set (q := sat_norm _ _ _ q1).
+    all: cbn in q.
+    all: rewrite r1, r2 in q.
+    all: try discriminate.
     all: repeat split.
     all: auto.
-    apply IHq1.
-    cbn.
-    rewrite r1, r2.
-    reflexivity.
   - cbn in p.
-    destruct (is_term_norm_of_term N0) eqn:r1, (is_term_norm_of_term N1) eqn:r2.
+    destruct (is_term_norm_of_term N) eqn:r1, (is_term_norm_of_term N') eqn:r2.
     all: try discriminate.
     auto.
   - cbn in *.
-    destruct (is_term_norm_of_term N0) eqn:r1, (is_term_norm_of_term N1) eqn:r2.
+    destruct (is_term_norm_of_term N) eqn:r1, (is_term_norm_of_term N') eqn:r2.
     all: try discriminate.
     all: set (r := sat_norm _ _ _ q1).
     all: cbn in r.
     all: rewrite r1 in r.
     all: rewrite r2 in r.
     all: try discriminate.
-    exists N0.
+    exists N.
     all: repeat split.
     all: auto.
 Qed.

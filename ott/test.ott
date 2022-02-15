@@ -3,7 +3,7 @@ embed
 Require Blech.Map.
 }}
 
-metavar var, x ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[var]]} }}
+metavar var, x, y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[var]]} }}
 indexvar index, i, m, n ::= {{ isa num }} {{ coq nat }}
 
 grammar
@@ -26,12 +26,10 @@ context, E :: 'E_' ::=
   | tt                       ::   :: tt
   | E ,, E'                  ::   :: step
   | E , E'                   ::   :: fanout
-  | let ( x0 , x1 ) := E in E' ::   :: let (+ bind x0 union x1 in E' +)
+  | let ( x , y ) := E in E' ::   :: let (+ bind x union y in E' +)
   | ( E )                    :: S :: paren {{ icho ([[E]]) }}
   | [ x := E ] E'            :: M :: subst
                                   {{ icho (subst_context [[E]] [[x]] [[E']]) }}
-  | e [ E ]                  :: M :: fill_context
-                                  {{ icho (appctx_context_ctx_context [[e]] [[E]]) }}
 
 environment, G {{ tex \Gamma }} :: 'G_' ::= {{ coq (Map.map type) }} {{ coq-universe Type }}
   | empty         ::   :: empty {{ coq Map.empty }}
@@ -40,7 +38,7 @@ environment, G {{ tex \Gamma }} :: 'G_' ::= {{ coq (Map.map type) }} {{ coq-univ
 
 seq, D {{ tex \Delta }} :: 'D_'  ::= {{ coq (Map.map term) }} {{ coq-universe Type }}
   | empty         ::   :: empty {{ coq Map.empty }}
-  | D , x [ v ]   ::   :: add {{ coq (Map.add [[x]] [[v]] [[D]]) }}
+  | D , x [ N ]   ::   :: add {{ coq (Map.add [[x]] [[N]] [[D]]) }}
 
 term_norm, N :: 'N_' ::=
   | tt      ::  :: tt
@@ -58,14 +56,9 @@ terminals :: 'terminals_' ::=
   | tt           ::   :: tt   {{ tex \mathop{ \textbf ! } }}
   | fst          ::   :: fst  {{ tex \pi{}_1 }}
   | snd          ::   :: snd  {{ tex \pi{}_2 }}
-  | __           ::   :: hole    {{ tex [\cdot{}] }}
-  | ==           ::   :: equiv  {{ tex \mathrel{\sim} }}
   | forall       ::   :: forall  {{ tex \exists{} }}
   | empty        ::   :: empty   {{ tex \bullet{} }}
   | !            ::   :: big     {{ tex \mathrel{\Downarrow} }}
-  | ~>           ::   :: beta     {{ tex \mathrel{\rightarrow} }}
-  | -->          ::   :: step     {{ tex \mathrel{\rightarrow} }}
-  | *->          ::   :: multi     {{ tex \mathrel{\longrightarrow} }}
 
 substitutions
   single context var :: subst 
@@ -178,27 +171,29 @@ D |- x[N]
 ----------- :: tt
 D |- tt[tt]
 
-D |- E0[tt]
-D |- E1[N]
+D |- E[tt]
+D |- E'[N]
 --------------------- :: step
-D |- (E0,, E1)[N]
+D |- (E,, E')[N]
 
-D |- E0[N0]
-D |- E1[N1]
+D |- E[N]
+D |- E'[N']
 --------------------- :: fanout
-D |- (E0, E1)[N0, N1]
+D |- (E, E')[N, N']
 
 
-D |- E0[N0, N1]
-D, x0[N0], x1[N1] |- E1[N2]
+D |- E[N0, N1]
+D, x0[N0], x1[N1] |- E'[N2]
 --------------------- :: let
-D |- (let (x0, x1) := E0 in E1)[N2]
+D |- (let (x0, x1) := E in E')[N2]
 
-D, x[N0] |- E[N1]
+% FIXME ugly hack
+{{ is_term_norm_of_term [[N]] = true }}
+D, x[N] |- E[N']
 ------------------------------- :: abs
-D |- (forall x: t. E) [N0, N1]
+D |- (forall x: t. E) [N, N']
 
-D |- E0[N0, N1]
-D |- E1[N0]
+D |- E[N, N']
+D |- E'[N]
 ------------------------ :: app
-D |- (E0 E1)[N1]
+D |- (E E')[N']
