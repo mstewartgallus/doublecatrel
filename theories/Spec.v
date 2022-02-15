@@ -16,15 +16,17 @@ Defined.
 Hint Resolve eq_var : ott_coq_equality.
 Definition index : Set := nat.
 
-Inductive type : Set := 
- | t_unit : type
- | t_prod (t:type) (t':type).
-
 Inductive term : Set := 
  | v_tt : term
  | v_fst (v:term)
  | v_snd (v:term)
  | v_fanout (v:term) (v':term).
+
+Inductive type : Set := 
+ | t_unit : type
+ | t_prod (t:type) (t':type).
+
+Definition seq : Type := (Map.map term).
 
 Inductive context : Set := 
  | E_var (x:var)
@@ -36,8 +38,6 @@ Inductive context : Set :=
  | E_let (x0:var) (x1:var) (E:context) (E':context).
 
 Definition environment : Type := (Map.map type).
-
-Definition seq : Type := (Map.map term).
 (** library functions *)
 Fixpoint list_mem A (eq:forall a b:A,{a=b}+{a<>b}) (x:A) (l:list A) {struct l} : bool :=
   match l with
@@ -151,43 +151,34 @@ Inductive big : term -> term -> Type :=    (* defn big *)
      big (v_snd v) N2.
 (** definitions *)
 
-(* defns equiv *)
-Inductive equiv : term -> term -> Prop :=    (* defn equiv *)
- | equiv_common : forall (v0 v1 N2:term),
-     big v0 N2 ->
-     big v1 N2 ->
-     equiv v0 v1.
-(** definitions *)
-
 (* defns sat *)
 Inductive sat : seq -> context -> term -> Prop :=    (* defn sat *)
- | sat_var : forall (D:seq) (x:var) (v:term),
-     Map.find x D = Some v  ->
-     sat D (E_var x) v
+ | sat_var : forall (D:seq) (x:var) (N:term),
+     Map.find x D = Some N  ->
+     sat D (E_var x) N
  | sat_tt : forall (D:seq),
      sat D E_tt v_tt
- | sat_step : forall (D:seq) (E0 E1:context) (v:term),
+ | sat_step : forall (D:seq) (E0 E1:context) (N:term),
      sat D E0 v_tt ->
-     sat D E1 v ->
-     sat D  ( (E_step E0 E1) )  v
- | sat_fanout : forall (D:seq) (E0 E1:context) (v0 v1:term),
-     sat D E0 v0 ->
-     sat D E1 v1 ->
-     sat D  ( (E_fanout E0 E1) )  (v_fanout v0 v1)
- | sat_let : forall (D:seq) (x0 x1:var) (E0 E1:context) (v2 v0 v1:term),
-     sat D E0 (v_fanout v0 v1) ->
-     sat  (Map.add  x1   v1    (Map.add  x0   v0   D )  )  E1 v2 ->
-     sat D  ( (E_let x0 x1 E0 E1) )  v2
- | sat_abs : forall (D:seq) (x:var) (t:type) (E:context) (v0 v1:term),
-     sat  (Map.add  x   v0   D )  E v1 ->
-     sat D  ( (E_all x t E) )  (v_fanout v0 v1)
- | sat_app : forall (D:seq) (E0 E1:context) (v1 v0:term),
-     sat D E0 (v_fanout v0 v1) ->
-     sat D E1 v0 ->
-     sat D  ( (E_app E0 E1) )  v1
- | sat_equiv : forall (D:seq) (E:context) (v1 v0:term),
-     equiv v0 v1 ->
-     sat D E v0 ->
-     sat D E v1.
+     sat D E1 N ->
+     sat D  ( (E_step E0 E1) )  N
+ | sat_fanout : forall (D:seq) (E0 E1:context) (N0 N1:term),
+     sat D E0 N0 ->
+     sat D E1 N1 ->
+     sat D  ( (E_fanout E0 E1) )  (v_fanout N0 N1)
+ | sat_let : forall (D:seq) (x0 x1:var) (E0 E1:context) (N2 N0 N1:term),
+     Is_true (is_term_norm_of_term N0) ->
+     Is_true (is_term_norm_of_term N1) ->
+     sat D E0 (v_fanout N0 N1) ->
+     sat  (Map.add  x1   N1    (Map.add  x0   N0   D )  )  E1 N2 ->
+     sat D  ( (E_let x0 x1 E0 E1) )  N2
+ | sat_abs : forall (D:seq) (x:var) (t:type) (E:context) (N1 N0:term),
+     Is_true (is_term_norm_of_term N0) ->
+     sat  (Map.add  x   N0   D )  E N1 ->
+     sat D  ( (E_all x t E) )  (v_fanout N0 N1)
+ | sat_app : forall (D:seq) (E0 E1:context) (N1 N0:term),
+     sat D E0 (v_fanout N0 N1) ->
+     sat D E1 N0 ->
+     sat D  ( (E_app E0 E1) )  N1.
 
 

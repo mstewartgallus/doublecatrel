@@ -164,58 +164,40 @@ snd v ! N2
 
 defns
 
-equiv :: '' ::=
-
-defn
-v == v' ::   :: equiv :: 'equiv_'
-by
-
-v0 ! N2
-v1 ! N2
--------------------- :: common
-v0 == v1
-
-defns
-
 sat :: '' ::=
 
 defn
-D |- E [ v ] ::   :: sat :: 'sat_'
+D |- E [ N ] ::   :: sat :: 'sat_'
 by
 
-{{ Map.find [[x]] [[D]] = Some v }}
+{{ Map.find [[x]] [[D]] = Some [[N]] }}
 --------------------- :: var
-D |- x[v]
+D |- x[N]
 
 ----------- :: tt
 D |- tt[tt]
 
 D |- E0[tt]
-D |- E1[v]
+D |- E1[N]
 --------------------- :: step
-D |- (E0,, E1)[v]
+D |- (E0,, E1)[N]
 
-D |- E0[v0]
-D |- E1[v1]
+D |- E0[N0]
+D |- E1[N1]
 --------------------- :: fanout
-D |- (E0, E1)[v0, v1]
+D |- (E0, E1)[N0, N1]
 
 
-D |- E0[v0, v1]
-D, x0[v0], x1[v1] |- E1[v2]
+D |- E0[N0, N1]
+D, x0[N0], x1[N1] |- E1[N2]
 --------------------- :: let
-D |- (let (x0, x1) := E0 in E1)[v2]
+D |- (let (x0, x1) := E0 in E1)[N2]
 
-D, x[v0] |- E[v1]
+D, x[N0] |- E[N1]
 ------------------------------- :: abs
-D |- (forall x: t. E) [v0, v1]
+D |- (forall x: t. E) [N0, N1]
 
-D |- E0[v0, v1]
-D |- E1[v0]
+D |- E0[N0, N1]
+D |- E1[N0]
 ------------------------ :: app
-D |- (E0 E1)[v1]
-
-v0 == v1
-D |- E[v0]
----------- :: equiv
-D |- E[v1]
+D |- (E0 E1)[N1]

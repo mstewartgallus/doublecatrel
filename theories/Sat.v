@@ -12,47 +12,151 @@ Require Import FunInd.
 
 Import IfNotations.
 
-Definition denote E v := Map.empty ⊢ E[v].
-
-Notation "[[ E ]]" := (denote E).
-
-
-Definition leibniz E E' :=
-  forall v, [[ E ]] v <-> [[ E' ]] v.
-
-Instance leibniz_Reflexive: Reflexive leibniz.
-Proof.
-  exists.
-  all: auto.
-Defined.
-
-Instance leibniz_Transitive: Transitive leibniz.
-Proof.
-  exists.
-  - intro.
-    apply H0.
-    apply H.
-    auto.
-  - intro.
-    apply H.
-    apply H0.
-    auto.
-Defined.
-
-Instance leibniz_Symmetric: Symmetric leibniz.
-Proof.
-  exists.
-  all: apply H.
-Defined.
-
-Instance leibniz_Equivalence: Equivalence leibniz := { Equivalence_Reflexive := _ ; }.
-
-Instance leibniz_Setoid: Setoid context := { equiv := leibniz }.
-
 Definition eq_term (x y: term): {x = y} + {x <> y}.
 Proof.
   decide equality.
 Defined.
+
+Definition big_eq x y :=
+  match Term.big x, Term.big y with
+  | Some x', Some y' => x' = y'
+  | _, _ => False
+  end.
+
+Fixpoint denote (σ: Map.map term) (E: context) (v: term) {struct E}: Prop :=
+  match E, v with
+  | E_var x, _ => if Map.find x σ is Some v' then v = v' else False
+
+  | E_tt, v_tt => True
+
+  | E_step E E', _ => denote σ E v_tt /\ denote σ E' v
+
+  | E_fanout E E', v_fanout v v' => denote σ E v /\ denote σ E' v'
+
+  | E_let x y E E', _ =>
+      exists a b, is_term_norm_of_term a = true /\
+                  is_term_norm_of_term b = true /\
+                    denote σ E (v_fanout a b) /\ denote (Map.add y b (Map.add x a σ)) E' v
+
+  | E_all x t E, v_fanout v v' => denote (Map.add x v σ) E v'
+  | E_app E E', _ =>
+      exists v', is_term_norm_of_term v' = true /\ denote σ E (v_fanout v' v) /\ denote σ E' v'
+  | _, _ => False
+  end.
+
+Lemma normal_big:
+  forall v,
+    is_term_norm_of_term v = true -> v ⇓ v.
+Proof.
+  intros v.
+  induction v.
+  all: cbn.
+  all: try discriminate.
+  all: intros p.
+  - constructor.
+  - constructor.
+    + apply IHv1.
+      destruct (is_term_norm_of_term v1).
+      2: discriminate.
+      reflexivity.
+    + apply IHv2.
+      destruct (is_term_norm_of_term v1), (is_term_norm_of_term v2).
+      all: try discriminate.
+      reflexivity.
+Qed.
+
+Theorem denote_sound:
+  forall σ E v,
+    is_term_norm_of_term v = true ->
+    denote σ E v -> sat σ E v.
+Proof using.
+  intros σ E.
+  generalize dependent σ.
+  induction E.
+  all: cbn in *.
+  all: intros σ v p q.
+  - destruct (Map.find x σ) eqn:r.
+    2: contradiction.
+    subst.
+    constructor.
+    auto.
+  - destruct v.
+    all: try contradiction.
+    cbn in p.
+    destruct (is_term_norm_of_term v1) eqn:q1, (is_term_norm_of_term v2) eqn:q2.
+    all: try discriminate.
+    constructor.
+    1: rewrite q1.
+    1: apply I.
+    auto.
+  - destruct q as [? [? [? ?]]].
+    econstructor.
+    all: eauto.
+    apply IHE1.
+    2: auto.
+    cbn.
+    rewrite p, H.
+    reflexivity.
+  - destruct v.
+    all: try contradiction.
+    constructor.
+  - destruct q.
+    constructor.
+    all: auto.
+  - destruct v.
+    all: try contradiction.
+    cbn in p.
+    destruct q.
+    destruct (is_term_norm_of_term v1) eqn:q1, (is_term_norm_of_term v2) eqn:q2.
+    all: try discriminate.
+    constructor.
+    all: auto.
+  - destruct q as [? [? [? [? [? ?]]]]].
+    econstructor.
+    all: eauto.
+    + rewrite H.
+      reflexivity.
+    + rewrite H0.
+      reflexivity.
+    + apply IHE1.
+      2: auto.
+      cbn.
+      rewrite H.
+      rewrite H0.
+      reflexivity.
+Qed.
+
+
+Theorem denote_complete:
+  forall σ E v, is_term_norm_of_term v = true ->
+                sat σ E v -> denote σ E v.
+Proof using.
+  intros ? ? ? p q.
+  induction q.
+  all: cbn.
+  all: auto.
+  - rewrite H.
+    reflexivity.
+  - cbn in p.
+    destruct (is_term_norm_of_term N0) eqn:r1, (is_term_norm_of_term N1) eqn:r2.
+    split.
+    all: auto.
+  - exists N0.
+    exists N1.
+    destruct (is_term_norm_of_term N0) eqn:r1, (is_term_norm_of_term N1) eqn:r2.
+    all: try contradiction.
+    all: repeat split.
+    all: auto.
+    apply IHq1.
+    cbn.
+    rewrite r1, r2.
+    reflexivity.
+  - cbn in p.
+    destruct (is_term_norm_of_term N0) eqn:r1, (is_term_norm_of_term N1) eqn:r2.
+    all: try discriminate.
+    auto.
+  - admit.
+Admitted.
 
 Import List.ListNotations.
 
@@ -231,22 +335,7 @@ Example id t :=
   let x := 0 in
   E_all x t (E_var x).
 
-Theorem id_sat t v: [[ id t ]] (v_fanout v v).
-Proof.
-  econstructor.
-  cbn.
-  econstructor.
-  cbn.
-  auto.
-Defined.
-
 Example conv E :=
   let x := 0 in
   let y := 1 in
   E_let x y E (E_fanout (E_var y) (E_var x)).
-
-Theorem id_conv_id t: id t == conv (id t).
-Proof.
-  cbn.
-  admit.
-Admitted.

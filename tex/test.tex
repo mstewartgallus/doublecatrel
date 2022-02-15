@@ -112,20 +112,15 @@
 \ottrulehead{\ottnt{big}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottnt{v}  \mathrel{\Downarrow}  \ottnt{N}}{}{}{}{}}
 
-\newcommand{\ottequiv}{
-\ottrulehead{\ottnt{equiv}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\ottnt{v}  \mathrel{\sim}  \ottnt{v'}}{}{}{}{}}
-
 \newcommand{\ottsat}{
 \ottrulehead{\ottnt{sat}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\Delta  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{v}  \ottsym{]}}{}{}{}{}}
+\ottfirstprodline{|}{\Delta  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{N}  \ottsym{]}}{}{}{}{}}
 
 \newcommand{\ottjudgement}{
 \ottrulehead{\ottnt{judgement}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottnt{judge\_context}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{judge\_term}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{big}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{equiv}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{sat}}{}{}{}{}}
 
 \newcommand{\ottuserXXsyntax}{
@@ -152,7 +147,6 @@
 \ottjudgeXXcontext\ottinterrule
 \ottjudgeXXterm\ottinterrule
 \ottbig\ottinterrule
-\ottequiv\ottinterrule
 \ottsat\ottinterrule
 \ottjudgement\ottinterrule
 \ottuserXXsyntax\ottafterlastrule
@@ -320,30 +314,12 @@
 \newcommand{\ottdefnsbig}{
 \ottdefnbig{}}
 
-% defns equiv
-%% defn equiv
-\newcommand{\ottdruleequivXXcommon}[1]{\ottdrule[#1]{%
-\ottpremise{\ottnt{v_{{\mathrm{0}}}}  \mathrel{\Downarrow}  \ottnt{N_{{\mathrm{2}}}}}%
-\ottpremise{\ottnt{v_{{\mathrm{1}}}}  \mathrel{\Downarrow}  \ottnt{N_{{\mathrm{2}}}}}%
-}{
-\ottnt{v_{{\mathrm{0}}}}  \mathrel{\sim}  \ottnt{v_{{\mathrm{1}}}}}{%
-{\ottdrulename{equiv\_common}}{}%
-}}
-
-\newcommand{\ottdefnequiv}[1]{\begin{ottdefnblock}[#1]{$\ottnt{v}  \mathrel{\sim}  \ottnt{v'}$}{}
-\ottusedrule{\ottdruleequivXXcommon{}}
-\end{ottdefnblock}}
-
-
-\newcommand{\ottdefnsequiv}{
-\ottdefnequiv{}}
-
 % defns sat
 %% defn sat
 \newcommand{\ottdrulesatXXvar}[1]{\ottdrule[#1]{%
-\ottpremise{\texttt{Map.find }\mathit{x}\texttt{ }\Delta\texttt{ = Some v }}%
+\ottpremise{\texttt{Map.find }\mathit{x}\texttt{ }\Delta\texttt{ = Some }\ottnt{N}\texttt{ }}%
 }{
-\Delta  \vdash{}  \mathit{x}  \ottsym{[}  \ottnt{v}  \ottsym{]}}{%
+\Delta  \vdash{}  \mathit{x}  \ottsym{[}  \ottnt{N}  \ottsym{]}}{%
 {\ottdrulename{sat\_var}}{}%
 }}
 
@@ -357,57 +333,48 @@
 
 \newcommand{\ottdrulesatXXstep}[1]{\ottdrule[#1]{%
 \ottpremise{\Delta  \vdash{}  \ottnt{E_{{\mathrm{0}}}}  \ottsym{[}  \mathop{ \textbf ! }  \ottsym{]}}%
-\ottpremise{\Delta  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{[}  \ottnt{v}  \ottsym{]}}%
+\ottpremise{\Delta  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{[}  \ottnt{N}  \ottsym{]}}%
 }{
-\Delta  \vdash{}  \ottsym{(}  \ottnt{E_{{\mathrm{0}}}}  ;  \ottnt{E_{{\mathrm{1}}}}  \ottsym{)}  \ottsym{[}  \ottnt{v}  \ottsym{]}}{%
+\Delta  \vdash{}  \ottsym{(}  \ottnt{E_{{\mathrm{0}}}}  ;  \ottnt{E_{{\mathrm{1}}}}  \ottsym{)}  \ottsym{[}  \ottnt{N}  \ottsym{]}}{%
 {\ottdrulename{sat\_step}}{}%
 }}
 
 
 \newcommand{\ottdrulesatXXfanout}[1]{\ottdrule[#1]{%
-\ottpremise{\Delta  \vdash{}  \ottnt{E_{{\mathrm{0}}}}  \ottsym{[}  \ottnt{v_{{\mathrm{0}}}}  \ottsym{]}}%
-\ottpremise{\Delta  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{[}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{]}}%
+\ottpremise{\Delta  \vdash{}  \ottnt{E_{{\mathrm{0}}}}  \ottsym{[}  \ottnt{N_{{\mathrm{0}}}}  \ottsym{]}}%
+\ottpremise{\Delta  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{[}  \ottnt{N_{{\mathrm{1}}}}  \ottsym{]}}%
 }{
-\Delta  \vdash{}  \ottsym{(}  \ottnt{E_{{\mathrm{0}}}}  \ottsym{,}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{)}  \ottsym{[}  \ottnt{v_{{\mathrm{0}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{]}}{%
+\Delta  \vdash{}  \ottsym{(}  \ottnt{E_{{\mathrm{0}}}}  \ottsym{,}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{)}  \ottsym{[}  \ottnt{N_{{\mathrm{0}}}}  \ottsym{,}  \ottnt{N_{{\mathrm{1}}}}  \ottsym{]}}{%
 {\ottdrulename{sat\_fanout}}{}%
 }}
 
 
 \newcommand{\ottdrulesatXXlet}[1]{\ottdrule[#1]{%
-\ottpremise{\Delta  \vdash{}  \ottnt{E_{{\mathrm{0}}}}  \ottsym{[}  \ottnt{v_{{\mathrm{0}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{]}}%
-\ottpremise{\Delta  \ottsym{,}  \mathit{x_{{\mathrm{0}}}}  \ottsym{[}  \ottnt{v_{{\mathrm{0}}}}  \ottsym{]}  \ottsym{,}  \mathit{x_{{\mathrm{1}}}}  \ottsym{[}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{]}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{[}  \ottnt{v_{{\mathrm{2}}}}  \ottsym{]}}%
+\ottpremise{\Delta  \vdash{}  \ottnt{E_{{\mathrm{0}}}}  \ottsym{[}  \ottnt{N_{{\mathrm{0}}}}  \ottsym{,}  \ottnt{N_{{\mathrm{1}}}}  \ottsym{]}}%
+\ottpremise{\Delta  \ottsym{,}  \mathit{x_{{\mathrm{0}}}}  \ottsym{[}  \ottnt{N_{{\mathrm{0}}}}  \ottsym{]}  \ottsym{,}  \mathit{x_{{\mathrm{1}}}}  \ottsym{[}  \ottnt{N_{{\mathrm{1}}}}  \ottsym{]}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{[}  \ottnt{N_{{\mathrm{2}}}}  \ottsym{]}}%
 }{
-\Delta  \vdash{}  \ottsym{(}  \ottkw{let} \, \ottsym{(}  \mathit{x_{{\mathrm{0}}}}  \ottsym{,}  \mathit{x_{{\mathrm{1}}}}  \ottsym{)}  \mathbin{:=}  \ottnt{E_{{\mathrm{0}}}} \, \ottkw{in} \, \ottnt{E_{{\mathrm{1}}}}  \ottsym{)}  \ottsym{[}  \ottnt{v_{{\mathrm{2}}}}  \ottsym{]}}{%
+\Delta  \vdash{}  \ottsym{(}  \ottkw{let} \, \ottsym{(}  \mathit{x_{{\mathrm{0}}}}  \ottsym{,}  \mathit{x_{{\mathrm{1}}}}  \ottsym{)}  \mathbin{:=}  \ottnt{E_{{\mathrm{0}}}} \, \ottkw{in} \, \ottnt{E_{{\mathrm{1}}}}  \ottsym{)}  \ottsym{[}  \ottnt{N_{{\mathrm{2}}}}  \ottsym{]}}{%
 {\ottdrulename{sat\_let}}{}%
 }}
 
 
 \newcommand{\ottdrulesatXXabs}[1]{\ottdrule[#1]{%
-\ottpremise{\Delta  \ottsym{,}  \mathit{x}  \ottsym{[}  \ottnt{v_{{\mathrm{0}}}}  \ottsym{]}  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{]}}%
+\ottpremise{\Delta  \ottsym{,}  \mathit{x}  \ottsym{[}  \ottnt{N_{{\mathrm{0}}}}  \ottsym{]}  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{N_{{\mathrm{1}}}}  \ottsym{]}}%
 }{
-\Delta  \vdash{}  \ottsym{(}  \exists{} \, \mathit{x}  \colon{}  \ottnt{t}  \ottsym{.}  \ottnt{E}  \ottsym{)}  \ottsym{[}  \ottnt{v_{{\mathrm{0}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{]}}{%
+\Delta  \vdash{}  \ottsym{(}  \exists{} \, \mathit{x}  \colon{}  \ottnt{t}  \ottsym{.}  \ottnt{E}  \ottsym{)}  \ottsym{[}  \ottnt{N_{{\mathrm{0}}}}  \ottsym{,}  \ottnt{N_{{\mathrm{1}}}}  \ottsym{]}}{%
 {\ottdrulename{sat\_abs}}{}%
 }}
 
 
 \newcommand{\ottdrulesatXXapp}[1]{\ottdrule[#1]{%
-\ottpremise{\Delta  \vdash{}  \ottnt{E_{{\mathrm{0}}}}  \ottsym{[}  \ottnt{v_{{\mathrm{0}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{]}}%
-\ottpremise{\Delta  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{[}  \ottnt{v_{{\mathrm{0}}}}  \ottsym{]}}%
+\ottpremise{\Delta  \vdash{}  \ottnt{E_{{\mathrm{0}}}}  \ottsym{[}  \ottnt{N_{{\mathrm{0}}}}  \ottsym{,}  \ottnt{N_{{\mathrm{1}}}}  \ottsym{]}}%
+\ottpremise{\Delta  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{[}  \ottnt{N_{{\mathrm{0}}}}  \ottsym{]}}%
 }{
-\Delta  \vdash{}  \ottsym{(}  \ottnt{E_{{\mathrm{0}}}} \, \ottnt{E_{{\mathrm{1}}}}  \ottsym{)}  \ottsym{[}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{]}}{%
+\Delta  \vdash{}  \ottsym{(}  \ottnt{E_{{\mathrm{0}}}} \, \ottnt{E_{{\mathrm{1}}}}  \ottsym{)}  \ottsym{[}  \ottnt{N_{{\mathrm{1}}}}  \ottsym{]}}{%
 {\ottdrulename{sat\_app}}{}%
 }}
 
-
-\newcommand{\ottdrulesatXXequiv}[1]{\ottdrule[#1]{%
-\ottpremise{\ottnt{v_{{\mathrm{0}}}}  \mathrel{\sim}  \ottnt{v_{{\mathrm{1}}}}}%
-\ottpremise{\Delta  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{v_{{\mathrm{0}}}}  \ottsym{]}}%
-}{
-\Delta  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{]}}{%
-{\ottdrulename{sat\_equiv}}{}%
-}}
-
-\newcommand{\ottdefnsat}[1]{\begin{ottdefnblock}[#1]{$\Delta  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{v}  \ottsym{]}$}{}
+\newcommand{\ottdefnsat}[1]{\begin{ottdefnblock}[#1]{$\Delta  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{N}  \ottsym{]}$}{}
 \ottusedrule{\ottdrulesatXXvar{}}
 \ottusedrule{\ottdrulesatXXtt{}}
 \ottusedrule{\ottdrulesatXXstep{}}
@@ -415,7 +382,6 @@
 \ottusedrule{\ottdrulesatXXlet{}}
 \ottusedrule{\ottdrulesatXXabs{}}
 \ottusedrule{\ottdrulesatXXapp{}}
-\ottusedrule{\ottdrulesatXXequiv{}}
 \end{ottdefnblock}}
 
 
@@ -426,7 +392,6 @@
 \ottdefnsjudgeXXcontext
 \ottdefnsjudgeXXterm
 \ottdefnsbig
-\ottdefnsequiv
 \ottdefnssat
 }
 
