@@ -28,19 +28,17 @@ context, E :: 'E_' ::=
   | E , E'                   ::   :: fanout
   | let ( x , y ) := E in E' ::   :: let (+ bind x union y in E' +)
   | ( E )                    :: S :: paren {{ icho ([[E]]) }}
-  | [ x := E ] E'            :: M :: subst
-                                  {{ icho (subst_context [[E]] [[x]] [[E']]) }}
 
 environment, G {{ tex \Gamma }} :: 'G_' ::= {{ coq (Map.map type) }} {{ coq-universe Type }}
   | empty         ::   :: empty {{ coq Map.empty }}
   | G , x : t     ::   :: add {{ coq (Map.add [[x]] [[t]] [[G]]) }}
   | G ++ G'       ::   :: merge {{ coq (Map.merge [[G]] [[G']]) }}
 
-seq, D {{ tex \Delta }} :: 'D_'  ::= {{ coq (Map.map term) }} {{ coq-universe Type }}
+seq, D {{ tex \Delta }} :: 'D_'  ::= {{ coq (Map.map normal) }} {{ coq-universe Type }}
   | empty         ::   :: empty {{ coq Map.empty }}
   | D , x [ N ]   ::   :: add {{ coq (Map.add [[x]] [[N]] [[D]]) }}
 
-term_norm, N :: 'N_' ::=
+normal, N :: 'N_' ::=
   | tt      ::  :: tt
   | N , N'  ::  :: fanout
   | ( N )   :: S :: paren {{ coq ([[N]]) }}
@@ -62,9 +60,6 @@ terminals :: 'terminals_' ::=
 
 substitutions
   single context var :: subst 
-
-subrules
-  N <:: v
 
 freevars
   context var :: fv
@@ -164,7 +159,6 @@ D |- E [ N ] ::   :: sat :: 'sat_'
 by
 
 {{ Map.find [[x]] [[D]] = Some [[N]] }}
-{{ is_term_norm_of_term [[N]] = true }}
 --------------------- :: var
 D |- x[N]
 
@@ -187,8 +181,6 @@ D, x0[N0], x1[N1] |- E'[N2]
 --------------------- :: let
 D |- (let (x0, x1) := E in E')[N2]
 
-% FIXME ugly hack
-{{ is_term_norm_of_term [[N]] = true }}
 D, x[N] |- E[N']
 ------------------------------- :: abs
 D |- (forall x: t. E) [N, N']

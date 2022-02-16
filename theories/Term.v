@@ -7,6 +7,14 @@ Import IfNotations.
 
 Require Import FunInd.
 
+Fixpoint toterm (v: normal): term :=
+  match v with
+  | N_tt => v_tt
+  | N_fanout v0 v1 => v_fanout (toterm v0) (toterm v1)
+  end.
+
+Coercion toterm: normal >-> term.
+
 Function typecheck (v: term): option type :=
   match v with
   | v_tt => Some t_unit
@@ -84,15 +92,15 @@ Defined.
 
 Function big v :=
   match v with
-  | v_tt => Some v_tt
-  | v_fst v => if big v is Some (v_fanout a _) then Some a else None
-  | v_snd v => if big v is Some (v_fanout _ a) then Some a else None
+  | v_tt => Some N_tt
+  | v_fst v => if big v is Some (N_fanout a _) then Some a else None
+  | v_snd v => if big v is Some (N_fanout _ a) then Some a else None
   | v_fanout v0 v1 =>
       if big v0 is Some v0'
       then
         if big v1 is Some v1'
         then
-          Some (v_fanout v0' v1')
+          Some (N_fanout v0' v1')
         else
           None
       else
@@ -100,7 +108,7 @@ Function big v :=
   end.
 
 Theorem big_sound:
-  forall v v', big v = Some v' -> v ⇓ v'.
+  forall v N, big v = Some N -> v ⇓ N.
 Proof using.
   intros v.
   functional induction (big v).
@@ -155,26 +163,6 @@ Proof using.
     auto.
 Qed.
 
-Theorem big_normal:
-  forall v v',
-    v ⇓ v' -> is_term_norm_of_term v' = true.
-Proof.
-  intros ? ? p.
-  induction p.
-  all: cbn.
-  - reflexivity.
-  - rewrite IHp1, IHp2.
-    reflexivity.
-  - cbn in IHp.
-    destruct (is_term_norm_of_term N1).
-    1: reflexivity.
-    discriminate.
-  - cbn in IHp.
-    destruct (is_term_norm_of_term N1), (is_term_norm_of_term N2).
-    all: try reflexivity.
-    all: discriminate.
-Qed.
-
 Theorem normalize:
   forall v t,
    ⊢ v in t ->
@@ -182,16 +170,15 @@ Theorem normalize:
 Proof using.
   intros ? ? p.
   induction p.
-  - exists v_tt.
+  - exists N_tt.
     constructor.
   - destruct IHp1 as [v1' s1].
     destruct IHp2 as [v2' s2].
-    exists (v_fanout v1' v2').
+    exists (N_fanout v1' v2').
     constructor.
     all: auto.
   - destruct IHp as [v' s].
     set (vwf := big_preserve _ _ s _ p).
-    set (isnorm := big_normal _ _ s).
     destruct v'.
     all: cbn in *.
     all: try discriminate.
@@ -203,7 +190,6 @@ Proof using.
     all: eauto.
   - destruct IHp as [v' s].
     set (vwf := big_preserve _ _ s _ p).
-    set (isnorm := big_normal _ _ s).
     destruct v'.
     all: cbn in *.
     all: try discriminate.

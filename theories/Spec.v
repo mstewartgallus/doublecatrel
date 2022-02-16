@@ -16,17 +16,21 @@ Defined.
 Hint Resolve eq_var : ott_coq_equality.
 Definition index : Set := nat.
 
+Inductive normal : Set := 
+ | N_tt : normal
+ | N_fanout (N:normal) (N':normal).
+
+Inductive type : Set := 
+ | t_unit : type
+ | t_prod (t:type) (t':type).
+
 Inductive term : Set := 
  | v_tt : term
  | v_fst (v:term)
  | v_snd (v:term)
  | v_fanout (v:term) (v':term).
 
-Inductive type : Set := 
- | t_unit : type
- | t_prod (t:type) (t':type).
-
-Definition seq : Type := (Map.map term).
+Definition seq : Type := (Map.map normal).
 
 Inductive context : Set := 
  | E_var (x:var)
@@ -57,16 +61,6 @@ Fixpoint subst_context (E5:context) (x5:var) (E_6:context) {struct E_6} : contex
   | (E_step E E') => E_step (subst_context E5 x5 E) (subst_context E5 x5 E')
   | (E_fanout E E') => E_fanout (subst_context E5 x5 E) (subst_context E5 x5 E')
   | (E_let x y E E') => E_let x y (subst_context E5 x5 E) (if list_mem eq_var x5 (app (cons x nil) (cons y nil)) then E' else (subst_context E5 x5 E'))
-end.
-
-
-(** subrules *)
-Fixpoint is_term_norm_of_term (v5:term) : bool :=
-  match v5 with
-  | v_tt => (true)
-  | (v_fst v) => false
-  | (v_snd v) => false
-  | (v_fanout v v') => ((is_term_norm_of_term v) && (is_term_norm_of_term v'))
 end.
 
 (** library functions *)
@@ -136,47 +130,45 @@ Inductive Jv : term -> type -> Type :=    (* defn v *)
 (** definitions *)
 
 (* defns big *)
-Inductive big : term -> term -> Type :=    (* defn big *)
+Inductive big : term -> normal -> Type :=    (* defn big *)
  | big_tt : 
-     big v_tt v_tt
- | big_fanout : forall (v1 v2 N1' N2':term),
+     big v_tt N_tt
+ | big_fanout : forall (v1 v2:term) (N1' N2':normal),
      big v1 N1' ->
      big v2 N2' ->
-     big  ( (v_fanout v1 v2) )   ( (v_fanout N1' N2') ) 
- | big_fst : forall (v N1 N2:term),
-     big v (v_fanout N1 N2) ->
+     big  ( (v_fanout v1 v2) )   ( (N_fanout N1' N2') ) 
+ | big_fst : forall (v:term) (N1 N2:normal),
+     big v (N_fanout N1 N2) ->
      big (v_fst v) N1
- | big_snd : forall (v N2 N1:term),
-     big v (v_fanout N1 N2) ->
+ | big_snd : forall (v:term) (N2 N1:normal),
+     big v (N_fanout N1 N2) ->
      big (v_snd v) N2.
 (** definitions *)
 
 (* defns sat *)
-Inductive sat : seq -> context -> term -> Prop :=    (* defn sat *)
- | sat_var : forall (D:seq) (x:var) (N:term),
+Inductive sat : seq -> context -> normal -> Prop :=    (* defn sat *)
+ | sat_var : forall (D:seq) (x:var) (N:normal),
      Map.find x D = Some N  ->
-     is_term_norm_of_term N = true  ->
      sat D (E_var x) N
  | sat_tt : forall (D:seq),
-     sat D E_tt v_tt
- | sat_step : forall (D:seq) (E E':context) (N:term),
-     sat D E v_tt ->
+     sat D E_tt N_tt
+ | sat_step : forall (D:seq) (E E':context) (N:normal),
+     sat D E N_tt ->
      sat D E' N ->
      sat D  ( (E_step E E') )  N
- | sat_fanout : forall (D:seq) (E E':context) (N N':term),
+ | sat_fanout : forall (D:seq) (E E':context) (N N':normal),
      sat D E N ->
      sat D E' N' ->
-     sat D  ( (E_fanout E E') )  (v_fanout N N')
- | sat_let : forall (D:seq) (x0 x1:var) (E E':context) (N2 N0 N1:term),
-     sat D E (v_fanout N0 N1) ->
+     sat D  ( (E_fanout E E') )  (N_fanout N N')
+ | sat_let : forall (D:seq) (x0 x1:var) (E E':context) (N2 N0 N1:normal),
+     sat D E (N_fanout N0 N1) ->
      sat  (Map.add  x1   N1    (Map.add  x0   N0   D )  )  E' N2 ->
      sat D  ( (E_let x0 x1 E E') )  N2
- | sat_abs : forall (D:seq) (x:var) (t:type) (E:context) (N N':term),
-     is_term_norm_of_term N = true  ->
+ | sat_abs : forall (D:seq) (x:var) (t:type) (E:context) (N N':normal),
      sat  (Map.add  x   N   D )  E N' ->
-     sat D  ( (E_all x t E) )  (v_fanout N N')
- | sat_app : forall (D:seq) (E E':context) (N' N:term),
-     sat D E (v_fanout N N') ->
+     sat D  ( (E_all x t E) )  (N_fanout N N')
+ | sat_app : forall (D:seq) (E E':context) (N' N:normal),
+     sat D E (N_fanout N N') ->
      sat D E' N ->
      sat D  ( (E_app E E') )  N'.
 

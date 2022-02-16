@@ -12,64 +12,61 @@ Require Import FunInd.
 
 Import IfNotations.
 
-Definition eq_term (x y: term): {x = y} + {x <> y}.
+Definition eq_normal (x y: normal): {x = y} + {x <> y}.
 Proof.
   decide equality.
 Defined.
 
-Fixpoint denote (σ: Map.map term) (E: context) (v: term) {struct E}: Prop :=
+Fixpoint denote (σ: Map.map normal) (E: context) (v: normal) {struct E}: Prop :=
   match E, v with
   | E_var x, _ => if Map.find x σ is Some v' then v = v' else False
 
-  | E_tt, v_tt => True
+  | E_tt, N_tt => True
 
-  | E_step E E', _ => denote σ E v_tt /\ denote σ E' v
+  | E_step E E', _ => denote σ E N_tt /\ denote σ E' v
 
-  | E_fanout E E', v_fanout v v' => denote σ E v /\ denote σ E' v'
+  | E_fanout E E', N_fanout v v' => denote σ E v /\ denote σ E' v'
 
   | E_let x y E E', _ =>
-      exists a b, is_term_norm_of_term a = true /\
-                  is_term_norm_of_term b = true /\
-                    denote σ E (v_fanout a b) /\ denote (Map.add y b (Map.add x a σ)) E' v
+      exists a b, denote σ E (N_fanout a b) /\ denote (Map.add y b (Map.add x a σ)) E' v
 
-  | E_all x t E, v_fanout v v' => denote (Map.add x v σ) E v'
+  | E_all x t E, N_fanout v v' => denote (Map.add x v σ) E v'
   | E_app E E', _ =>
-      exists v', is_term_norm_of_term v' = true /\ denote σ E (v_fanout v' v) /\ denote σ E' v'
+      exists v', denote σ E (N_fanout v' v) /\ denote σ E' v'
   | _, _ => False
   end.
 
-Lemma normal_big:
-  forall v,
-    is_term_norm_of_term v = true -> v ⇓ v.
-Proof.
-  intros v.
-  induction v.
-  all: cbn.
-  all: try discriminate.
-  all: intros p.
-  - constructor.
-  - constructor.
-    + apply IHv1.
-      destruct (is_term_norm_of_term v1).
-      2: discriminate.
-      reflexivity.
-    + apply IHv2.
-      destruct (is_term_norm_of_term v1), (is_term_norm_of_term v2).
-      all: try discriminate.
-      reflexivity.
-Qed.
+(* Lemma normal_big: *)
+(*   forall v, *)
+(*     is_term_norm_of_term v = true -> v ⇓ v. *)
+(* Proof. *)
+(*   intros v. *)
+(*   induction v. *)
+(*   all: cbn. *)
+(*   all: try discriminate. *)
+(*   all: intros p. *)
+(*   - constructor. *)
+(*   - constructor. *)
+(*     + apply IHv1. *)
+(*       destruct (is_term_norm_of_term v1). *)
+(*       2: discriminate. *)
+(*       reflexivity. *)
+(*     + apply IHv2. *)
+(*       destruct (is_term_norm_of_term v1), (is_term_norm_of_term v2). *)
+(*       all: try discriminate. *)
+(*       reflexivity. *)
+(* Qed. *)
 
 Theorem denote_sound:
   forall σ E v,
-    is_term_norm_of_term v = true ->
     denote σ E v -> sat σ E v.
 Proof using.
   intros σ E.
   generalize dependent σ.
   induction E.
   all: cbn in *.
-  all: intros σ v p q.
-  - destruct (Map.find x σ) eqn:r.
+  all: intros σ v p.
+  - destruct (Map.find x σ) eqn:q.
     2: contradiction.
     subst.
     constructor.
@@ -77,99 +74,41 @@ Proof using.
   - destruct v.
     all: try contradiction.
     cbn in p.
-    destruct (is_term_norm_of_term v1) eqn:q1, (is_term_norm_of_term v2) eqn:q2.
-    all: try discriminate.
     constructor.
     all: auto.
-  - destruct q as [? [? [? ?]]].
+  - destruct p as [? [? ?]].
     econstructor.
     all: eauto.
-    apply IHE1.
-    2: auto.
-    cbn.
-    rewrite p, H.
-    reflexivity.
   - destruct v.
     all: try contradiction.
     constructor.
-  - destruct q.
+  - destruct p.
     constructor.
     all: auto.
   - destruct v.
     all: try contradiction.
-    cbn in p.
-    destruct q.
-    destruct (is_term_norm_of_term v1) eqn:q1, (is_term_norm_of_term v2) eqn:q2.
-    all: try discriminate.
+    destruct p.
     constructor.
     all: auto.
-  - destruct q as [? [? [? [? [? ?]]]]].
+  - destruct p as [? [? [? ?]]].
     econstructor.
     all: eauto.
-    apply IHE1.
-    2: auto.
-    cbn.
-    rewrite H.
-    rewrite H0.
-    reflexivity.
-Qed.
-
-Lemma sat_norm:
-  forall σ E v, sat σ E v -> is_term_norm_of_term v = true.
-Proof.
-  intros ? ? ? p.
-  induction p.
-  all: cbn in *.
-  all: auto.
-  - rewrite IHp1, IHp2.
-    reflexivity.
-  - rewrite IHp.
-    rewrite H.
-    reflexivity.
-  - rewrite IHp2 in IHp1.
-    destruct (is_term_norm_of_term N').
-    2: discriminate.
-    reflexivity.
 Qed.
 
 Theorem denote_complete:
-  forall σ E v, is_term_norm_of_term v = true ->
-                sat σ E v -> denote σ E v.
+  forall σ E v, sat σ E v -> denote σ E v.
 Proof using.
-  intros ? ? ? p q.
+  intros ? ? ? q.
   induction q.
   all: cbn.
   all: auto.
   - rewrite H.
     reflexivity.
-  - cbn in p.
-    destruct (is_term_norm_of_term N) eqn:r1, (is_term_norm_of_term N') eqn:r2.
-    split.
-    all: auto.
-  - rewrite p in *.
-    exists N0.
+  - exists N0.
     exists N1.
-    cbn in *.
-    destruct (is_term_norm_of_term N0) eqn:r1, (is_term_norm_of_term N1) eqn:r2.
-    all: set (q := sat_norm _ _ _ q1).
-    all: cbn in q.
-    all: rewrite r1, r2 in q.
-    all: try discriminate.
     all: repeat split.
     all: auto.
-  - cbn in p.
-    destruct (is_term_norm_of_term N) eqn:r1, (is_term_norm_of_term N') eqn:r2.
-    all: try discriminate.
-    auto.
-  - cbn in *.
-    destruct (is_term_norm_of_term N) eqn:r1, (is_term_norm_of_term N') eqn:r2.
-    all: try discriminate.
-    all: set (r := sat_norm _ _ _ q1).
-    all: cbn in r.
-    all: rewrite r1 in r.
-    all: rewrite r2 in r.
-    all: try discriminate.
-    exists N.
+  - exists N.
     all: repeat split.
     all: auto.
 Qed.
@@ -201,15 +140,15 @@ Definition app {A B} (f: list (A -> B)) x :=
 
 Infix "<*>" := app (at level 30).
 
-Fixpoint generate (t: type): list term :=
+Fixpoint generate (t: type): list normal :=
   match t with
-  | t_unit => [v_tt]
+  | t_unit => [N_tt]
   | A * B =>
-      [ fun v0 v1 => v_fanout v0 v1 ] <*> generate A <*> generate B
+      [ fun v0 v1 => N_fanout v0 v1 ] <*> generate A <*> generate B
   end%list.
 
 (* FIXME normalize *)
-Function search (σ: Map.map term) E: list term :=
+Function search (σ: Map.map normal) E: list normal :=
   match E with
   | E_var x => if Map.find x σ is Some v then [v] else []
 
@@ -217,38 +156,38 @@ Function search (σ: Map.map term) E: list term :=
   | E_all x t E =>
       do v0 <- generate t ;
       do v1 <- search (Map.add x v0 σ) E ;
-      [v_fanout v0 v1]
+      [N_fanout v0 v1]
 
   | E_app E E' =>
       do f <- search σ E ;
       do x <- search σ E' ;
-      if f is v_fanout a b
+      if f is N_fanout a b
       then
-        if eq_term x a
+        if eq_normal x a
         then
           [b]
         else []
       else []
 
-  | E_tt => [v_tt]
+  | E_tt => [N_tt]
   | E_step E E' =>
       do p <- search σ E ;
       do x <- search σ E' ;
-      if p is v_tt then [x] else []
+      if p is N_tt then [x] else []
 
   | E_fanout E E' =>
      do x <- search σ E ;
      do y <- search σ E' ;
-     [v_fanout x y]
+     [N_fanout x y]
 
   | E_let x y E E' =>
       do tuple <- search σ E ;
-      do ab <- (if tuple is v_fanout a b then [(a, b)] else []) ;
+      do ab <- (if tuple is N_fanout a b then [(a, b)] else []) ;
       search (Map.add x (fst ab) (Map.add y (snd ab) σ)) E'
   end%list.
 
 
-Definition matches σ E v := List.existsb (fun y => if eq_term v y then true else false) (search σ E).
+Definition matches σ E v := List.existsb (fun y => if eq_normal v y then true else false) (search σ E).
 
 Lemma Forall_concat:
   forall {A} p (x: list (list A)), List.Forall (List.Forall p) x -> List.Forall p (List.concat x).

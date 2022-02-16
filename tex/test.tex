@@ -54,8 +54,7 @@
 \ottprodline{|}{\ottnt{E}  ;  \ottnt{E'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{E}  \ottsym{,}  \ottnt{E'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottkw{let} \, \ottsym{(}  \mathit{x}  \ottsym{,}  \mathit{y}  \ottsym{)}  \mathbin{:=}  \ottnt{E} \, \ottkw{in} \, \ottnt{E'}}{}{\textsf{bind}\; \mathit{x} \cup  \mathit{y}\; \textsf{in}\; \ottnt{E'}}{}{}\ottprodnewline
-\ottprodline{|}{\ottsym{(}  \ottnt{E}  \ottsym{)}} {\textsf{S}}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottsym{[}  \mathit{x}  \mathbin{:=}  \ottnt{E}  \ottsym{]}  \ottnt{E'}} {\textsf{M}}{}{}{}}
+\ottprodline{|}{\ottsym{(}  \ottnt{E}  \ottsym{)}} {\textsf{S}}{}{}{}}
 
 \newcommand{\ottenvironment}{
 \ottrulehead{\ottnt{environment}  ,\ \Gamma}{::=}{}\ottprodnewline
@@ -68,8 +67,8 @@
 \ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\Delta  \ottsym{,}  \mathit{x}  \ottsym{[}  \ottnt{N}  \ottsym{]}}{}{}{}{}}
 
-\newcommand{\otttermXXnorm}{
-\ottrulehead{\ottnt{term\_norm}  ,\ \ottnt{N}}{::=}{}\ottprodnewline
+\newcommand{\ottnormal}{
+\ottrulehead{\ottnt{normal}  ,\ \ottnt{N}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\mathop{ \textbf ! }}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{N}  \ottsym{,}  \ottnt{N'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{(}  \ottnt{N}  \ottsym{)}} {\textsf{S}}{}{}{}}
@@ -126,7 +125,7 @@
 \ottprodline{|}{\ottnt{context}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{environment}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{seq}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{term\_norm}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{normal}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{terminals}}{}{}{}{}}
 
 \newcommand{\ottgrammar}{\ottgrammartabular{
@@ -135,7 +134,7 @@
 \ottcontext\ottinterrule
 \ottenvironment\ottinterrule
 \ottseq\ottinterrule
-\otttermXXnorm\ottinterrule
+\ottnormal\ottinterrule
 \ottterminals\ottinterrule
 \ottformula\ottinterrule
 \ottjudgeXXcontext\ottinterrule
@@ -312,7 +311,6 @@
 %% defn sat
 \newcommand{\ottdrulesatXXvar}[1]{\ottdrule[#1]{%
 \ottpremise{\texttt{Map.find }\mathit{x}\texttt{ }\Delta\texttt{ = Some }\ottnt{N}\texttt{ }}%
-\ottpremise{\texttt{is\_term\_norm\_of\_term }\ottnt{N}\texttt{ = true }}%
 }{
 \Delta  \vdash{}  \mathit{x}  \ottsym{[}  \ottnt{N}  \ottsym{]}}{%
 {\ottdrulename{sat\_var}}{}%
@@ -354,7 +352,6 @@
 
 
 \newcommand{\ottdrulesatXXabs}[1]{\ottdrule[#1]{%
-\ottpremise{\texttt{is\_term\_norm\_of\_term }\ottnt{N}\texttt{ = true }}%
 \ottpremise{\Delta  \ottsym{,}  \mathit{x}  \ottsym{[}  \ottnt{N}  \ottsym{]}  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{N'}  \ottsym{]}}%
 }{
 \Delta  \vdash{}  \ottsym{(}  \exists{} \, \mathit{x}  \colon{}  \ottnt{t}  \ottsym{.}  \ottnt{E}  \ottsym{)}  \ottsym{[}  \ottnt{N}  \ottsym{,}  \ottnt{N'}  \ottsym{]}}{%
