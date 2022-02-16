@@ -109,7 +109,7 @@ Qed.
 
 Import List.ListNotations.
 
-Notation "'do' x <- e0 ; e1" := (List.flat_map (fun x => e1) e0) (x ident, at level 200, left associativity).
+Notation "'do' x <- e0 ; e1" := (List.flat_map (fun x => e1) e0) (x pattern, at level 200, left associativity).
 
 Fixpoint mon {A B} (x: list A) (y: list B): list _ :=
   match x with
@@ -175,45 +175,55 @@ Qed.
 Fixpoint generate (t: type): list normal :=
   match t with
   | t_unit => [N_tt]
-  | A * B => [ N_fanout ] <*> generate A <*> generate B
+  | A * B => [N_fanout] <*> generate A <*> generate B
   end%list.
 
-Function search (σ: Map.map normal) E: list normal :=
+Fixpoint search (σ: Map.map normal) E: list (Map.map normal * normal) :=
   match E with
-  | E_var x => if Map.find x σ is Some v then [v] else []
+  | E_var x => if Map.find x σ is Some v then [(Map.one x v, v)] else []
 
   | E_lam x t E =>
       do v0 <- generate t ;
-      [N_fanout v0] <*> search (Map.add x v0 σ) E
+      do (σ', v1) <- search (Map.add x v0 σ) E ;
+      if Map.find x σ' is Some v0'
+      then
+        if eq_normal v0 v0'
+        then
+          [(Map.minus x σ', N_fanout v0 v1)]
+        else
+          []
+      else
+        []
 
   | E_app E E' =>
-      do f <- search σ E ;
-      do x <- search σ E' ;
+      do (σ1, f) <- search σ E ;
+      do (σ2, x) <- search σ E' ;
       if f is N_fanout a b
       then
         if eq_normal x a
         then
-          [b]
+          [(Map.merge σ1 σ2, b)]
         else []
       else []
 
-  | E_tt => [N_tt]
+  | E_tt => [(Map.empty, N_tt)]
+
   | E_step E E' =>
-      do p <- search σ E ;
-      do x <- search σ E' ;
-      if p is N_tt then [x] else []
+      do (σ1, p) <- search σ E ;
+      do (σ2, x) <- search σ E' ;
+      if p is N_tt then [(Map.merge σ1 σ2, x)] else []
 
   | E_fanout E E' =>
-     [N_fanout] <*> search σ E <*> search σ E'
+      do (σ1, v1) <- search σ E ;
+      do (σ2, v2) <- search σ E' ;
+      [(Map.merge σ1 σ2, N_fanout v1 v2)]
 
   | E_let x y E E' =>
-      do tuple <- search σ E ;
-      do ab <- (if tuple is N_fanout a b then [(a, b)] else []) ;
-      search (Map.add x (fst ab) (Map.add y (snd ab) σ)) E'
+      do (σ1, tuple) <- search σ E ;
+      do (a, b) <- (if tuple is N_fanout a b then [(a, b)] else []) ;
+      do (σ2, v) <- search (Map.add x a (Map.add y b σ)) E' ;
+      [(Map.merge σ1 σ2, v)]
   end%list.
-
-
-Definition matches σ E v := List.existsb (fun y => if eq_normal v y then true else false) (search σ E).
 
 Lemma Forall_concat:
   forall {A} p (x: list (list A)), List.Forall (List.Forall p) x -> List.Forall p (List.concat x).
@@ -306,11 +316,48 @@ Proof using.
   auto.
 Qed.
 
+Definition matches σ E v := List.Exists (fun σy => fst σy = σ /\ snd σy = v) (search σ E).
+
 Theorem search_sound:
-  forall σ E x, matches σ E x = true -> sat σ E x.
+  forall σ E, List.Forall (fun '(σ, v) => sat σ E v) (search σ E).
 Proof using.
-  admit.
-Admitted.
+  intros σ E.
+  generalize dependent σ.
+  induction E.
+  all: cbn.
+  all: intros.
+  - destruct (Map.find x σ) eqn:q.
+    2: constructor.
+    constructor.
+    2: constructor.
+    constructor.
+  - apply Forall_flat_map.
+    induction (generate t).
+    1: constructor.
+    constructor.
+    2: auto.
+    apply Forall_flat_map.
+    induction (IHE (Map.add x a σ)).
+    1: constructor.
+    constructor.
+    2: auto.
+    destruct x0.
+    cbn.
+    destruct (Map.find x s) eqn:q.
+    destruct (eq_normal a n0).
+    2: constructor.
+    subst.
+    constructor.
+    2: constructor.
+    constructor.
+    rewrite Map.add_minus.
+    all: auto.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  Admitted.
 
 Example id t :=
   let x := 0 in

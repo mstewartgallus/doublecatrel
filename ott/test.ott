@@ -89,7 +89,7 @@ empty , x: t |- x: t
 
 G , x: t1 |- E: t2
 -------------------------- :: abs
-G |- lam x : t1 . E: t1 * t2
+G |- lam x: t1 . E: t1 * t2
 
 G1 |- E1: t1 * t2
 G2 |- E2: t1
