@@ -30,32 +30,11 @@ Fixpoint denote (σ: Map.map normal) (E: context) (v: normal) {struct E}: Prop :
   | E_let x y E E', _ =>
       exists a b, denote σ E (N_fanout a b) /\ denote (Map.add y b (Map.add x a σ)) E' v
 
-  | E_all x t E, N_fanout v v' => denote (Map.add x v σ) E v'
+  | E_lam x t E, N_fanout v v' => denote (Map.add x v σ) E v'
   | E_app E E', _ =>
       exists v', denote σ E (N_fanout v' v) /\ denote σ E' v'
   | _, _ => False
   end.
-
-(* Lemma normal_big: *)
-(*   forall v, *)
-(*     is_term_norm_of_term v = true -> v ⇓ v. *)
-(* Proof. *)
-(*   intros v. *)
-(*   induction v. *)
-(*   all: cbn. *)
-(*   all: try discriminate. *)
-(*   all: intros p. *)
-(*   - constructor. *)
-(*   - constructor. *)
-(*     + apply IHv1. *)
-(*       destruct (is_term_norm_of_term v1). *)
-(*       2: discriminate. *)
-(*       reflexivity. *)
-(*     + apply IHv2. *)
-(*       destruct (is_term_norm_of_term v1), (is_term_norm_of_term v2). *)
-(*       all: try discriminate. *)
-(*       reflexivity. *)
-(* Qed. *)
 
 Theorem denote_sound:
   forall σ E v,
@@ -147,13 +126,11 @@ Fixpoint generate (t: type): list normal :=
       [ fun v0 v1 => N_fanout v0 v1 ] <*> generate A <*> generate B
   end%list.
 
-(* FIXME normalize *)
 Function search (σ: Map.map normal) E: list normal :=
   match E with
   | E_var x => if Map.find x σ is Some v then [v] else []
 
-  (* normalize ? *)
-  | E_all x t E =>
+  | E_lam x t E =>
       do v0 <- generate t ;
       do v1 <- search (Map.add x v0 σ) E ;
       [N_fanout v0 v1]
@@ -288,7 +265,7 @@ Admitted.
 
 Example id t :=
   let x := 0 in
-  E_all x t (E_var x).
+  E_lam x t (E_var x).
 
 Example conv E :=
   let x := 0 in

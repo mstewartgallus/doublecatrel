@@ -27,7 +27,7 @@ Function typecheck (Γ: environment) (E: context): option (environment * type) :
           None
       else
         None
-  | E_all x t1 E =>
+  | E_lam x t1 E =>
       if typecheck (Map.add x t1 Γ) E is Some (Γ', t2)
       then
         if Env.find x Γ' is Some t1'
@@ -193,4 +193,3 @@ Proof using.
   - admit.
   - admit.
 Admitted.
-

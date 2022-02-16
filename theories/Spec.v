@@ -34,7 +34,7 @@ Definition seq : Type := (Map.map normal).
 
 Inductive context : Set := 
  | E_var (x:var)
- | E_all (x:var) (t:type) (E:context)
+ | E_lam (x:var) (t:type) (E:context)
  | E_app (E:context) (E':context)
  | E_tt : context
  | E_step (E:context) (E':context)
@@ -55,7 +55,7 @@ Arguments list_mem [A] _ _ _.
 Fixpoint subst_context (E5:context) (x5:var) (E_6:context) {struct E_6} : context :=
   match E_6 with
   | (E_var x) => (if eq_var x x5 then E5 else (E_var x))
-  | (E_all x t E) => E_all x t (if list_mem eq_var x5 (cons x nil) then E else (subst_context E5 x5 E))
+  | (E_lam x t E) => E_lam x t (if list_mem eq_var x5 (cons x nil) then E else (subst_context E5 x5 E))
   | (E_app E E') => E_app (subst_context E5 x5 E) (subst_context E5 x5 E')
   | E_tt => E_tt 
   | (E_step E E') => E_step (subst_context E5 x5 E) (subst_context E5 x5 E')
@@ -76,13 +76,22 @@ Arguments list_minus [A] _ _ _.
 Fixpoint fv_context (E5:context) : list var :=
   match E5 with
   | (E_var x) => (cons x nil)
-  | (E_all x t E) => ((list_minus eq_var (fv_context E) (cons x nil)))
+  | (E_lam x t E) => ((list_minus eq_var (fv_context E) (cons x nil)))
   | (E_app E E') => (app (fv_context E) (fv_context E'))
   | E_tt => nil
   | (E_step E E') => (app (fv_context E) (fv_context E'))
   | (E_fanout E E') => (app (fv_context E) (fv_context E'))
   | (E_let x y E E') => (app (fv_context E) (list_minus eq_var (fv_context E') (app (cons x nil) (cons y nil))))
 end.
+
+
+Module Examples.
+
+Example id t :=
+ let x := 0 in
+(E_lam x t (E_var x)). 
+
+End Examples.
 
 (** definitions *)
 
@@ -92,7 +101,7 @@ Inductive JE : environment -> context -> type -> Type :=    (* defn E *)
      JE  (Map.add  x   t    Map.empty  )  (E_var x) t
  | JE_abs : forall (G:environment) (x:var) (t1:type) (E:context) (t2:type),
      JE  (Map.add  x   t1   G )  E t2 ->
-     JE G (E_all x t1 E) (t_prod t1 t2)
+     JE G (E_lam x t1 E) (t_prod t1 t2)
  | JE_app : forall (G1 G2:environment) (E1 E2:context) (t2 t1:type),
      JE G1 E1 (t_prod t1 t2) ->
      JE G2 E2 t1 ->
@@ -166,7 +175,7 @@ Inductive sat : seq -> context -> normal -> Prop :=    (* defn sat *)
      sat D  ( (E_let x0 x1 E E') )  N2
  | sat_abs : forall (D:seq) (x:var) (t:type) (E:context) (N N':normal),
      sat  (Map.add  x   N   D )  E N' ->
-     sat D  ( (E_all x t E) )  (N_fanout N N')
+     sat D  ( (E_lam x t E) )  (N_fanout N N')
  | sat_app : forall (D:seq) (E E':context) (N' N:normal),
      sat D E (N_fanout N N') ->
      sat D E' N ->

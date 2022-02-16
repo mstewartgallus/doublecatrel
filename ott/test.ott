@@ -17,11 +17,10 @@ term, v :: 'v_' ::=
   | snd v        ::   :: snd
   | v , v'       ::   :: fanout
   | ( v )        :: S :: paren {{ coq ([[v]]) }}
-  | V [ v ]      :: M :: fill_context {{ icho (appctx_term_ctx_term [[V]] [[v]]) }}
 
 context, E :: 'E_' ::=
   | x                        ::   :: var
-  | forall x : t . E         ::   :: all (+ bind x in E +)
+  | lam x : t . E            ::   :: lam (+ bind x in E +)
   | E E'                     ::   :: app
   | tt                       ::   :: tt
   | E ,, E'                  ::   :: step
@@ -54,7 +53,7 @@ terminals :: 'terminals_' ::=
   | tt           ::   :: tt   {{ tex \mathop{ \textbf ! } }}
   | fst          ::   :: fst  {{ tex \pi{}_1 }}
   | snd          ::   :: snd  {{ tex \pi{}_2 }}
-  | forall       ::   :: forall  {{ tex \exists{} }}
+  | lam       ::   :: lam  {{ tex \exists{} }}
   | empty        ::   :: empty   {{ tex \bullet{} }}
   | !            ::   :: big     {{ tex \mathrel{\Downarrow} }}
 
@@ -63,6 +62,18 @@ substitutions
 
 freevars
   context var :: fv
+
+embed
+{{ coq
+
+Module Examples.
+
+Example id [[t]] :=
+ let [[x]] := 0 in
+[[ lam x: t. x ]]. 
+
+End Examples.
+}}
 
 defns
 
@@ -77,7 +88,7 @@ empty , x: t |- x: t
 
 G , x: t1 |- E: t2
 -------------------------- :: abs
-G |- forall x : t1 . E: t1 * t2
+G |- lam x : t1 . E: t1 * t2
 
 G1 |- E1: t1 * t2
 G2 |- E2: t1
@@ -183,7 +194,7 @@ D |- (let (x0, x1) := E in E')[N2]
 
 D, x[N] |- E[N']
 ------------------------------- :: abs
-D |- (forall x: t. E) [N, N']
+D |- (lam x: t. E) [N, N']
 
 D |- E[N, N']
 D |- E'[N]
