@@ -47,7 +47,7 @@
 \newcommand{\ottcontext}{
 \ottrulehead{\ottnt{context}  ,\ \ottnt{E}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\mathit{x}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\exists{} \, \mathit{x}  \colon{}  \ottnt{t}  \ottsym{.}  \ottnt{E}}{}{\textsf{bind}\; \mathit{x}\; \textsf{in}\; \ottnt{E}}{}{}\ottprodnewline
+\ottprodline{|}{\lambda{} \, \mathit{x}  \colon{}  \ottnt{t}  \ottsym{.}  \ottnt{E}}{}{\textsf{bind}\; \mathit{x}\; \textsf{in}\; \ottnt{E}}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{E} \, \ottnt{E'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\mathop{ \textbf ! }}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{E}  ;  \ottnt{E'}}{}{}{}{}\ottprodnewline
@@ -84,7 +84,7 @@
 \ottprodline{|}{ \mathop{ \textbf ! } }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \pi{}_1 }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \pi{}_2 }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \exists{} }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ \lambda{} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \bullet{} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathrel{\Downarrow} }{}{}{}{}}
 
@@ -157,7 +157,7 @@
 \newcommand{\ottdruleJEXXabs}[1]{\ottdrule[#1]{%
 \ottpremise{\Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \vdash{}  \ottnt{E}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}%
 }{
-\Gamma  \vdash{}  \exists{} \, \mathit{x}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \ottsym{.}  \ottnt{E}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \times{}  \ottnt{t_{{\mathrm{2}}}}}{%
+\Gamma  \vdash{}  \lambda{} \, \mathit{x}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \ottsym{.}  \ottnt{E}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \times{}  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{JE\_abs}}{}%
 }}
 
@@ -353,7 +353,7 @@
 \newcommand{\ottdrulesatXXabs}[1]{\ottdrule[#1]{%
 \ottpremise{\Delta  \ottsym{,}  \mathit{x}  \ottsym{[}  \ottnt{N}  \ottsym{]}  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{N'}  \ottsym{]}}%
 }{
-\Delta  \vdash{}  \ottsym{(}  \exists{} \, \mathit{x}  \colon{}  \ottnt{t}  \ottsym{.}  \ottnt{E}  \ottsym{)}  \ottsym{[}  \ottnt{N}  \ottsym{,}  \ottnt{N'}  \ottsym{]}}{%
+\Delta  \vdash{}  \ottsym{(}  \lambda{} \, \mathit{x}  \colon{}  \ottnt{t}  \ottsym{.}  \ottnt{E}  \ottsym{)}  \ottsym{[}  \ottnt{N}  \ottsym{,}  \ottnt{N'}  \ottsym{]}}{%
 {\ottdrulename{sat\_abs}}{}%
 }}
 

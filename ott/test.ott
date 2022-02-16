@@ -53,7 +53,7 @@ terminals :: 'terminals_' ::=
   | tt           ::   :: tt   {{ tex \mathop{ \textbf ! } }}
   | fst          ::   :: fst  {{ tex \pi{}_1 }}
   | snd          ::   :: snd  {{ tex \pi{}_2 }}
-  | lam       ::   :: lam  {{ tex \exists{} }}
+  | lam       ::   :: lam  {{ tex \lambda{} }}
   | empty        ::   :: empty   {{ tex \bullet{} }}
   | !            ::   :: big     {{ tex \mathrel{\Downarrow} }}
 

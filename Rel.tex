@@ -93,7 +93,7 @@
 \DeclareMathOperator{\head}{\textbf{h}}
 \DeclareMathOperator{\tail}{\textbf{t}}
 
-\newcommand{\Forall}{\Pi}
+\newcommand{\Forall}{\Lambda}
 
 \newcommand{\update}{\mathbin{:=}}
 
@@ -164,7 +164,7 @@ imperative.
 
 \[\begin{aligned}
 &\textbf{Types} &  t & \bnfdef \prop \mid t \times t  \\
-&\textbf{Contexts}  & E & \bnfdef x_t \mid E \, E \mid \forall (x \colon t) . E  \\
+&\textbf{Contexts}  & E & \bnfdef x_t \mid E \, E \mid \lambda (x \colon t) . E  \\
 &\textbf{Terms} &  v & \bnfdef x \mid \fst(v) \mid \snd(v) \mid v , v  \\
 &\textbf{Environment}  &  \Gamma & \bnfdef \cdot \mid \Gamma , \, x \colon t   \\
 &\textbf{Command Env}  &  \Delta & \bnfdef \cdot \mid \Delta , \, x \sat v  
@@ -181,7 +181,7 @@ imperative.
 \name{\(\times\)I}
 \Axiom$\Gamma \fCenter E \colon t_1$
 \side{ x \colon t_0 \in \Gamma }
-\UnaryInf$\Gamma \setminus x \fCenter \forall (x \colon t_0). E \colon t_0 \times t_1$
+\UnaryInf$\Gamma \setminus x \fCenter \lambda (x \colon t_0). E \colon t_0 \times t_1$
 \end{prooftree}
 
 \begin{prooftree}
@@ -192,7 +192,7 @@ imperative.
 \end{prooftree}
 
 \axiom{\(\times\beta\)}
-      {\( ( \forall (x \colon t ). E_0) \, E_1 \step [x_t \update E_1] E_0 \)}
+      {\( ( \lambda (x \colon t ). E_0) \, E_1 \step [x_t \update E_1] E_0 \)}
 
 \subsubsection*{Term Calculus}
 
@@ -246,7 +246,7 @@ imperative.
 \begin{prooftree}
 \name{\(\times\)I}
 \Axiom$ \Delta , \,  x_t \sat v_0  \fCenter E \sat v_1 $
-\UnaryInf$ \Delta \fCenter \forall (x \colon t ). E \sat  v_0 , v_1 $
+\UnaryInf$ \Delta \fCenter \lambda (x \colon t ). E \sat  v_0 , v_1 $
 \end{prooftree}
 
 
@@ -270,26 +270,26 @@ imperative.
 
 \subsection*{Identity}
 
-\( \textbf{id}_t = \forall (x \colon t). \, x_t \)
+\( \textbf{id}_t = \lambda (x \colon t). \, x_t \)
 {\taut
   \apply{V}
   \UnaryInf$ \cdot , \, x \colon t \fCenter x_t \colon t $
   \apply{\(\times\)I}
-  \UnaryInf$ \cdot \fCenter  \forall (x \colon t). \, x_t \colon t \times t $
+  \UnaryInf$ \cdot \fCenter  \lambda (x \colon t). \, x_t \colon t \times t $
   \DisplayProof}
 \hfill
 {\taut
   \apply{V}
   \UnaryInf$ \Delta , \,  x_t \sat v  \fCenter  x_t \sat v $
   \apply{\(\times\)I}
-  \UnaryInf$ \Delta \fCenter  \forall (x \colon t). \, x_t  \sat v , v $
+  \UnaryInf$ \Delta \fCenter  \lambda (x \colon t). \, x_t  \sat v , v $
   \DisplayProof}
 
 \subsection*{Composition}
 
 \begin{center}
 
-  \[ f \circ_t g = \forall (x \colon t). \, f \, (g \, x_t) \]
+  \[ f \circ_t g = \lambda (x \colon t). \, f \, (g \, x_t) \]
 
 \begin{prooftree}
 
@@ -306,7 +306,7 @@ imperative.
   \apply{\(\times\)E}
   \BinaryInf$ \cdot , \, x \colon t_0 \fCenter f \, (g \, x_{t_0}) \colon t_2 $
   \apply{\(\times\)I}
-  \UnaryInf$ \cdot \fCenter \forall (x \colon t_0). \, f \, (g \, x_{t_0}) \colon t_0 \times t_2 $
+  \UnaryInf$ \cdot \fCenter \lambda (x \colon t_0). \, f \, (g \, x_{t_0}) \colon t_0 \times t_2 $
 
 \end{prooftree}
 
@@ -326,7 +326,7 @@ imperative.
   \apply{\(\times\)E}
   \BinaryInf$ \cdot , \,  x_{t_0} \sat v_0  \fCenter  f \, (g \, x_{t_0})  \sat v_2 $
   \apply{\(\times\)I}
-  \UnaryInf$ \cdot \fCenter \forall (x \colon t_0). \, f \, (g \, x_{t_0})  \sat v_0 , v_2 $
+  \UnaryInf$ \cdot \fCenter \lambda (x \colon t_0). \, f \, (g \, x_{t_0})  \sat v_0 , v_2 $
 \end{prooftree}
 
 \end{center}
@@ -362,7 +362,7 @@ Really need to think about denotation again.
   \\
   \llbracket x_t \rrbracket(\sigma, s) & = \sigma(x, s) \\
   \llbracket E_0 \, E_1 \rrbracket(\sigma, s_0) & = \exists s_1,  \llbracket E_1 \rrbracket (\sigma, s_1) \wedge \llbracket E_0 \rrbracket (\sigma, (s_1, s_0))\\
-  \llbracket \forall (x \colon t). E_0 \rrbracket(\sigma, (s_0, s_1)) & = \forall E_1, \llbracket E_1 \rrbracket (\sigma, s_0) \rightarrow \llbracket E_0 \rrbracket ([x \update  s \mapsto \llbracket E_1 \rrbracket(\sigma, s)] \sigma, s_1) 
+  \llbracket \lambda (x \colon t). E_0 \rrbracket(\sigma, (s_0, s_1)) & = \lambda E_1, \llbracket E_1 \rrbracket (\sigma, s_0) \rightarrow \llbracket E_0 \rrbracket ([x \update  s \mapsto \llbracket E_1 \rrbracket(\sigma, s)] \sigma, s_1) 
 \end{aligned}
 \]
 
@@ -385,7 +385,7 @@ equivalence relation might be something like:
 \DisplayProof
 
 \name{trans}
-\Axiom$ \cdot \fCenter  \forall (x\colon O). R \, (R \, x)  \sat o_0, o_1 $
+\Axiom$ \cdot \fCenter  \lambda (x\colon O). R \, (R \, x)  \sat o_0, o_1 $
 \side{\cdot \fCenter o_1, o_0 \colon O \times O}
 \UnaryInf$ \cdot \fCenter  R \sat o_0, o_1 $
 \DisplayProof
@@ -623,7 +623,7 @@ Not really good at the typing judgements for dependent sum types.
 
 \[\begin{aligned}
 & \textbf{Types} & t & \bnfdef \ldots \mid x \mid \prop \mid \head(v) \mid \Sigma (x \colon \prop). t  \\
-& \textbf{Contexts} &  E & \bnfdef \ldots \mid E \, t \mid \Forall (x \colon \prop). E  \\
+& \textbf{Contexts} &  E & \bnfdef \ldots \mid E \, t \mid \lambda (x \colon \prop). E  \\
 & \textbf{Terms} &  v & \bnfdef \ldots \mid \tail(v) \mid \langle x \update t , v \rangle  \\
 & \textbf{Command Env} & \Delta & \bnfdef \ldots \mid \Delta , \, x \sat t 
 \end{aligned}\]
@@ -638,10 +638,10 @@ Not really good at the typing judgements for dependent sum types.
 
 \name{\(\Sigma\)I}
 \Axiom$ \Gamma , \, x \colon \prop \fCenter E \colon t $
-\UnaryInf$ \Gamma \fCenter \Forall (x \colon \prop). E \colon \Sigma (x \colon \prop). t $
+\UnaryInf$ \Gamma \fCenter \lambda (x \colon \prop). E \colon \Sigma (x \colon \prop). t $
 \DisplayProof
 
-\axiom{\(\Sigma\beta\)}{\( ( \Forall (x \colon \prop). E) \, t \step [x \update t] E \)}
+\axiom{\(\Sigma\beta\)}{\( ( \lambda (x \colon \prop). E) \, t \step [x \update t] E \)}
 
 \subsubsection*{Term Calculus}
 
@@ -686,7 +686,7 @@ Not really good at the typing judgements for dependent sum types.
 
 \name{\(\Sigma\)I}
 \Axiom$ \Delta , \,  x \sat t  \fCenter E \sat v $
-\UnaryInf$ \Delta \fCenter  \Forall (x \colon \prop). E \sat \langle x \update t , v \rangle $
+\UnaryInf$ \Delta \fCenter  \lambda (x \colon \prop). E \sat \langle x \update t , v \rangle $
 \DisplayProof
 
 \end{center}
