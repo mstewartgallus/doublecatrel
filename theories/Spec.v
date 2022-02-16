@@ -30,7 +30,7 @@ Inductive term : Set :=
  | v_snd (v:term)
  | v_fanout (v:term) (v':term).
 
-Definition seq : Type := (Map.map normal).
+Definition store : Type := (Map.map normal).
 
 Inductive context : Set := 
  | E_var (x:var)
@@ -42,48 +42,6 @@ Inductive context : Set :=
  | E_let (x:var) (y:var) (E:context) (E':context).
 
 Definition environment : Type := (Map.map type).
-(** library functions *)
-Fixpoint list_mem A (eq:forall a b:A,{a=b}+{a<>b}) (x:A) (l:list A) {struct l} : bool :=
-  match l with
-  | nil => false
-  | cons h t => if eq h x then true else list_mem A eq x t
-end.
-Arguments list_mem [A] _ _ _.
-
-
-(** substitutions *)
-Fixpoint subst_context (E5:context) (x5:var) (E_6:context) {struct E_6} : context :=
-  match E_6 with
-  | (E_var x) => (if eq_var x x5 then E5 else (E_var x))
-  | (E_lam x t E) => E_lam x t (if list_mem eq_var x5 (cons x nil) then E else (subst_context E5 x5 E))
-  | (E_app E E') => E_app (subst_context E5 x5 E) (subst_context E5 x5 E')
-  | E_tt => E_tt 
-  | (E_step E E') => E_step (subst_context E5 x5 E) (subst_context E5 x5 E')
-  | (E_fanout E E') => E_fanout (subst_context E5 x5 E) (subst_context E5 x5 E')
-  | (E_let x y E E') => E_let x y (subst_context E5 x5 E) (if list_mem eq_var x5 (app (cons x nil) (cons y nil)) then E' else (subst_context E5 x5 E'))
-end.
-
-(** library functions *)
-Fixpoint list_minus A (eq:forall a b:A,{a=b}+{a<>b}) (l1:list A) (l2:list A) {struct l1} : list A :=
-  match l1 with
-  | nil => nil
-  | cons h t => if (list_mem (A:=A) eq h l2) then list_minus A eq t l2 else cons h (list_minus A eq t l2)
-end.
-Arguments list_minus [A] _ _ _.
-
-
-(** free variables *)
-Fixpoint fv_context (E5:context) : list var :=
-  match E5 with
-  | (E_var x) => (cons x nil)
-  | (E_lam x t E) => ((list_minus eq_var (fv_context E) (cons x nil)))
-  | (E_app E E') => (app (fv_context E) (fv_context E'))
-  | E_tt => nil
-  | (E_step E E') => (app (fv_context E) (fv_context E'))
-  | (E_fanout E E') => (app (fv_context E) (fv_context E'))
-  | (E_let x y E E') => (app (fv_context E) (list_minus eq_var (fv_context E') (app (cons x nil) (cons y nil))))
-end.
-
 
 Module Examples.
 
@@ -155,27 +113,27 @@ Inductive big : term -> normal -> Type :=    (* defn big *)
 (** definitions *)
 
 (* defns sat *)
-Inductive sat : seq -> context -> normal -> Prop :=    (* defn sat *)
+Inductive sat : store -> context -> normal -> Prop :=    (* defn sat *)
  | sat_var : forall (x:var) (N:normal),
      sat  (Map.add  x   N    Map.empty  )  (E_var x) N
  | sat_tt : 
      sat  Map.empty  E_tt N_tt
- | sat_step : forall (D D':seq) (E E':context) (N:normal),
+ | sat_step : forall (D D':store) (E E':context) (N:normal),
      sat D E N_tt ->
      sat D' E' N ->
      sat  (Map.merge  D   D' )   ( (E_step E E') )  N
- | sat_fanout : forall (D D':seq) (E E':context) (N N':normal),
+ | sat_fanout : forall (D D':store) (E E':context) (N N':normal),
      sat D E N ->
      sat D' E' N' ->
      sat  (Map.merge  D   D' )   ( (E_fanout E E') )  (N_fanout N N')
- | sat_let : forall (D D':seq) (x y:var) (E E':context) (N2 N0 N1:normal),
+ | sat_let : forall (D D':store) (x y:var) (E E':context) (N2 N0 N1:normal),
      sat D E (N_fanout N0 N1) ->
      sat  (Map.add  y   N1    (Map.add  x   N0   D' )  )  E' N2 ->
      sat  (Map.merge  D   D' )   ( (E_let x y E E') )  N2
- | sat_abs : forall (D:seq) (x:var) (t:type) (E:context) (N N':normal),
+ | sat_abs : forall (D:store) (x:var) (t:type) (E:context) (N N':normal),
      sat  (Map.add  x   N   D )  E N' ->
      sat D  ( (E_lam x t E) )  (N_fanout N N')
- | sat_app : forall (D D':seq) (E E':context) (N' N:normal),
+ | sat_app : forall (D D':store) (E E':context) (N' N:normal),
      sat D E (N_fanout N N') ->
      sat D' E' N ->
      sat  (Map.merge  D   D' )   ( (E_app E E') )  N'.

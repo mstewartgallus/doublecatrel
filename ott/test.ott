@@ -33,10 +33,10 @@ environment, G {{ tex \Gamma }} :: 'G_' ::= {{ coq (Map.map type) }} {{ coq-univ
   | G , x : t     ::   :: add {{ coq (Map.add [[x]] [[t]] [[G]]) }}
   | G ++ G'       ::   :: merge {{ coq (Map.merge [[G]] [[G']]) }}
 
-seq, D {{ tex \Delta }} :: 'D_'  ::= {{ coq (Map.map normal) }} {{ coq-universe Type }}
-  | empty         ::   :: empty {{ coq Map.empty }}
-  | D , x [ N ]   ::   :: add {{ coq (Map.add [[x]] [[N]] [[D]]) }}
-  | D ++ D'       ::   :: merge {{ coq (Map.merge [[D]] [[D']]) }}
+store, D {{ tex \sigma }} :: 'D_'  ::= {{ coq (Map.map normal) }} {{ coq-universe Type }}
+  | empty                 ::   :: empty {{ coq Map.empty }}
+  | D , x [ N ]           ::   :: add {{ coq (Map.add [[x]] [[N]] [[D]]) }}
+  | D ++ D'               ::   :: merge {{ coq (Map.merge [[D]] [[D']]) }}
 
 normal, N :: 'N_' ::=
   | tt      ::  :: tt
@@ -54,15 +54,9 @@ terminals :: 'terminals_' ::=
   | tt           ::   :: tt   {{ tex \mathop{ \textbf ! } }}
   | fst          ::   :: fst  {{ tex \pi{}_1 }}
   | snd          ::   :: snd  {{ tex \pi{}_2 }}
-  | lam       ::   :: lam  {{ tex \lambda{} }}
+  | lam          ::   :: lam  {{ tex \lambda{} }}
   | empty        ::   :: empty   {{ tex \bullet{} }}
   | !            ::   :: big     {{ tex \mathrel{\Downarrow} }}
-
-substitutions
-  single context var :: subst 
-
-freevars
-  context var :: fv
 
 embed
 {{ coq
