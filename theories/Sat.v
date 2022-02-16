@@ -98,7 +98,7 @@ Notation "'do' x <- e0 ; e1" := (List.flat_map (fun x => e1) e0) (x ident, at le
 
 Fixpoint mon {A B} (x: list A) (y: list B): list _ :=
   match x with
-  | cons H T => List.map (fun y' => (H, y')) y ++ mon T y
+  | cons H T => List.map (pair H) y ++ mon T y
   | _ => nil
   end.
 Infix ">*<" := mon (at level 30).
@@ -114,16 +114,53 @@ Proof using.
   reflexivity.
 Qed.
 
-Definition app {A B} (f: list (A -> B)) x :=
-  List.map (fun '(f, x) => f x) (f >*< x).
+
+Fixpoint app {A B} (f: list (A -> B)) x: list _ :=
+  if f is cons H T
+  then
+    List.app (List.map H x) (app T x)
+  else
+    nil%list.
 
 Infix "<*>" := app (at level 30).
+
+Lemma map_map {A B C} (f: B -> C) (g: A -> B) x:
+  List.map f (List.map g x) = List.map (fun x => f (g x)) x.
+Proof.
+  induction x.
+  1: reflexivity.
+  cbn.
+  rewrite IHx.
+  reflexivity.
+Qed.
+
+Lemma map_app {A B} (f: A -> B) x y:
+  (List.map f (x ++ y) = List.map f x ++ List.map f y)%list.
+Proof.
+  induction x.
+  1: reflexivity.
+  cbn.
+  rewrite IHx.
+  reflexivity.
+Qed.
+
+Lemma map_mon {A B} (f: list (A -> B)) x:
+  f <*> x = List.map (fun '(f, x) => f x) (f >*< x).
+Proof.
+  induction f.
+  1: reflexivity.
+  cbn in *.
+  repeat rewrite map_app.
+  repeat rewrite map_map.
+  rewrite <- IHf.
+  clear.
+  reflexivity.
+Qed.
 
 Fixpoint generate (t: type): list normal :=
   match t with
   | t_unit => [N_tt]
-  | A * B =>
-      [ fun v0 v1 => N_fanout v0 v1 ] <*> generate A <*> generate B
+  | A * B => [ N_fanout ] <*> generate A <*> generate B
   end%list.
 
 Function search (σ: Map.map normal) E: list normal :=
@@ -132,8 +169,7 @@ Function search (σ: Map.map normal) E: list normal :=
 
   | E_lam x t E =>
       do v0 <- generate t ;
-      do v1 <- search (Map.add x v0 σ) E ;
-      [N_fanout v0 v1]
+      [N_fanout v0] <*> search (Map.add x v0 σ) E
 
   | E_app E E' =>
       do f <- search σ E ;
@@ -153,9 +189,7 @@ Function search (σ: Map.map normal) E: list normal :=
       if p is N_tt then [x] else []
 
   | E_fanout E E' =>
-     do x <- search σ E ;
-     do y <- search σ E' ;
-     [N_fanout x y]
+     [N_fanout] <*> search σ E <*> search σ E'
 
   | E_let x y E E' =>
       do tuple <- search σ E ;
