@@ -36,6 +36,7 @@ environment, G {{ tex \Gamma }} :: 'G_' ::= {{ coq (Map.map type) }} {{ coq-univ
 seq, D {{ tex \Delta }} :: 'D_'  ::= {{ coq (Map.map normal) }} {{ coq-universe Type }}
   | empty         ::   :: empty {{ coq Map.empty }}
   | D , x [ N ]   ::   :: add {{ coq (Map.add [[x]] [[N]] [[D]]) }}
+  | D ++ D'       ::   :: merge {{ coq (Map.merge [[D]] [[D']]) }}
 
 normal, N :: 'N_' ::=
   | tt      ::  :: tt
@@ -169,34 +170,33 @@ defn
 D |- E [ N ] ::   :: sat :: 'sat_'
 by
 
-{{ Map.find [[x]] [[D]] = Some [[N]] }}
 --------------------- :: var
-D |- x[N]
+empty, x[N] |- x[N]
 
------------ :: tt
-D |- tt[tt]
+----------------- :: tt
+empty |- tt[tt]
 
 D |- E[tt]
-D |- E'[N]
---------------------- :: step
-D |- (E,, E')[N]
+D' |- E'[N]
+------------------------- :: step
+D ++ D' |- (E,, E')[N]
 
 D |- E[N]
-D |- E'[N']
+D' |- E'[N']
 --------------------- :: fanout
-D |- (E, E')[N, N']
+D ++ D' |- (E, E')[N, N']
 
 
 D |- E[N0, N1]
-D, x0[N0], x1[N1] |- E'[N2]
+D', x[N0], y[N1] |- E'[N2]
 --------------------- :: let
-D |- (let (x0, x1) := E in E')[N2]
+D ++ D' |- (let (x, y) := E in E')[N2]
 
 D, x[N] |- E[N']
 ------------------------------- :: abs
 D |- (lam x: t. E) [N, N']
 
 D |- E[N, N']
-D |- E'[N]
+D' |- E'[N]
 ------------------------ :: app
-D |- (E E')[N']
+D ++ D' |- (E E')[N']

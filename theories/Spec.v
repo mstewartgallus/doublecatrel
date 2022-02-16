@@ -156,29 +156,28 @@ Inductive big : term -> normal -> Type :=    (* defn big *)
 
 (* defns sat *)
 Inductive sat : seq -> context -> normal -> Prop :=    (* defn sat *)
- | sat_var : forall (D:seq) (x:var) (N:normal),
-     Map.find x D = Some N  ->
-     sat D (E_var x) N
- | sat_tt : forall (D:seq),
-     sat D E_tt N_tt
- | sat_step : forall (D:seq) (E E':context) (N:normal),
+ | sat_var : forall (x:var) (N:normal),
+     sat  (Map.add  x   N    Map.empty  )  (E_var x) N
+ | sat_tt : 
+     sat  Map.empty  E_tt N_tt
+ | sat_step : forall (D D':seq) (E E':context) (N:normal),
      sat D E N_tt ->
-     sat D E' N ->
-     sat D  ( (E_step E E') )  N
- | sat_fanout : forall (D:seq) (E E':context) (N N':normal),
+     sat D' E' N ->
+     sat  (Map.merge  D   D' )   ( (E_step E E') )  N
+ | sat_fanout : forall (D D':seq) (E E':context) (N N':normal),
      sat D E N ->
-     sat D E' N' ->
-     sat D  ( (E_fanout E E') )  (N_fanout N N')
- | sat_let : forall (D:seq) (x0 x1:var) (E E':context) (N2 N0 N1:normal),
+     sat D' E' N' ->
+     sat  (Map.merge  D   D' )   ( (E_fanout E E') )  (N_fanout N N')
+ | sat_let : forall (D D':seq) (x y:var) (E E':context) (N2 N0 N1:normal),
      sat D E (N_fanout N0 N1) ->
-     sat  (Map.add  x1   N1    (Map.add  x0   N0   D )  )  E' N2 ->
-     sat D  ( (E_let x0 x1 E E') )  N2
+     sat  (Map.add  y   N1    (Map.add  x   N0   D' )  )  E' N2 ->
+     sat  (Map.merge  D   D' )   ( (E_let x y E E') )  N2
  | sat_abs : forall (D:seq) (x:var) (t:type) (E:context) (N N':normal),
      sat  (Map.add  x   N   D )  E N' ->
      sat D  ( (E_lam x t E) )  (N_fanout N N')
- | sat_app : forall (D:seq) (E E':context) (N' N:normal),
+ | sat_app : forall (D D':seq) (E E':context) (N' N:normal),
      sat D E (N_fanout N N') ->
-     sat D E' N ->
-     sat D  ( (E_app E E') )  N'.
+     sat D' E' N ->
+     sat  (Map.merge  D   D' )   ( (E_app E E') )  N'.
 
 

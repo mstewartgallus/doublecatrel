@@ -7,6 +7,7 @@ Require Blech.Term.
 
 Require Coq.Lists.List.
 Require Import Coq.Classes.SetoidClass.
+Require Import Coq.Program.Tactics.
 
 Require Import FunInd.
 
@@ -17,79 +18,93 @@ Proof.
   decide equality.
 Defined.
 
-Fixpoint denote (σ: Map.map normal) (E: context) (v: normal) {struct E}: Prop :=
+Function denote (σ: Map.map normal) (v: normal) (E: context) {struct E}: Prop :=
   match E, v with
-  | E_var x, _ => if Map.find x σ is Some v' then v = v' else False
+  | E_var x, _ => σ = Map.one x v
 
-  | E_tt, N_tt => True
+  | E_tt, N_tt => σ = Map.empty
 
-  | E_step E E', _ => denote σ E N_tt /\ denote σ E' v
+  | E_step E E', _ =>
+      exists a b,
+      σ = Map.merge a b /\ denote a N_tt E /\ denote b v E'
 
-  | E_fanout E E', N_fanout v v' => denote σ E v /\ denote σ E' v'
+  | E_fanout E E', N_fanout v v' =>
+      exists a b,
+      σ = Map.merge a b /\ denote a v E /\ denote b v' E'
 
   | E_let x y E E', _ =>
-      exists a b, denote σ E (N_fanout a b) /\ denote (Map.add y b (Map.add x a σ)) E' v
+      exists l r a b,
+      σ = Map.merge l r /\ denote l (N_fanout a b) E /\ denote (Map.add y b (Map.add x a r)) v E'
 
-  | E_lam x t E, N_fanout v v' => denote (Map.add x v σ) E v'
+  | E_lam x t E, N_fanout v v' => denote (Map.add x v σ) v' E
   | E_app E E', _ =>
-      exists v', denote σ E (N_fanout v' v) /\ denote σ E' v'
+      exists v' a b,
+      σ = Map.merge a b /\ denote a (N_fanout v' v) E /\ denote b v' E'
   | _, _ => False
   end.
 
 Theorem denote_sound:
   forall σ E v,
-    denote σ E v -> sat σ E v.
+    denote σ v E -> sat σ E v.
 Proof using.
   intros σ E.
   generalize dependent σ.
   induction E.
   all: cbn in *.
   all: intros σ v p.
-  - destruct (Map.find x σ) eqn:q.
-    2: contradiction.
-    subst.
-    constructor.
-    all: auto.
+  - subst.
+    econstructor.
   - destruct v.
     all: try contradiction.
     cbn in p.
     constructor.
     all: auto.
-  - destruct p as [? [? ?]].
+  - destruct_conjs.
+    subst.
     econstructor.
     all: eauto.
   - destruct v.
     all: try contradiction.
+    subst.
     constructor.
-  - destruct p.
+  - destruct_conjs.
+    subst.
     constructor.
     all: auto.
   - destruct v.
     all: try contradiction.
-    destruct p.
+    destruct_conjs.
+    subst.
     constructor.
     all: auto.
-  - destruct p as [? [? [? ?]]].
+  - destruct_conjs.
+    subst.
     econstructor.
     all: eauto.
 Qed.
 
 Theorem denote_complete:
-  forall σ E v, sat σ E v -> denote σ E v.
+  forall σ E v, sat σ E v -> denote σ v E.
 Proof using.
   intros ? ? ? q.
   induction q.
   all: cbn.
   all: auto.
-  - rewrite H.
-    reflexivity.
-  - exists N0.
+  - exists D.
+    exists D'.
+    all: repeat (split; auto).
+  - exists D.
+    exists D'.
+    all: repeat (split; auto).
+  - exists D.
+    exists D'.
+    exists N0.
     exists N1.
-    all: repeat split.
-    all: auto.
+    all: repeat (split; auto).
   - exists N.
-    all: repeat split.
-    all: auto.
+    exists D.
+    exists D'.
+    all: repeat (split; auto).
 Qed.
 
 Import List.ListNotations.

@@ -64,7 +64,8 @@
 \newcommand{\ottseq}{
 \ottrulehead{\ottnt{seq}  ,\ \Delta}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\Delta  \ottsym{,}  \mathit{x}  \ottsym{[}  \ottnt{N}  \ottsym{]}}{}{}{}{}}
+\ottprodline{|}{\Delta  \ottsym{,}  \mathit{x}  \ottsym{[}  \ottnt{N}  \ottsym{]}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\Delta  \cup{}  \Delta'}{}{}{}{}}
 
 \newcommand{\ottnormal}{
 \ottrulehead{\ottnt{normal}  ,\ \ottnt{N}}{::=}{}\ottprodnewline
@@ -309,43 +310,42 @@
 % defns sat
 %% defn sat
 \newcommand{\ottdrulesatXXvar}[1]{\ottdrule[#1]{%
-\ottpremise{\texttt{Map.find }\mathit{x}\texttt{ }\Delta\texttt{ = Some }\ottnt{N}\texttt{ }}%
 }{
-\Delta  \vdash{}  \mathit{x}  \ottsym{[}  \ottnt{N}  \ottsym{]}}{%
+\bullet{}  \ottsym{,}  \mathit{x}  \ottsym{[}  \ottnt{N}  \ottsym{]}  \vdash{}  \mathit{x}  \ottsym{[}  \ottnt{N}  \ottsym{]}}{%
 {\ottdrulename{sat\_var}}{}%
 }}
 
 
 \newcommand{\ottdrulesatXXtt}[1]{\ottdrule[#1]{%
 }{
-\Delta  \vdash{}  \mathop{ \textbf ! }  \ottsym{[}  \mathop{ \textbf ! }  \ottsym{]}}{%
+\bullet{}  \vdash{}  \mathop{ \textbf ! }  \ottsym{[}  \mathop{ \textbf ! }  \ottsym{]}}{%
 {\ottdrulename{sat\_tt}}{}%
 }}
 
 
 \newcommand{\ottdrulesatXXstep}[1]{\ottdrule[#1]{%
 \ottpremise{\Delta  \vdash{}  \ottnt{E}  \ottsym{[}  \mathop{ \textbf ! }  \ottsym{]}}%
-\ottpremise{\Delta  \vdash{}  \ottnt{E'}  \ottsym{[}  \ottnt{N}  \ottsym{]}}%
+\ottpremise{\Delta'  \vdash{}  \ottnt{E'}  \ottsym{[}  \ottnt{N}  \ottsym{]}}%
 }{
-\Delta  \vdash{}  \ottsym{(}  \ottnt{E}  ;  \ottnt{E'}  \ottsym{)}  \ottsym{[}  \ottnt{N}  \ottsym{]}}{%
+\Delta  \cup{}  \Delta'  \vdash{}  \ottsym{(}  \ottnt{E}  ;  \ottnt{E'}  \ottsym{)}  \ottsym{[}  \ottnt{N}  \ottsym{]}}{%
 {\ottdrulename{sat\_step}}{}%
 }}
 
 
 \newcommand{\ottdrulesatXXfanout}[1]{\ottdrule[#1]{%
 \ottpremise{\Delta  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{N}  \ottsym{]}}%
-\ottpremise{\Delta  \vdash{}  \ottnt{E'}  \ottsym{[}  \ottnt{N'}  \ottsym{]}}%
+\ottpremise{\Delta'  \vdash{}  \ottnt{E'}  \ottsym{[}  \ottnt{N'}  \ottsym{]}}%
 }{
-\Delta  \vdash{}  \ottsym{(}  \ottnt{E}  \ottsym{,}  \ottnt{E'}  \ottsym{)}  \ottsym{[}  \ottnt{N}  \ottsym{,}  \ottnt{N'}  \ottsym{]}}{%
+\Delta  \cup{}  \Delta'  \vdash{}  \ottsym{(}  \ottnt{E}  \ottsym{,}  \ottnt{E'}  \ottsym{)}  \ottsym{[}  \ottnt{N}  \ottsym{,}  \ottnt{N'}  \ottsym{]}}{%
 {\ottdrulename{sat\_fanout}}{}%
 }}
 
 
 \newcommand{\ottdrulesatXXlet}[1]{\ottdrule[#1]{%
 \ottpremise{\Delta  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{N_{{\mathrm{0}}}}  \ottsym{,}  \ottnt{N_{{\mathrm{1}}}}  \ottsym{]}}%
-\ottpremise{\Delta  \ottsym{,}  \mathit{x_{{\mathrm{0}}}}  \ottsym{[}  \ottnt{N_{{\mathrm{0}}}}  \ottsym{]}  \ottsym{,}  \mathit{x_{{\mathrm{1}}}}  \ottsym{[}  \ottnt{N_{{\mathrm{1}}}}  \ottsym{]}  \vdash{}  \ottnt{E'}  \ottsym{[}  \ottnt{N_{{\mathrm{2}}}}  \ottsym{]}}%
+\ottpremise{\Delta'  \ottsym{,}  \mathit{x}  \ottsym{[}  \ottnt{N_{{\mathrm{0}}}}  \ottsym{]}  \ottsym{,}  \mathit{y}  \ottsym{[}  \ottnt{N_{{\mathrm{1}}}}  \ottsym{]}  \vdash{}  \ottnt{E'}  \ottsym{[}  \ottnt{N_{{\mathrm{2}}}}  \ottsym{]}}%
 }{
-\Delta  \vdash{}  \ottsym{(}  \ottkw{let} \, \ottsym{(}  \mathit{x_{{\mathrm{0}}}}  \ottsym{,}  \mathit{x_{{\mathrm{1}}}}  \ottsym{)}  \mathbin{:=}  \ottnt{E} \, \ottkw{in} \, \ottnt{E'}  \ottsym{)}  \ottsym{[}  \ottnt{N_{{\mathrm{2}}}}  \ottsym{]}}{%
+\Delta  \cup{}  \Delta'  \vdash{}  \ottsym{(}  \ottkw{let} \, \ottsym{(}  \mathit{x}  \ottsym{,}  \mathit{y}  \ottsym{)}  \mathbin{:=}  \ottnt{E} \, \ottkw{in} \, \ottnt{E'}  \ottsym{)}  \ottsym{[}  \ottnt{N_{{\mathrm{2}}}}  \ottsym{]}}{%
 {\ottdrulename{sat\_let}}{}%
 }}
 
@@ -360,9 +360,9 @@
 
 \newcommand{\ottdrulesatXXapp}[1]{\ottdrule[#1]{%
 \ottpremise{\Delta  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{N}  \ottsym{,}  \ottnt{N'}  \ottsym{]}}%
-\ottpremise{\Delta  \vdash{}  \ottnt{E'}  \ottsym{[}  \ottnt{N}  \ottsym{]}}%
+\ottpremise{\Delta'  \vdash{}  \ottnt{E'}  \ottsym{[}  \ottnt{N}  \ottsym{]}}%
 }{
-\Delta  \vdash{}  \ottsym{(}  \ottnt{E} \, \ottnt{E'}  \ottsym{)}  \ottsym{[}  \ottnt{N'}  \ottsym{]}}{%
+\Delta  \cup{}  \Delta'  \vdash{}  \ottsym{(}  \ottnt{E} \, \ottnt{E'}  \ottsym{)}  \ottsym{[}  \ottnt{N'}  \ottsym{]}}{%
 {\ottdrulename{sat\_app}}{}%
 }}
 

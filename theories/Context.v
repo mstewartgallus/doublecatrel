@@ -18,9 +18,9 @@ Defined.
 Function typecheck (Γ: environment) (E: context): option (environment * type) :=
   match E with
   | E_var x =>
-      if Env.find x Γ is Some t
+      if Map.find x Γ is Some t
       then
-        if Env.is_empty (Env.remove x Γ)
+        if Env.is_empty (Map.minus x Γ)
         then
           Some (Map.one x t, t)
         else
@@ -30,7 +30,7 @@ Function typecheck (Γ: environment) (E: context): option (environment * type) :
   | E_lam x t1 E =>
       if typecheck (Map.add x t1 Γ) E is Some (Γ', t2)
       then
-        if Env.find x Γ' is Some t1'
+        if Map.find x Γ' is Some t1'
         then
           if eq_type t1 t1'
           then
@@ -84,15 +84,15 @@ Function typecheck (Γ: environment) (E: context): option (environment * type) :
       then
         if typecheck (Map.add x t1 (Map.add y t2 Γ)) E' is Some (Δ, t3)
         then
-          if Env.find x (Env.remove y Δ) is Some t1'
+          if Map.find x (Map.minus y Δ) is Some t1'
           then
             if eq_type t1 t1'
             then
-              if Env.find y Δ is Some t2'
+              if Map.find y Δ is Some t2'
               then
                 if eq_type t2 t2'
                 then
-                  Some (Map.merge Γ' (Env.remove x (Env.remove y Δ)), t3)
+                  Some (Map.merge Γ' (Map.minus x (Map.minus y Δ)), t3)
                 else
                   None
               else
@@ -108,40 +108,6 @@ Function typecheck (Γ: environment) (E: context): option (environment * type) :
   end
     %list.
 
-Lemma env_add_minus:
-  forall x (t: type) Γ,
-    Env.find x Γ = Some t ->
-    Map.add x t (Map.minus x Γ) = Γ.
-Proof.
-  intros x t Γ p.
-  unfold add, minus.
-  admit.
-Admitted.
-
-Lemma find_add:
-  forall x (t: type) Γ,
-    Env.find x (Env.add x t Γ) = Some t.
-Proof.
-  intros x t.
-  admit.
-Admitted.
-
-Lemma always_empty:
-  forall x (t: type), Env.is_empty (Env.remove x (Env.add x t (Env.empty _))) = true.
-Proof.
-  intros ? ?.
-  unfold one.
-  admit.
-Admitted.
-
-Lemma remove_add:
-  forall x (t: type) Γ,
-    Env.remove x (Env.add x t Γ) = Γ.
-Proof.
-  intros x t.
-  admit.
-Admitted.
-
 Theorem typecheck_sound:
   forall Γ E Δ t, typecheck Γ E = Some (Δ, t) -> Δ ⊢ E in t.
 Proof using.
@@ -154,12 +120,12 @@ Proof using.
   all: econstructor.
   all: eauto.
   - apply IHo.
-    rewrite (env_add_minus x t1 Γ').
+    rewrite (Map.add_minus x t1 Γ').
     2: auto.
     auto.
-  - rewrite env_add_minus.
+  - rewrite Map.add_minus.
     all: auto.
-    1: rewrite env_add_minus.
+    1: rewrite Map.add_minus.
     all: auto.
 Qed.
 
@@ -170,9 +136,7 @@ Proof using.
   induction p.
   - unfold typecheck.
     unfold one.
-    unfold empty.
-    unfold add.
-    rewrite (find_add x t (Env.empty _)).
+    rewrite (Map.find_add x t Map.empty).
     rewrite always_empty.
     reflexivity.
   - cbn.
@@ -180,7 +144,6 @@ Proof using.
     2: discriminate.
     inversion IHp.
     subst.
-    unfold add.
     rewrite (find_add x t1 G).
     destruct (eq_type t1 t1).
     2: contradiction.
