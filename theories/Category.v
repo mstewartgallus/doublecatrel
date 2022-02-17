@@ -20,7 +20,6 @@ Module Import Hor.
   }.
 
   Definition id x: term := x.
-
   Instance id_Hor A: Hor A A id.
   Proof using.
     exists.
@@ -28,7 +27,6 @@ Module Import Hor.
   Defined.
 
   Definition compose (f g: term -> term) x := f (g x).
-
   Instance compose_Hor f g {A B C} `{Hor B C f} `{Hor A B g}: Hor A C (compose f g).
   Proof.
     exists.
@@ -75,6 +73,59 @@ Module Import Hor.
   Defined.
 
   (* FIXME define setoid equality and prove laws *)
+
+  Section Subst.
+    Variable X: var.
+
+    Definition to (v: term) (v': term) := subst_term v' X v.
+    Definition from (f: term -> term) := f (v_var X).
+
+    Instance to_Hor v A B: Map.one X A ⊢ v in B -> Hor A B (to v).
+    Proof.
+      unfold to.
+      generalize dependent B.
+      generalize dependent A.
+      induction v.
+      all: intros A B p.
+      all: cbn.
+      all: constructor.
+      all: intros Γ v' q.
+      - destruct (eq_var x X).
+        + subst.
+          inversion p.
+          subst.
+          unfold Map.one in H1.
+          rewrite Map.find_add in H1.
+          inversion H1.
+          subst.
+          auto.
+        + inversion p.
+          subst.
+          rewrite Map.find_one_ne in H1.
+          1: discriminate.
+          auto.
+      - inversion p.
+        subst.
+        constructor.
+      - inversion p.
+        subst.
+        econstructor.
+        apply (@preserves_types _ _ _ (IHv _ _ X0)).
+        eauto.
+      - inversion p.
+        subst.
+        econstructor.
+        apply (@preserves_types _ _ _ (IHv _ _ X0)).
+        auto.
+      - inversion p.
+        subst.
+        econstructor.
+        + apply (@preserves_types _ _ _ (IHv1 _ _ X0)).
+          auto.
+        + apply (@preserves_types _ _ _ (IHv2 _ _ X1)).
+          auto.
+    Defined.
+    End Subst.
 End Hor.
 
 Module Import Vert.
@@ -83,7 +134,6 @@ Module Import Vert.
   }.
 
   Definition id x: context := x.
-
   Instance id_Vert A: Vert A A id.
   Proof using.
     exists.
@@ -91,7 +141,6 @@ Module Import Vert.
   Defined.
 
   Definition compose (f g: context -> context) x := f (g x).
-
   Instance compose_Vert f g {A B C} `{Vert B C f} `{Vert A B g}: Vert A C (compose f g).
   Proof.
     exists.

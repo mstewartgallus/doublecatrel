@@ -66,3 +66,11 @@ Lemma merge_empty {V}:
 Proof.
   admit.
 Admitted.
+
+Lemma find_one_ne {V}:
+  forall {x x'} {t: V},
+    x <> x' ->
+    find x (one x' t) = None.
+Proof.
+  admit.
+Admitted.
