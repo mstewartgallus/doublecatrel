@@ -49,3 +49,13 @@ Proof.
   intros x t.
   admit.
 Admitted.
+
+
+Lemma add_add {V}:
+  forall x (s t: V) Γ,
+    add x s (add x t Γ) = add x s Γ.
+Proof.
+  intros x s t Γ.
+  unfold add.
+  admit.
+Admitted.

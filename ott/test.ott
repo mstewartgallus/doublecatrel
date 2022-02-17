@@ -65,6 +65,10 @@ terminals :: 'terminals_' ::=
   | nil          ::   :: nil   {{ tex \bullet{} }}
   | !            ::   :: big     {{ tex \mathrel{\Downarrow} }}
 
+substitutions
+  single v x :: subst
+  single E x :: subst 
+
 embed
 {{ coq
 

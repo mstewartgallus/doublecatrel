@@ -8,3 +8,4 @@ theories/SpecNotations.v
 theories/Term.v
 theories/Context.v
 theories/Sat.v
+theories/Category.v

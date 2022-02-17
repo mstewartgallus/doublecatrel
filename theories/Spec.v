@@ -48,6 +48,36 @@ Inductive term : Set :=
  | v_fanout (v:term) (v':term).
 
 Definition set : Type := (list span).
+(** library functions *)
+Fixpoint list_mem A (eq:forall a b:A,{a=b}+{a<>b}) (x:A) (l:list A) {struct l} : bool :=
+  match l with
+  | nil => false
+  | cons h t => if eq h x then true else list_mem A eq x t
+end.
+Arguments list_mem [A] _ _ _.
+
+
+(** substitutions *)
+Fixpoint subst_term (v5:term) (x5:var) (v_6:term) {struct v_6} : term :=
+  match v_6 with
+  | (v_var x) => (if eq_var x x5 then v5 else (v_var x))
+  | v_tt => v_tt 
+  | (v_fst v) => v_fst (subst_term v5 x5 v)
+  | (v_snd v) => v_snd (subst_term v5 x5 v)
+  | (v_fanout v v') => v_fanout (subst_term v5 x5 v) (subst_term v5 x5 v')
+end.
+
+Fixpoint subst_context (E5:context) (x5:var) (E_6:context) {struct E_6} : context :=
+  match E_6 with
+  | (E_var x) => (if eq_var x x5 then E5 else (E_var x))
+  | (E_lam x t E) => E_lam x t (if list_mem eq_var x5 (cons x nil) then E else (subst_context E5 x5 E))
+  | (E_app E E') => E_app (subst_context E5 x5 E) (subst_context E5 x5 E')
+  | E_tt => E_tt 
+  | (E_step E E') => E_step (subst_context E5 x5 E) (subst_context E5 x5 E')
+  | (E_fanout E E') => E_fanout (subst_context E5 x5 E) (subst_context E5 x5 E')
+  | (E_let x y E E') => E_let x y (subst_context E5 x5 E) (if list_mem eq_var x5 (app (cons x nil) (cons y nil)) then E' else (subst_context E5 x5 E'))
+end.
+
 
 Module Examples.
 
