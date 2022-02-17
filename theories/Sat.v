@@ -99,13 +99,13 @@ Fixpoint generate (t: type): list normal :=
   | A * B => [N_fanout] <*> generate A <*> generate B
   end%list.
 
-Fixpoint pick (σ: Map.map normal) E: list span :=
+Fixpoint search (σ: Map.map normal) E: list span :=
   match E with
   | E_var x => if Map.find x σ is Some N then [Map.one x N |- N] else []
 
   | E_lam x t E =>
       do N0 <- generate t ;
-      do (σ' |- N1) <- pick (Map.add x N0 σ) E ;
+      do (σ' |- N1) <- search (Map.add x N0 σ) E ;
       if Map.find x σ' is Some N0'
       then
         if eq_normal N0 N0'
@@ -117,8 +117,8 @@ Fixpoint pick (σ: Map.map normal) E: list span :=
         []
 
   | E_app E E' =>
-      do (σ1 |- N) <- pick σ E ;
-      do (σ2 |- N0) <- pick σ E' ;
+      do (σ1 |- N) <- search σ E ;
+      do (σ2 |- N0) <- search σ E' ;
       if N is N_fanout N0' N1
       then
         if eq_normal N0 N0'
@@ -132,20 +132,20 @@ Fixpoint pick (σ: Map.map normal) E: list span :=
   | E_tt => [Map.empty |- N_tt]
 
   | E_step E E' =>
-      do (σ1 |- N) <- pick σ E ;
+      do (σ1 |- N) <- search σ E ;
       if N is N_tt
       then
-        [fun '(σ2 |- N') => Map.merge σ1 σ2 |- N'] <*> pick σ E'
+        [fun '(σ2 |- N') => Map.merge σ1 σ2 |- N'] <*> search σ E'
       else
         []
 
   | E_fanout E E' =>
-      [fun '(σ1 |- N) '(σ2 |- N') => Map.merge σ1 σ2 |- N_fanout N N'] <*> pick σ E <*> pick σ E'
+      [fun '(σ1 |- N) '(σ2 |- N') => Map.merge σ1 σ2 |- N_fanout N N'] <*> search σ E <*> search σ E'
 
   | E_let x y E E' =>
-      do (σ1 |- N) <- pick σ E ;
+      do (σ1 |- N) <- search σ E ;
       do (a, b) <- (if N is N_fanout a b then [(a, b)] else []) ;
-      do (σ2 |- N') <- pick (Map.add x a (Map.add y b σ)) E' ;
+      do (σ2 |- N') <- search (Map.add x a (Map.add y b σ)) E' ;
       if Map.find x (Map.minus y σ2)is Some a'
       then
         if eq_normal a a'
@@ -187,7 +187,7 @@ Proof.
 Defined.
 
 Theorem search_sound:
-  forall σ E, sound E (pick σ E).
+  forall σ E, sound E (search σ E).
 Proof using.
   intros σ E.
   generalize dependent σ.

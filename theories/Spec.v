@@ -41,6 +41,7 @@ Inductive context : Set :=
 Definition environment : Type := (Map.map type).
 
 Inductive term : Set := 
+ | v_var (x:var)
  | v_tt : term
  | v_fst (v:term)
  | v_snd (v:term)
@@ -86,19 +87,22 @@ Inductive JE : environment -> context -> type -> Type :=    (* defn E *)
 (** definitions *)
 
 (* defns judge_term *)
-Inductive Jv : term -> type -> Type :=    (* defn v *)
- | Jv_tt : 
-     Jv v_tt t_unit
- | Jv_fanout : forall (v1 v2:term) (t1 t2:type),
-     Jv v1 t1 ->
-     Jv v2 t2 ->
-     Jv (v_fanout v1 v2) (t_prod t1 t2)
- | Jv_fst : forall (v:term) (t1 t2:type),
-     Jv v (t_prod t1 t2) ->
-     Jv (v_fst v) t1
- | Jv_snd : forall (v:term) (t2 t1:type),
-     Jv v (t_prod t1 t2) ->
-     Jv (v_snd v) t2.
+Inductive Jv : environment -> term -> type -> Type :=    (* defn v *)
+ | Jv_var : forall (G:environment) (x:var) (t:type),
+     Map.find x G = Some t  ->
+     Jv G (v_var x) t
+ | Jv_tt : forall (G:environment),
+     Jv G v_tt t_unit
+ | Jv_fanout : forall (G:environment) (v1 v2:term) (t1 t2:type),
+     Jv G v1 t1 ->
+     Jv G v2 t2 ->
+     Jv G (v_fanout v1 v2) (t_prod t1 t2)
+ | Jv_fst : forall (G:environment) (v:term) (t1 t2:type),
+     Jv G v (t_prod t1 t2) ->
+     Jv G (v_fst v) t1
+ | Jv_snd : forall (G:environment) (v:term) (t2 t1:type),
+     Jv G v (t_prod t1 t2) ->
+     Jv G (v_snd v) t2.
 (** definitions *)
 
 (* defns big *)

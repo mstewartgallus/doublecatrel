@@ -107,7 +107,7 @@ Function typecheck (Γ: environment) (E: context): option (environment * type) :
     %list.
 
 Theorem typecheck_sound:
-  forall {Γ E Δ t}, typecheck Γ E = Some (Δ, t) -> Δ ⊢ E in t.
+  forall {Γ E Δ t}, typecheck Γ E = Some (Δ, t) -> Δ ⊢ E ? t.
 Proof using.
   intros Γ E.
   functional induction (typecheck Γ E).

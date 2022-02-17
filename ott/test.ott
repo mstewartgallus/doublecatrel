@@ -12,6 +12,7 @@ type, t :: 't_' ::=
   | t * t'       ::   :: prod
 
 term, v :: 'v_' ::=
+  | x            ::   :: var
   | tt           ::   :: tt
   | fst v        ::   :: fst
   | snd v        ::   :: snd
@@ -52,8 +53,6 @@ normal, N :: 'N_' ::=
 
 terminals :: 'terminals_' ::=
   | :            ::   :: in     {{ tex \colon{} }}
-  | |            ::   :: suchthat  {{ tex \mid{} }}
-  | mem          ::   :: member  {{ tex \in{} }}
   | |-           ::   :: turnstile   {{ tex \vdash{} }}
   | :=           ::   :: update  {{ tex \mathbin{:=} }}
   | ++           ::   :: merge   {{ tex \cup{} }}
@@ -64,7 +63,6 @@ terminals :: 'terminals_' ::=
   | snd          ::   :: snd  {{ tex \pi{}_2 }}
   | lam          ::   :: lam  {{ tex \lambda{} }}
   | nil          ::   :: nil   {{ tex \bullet{} }}
-  | empty        ::   :: empty   {{ tex \emptyset{} }}
   | !            ::   :: big     {{ tex \mathrel{\Downarrow} }}
 
 embed
@@ -122,24 +120,28 @@ defns
 judge_term :: 'J' ::= {{ coq-universe Type }}
 
 defn
-|- v : t ::   :: v :: 'v_'
+G |- v : t ::   :: v :: 'v_'
 by
 
+{{ Map.find [[x]] [[G]] = Some [[t]] }}
+------------ :: var
+G |- x: t
+
 ------------ :: tt
-|- tt: unit
+G |- tt: unit
 
-|- v1: t1
-|- v2: t2
+G |- v1: t1
+G |- v2: t2
 ------------------ :: fanout
-|- v1, v2: t1 * t2
+G |- v1, v2: t1 * t2
 
-|- v: t1 * t2
+G |- v: t1 * t2
 ------------------ :: fst
-|- fst v: t1
+G |- fst v: t1
 
-|- v: t1 * t2
+G |- v: t1 * t2
 ------------------ :: snd
-|- snd v: t2
+G |- snd v: t2
 
 defns
 

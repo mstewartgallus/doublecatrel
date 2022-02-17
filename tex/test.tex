@@ -38,7 +38,8 @@
 
 \newcommand{\ottterm}{
 \ottrulehead{\ottnt{term}  ,\ \ottnt{v}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\mathop{ \textbf ! }}{}{}{}{}\ottprodnewline
+\ottfirstprodline{|}{\mathit{x}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\mathop{ \textbf ! }}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\pi{}_1 \, \ottnt{v}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\pi{}_2 \, \ottnt{v}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{v}  \ottsym{,}  \ottnt{v'}}{}{}{}{}\ottprodnewline
@@ -85,8 +86,6 @@
 \newcommand{\ottterminals}{
 \ottrulehead{\ottnt{terminals}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{ \colon{} }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \mid{} }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \in{} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \vdash{} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathbin{:=} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \cup{} }{}{}{}{}\ottprodnewline
@@ -97,7 +96,6 @@
 \ottprodline{|}{ \pi{}_2 }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \lambda{} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \bullet{} }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \emptyset{} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathrel{\Downarrow} }{}{}{}{}}
 
 \newcommand{\ottformula}{
@@ -110,7 +108,7 @@
 
 \newcommand{\ottjudgeXXterm}{
 \ottrulehead{\ottnt{judge\_term}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\vdash{}  \ottnt{v}  \colon{}  \ottnt{t}}{}{}{}{}}
+\ottfirstprodline{|}{\Gamma  \vdash{}  \ottnt{v}  \colon{}  \ottnt{t}}{}{}{}{}}
 
 \newcommand{\ottbig}{
 \ottrulehead{\ottnt{big}}{::=}{}\ottprodnewline
@@ -242,38 +240,47 @@
 
 % defns judge_term
 %% defn v
+\newcommand{\ottdruleJvXXvar}[1]{\ottdrule[#1]{%
+\ottpremise{\texttt{Map.find }\mathit{x}\texttt{ }\Gamma\texttt{ = Some }\ottnt{t}\texttt{ }}%
+}{
+\Gamma  \vdash{}  \mathit{x}  \colon{}  \ottnt{t}}{%
+{\ottdrulename{Jv\_var}}{}%
+}}
+
+
 \newcommand{\ottdruleJvXXtt}[1]{\ottdrule[#1]{%
 }{
-\vdash{}  \mathop{ \textbf ! }  \colon{}  \top{}}{%
+\Gamma  \vdash{}  \mathop{ \textbf ! }  \colon{}  \top{}}{%
 {\ottdrulename{Jv\_tt}}{}%
 }}
 
 
 \newcommand{\ottdruleJvXXfanout}[1]{\ottdrule[#1]{%
-\ottpremise{\vdash{}  \ottnt{v_{{\mathrm{1}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}}%
-\ottpremise{\vdash{}  \ottnt{v_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\Gamma  \vdash{}  \ottnt{v_{{\mathrm{1}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}}%
+\ottpremise{\Gamma  \vdash{}  \ottnt{v_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}%
 }{
-\vdash{}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \times{}  \ottnt{t_{{\mathrm{2}}}}}{%
+\Gamma  \vdash{}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \times{}  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{Jv\_fanout}}{}%
 }}
 
 
 \newcommand{\ottdruleJvXXfst}[1]{\ottdrule[#1]{%
-\ottpremise{\vdash{}  \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \times{}  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\Gamma  \vdash{}  \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \times{}  \ottnt{t_{{\mathrm{2}}}}}%
 }{
-\vdash{}  \pi{}_1 \, \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{1}}}}}{%
+\Gamma  \vdash{}  \pi{}_1 \, \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{1}}}}}{%
 {\ottdrulename{Jv\_fst}}{}%
 }}
 
 
 \newcommand{\ottdruleJvXXsnd}[1]{\ottdrule[#1]{%
-\ottpremise{\vdash{}  \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \times{}  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\Gamma  \vdash{}  \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \times{}  \ottnt{t_{{\mathrm{2}}}}}%
 }{
-\vdash{}  \pi{}_2 \, \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}{%
+\Gamma  \vdash{}  \pi{}_2 \, \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{Jv\_snd}}{}%
 }}
 
-\newcommand{\ottdefnJv}[1]{\begin{ottdefnblock}[#1]{$\vdash{}  \ottnt{v}  \colon{}  \ottnt{t}$}{}
+\newcommand{\ottdefnJv}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \vdash{}  \ottnt{v}  \colon{}  \ottnt{t}$}{}
+\ottusedrule{\ottdruleJvXXvar{}}
 \ottusedrule{\ottdruleJvXXtt{}}
 \ottusedrule{\ottdruleJvXXfanout{}}
 \ottusedrule{\ottdruleJvXXfst{}}

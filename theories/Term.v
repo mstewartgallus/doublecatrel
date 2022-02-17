@@ -15,25 +15,26 @@ Fixpoint toterm (v: normal): term :=
 
 Coercion toterm: normal >-> term.
 
-Function typecheck (v: term): option type :=
+Function typecheck Γ (v: term): option type :=
   match v with
+  | v_var x => Map.find x Γ
   | v_tt => Some t_unit
   | v_fst v =>
-      if typecheck v is Some (t0 * _)
+      if typecheck Γ v is Some (t0 * _)
       then
         Some t0
       else
         None
   | v_snd v =>
-      if typecheck v is Some (_ * t1)
+      if typecheck Γ v is Some (_ * t1)
       then
         Some t1
       else
         None
   | v_fanout v0 v1 =>
-      if typecheck v0 is Some t0
+      if typecheck Γ v0 is Some t0
       then
-        if typecheck v1 is Some t1
+        if typecheck Γ v1 is Some t1
         then
           Some (t0 * t1)
         else
@@ -43,10 +44,10 @@ Function typecheck (v: term): option type :=
   end.
 
 Theorem typecheck_sound:
-  forall v t, typecheck v = Some t -> ⊢ v in t.
+  forall {Γ v t}, typecheck Γ v = Some t -> Γ ⊢ v in t.
 Proof using .
-  intros v.
-  functional induction (typecheck v).
+  intros Γ v.
+  functional induction (typecheck Γ v).
   all: cbn.
   all: intros ? p.
   all: inversion p.
@@ -56,42 +57,26 @@ Proof using .
 Qed.
 
 Theorem typecheck_complete:
-  forall v t, ⊢ v in t -> typecheck v = Some t.
+  forall {Γ v t}, Γ ⊢ v in t -> typecheck Γ v = Some t.
 Proof using .
-  intros ? ? p.
+  intros Γ ? ? p.
   induction p.
   all: cbn.
-  all: try (destruct (typecheck v) as [[]|]).
-  all: try (destruct (typecheck v1)).
-  all: try (destruct (typecheck v2)).
+  all: try (destruct (typecheck G v) as [[]|]).
+  all: try (destruct (typecheck G v1)).
+  all: try (destruct (typecheck G v2)).
   all: try inversion IHp.
   all: subst.
   all: try inversion IHp1.
   all: subst.
   all: try inversion IHp2.
   all: subst.
-  all: reflexivity.
+  all: auto.
 Qed.
-
-Inductive tr A: Prop := tr_intro (_: A).
-Definition of_t t := { v | tr (⊢ v in t) }.
-
-Definition tc v: if typecheck v is Some t
-                 then
-                   of_t t
-                 else
-                   unit.
-Proof.
-  destruct (typecheck v) eqn:q.
-  2: apply tt.
-  exists v.
-  exists.
-  apply typecheck_sound.
-  auto.
-Defined.
 
 Function eval v :=
   match v with
+  | v_var _ => None
   | v_tt => Some N_tt
   | v_fst v => if eval v is Some (N_fanout a _) then Some a else None
   | v_snd v => if eval v is Some (N_fanout _ a) then Some a else None
@@ -108,7 +93,7 @@ Function eval v :=
   end.
 
 Theorem eval_sound:
-  forall v N, eval v = Some N -> v ⇓ N.
+  forall {v N}, eval v = Some N -> v ⇓ N.
 Proof using.
   intros v.
   functional induction (eval v).
@@ -129,7 +114,7 @@ Proof using.
 Qed.
 
 Theorem eval_complete:
-  forall v v', v ⇓ v' -> eval v = Some v'.
+  forall {v v'}, v ⇓ v' -> eval v = Some v'.
 Proof using.
   intros ? ? p.
   induction p.
@@ -141,23 +126,23 @@ Proof using.
 Qed.
 
 Theorem eval_preserve:
-  forall v v',
+  forall {v v'},
     v ⇓ v' ->
-    forall t, ⊢ v in t -> ⊢ v' in t.
+    forall Γ t, Γ ⊢ v in t -> Γ ⊢ v' in t.
 Proof using.
   intros v v' p.
   induction p.
-  all: intros ? q.
+  all: intros ? ? q.
   all: inversion q.
   all: subst.
   all: auto.
   - econstructor.
     all: eauto.
-  - set (p' := IHp _ H0).
+  - set (p' := IHp _ _ X).
     inversion p'.
     subst.
     auto.
-  - set (p' := IHp _ H0).
+  - set (p' := IHp _ _ X).
     inversion p'.
     subst.
     auto.
@@ -165,20 +150,23 @@ Qed.
 
 Theorem normalize:
   forall v t,
-   ⊢ v in t ->
-   { v' & v ⇓ v' }.
+   Map.empty ⊢ v in t ->
+   { N & v ⇓ N }.
 Proof using.
+  remember Map.empty as G.
   intros ? ? p.
   induction p.
+  all: subst.
+  - discriminate.
   - exists N_tt.
     constructor.
-  - destruct IHp1 as [v1' s1].
-    destruct IHp2 as [v2' s2].
+  - destruct (IHp1 (eq_refl _)) as [v1' s1].
+    destruct (IHp2 (eq_refl _)) as [v2' s2].
     exists (N_fanout v1' v2').
     constructor.
     all: auto.
-  - destruct IHp as [v' s].
-    set (vwf := eval_preserve _ _ s _ p).
+  - destruct (IHp (eq_refl _)) as [v' s].
+    set (vwf := eval_preserve s _ _ p).
     destruct v'.
     all: cbn in *.
     all: try discriminate.
@@ -188,8 +176,8 @@ Proof using.
     exists v'1.
     econstructor.
     all: eauto.
-  - destruct IHp as [v' s].
-    set (vwf := eval_preserve _ _ s _ p).
+  - destruct (IHp (eq_refl _)) as [v' s].
+    set (vwf := eval_preserve s _ _ p).
     destruct v'.
     all: cbn in *.
     all: try discriminate.
