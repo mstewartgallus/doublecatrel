@@ -4,6 +4,7 @@ Require Blech.Map.
 }}
 
 metavar var, x, y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[var]]} }}
+indexvar index, i, j, m, n ::= {{ coq nat }}
 
 grammar
 type, t :: 't_' ::=
@@ -27,26 +28,22 @@ context, E :: 'E_' ::=
   | let ( x , y ) := E in E' ::   :: let (+ bind x union y in E' +)
   | ( E )                    :: S :: paren {{ icho ([[E]]) }}
 
-command, c :: 'c_' ::=
-  | x [ N ]               ::   :: var
-  | lam x : t . c         ::   :: lam (+ bind x in c +)
-  | c c'                  ::   :: app
-  | tt                    ::   :: tt
-  | c ; c'                ::   :: step
-  | c , c'                ::   :: fanout
-  | let ( x , y ) := c in c' ::   :: let (+ bind x union y in c' +)
-  | ( c )                    :: S :: paren {{ icho ([[c]]) }}
-
-
 environment, G {{ tex \Gamma }} :: 'G_' ::= {{ coq (Map.map type) }} {{ coq-universe Type }}
-  | empty         ::   :: empty {{ coq Map.empty }}
+  | nil         ::   :: nil {{ coq Map.empty }}
   | G , x : t     ::   :: add {{ coq (Map.add [[x]] [[t]] [[G]]) }}
   | G ++ G'       ::   :: merge {{ coq (Map.merge [[G]] [[G']]) }}
 
 store, D {{ tex \sigma }} :: 'D_'  ::= {{ coq (Map.map normal) }} {{ coq-universe Type }}
-  | empty                 ::   :: empty {{ coq Map.empty }}
-  | D , x [ N ]            ::   :: add {{ coq (Map.add [[x]] [[N]] [[D]]) }}
+  | nil                   ::   :: nil {{ coq Map.empty }}
+  | D , x [ N ]           ::   :: add {{ coq (Map.add [[x]] [[N]] [[D]]) }}
   | D ++ D'               ::   :: merge {{ coq (Map.merge [[D]] [[D']]) }}
+
+span, P :: 'P_' ::= {{ coq-universe Type }}
+  | D |- N  ::   :: with
+
+set, X :: 'X_' ::= {{ coq (list span) }} {{ coq-universe Type }}
+  | nil          ::   :: nil {{ coq nil }}
+  | X , P         ::   :: cons {{ coq (cons [[P]] [[X]]) }}
 
 normal, N :: 'N_' ::=
   | tt      ::  :: tt
@@ -55,17 +52,19 @@ normal, N :: 'N_' ::=
 
 terminals :: 'terminals_' ::=
   | :            ::   :: in     {{ tex \colon{} }}
+  | |            ::   :: suchthat  {{ tex \mid{} }}
+  | mem          ::   :: member  {{ tex \in{} }}
   | |-           ::   :: turnstile   {{ tex \vdash{} }}
   | :=           ::   :: update  {{ tex \mathbin{:=} }}
   | ++           ::   :: merge   {{ tex \cup{} }}
   | unit         ::   :: unit  {{ tex \top{} }}
   | *            ::   :: prod  {{ tex \times{} }}
-  | ;           ::   :: then  {{ tex ; }}
   | tt           ::   :: tt   {{ tex \mathop{ \textbf ! } }}
   | fst          ::   :: fst  {{ tex \pi{}_1 }}
   | snd          ::   :: snd  {{ tex \pi{}_2 }}
   | lam          ::   :: lam  {{ tex \lambda{} }}
-  | empty        ::   :: empty   {{ tex \bullet{} }}
+  | nil          ::   :: nil   {{ tex \bullet{} }}
+  | empty        ::   :: empty   {{ tex \emptyset{} }}
   | !            ::   :: big     {{ tex \mathrel{\Downarrow} }}
 
 embed
@@ -89,7 +88,7 @@ G |- E : t ::   :: E :: 'E_'
 by
 
 ------------ :: var
-empty , x: t |- x: t
+nil , x: t |- x: t
 
 G , x: t1 |- E: t2
 -------------------------- :: abs
@@ -101,7 +100,7 @@ G2 |- E2: t1
 G1 ++ G2 |- E1 E2: t2
 
 ------------------- :: tt
-empty |- tt: unit
+nil |- tt: unit
 
 G1 |- E1: unit
 G2 |- E2: t
@@ -171,75 +170,51 @@ defns
 sat :: '' ::=
 
 defn
-D |- c : E [ N ] ::   :: sat :: 'sat_'
+E ! P ::   :: sat :: 'sat_'
 by
 
------------------------------ :: var
-empty, x[N] |- x[N]: x[N]
+---------------------- :: var
+x ! nil, x[N] |- N
 
---------------------- :: tt
-empty |- tt: tt[tt]
+------------------ :: tt
+tt ! nil |- tt
 
-D |- c: E[tt]
-D' |- c': E'[N]
-------------------------------- :: step
-D ++ D' |- c; c': (E; E')[N]
+E !  D |- tt 
+E' !  D' |- N 
+-------------------------- :: step
+(E; E') !  D ++ D' |- N 
 
-D |- c: E[N]
-D' |- c': E'[N']
---------------------------------- :: fanout
-D ++ D' |- c, c': (E, E')[N, N']
+E !  D |- N 
+E' !  D' |- N' 
+-------------------------- :: fanout
+(E, E') !  D ++ D' |- N, N'
 
-D |- c: E[N0, N1]
-D', x[N0], y[N1] |- c': E'[N2]
-------------------------------- :: let
-D ++ D' |- let (x, y) := c in c': (let (x, y) := E in E')[N2]
+E !  D |- N0, N1 
+E' !  D', x[N0], y[N1] |- N2 
+------------------------------------------- :: let
+(let (x, y) := E in E') !  D ++ D' |- N2 
 
-D, x[N] |- c: E[N']
+E !  D, x[N] |- N' 
 ------------------------------- :: lam
-D |- (lam x: t. c) : (lam x: t. E)[N, N']
+(lam x: t. E) !  D |- N, N' 
 
-D |- c: E[N, N']
-D' |- c': E'[N ]
----------------------------- :: app
-D ++ D' |- c c': E E'[N']
+E !  D |- N, N' 
+E' !  D' |- N 
+------------------------- :: app
+E E' !  D ++ D' |- N' 
 
 defns
 
-pick :: '' ::=
+sound :: '' ::=
 
 defn
-D |- E ! c ::   :: pick :: 'p_'
+E ! X ::   :: sound :: 'sound_'
 by
 
------------------------------ :: var
-empty, x[N] |- x ! x[N]
+------- :: nil
+E ! nil
 
---------------------- :: tt
-empty |- tt ! tt
-
-D |- E ! tt
-D' |- E' ! c
-------------------------------- :: step
-D ++ D' |- E; E' ! c
-
-D |- E ! c
-D' |- E' ! c'
---------------------------------- :: fanout
-D ++ D' |- E, E' ! c, c'
-
-D |- E ! c
-D |- c: E [N, N']
-D', x[N], y[N'] |-  E' ! c'
---------------------------------------------------------- :: let
-D ++ D' |- let (x, y) := E in E' ! let (x, y) := c in c'
-
-% nondeterministically pick a value N
-D, x[N] |- E ! c
------------------------------------ :: lam
-D |- (lam x: t. E) ! (lam x: t. c)
-
-D |- E ! c
-D' |- E' ! c'
----------------------------- :: app
-D ++ D' |- E E' ! c c'
+E ! X
+E ! P
+-------- :: cons
+E ! X, P

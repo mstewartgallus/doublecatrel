@@ -17,115 +17,6 @@ Definition eq_normal (x y: normal): {x = y} + {x <> y}.
 Proof.
   decide equality.
 Defined.
-
-Function denote (σ: Map.map normal) (v: normal) (E: context) {struct E}: Prop :=
-  match E, v with
-  | E_var x, _ => σ = Map.one x v
-
-  | E_tt, N_tt => σ = Map.empty
-
-  | E_step E E', _ =>
-      exists a b,
-      σ = Map.merge a b /\ denote a N_tt E /\ denote b v E'
-
-  | E_fanout E E', N_fanout v v' =>
-      exists a b,
-      σ = Map.merge a b /\ denote a v E /\ denote b v' E'
-
-  | E_let x y E E', _ =>
-      exists l r a b,
-      σ = Map.merge l r /\ denote l (N_fanout a b) E /\ denote (Map.add y b (Map.add x a r)) v E'
-
-  | E_lam x t E, N_fanout v v' => denote (Map.add x v σ) v' E
-  | E_app E E', _ =>
-      exists v' a b,
-      σ = Map.merge a b /\ denote a (N_fanout v' v) E /\ denote b v' E'
-  | _, _ => False
-  end.
-
-Theorem denote_complete:
-  forall c σ E v, sat σ c E v -> denote σ v E.
-Proof using.
-  intros c.
-  induction c.
-  all: intros σ E v q.
-  all: inversion q.
-  all: subst.
-  all: cbn.
-  all: auto.
-  - exists N.
-    exists D.
-    exists D'.
-    all: repeat (split; auto).
-  - exists D.
-    exists D'.
-    all: repeat (split; auto).
-  - exists D.
-    exists D'.
-    all: repeat (split; auto).
-  - exists D.
-    exists D'.
-    exists N0.
-    exists N1.
-    all: repeat (split; auto).
-Qed.
-
-Theorem denote_sound:
-  forall σ E v,
-    denote σ v E -> exists c, sat σ c E v.
-Proof using.
-  intros σ E.
-  generalize dependent σ.
-  induction E.
-  all: cbn in *.
-  all: intros σ v p.
-  - subst.
-    eexists.
-    econstructor.
-  - destruct v.
-    all: try contradiction.
-    cbn in p.
-    destruct (IHE _ _ p).
-    eexists.
-    constructor.
-    eauto.
-  - destruct_conjs.
-    destruct (IHE1 _ _ H2).
-    destruct (IHE2 _ _ H3).
-    subst.
-    eexists.
-    econstructor.
-    all: eauto.
-  - destruct v.
-    all: try contradiction.
-    subst.
-    eexists.
-    constructor.
-  - destruct_conjs.
-    subst.
-    destruct (IHE1 _ _ H1).
-    destruct (IHE2 _ _ H2).
-    eexists.
-    constructor.
-    all: eauto.
-  - destruct v.
-    all: try contradiction.
-    destruct_conjs.
-    subst.
-    destruct (IHE1 _ _ H1).
-    destruct (IHE2 _ _ H2).
-    eexists.
-    constructor.
-    all: eauto.
-  - destruct_conjs.
-    subst.
-    destruct (IHE1 _ _ H3).
-    destruct (IHE2 _ _ H4).
-    eexists (c_let x y x0 x1).
-    econstructor.
-    all: eauto.
-Qed.
-
 Import List.ListNotations.
 
 Notation "'do' x <- e0 ; e1" := (List.flat_map (fun x => e1) e0) (x pattern, at level 200, left associativity).
@@ -191,239 +82,248 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma app_as_flat_map {A B} (f: list (A -> B)) x:
+  f <*> x = List.flat_map (fun f' => List.map f' x) f.
+Proof.
+  induction f.
+  1: reflexivity.
+  cbn.
+  rewrite IHf.
+  cbn.
+  reflexivity.
+Qed.
+
 Fixpoint generate (t: type): list normal :=
   match t with
   | t_unit => [N_tt]
   | A * B => [N_fanout] <*> generate A <*> generate B
   end%list.
 
-Fixpoint sub c: option (Map.map normal * context * normal) :=
-  match c with
-  | c_var x N => Some (Map.one x N, E_var x, N)
-  | c_lam x t c =>
-      if sub c is Some (σ, E, N')
-      then
-        if Map.find x σ is Some N
-        then
-          Some (Map.minus x σ, E_lam x t E, N_fanout N N')
-        else
-          None
-      else
-        None
-
-  | c_app c c' =>
-      if sub c is Some (σ, E, N_fanout N0 N1)
-      then
-        if sub c' is Some (σ', E', N0')
-        then
-          if eq_normal N0 N0'
-          then
-            Some (Map.merge σ σ', E_app E E', N1)
-          else
-            None
-        else
-          None
-      else
-        None
-
-  | c_tt => Some (Map.empty, E_tt, N_tt)
-  | c_step c c' =>
-      if sub c is Some (σ, E, N_tt)
-      then
-        if sub c' is Some (σ', E', N)
-        then
-          Some (Map.merge σ σ', E_step E E', N)
-        else
-          None
-      else
-        None
-
-  | c_fanout c c' =>
-      if sub c is Some (σ, E, N)
-      then
-        if sub c' is Some (σ', E', N')
-        then
-          Some (Map.merge σ σ', E_fanout E E', N_fanout N N')
-        else
-          None
-      else
-        None
-
-  | c_let x y c c' =>
-      if sub c is Some (σ, E, N_fanout N N')
-      then
-        if sub c' is Some (σ', E', N2)
-        then
-          Some (Map.merge σ (Map.minus y (Map.minus x σ')), E_let x y E E', N2)
-        else
-          None
-      else
-        None
-  end%list.
-
-Fixpoint search (σ: Map.map normal) E: list command :=
+Fixpoint pick (σ: Map.map normal) E: list span :=
   match E with
-  | E_var x => if Map.find x σ is Some N then [c_var x N] else []
+  | E_var x => if Map.find x σ is Some N then [Map.one x N |- N] else []
 
   | E_lam x t E =>
-      do v0 <- generate t ;
-      [c_lam x t] <*> search (Map.add x v0 σ) E
+      do N0 <- generate t ;
+      do (σ' |- N1) <- pick (Map.add x N0 σ) E ;
+      if Map.find x σ' is Some N0'
+      then
+        if eq_normal N0 N0'
+        then
+          [Map.minus x σ' |- N_fanout N0 N1]
+        else
+          []
+      else
+        []
 
   | E_app E E' =>
-      [c_app] <*> search σ E <*> search σ E'
+      do (σ1 |- N) <- pick σ E ;
+      do (σ2 |- N0) <- pick σ E' ;
+      if N is N_fanout N0' N1
+      then
+        if eq_normal N0 N0'
+        then
+          [Map.merge σ1 σ2 |- N1]
+        else
+          []
+      else
+        []
 
-  | E_tt => [c_tt]
+  | E_tt => [Map.empty |- N_tt]
 
   | E_step E E' =>
-      [c_step] <*> search σ E <*> search σ E'
+      do (σ1 |- N) <- pick σ E ;
+      if N is N_tt
+      then
+        [fun '(σ2 |- N') => Map.merge σ1 σ2 |- N'] <*> pick σ E'
+      else
+        []
 
   | E_fanout E E' =>
-      [c_fanout] <*> search σ E <*> search σ E'
+      [fun '(σ1 |- N) '(σ2 |- N') => Map.merge σ1 σ2 |- N_fanout N N'] <*> pick σ E <*> pick σ E'
 
   | E_let x y E E' =>
-      do c <- search σ E ;
-      do (a, b) <- (if sub c is Some (_, _, N_fanout a b) then [(a, b)] else []) ;
-      [c_let x y c] <*> search (Map.add x a (Map.add y b σ)) E'
+      do (σ1 |- N) <- pick σ E ;
+      do (a, b) <- (if N is N_fanout a b then [(a, b)] else []) ;
+      do (σ2 |- N') <- pick (Map.add x a (Map.add y b σ)) E' ;
+      if Map.find x (Map.minus y σ2)is Some a'
+      then
+        if eq_normal a a'
+        then
+          if Map.find y σ2 is Some b'
+          then
+            if eq_normal b b'
+            then
+              [Map.merge σ1 (Map.minus x (Map.minus y σ2)) |- N']
+            else
+              []
+          else
+            []
+        else
+          []
+      else
+        []
   end%list.
 
-Lemma Forall_concat:
-  forall {A} p (x: list (list A)), List.Forall (List.Forall p) x -> List.Forall p (List.concat x).
-Proof using.
-  all: intros.
-  induction H.
-  1: econstructor.
-  cbn.
-  induction H.
-  1: auto.
-  cbn.
-  econstructor.
-  1: auto.
-  auto.
-Qed.
-
-Lemma Forall_map:
-  forall {A B} p (f: A -> B) x, List.Forall (fun x => p (f x)) x -> List.Forall p (List.map f x).
-Proof using.
-  all: intros ? ? ? ? ? p.
-  induction p.
-  1: constructor.
-  cbn.
+Lemma sound_pure {E p}: sat E p -> sound E ([p]%list).
+Proof.
+  intro.
   constructor.
-  1: auto.
-  auto.
-Qed.
-
-Lemma Forall_concat':
-  forall {A} p (x: list (list A)), List.Forall p (List.concat x) -> List.Forall (List.Forall p) x.
-Proof using.
-  intros ? ? x.
-  induction x.
-  all: intros.
   1: constructor.
-  cbn in H.
-  - constructor.
-    2: apply IHx.
-    + induction a.
-      1: constructor.
-      constructor.
-      * cbn in H.
-        inversion H.
-        subst.
-        auto.
-      * cbn in H.
-        inversion H.
-        subst.
-        apply IHa.
-        auto.
-    + induction a.
-      1: auto.
-      cbn in *.
-      inversion H.
-      subst.
-      apply IHa.
-      auto.
-Qed.
+  auto.
+Defined.
 
-Theorem Forall_flat_map:
-  forall {A B} p (f: A -> list B) x, List.Forall (fun x => List.Forall p (f x)) x -> List.Forall p (List.flat_map f x).
-Proof using.
+Lemma sound_mon {E p p'}:
+  sound E p -> sound E p' ->
+  sound E ((p ++ p')%list).
+Proof.
   intros.
-  rewrite List.flat_map_concat_map.
-  apply Forall_concat.
-  induction H.
-  1:econstructor.
-  econstructor.
+  induction p.
   1: auto.
-  auto.
-Qed.
-
-Theorem Forall_flat_map':
-  forall {A B} p (f: A -> list B) x, List.Forall p (List.flat_map f x) -> List.Forall (fun x => List.Forall p (f x)) x.
-Proof using.
-  intros ? ? ? ? ?.
-  induction x.
-  1: constructor.
-  intros q.
-  rewrite List.flat_map_concat_map in q.
-  set (q' := Forall_concat' _ _ q).
-  cbn in q'.
-  inversion q'.
-  subst.
+  cbn.
+  inversion H.
   constructor.
-  1: auto.
-  apply IHx.
-  rewrite List.flat_map_concat_map.
-  apply Forall_concat.
-  auto.
-Qed.
-
+  all: auto.
+Defined.
 
 Theorem search_sound:
-  forall σ E, List.Forall (fun c =>
-                             if sub c is Some (σ, E, v)
-                             then
-                               sat σ c E v
-                             else
-                               True) (search σ E).
+  forall σ E, sound E (pick σ E).
 Proof using.
   intros σ E.
   generalize dependent σ.
   induction E.
-  all: cbn.
   all: intros.
-  - destruct (Map.find x σ) eqn:q.
+  - cbn.
+    destruct (Map.find x σ) eqn:q.
     2: constructor.
+    apply sound_pure.
     constructor.
-    2: constructor.
-    cbn.
-    constructor.
-  - apply Forall_flat_map.
+  - cbn.
     induction (generate t).
+    1: cbn.
     1: constructor.
-    constructor.
+    cbn in *.
+    apply sound_mon.
     2: auto.
-    repeat rewrite List.app_nil_r in *.
+    clear IHl.
     induction (IHE (Map.add x a σ)).
     1: constructor.
-    constructor.
-    2: auto.
     cbn.
-    destruct (sub x0) eqn:q.
+    destruct P.
+    cbn in *.
+    destruct (Map.find x D) eqn:q.
     2: auto.
-    destruct p.
-    destruct p.
-    destruct (Map.find x m) eqn:q'.
+    destruct (eq_normal a n).
+    2: auto.
+    subst.
+    constructor.
+    1: auto.
     constructor.
     rewrite Map.add_minus.
+    all: auto.
+  - cbn.
+    induction (IHE1 σ).
+    1: constructor.
+    cbn.
+    destruct P.
+    apply sound_mon.
+    2: auto.
+    clear IHs.
+    induction (IHE2 σ).
+    1: constructor.
+    cbn in *.
+    destruct P.
+    destruct N.
+    1: auto.
+    destruct (eq_normal N0 N1).
+    2: cbn.
+    2: auto.
+    cbn.
+    subst.
+    constructor.
+    1: auto.
+    econstructor.
+    all: eauto.
+  - all: repeat constructor.
+  - cbn.
+    induction (IHE1 σ).
+    1: constructor.
+    cbn.
+    destruct P.
+    cbn in *.
+    apply sound_mon.
+    2: auto.
+    clear IHs.
+    destruct N.
+    2: constructor.
+    induction (IHE2 σ).
+    1: constructor.
+    cbn.
+    destruct P.
+    cbn in *.
+    rewrite List.app_nil_r in *.
+    constructor.
+    1: auto.
+    clear IHs0.
+    constructor.
+    all: auto.
+  - cbn.
+    induction (IHE1 σ).
+    1: constructor.
+    cbn.
+    destruct P.
+    cbn in *.
+    apply sound_mon.
+    2: auto.
+    clear IHs.
+    induction (IHE2 σ).
+    1: constructor.
+    cbn.
+    destruct P.
+    cbn in *.
+    constructor.
+    1: auto.
+    econstructor.
+    all: eauto.
+  - cbn.
+    induction (IHE1 σ).
+    1: constructor.
+    destruct P.
+    apply sound_mon.
+    2: auto.
+    clear IHs.
+    destruct N.
+    1: constructor.
+    cbn.
+    rewrite List.app_nil_r.
+    induction (IHE2 (Map.add x N1 (Map.add y N2 σ))).
+    1: constructor.
+    cbn.
+    destruct P.
+    destruct (Map.find x (Map.minus y D0)) eqn:q.
+    2: auto.
+    cbn in q.
+    rewrite q.
+    destruct (eq_normal N1 n).
+    2: auto.
+    subst.
+    destruct (Map.find y D0) eqn:q'.
+    destruct (eq_normal N2 n0).
+    2: auto.
+    subst.
+    cbn.
+    constructor.
+    1: auto.
+    econstructor.
+    all: eauto.
+    all: repeat rewrite Map.add_minus.
+    all: eauto.
+    all: cbn.
+    cbn in q.
+    rewrite q.
+    cbn.
     auto.
-    auto.
-    auto.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-Admitted.
+Qed.
 
 Example id t :=
   let x := 0 in
