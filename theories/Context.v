@@ -1,9 +1,11 @@
 Require Import Blech.Spec.
-Require Import Blech.Map.
+Require Blech.Map.
 Require Import Blech.SpecNotations.
 
 Require Import Coq.Classes.SetoidClass.
 Require Coq.Lists.List.
+
+Require Import Coq.Program.Tactics.
 
 Require Import FunInd.
 
@@ -20,11 +22,7 @@ Function typecheck (Γ: environment) (E: context): option (environment * type) :
   | E_var x =>
       if Map.find x Γ is Some t
       then
-        if Env.is_empty (Map.minus x Γ)
-        then
           Some (Map.one x t, t)
-        else
-          None
       else
         None
   | E_lam x t1 E =>
@@ -109,7 +107,7 @@ Function typecheck (Γ: environment) (E: context): option (environment * type) :
     %list.
 
 Theorem typecheck_sound:
-  forall Γ E Δ t, typecheck Γ E = Some (Δ, t) -> Δ ⊢ E in t.
+  forall {Γ E Δ t}, typecheck Γ E = Some (Δ, t) -> Δ ⊢ E in t.
 Proof using.
   intros Γ E.
   functional induction (typecheck Γ E).
@@ -128,31 +126,3 @@ Proof using.
     1: rewrite Map.add_minus.
     all: auto.
 Qed.
-
-Theorem typecheck_complete:
-  forall E Γ t, Γ ⊢ E in t -> typecheck Γ E = Some (Γ, t).
-Proof using.
-  intros ? ? ? p.
-  induction p.
-  - unfold typecheck.
-    unfold one.
-    rewrite (Map.find_add x t Map.empty).
-    rewrite always_empty.
-    reflexivity.
-  - cbn.
-    destruct (typecheck (add x t1 G) E) as [[]|] eqn:q1.
-    2: discriminate.
-    inversion IHp.
-    subst.
-    rewrite (find_add x t1 G).
-    destruct (eq_type t1 t1).
-    2: contradiction.
-    unfold minus.
-    rewrite remove_add.
-    reflexivity.
-  - admit.
-  - reflexivity.
-  - admit.
-  - admit.
-  - admit.
-Admitted.
