@@ -261,52 +261,77 @@ Fixpoint sub c: option (Map.map normal * context * normal) :=
         None
   end%list.
 
-Fixpoint search (σ: Map.map normal) E: list (Map.map normal * normal) :=
+Fixpoint search (σ: Map.map normal) E: list command :=
   match E with
-  | E_var x => if Map.find x σ is Some v then [(Map.one x v, v)] else []
+  | E_var x => if Map.find x σ is Some N then [c_var x N] else []
 
   | E_lam x t E =>
       do v0 <- generate t ;
-      do (σ', v1) <- search (Map.add x v0 σ) E ;
-      if Map.find x σ' is Some v0'
-      then
-        if eq_normal v0 v0'
-        then
-          [(Map.minus x σ', N_fanout v0 v1)]
-        else
-          []
-      else
-        []
+      [c_lam x t] <*> search (Map.add x v0 σ) E
 
   | E_app E E' =>
-      do (σ1, f) <- search σ E ;
-      do (σ2, x) <- search σ E' ;
-      if f is N_fanout a b
-      then
-        if eq_normal x a
-        then
-          [(Map.merge σ1 σ2, b)]
-        else []
-      else []
+      [c_app] <*> search σ E <*> search σ E'
 
-  | E_tt => [(Map.empty, N_tt)]
+  | E_tt => [c_tt]
 
   | E_step E E' =>
-      do (σ1, p) <- search σ E ;
-      do (σ2, x) <- search σ E' ;
-      if p is N_tt then [(Map.merge σ1 σ2, x)] else []
+      [c_step] <*> search σ E <*> search σ E'
 
   | E_fanout E E' =>
-      do (σ1, v1) <- search σ E ;
-      do (σ2, v2) <- search σ E' ;
-      [(Map.merge σ1 σ2, N_fanout v1 v2)]
+      [c_fanout] <*> search σ E <*> search σ E'
 
   | E_let x y E E' =>
-      do (σ1, tuple) <- search σ E ;
-      do (a, b) <- (if tuple is N_fanout a b then [(a, b)] else []) ;
-      do (σ2, v) <- search (Map.add x a (Map.add y b σ)) E' ;
-      [(Map.merge σ1 σ2, v)]
+      do c <- search σ E ;
+      do (a, b) <- (if sub c is Some (_, _, N_fanout a b) then [(a, b)] else []) ;
+      [c_let x y c] <*> search (Map.add x a (Map.add y b σ)) E'
   end%list.
+
+(* Fixpoint search (σ: Map.map normal) E: list (Map.map normal * normal) := *)
+(*   match E with *)
+(*   | E_var x => if Map.find x σ is Some v then [(Map.one x v, v)] else [] *)
+
+(*   | E_lam x t E => *)
+(*       do v0 <- generate t ; *)
+(*       do (σ', v1) <- search (Map.add x v0 σ) E ; *)
+(*       if Map.find x σ' is Some v0' *)
+(*       then *)
+(*         if eq_normal v0 v0' *)
+(*         then *)
+(*           [(Map.minus x σ', N_fanout v0 v1)] *)
+(*         else *)
+(*           [] *)
+(*       else *)
+(*         [] *)
+
+(*   | E_app E E' => *)
+(*       do (σ1, f) <- search σ E ; *)
+(*       do (σ2, x) <- search σ E' ; *)
+(*       if f is N_fanout a b *)
+(*       then *)
+(*         if eq_normal x a *)
+(*         then *)
+(*           [(Map.merge σ1 σ2, b)] *)
+(*         else [] *)
+(*       else [] *)
+
+(*   | E_tt => [(Map.empty, N_tt)] *)
+
+(*   | E_step E E' => *)
+(*       do (σ1, p) <- search σ E ; *)
+(*       do (σ2, x) <- search σ E' ; *)
+(*       if p is N_tt then [(Map.merge σ1 σ2, x)] else [] *)
+
+(*   | E_fanout E E' => *)
+(*       do (σ1, v1) <- search σ E ; *)
+(*       do (σ2, v2) <- search σ E' ; *)
+(*       [(Map.merge σ1 σ2, N_fanout v1 v2)] *)
+
+(*   | E_let x y E E' => *)
+(*       do (σ1, tuple) <- search σ E ; *)
+(*       do (a, b) <- (if tuple is N_fanout a b then [(a, b)] else []) ; *)
+(*       do (σ2, v) <- search (Map.add x a (Map.add y b σ)) E' ; *)
+(*       [(Map.merge σ1 σ2, v)] *)
+(*   end%list. *)
 
 Lemma Forall_concat:
   forall {A} p (x: list (list A)), List.Forall (List.Forall p) x -> List.Forall p (List.concat x).
@@ -399,10 +424,14 @@ Proof using.
   auto.
 Qed.
 
-Definition matches σ E v := List.Exists (fun σy => fst σy = σ /\ snd σy = v) (search σ E).
 
 Theorem search_sound:
-  forall σ E, List.Forall (fun '(σ, v) => exists c, sat σ c E v) (search σ E).
+  forall σ E, List.Forall (fun c =>
+                             if sub c is Some (σ, E, v)
+                             then
+                               sat σ c E v
+                             else
+                               True) (search σ E).
 Proof using.
   intros σ E.
   generalize dependent σ.
@@ -413,37 +442,35 @@ Proof using.
     2: constructor.
     constructor.
     2: constructor.
-    eexists.
+    cbn.
     constructor.
   - apply Forall_flat_map.
     induction (generate t).
     1: constructor.
     constructor.
     2: auto.
-    apply Forall_flat_map.
+    repeat rewrite List.app_nil_r in *.
     induction (IHE (Map.add x a σ)).
     1: constructor.
     constructor.
     2: auto.
-    destruct x0.
     cbn.
-    destruct (Map.find x s) eqn:q.
-    destruct (eq_normal a n0).
-    2: constructor.
-    subst.
-    constructor.
-    2: constructor.
-    destruct_conjs.
-    econstructor.
+    destruct (sub x0) eqn:q.
+    2: auto.
+    destruct p.
+    destruct p.
+    destruct (Map.find x m) eqn:q'.
     constructor.
     rewrite Map.add_minus.
-    all: eauto.
+    auto.
+    auto.
+    auto.
   - admit.
   - admit.
   - admit.
   - admit.
   - admit.
-  Admitted.
+Admitted.
 
 Example id t :=
   let x := 0 in
