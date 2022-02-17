@@ -14,7 +14,6 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_var : ott_coq_equality.
-Definition index : Set := nat.
 
 Inductive normal : Set := 
  | N_tt : normal
@@ -77,15 +76,6 @@ Fixpoint subst_context (E5:context) (x5:var) (E_6:context) {struct E_6} : contex
   | (E_fanout E E') => E_fanout (subst_context E5 x5 E) (subst_context E5 x5 E')
   | (E_let x y E E') => E_let x y (subst_context E5 x5 E) (if list_mem eq_var x5 (app (cons x nil) (cons y nil)) then E' else (subst_context E5 x5 E'))
 end.
-
-
-Module Examples.
-
-Example id t :=
- let x := 0 in
-(E_lam x t (E_var x)). 
-
-End Examples.
 
 (** definitions *)
 

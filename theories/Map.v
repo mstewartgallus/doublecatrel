@@ -42,7 +42,7 @@ Proof.
   admit.
 Admitted.
 
-Lemma remove_add {V}:
+Lemma minus_add {V}:
   forall x (t: V) Γ,
     minus x (add x t Γ) = Γ.
 Proof.
@@ -57,5 +57,12 @@ Lemma add_add {V}:
 Proof.
   intros x s t Γ.
   unfold add.
+  admit.
+Admitted.
+
+Lemma merge_empty {V}:
+  forall (Γ: map V),
+    merge Γ empty = Γ.
+Proof.
   admit.
 Admitted.

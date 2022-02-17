@@ -8,124 +8,97 @@ Require Blech.Map.
 
 Import IfNotations.
 
-Definition X: var := 0.
+(*
+ Maps are behaviour preserving transformations between terms.  This
+ way we get identity and composition for free without finicky
+ substitution issues.
+ *)
+Module Import Hor.
+  (* FIXME preserve behaviour as well *)
+  Class Hor (A B: type) f := {
+      preserves_types {Γ v}: Γ ⊢ v in A -> Γ ⊢ f v in B ;
+  }.
 
-Definition Hor (A B: type) v := Map.one X A ⊢ v in B.
-Definition Vert (A B: type) E := Map.one X A ⊢ E ? B.
+  Definition id x: term := x.
 
-Definition Hor_id := v_var X.
-
-Definition Hor_id_Hor A: Hor A A Hor_id.
-Proof.
-  unfold Hor.
-  apply Term.typecheck_sound.
-  reflexivity.
-Qed.
-
-Definition Vert_id := E_var X.
-
-Definition Vert_id_Vert A: Vert A A Vert_id.
-Proof.
-  unfold Vert.
-  apply (Context.typecheck_sound (Map.one X A)).
-  reflexivity.
-Qed.
-
-Definition Hor_compose f g := subst_term g X f.
-Definition Vert_compose f g := subst_context g X f.
-
-Definition Hor_compose_Hor:
-  forall {f g A B C},
-  Hor B C f ->
-  Hor A B g ->
-  Hor A C (Hor_compose f g).
-Proof.
-  intros f.
-  unfold Hor.
-  unfold Hor_compose.
-  induction f.
-  all: intros g A B C p q.
-  - cbn.
-    inversion p.
-    subst.
-    destruct (eq_var x X).
-    + subst.
-      unfold Map.one in H1.
-      cbn in H1.
-      inversion H1.
-      subst.
-      auto.
-    + induction x.
-      * contradiction.
-      * discriminate.
-  - cbn.
-    inversion p.
-    subst.
-    constructor.
-  - cbn.
-    inversion p.
-    subst.
-    econstructor.
-    all: eauto.
-  - cbn.
-    inversion p.
-    subst.
-    econstructor.
-    all: eauto.
-  - cbn.
-    inversion p.
-    subst.
-    econstructor.
-    all: eauto.
-Qed.
-
-Definition Vert_compose_Hor:
-  forall {f g A B C},
-  Vert B C f ->
-  Vert A B g ->
-  Vert A C (Vert_compose f g).
-Proof.
-  intros f.
-  unfold Vert.
-  unfold Vert_compose.
-  induction f.
-  all: intros g A B C p q.
-  - cbn.
-    inversion p.
-    subst.
-    destruct (eq_var X X).
-    2:contradiction.
+  Instance id_Hor A: Hor A A id.
+  Proof using.
+    exists.
     auto.
-  - cbn.
-    inversion p.
-    subst.
+  Defined.
+
+  Definition compose (f g: term -> term) x := f (g x).
+
+  Instance compose_Hor f g {A B C} `{Hor B C f} `{Hor A B g}: Hor A C (compose f g).
+  Proof.
+    exists.
+    intros.
+    unfold compose.
+    apply preserves_types.
+    apply preserves_types.
+    auto.
+  Defined.
+
+  Definition tt (x: term) := v_tt.
+  Instance tt_Hor A: Hor A t_unit tt.
+  Proof.
+    exists.
+    intros.
+    constructor.
+  Defined.
+
+  Definition fanout (f g: term -> term) x := v_fanout (f x) (g x).
+  Instance fanout_Hor f g {A B C} `{Hor C A f} `{Hor C B g}: Hor C (t_prod A B) (fanout f g).
+  Proof.
+    exists.
+    intros.
+    unfold fanout.
+    constructor.
+    all: apply preserves_types.
+    all: auto.
+  Defined.
+
+  Instance fst_Hor A B : Hor (t_prod A B) A v_fst.
+  Proof.
+    exists.
+    intros.
     econstructor.
-    destruct (eq_var x X).
-    + subst.
-      unfold Map.one in *.
-      cbn.
-      replace (Map.add X t (Map.add X A Map.empty)) with (Map.one X t).
-      2: {
-        cbv.
-        admit.
-      }
-      replace (Map.add X t (Map.add X B Map.empty)) with (Map.one X t) in X0.
-      2: {
-        cbv.
-        admit.
-      }
-      auto.
-    + admit.
-  - cbn.
-    inversion p.
-    subst.
-    admit.
-  - cbn.
-    inversion p.
-  - cbn.
-    admit.
-  - cbn.
-    admit.
-  - cbn.
-    admit.
-Admitted.
+    eauto.
+  Defined.
+
+  Instance snd_Hor A B : Hor (t_prod A B) B v_snd.
+  Proof.
+    exists.
+    intros.
+    econstructor.
+    eauto.
+  Defined.
+
+  (* FIXME define setoid equality and prove laws *)
+End Hor.
+
+Module Import Vert.
+  Class Vert (A B: type) f := {
+      preserves_types {Γ E}: Γ ⊢ E ? A -> Γ ⊢ f E ? B ;
+  }.
+
+  Definition id x: context := x.
+
+  Instance id_Vert A: Vert A A id.
+  Proof using.
+    exists.
+    auto.
+  Defined.
+
+  Definition compose (f g: context -> context) x := f (g x).
+
+  Instance compose_Vert f g {A B C} `{Vert B C f} `{Vert A B g}: Vert A C (compose f g).
+  Proof.
+    exists.
+    intros.
+    unfold compose.
+    apply preserves_types.
+    apply preserves_types.
+    auto.
+  Defined.
+End Vert.

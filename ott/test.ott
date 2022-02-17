@@ -4,7 +4,6 @@ Require Blech.Map.
 }}
 
 metavar var, x, y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[var]]} }}
-indexvar index, i, j, m, n ::= {{ coq nat }}
 
 grammar
 type, t :: 't_' ::=
@@ -68,18 +67,6 @@ terminals :: 'terminals_' ::=
 substitutions
   single v x :: subst
   single E x :: subst 
-
-embed
-{{ coq
-
-Module Examples.
-
-Example id [[t]] :=
- let [[x]] := 0 in
-[[ lam x: t. x ]]. 
-
-End Examples.
-}}
 
 defns
 
