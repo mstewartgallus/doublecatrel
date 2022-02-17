@@ -15,30 +15,19 @@ Proof.
 Defined.
 Hint Resolve eq_var : ott_coq_equality.
 
-Inductive type : Set := 
- | t_unit : type
- | t_prod (t:type) (t':type).
-
 Inductive normal : Set := 
  | N_tt : normal
  | N_fanout (N:normal) (N':normal).
+
+Inductive type : Set := 
+ | t_unit : type
+ | t_prod (t:type) (t':type).
 
 Inductive term : Set := 
  | v_tt : term
  | v_fst (v:term)
  | v_snd (v:term)
  | v_fanout (v:term) (v':term).
-
-Definition environment : Type := (Map.map type).
-
-Inductive context : Set := 
- | E_var (x:var)
- | E_lam (x:var) (t:type) (E:context)
- | E_app (E:context) (E':context)
- | E_tt : context
- | E_step (E:context) (E':context)
- | E_fanout (E:context) (E':context)
- | E_let (x:var) (y:var) (E:context) (E':context).
 
 Definition store : Type := (Map.map normal).
 
@@ -50,6 +39,17 @@ Inductive command : Set :=
  | c_step (c:command) (c':command)
  | c_fanout (c:command) (c':command)
  | c_let (x:var) (y:var) (c:command) (c':command).
+
+Inductive context : Set := 
+ | E_var (x:var)
+ | E_lam (x:var) (t:type) (E:context)
+ | E_app (E:context) (E':context)
+ | E_tt : context
+ | E_step (E:context) (E':context)
+ | E_fanout (E:context) (E':context)
+ | E_let (x:var) (y:var) (E:context) (E':context).
+
+Definition environment : Type := (Map.map type).
 
 Module Examples.
 
@@ -133,7 +133,7 @@ Inductive sat : store -> command -> context -> normal -> Prop :=    (* defn sat 
  | sat_fanout : forall (D D':store) (c c':command) (E E':context) (N N':normal),
      sat D c E N ->
      sat D' c' E' N' ->
-     sat  (Map.merge  D   D' )  (c_fanout c c') (E_fanout E E') (N_fanout N N')
+     sat  (Map.merge  D   D' )  (c_fanout c c')  ( (E_fanout E E') )  (N_fanout N N')
  | sat_let : forall (D D':store) (x y:var) (c c':command) (E E':context) (N2 N0 N1:normal),
      sat D c E (N_fanout N0 N1) ->
      sat  (Map.add  y   N1    (Map.add  x   N0   D' )  )  c' E' N2 ->
@@ -145,5 +145,33 @@ Inductive sat : store -> command -> context -> normal -> Prop :=    (* defn sat 
      sat D c E (N_fanout N N') ->
      sat D' c' E' N ->
      sat  (Map.merge  D   D' )  (c_app c c') (E_app E E') N'.
+(** definitions *)
+
+(* defns pick *)
+Inductive pick : store -> context -> command -> Prop :=    (* defn pick *)
+ | p_var : forall (x:var) (N:normal),
+     pick  (Map.add  x   N    Map.empty  )  (E_var x) (c_var x N)
+ | p_tt : 
+     pick  Map.empty  E_tt c_tt
+ | p_step : forall (D D':store) (E E':context) (c:command),
+     pick D E c_tt ->
+     pick D' E' c ->
+     pick  (Map.merge  D   D' )  (E_step E E') c
+ | p_fanout : forall (D D':store) (E E':context) (c c':command),
+     pick D E c ->
+     pick D' E' c' ->
+     pick  (Map.merge  D   D' )  (E_fanout E E') (c_fanout c c')
+ | p_let : forall (D D':store) (x y:var) (E E':context) (c c':command) (N N':normal),
+     pick D E c ->
+     sat D c E (N_fanout N N') ->
+     pick  (Map.add  y   N'    (Map.add  x   N   D' )  )  E' c' ->
+     pick  (Map.merge  D   D' )  (E_let x y E E') (c_let x y c c')
+ | p_lam : forall (D:store) (x:var) (t:type) (E:context) (c:command) (N:normal),
+     pick  (Map.add  x   N   D )  E c ->
+     pick D  ( (E_lam x t E) )   ( (c_lam x t c) ) 
+ | p_app : forall (D D':store) (E E':context) (c c':command),
+     pick D E c ->
+     pick D' E' c' ->
+     pick  (Map.merge  D   D' )  (E_app E E') (c_app c c').
 
 

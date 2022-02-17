@@ -286,53 +286,6 @@ Fixpoint search (σ: Map.map normal) E: list command :=
       [c_let x y c] <*> search (Map.add x a (Map.add y b σ)) E'
   end%list.
 
-(* Fixpoint search (σ: Map.map normal) E: list (Map.map normal * normal) := *)
-(*   match E with *)
-(*   | E_var x => if Map.find x σ is Some v then [(Map.one x v, v)] else [] *)
-
-(*   | E_lam x t E => *)
-(*       do v0 <- generate t ; *)
-(*       do (σ', v1) <- search (Map.add x v0 σ) E ; *)
-(*       if Map.find x σ' is Some v0' *)
-(*       then *)
-(*         if eq_normal v0 v0' *)
-(*         then *)
-(*           [(Map.minus x σ', N_fanout v0 v1)] *)
-(*         else *)
-(*           [] *)
-(*       else *)
-(*         [] *)
-
-(*   | E_app E E' => *)
-(*       do (σ1, f) <- search σ E ; *)
-(*       do (σ2, x) <- search σ E' ; *)
-(*       if f is N_fanout a b *)
-(*       then *)
-(*         if eq_normal x a *)
-(*         then *)
-(*           [(Map.merge σ1 σ2, b)] *)
-(*         else [] *)
-(*       else [] *)
-
-(*   | E_tt => [(Map.empty, N_tt)] *)
-
-(*   | E_step E E' => *)
-(*       do (σ1, p) <- search σ E ; *)
-(*       do (σ2, x) <- search σ E' ; *)
-(*       if p is N_tt then [(Map.merge σ1 σ2, x)] else [] *)
-
-(*   | E_fanout E E' => *)
-(*       do (σ1, v1) <- search σ E ; *)
-(*       do (σ2, v2) <- search σ E' ; *)
-(*       [(Map.merge σ1 σ2, N_fanout v1 v2)] *)
-
-(*   | E_let x y E E' => *)
-(*       do (σ1, tuple) <- search σ E ; *)
-(*       do (a, b) <- (if tuple is N_fanout a b then [(a, b)] else []) ; *)
-(*       do (σ2, v) <- search (Map.add x a (Map.add y b σ)) E' ; *)
-(*       [(Map.merge σ1 σ2, v)] *)
-(*   end%list. *)
-
 Lemma Forall_concat:
   forall {A} p (x: list (list A)), List.Forall (List.Forall p) x -> List.Forall p (List.concat x).
 Proof using.
