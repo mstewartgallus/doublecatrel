@@ -133,17 +133,17 @@ Inductive sat : store -> command -> context -> normal -> Prop :=    (* defn sat 
  | sat_fanout : forall (D D':store) (c c':command) (E E':context) (N N':normal),
      sat D c E N ->
      sat D' c' E' N' ->
-     sat  (Map.merge  D   D' )  (c_fanout c c')  ( (E_fanout E E') )  (N_fanout N N')
+     sat  (Map.merge  D   D' )  (c_fanout c c') (E_fanout E E') (N_fanout N N')
  | sat_let : forall (D D':store) (x y:var) (c c':command) (E E':context) (N2 N0 N1:normal),
      sat D c E (N_fanout N0 N1) ->
      sat  (Map.add  y   N1    (Map.add  x   N0   D' )  )  c' E' N2 ->
      sat  (Map.merge  D   D' )  (c_let x y c c')  ( (E_let x y E E') )  N2
  | sat_lam : forall (D:store) (x:var) (t:type) (c:command) (E:context) (N N':normal),
      sat  (Map.add  x   N   D )  c E N' ->
-     sat D (c_lam x t c)  ( (E_lam x t E) )  (N_fanout N N')
+     sat D  ( (c_lam x t c) )   ( (E_lam x t E) )  (N_fanout N N')
  | sat_app : forall (D D':store) (c c':command) (E E':context) (N' N:normal),
      sat D c E (N_fanout N N') ->
      sat D' c' E' N ->
-     sat  (Map.merge  D   D' )  (c_app c c')  ( (E_app E E') )  N'.
+     sat  (Map.merge  D   D' )  (c_app c c') (E_app E E') N'.
 
 

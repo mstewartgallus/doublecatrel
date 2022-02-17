@@ -45,7 +45,7 @@ environment, G {{ tex \Gamma }} :: 'G_' ::= {{ coq (Map.map type) }} {{ coq-univ
 
 store, D {{ tex \sigma }} :: 'D_'  ::= {{ coq (Map.map normal) }} {{ coq-universe Type }}
   | empty                 ::   :: empty {{ coq Map.empty }}
-  | D , x [ N ]           ::   :: add {{ coq (Map.add [[x]] [[N]] [[D]]) }}
+  | D , x ! N             ::   :: add {{ coq (Map.add [[x]] [[N]] [[D]]) }}
   | D ++ D'               ::   :: merge {{ coq (Map.merge [[D]] [[D']]) }}
 
 normal, N :: 'N_' ::=
@@ -171,35 +171,35 @@ defns
 sat :: '' ::=
 
 defn
-D |- c : E [ N ] ::   :: sat :: 'sat_'
+D |- c : E ! N ::   :: sat :: 'sat_'
 by
 
 ----------------------------- :: var
-empty, x[N] |- x := N: x[N]
+empty, x ! N |- x := N: x ! N
 
 --------------------- :: tt
-empty |- tt: tt[tt]
+empty |- tt: tt ! tt
 
-D |- c: E[tt]
-D' |- c': E'[N]
+D |- c: E ! tt
+D' |- c': E' ! N
 ------------------------------- :: step
-D ++ D' |- c; c': (E; E')[N]
+D ++ D' |- c; c': (E; E') ! N
 
-D |- c: E[N]
-D' |- c': E'[N']
+D |- c: E ! N
+D' |- c': E' ! N'
 --------------------------------- :: fanout
-D ++ D' |- c, c': (E, E')[N, N']
+D ++ D' |- c, c': E, E' ! N, N'
 
-D |- c: E[N0, N1]
-D', x[N0], y[N1] |- c': E'[N2]
+D |- c: E ! N0, N1
+D', x ! N0, y ! N1 |- c': E' ! N2
 ------------------------------- :: let
-D ++ D' |- let (x, y) := c in c': (let (x, y) := E in E')[N2]
+D ++ D' |- let (x, y) := c in c': (let (x, y) := E in E') ! N2
 
-D, x[N] |- c: E[N']
+D, x ! N |- c: E ! N'
 ------------------------------- :: lam
-D |- lam x: t. c: (lam x: t. E) [N, N']
+D |- (lam x: t. c) : (lam x: t. E) ! N, N'
 
-D |- c: E[N, N']
-D' |- c': E'[N]
+D |- c: E ! N, N'
+D' |- c': E' ! N 
 ---------------------------- :: app
-D ++ D' |- c c': (E E')[N']
+D ++ D' |- c c': E E' ! N'
