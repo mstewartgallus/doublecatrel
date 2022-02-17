@@ -90,15 +90,15 @@ Proof.
   auto.
 Defined.
 
-Function big v :=
+Function eval v :=
   match v with
   | v_tt => Some N_tt
-  | v_fst v => if big v is Some (N_fanout a _) then Some a else None
-  | v_snd v => if big v is Some (N_fanout _ a) then Some a else None
+  | v_fst v => if eval v is Some (N_fanout a _) then Some a else None
+  | v_snd v => if eval v is Some (N_fanout _ a) then Some a else None
   | v_fanout v0 v1 =>
-      if big v0 is Some v0'
+      if eval v0 is Some v0'
       then
-        if big v1 is Some v1'
+        if eval v1 is Some v1'
         then
           Some (N_fanout v0' v1')
         else
@@ -107,11 +107,11 @@ Function big v :=
         None
   end.
 
-Theorem big_sound:
-  forall v N, big v = Some N -> v ⇓ N.
+Theorem eval_sound:
+  forall v N, eval v = Some N -> v ⇓ N.
 Proof using.
   intros v.
-  functional induction (big v).
+  functional induction (eval v).
   all: intros ? p.
   all: inversion p.
   all: subst.
@@ -128,8 +128,8 @@ Proof using.
     all:  eauto.
 Qed.
 
-Theorem big_complete:
-  forall v v', v ⇓ v' -> big v = Some v'.
+Theorem eval_complete:
+  forall v v', v ⇓ v' -> eval v = Some v'.
 Proof using.
   intros ? ? p.
   induction p.
@@ -140,7 +140,7 @@ Proof using.
   all: reflexivity.
 Qed.
 
-Theorem big_preserve:
+Theorem eval_preserve:
   forall v v',
     v ⇓ v' ->
     forall t, ⊢ v in t -> ⊢ v' in t.
@@ -178,7 +178,7 @@ Proof using.
     constructor.
     all: auto.
   - destruct IHp as [v' s].
-    set (vwf := big_preserve _ _ s _ p).
+    set (vwf := eval_preserve _ _ s _ p).
     destruct v'.
     all: cbn in *.
     all: try discriminate.
@@ -189,7 +189,7 @@ Proof using.
     econstructor.
     all: eauto.
   - destruct IHp as [v' s].
-    set (vwf := big_preserve _ _ s _ p).
+    set (vwf := eval_preserve _ _ s _ p).
     destruct v'.
     all: cbn in *.
     all: try discriminate.
