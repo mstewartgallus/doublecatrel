@@ -60,9 +60,16 @@ Proof.
   admit.
 Admitted.
 
-Lemma merge_empty {V}:
+Lemma merge_empty_r {V}:
   forall (Γ: map V),
     merge Γ empty = Γ.
+Proof.
+  admit.
+Admitted.
+
+Lemma merge_empty_l {V}:
+  forall (Γ: map V),
+    merge empty Γ = Γ.
 Proof.
   admit.
 Admitted.
