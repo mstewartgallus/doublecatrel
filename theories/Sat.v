@@ -43,53 +43,20 @@ Function denote (σ: Map.map normal) (v: normal) (E: context) {struct E}: Prop :
   | _, _ => False
   end.
 
-Theorem denote_sound:
-  forall σ E v,
-    denote σ v E -> sat σ E v.
-Proof using.
-  intros σ E.
-  generalize dependent σ.
-  induction E.
-  all: cbn in *.
-  all: intros σ v p.
-  - subst.
-    econstructor.
-  - destruct v.
-    all: try contradiction.
-    cbn in p.
-    constructor.
-    all: auto.
-  - destruct_conjs.
-    subst.
-    econstructor.
-    all: eauto.
-  - destruct v.
-    all: try contradiction.
-    subst.
-    constructor.
-  - destruct_conjs.
-    subst.
-    constructor.
-    all: auto.
-  - destruct v.
-    all: try contradiction.
-    destruct_conjs.
-    subst.
-    constructor.
-    all: auto.
-  - destruct_conjs.
-    subst.
-    econstructor.
-    all: eauto.
-Qed.
-
 Theorem denote_complete:
-  forall σ E v, sat σ E v -> denote σ v E.
+  forall c σ E v, sat σ c E v -> denote σ v E.
 Proof using.
-  intros ? ? ? q.
-  induction q.
+  intros c.
+  induction c.
+  all: intros σ E v q.
+  all: inversion q.
+  all: subst.
   all: cbn.
   all: auto.
+  - exists N.
+    exists D.
+    exists D'.
+    all: repeat (split; auto).
   - exists D.
     exists D'.
     all: repeat (split; auto).
@@ -101,10 +68,62 @@ Proof using.
     exists N0.
     exists N1.
     all: repeat (split; auto).
-  - exists N.
-    exists D.
-    exists D'.
-    all: repeat (split; auto).
+Qed.
+
+Theorem denote_sound:
+  forall σ E v,
+    denote σ v E -> exists c, sat σ c E v.
+Proof using.
+  intros σ E.
+  generalize dependent σ.
+  induction E.
+  all: cbn in *.
+  all: intros σ v p.
+  - subst.
+    eexists.
+    econstructor.
+  - destruct v.
+    all: try contradiction.
+    cbn in p.
+    destruct (IHE _ _ p).
+    eexists.
+    constructor.
+    eauto.
+  - destruct_conjs.
+    destruct (IHE1 _ _ H2).
+    destruct (IHE2 _ _ H3).
+    subst.
+    eexists.
+    econstructor.
+    all: eauto.
+  - destruct v.
+    all: try contradiction.
+    subst.
+    eexists.
+    constructor.
+  - destruct_conjs.
+    subst.
+    destruct (IHE1 _ _ H1).
+    destruct (IHE2 _ _ H2).
+    eexists.
+    constructor.
+    all: eauto.
+  - destruct v.
+    all: try contradiction.
+    destruct_conjs.
+    subst.
+    destruct (IHE1 _ _ H1).
+    destruct (IHE2 _ _ H2).
+    eexists.
+    constructor.
+    all: eauto.
+  - destruct_conjs.
+    subst.
+    destruct (IHE1 _ _ H3).
+    destruct (IHE2 _ _ H4).
+    eexists (c_let x y x0 x1).
+    econstructor.
+    all: eauto.
 Qed.
 
 Import List.ListNotations.
@@ -176,6 +195,70 @@ Fixpoint generate (t: type): list normal :=
   match t with
   | t_unit => [N_tt]
   | A * B => [N_fanout] <*> generate A <*> generate B
+  end%list.
+
+Fixpoint sub c: option (Map.map normal * context * normal) :=
+  match c with
+  | c_var x N => Some (Map.one x N, E_var x, N)
+  | c_lam x t c =>
+      if sub c is Some (σ, E, N')
+      then
+        if Map.find x σ is Some N
+        then
+          Some (Map.minus x σ, E_lam x t E, N_fanout N N')
+        else
+          None
+      else
+        None
+
+  | c_app c c' =>
+      if sub c is Some (σ, E, N_fanout N0 N1)
+      then
+        if sub c' is Some (σ', E', N0')
+        then
+          if eq_normal N0 N0'
+          then
+            Some (Map.merge σ σ', E_app E E', N1)
+          else
+            None
+        else
+          None
+      else
+        None
+
+  | c_tt => Some (Map.empty, E_tt, N_tt)
+  | c_step c c' =>
+      if sub c is Some (σ, E, N_tt)
+      then
+        if sub c' is Some (σ', E', N)
+        then
+          Some (Map.merge σ σ', E_step E E', N)
+        else
+          None
+      else
+        None
+
+  | c_fanout c c' =>
+      if sub c is Some (σ, E, N)
+      then
+        if sub c' is Some (σ', E', N')
+        then
+          Some (Map.merge σ σ', E_fanout E E', N_fanout N N')
+        else
+          None
+      else
+        None
+
+  | c_let x y c c' =>
+      if sub c is Some (σ, E, N_fanout N N')
+      then
+        if sub c' is Some (σ', E', N2)
+        then
+          Some (Map.merge σ (Map.minus y (Map.minus x σ')), E_let x y E E', N2)
+        else
+          None
+      else
+        None
   end%list.
 
 Fixpoint search (σ: Map.map normal) E: list (Map.map normal * normal) :=
@@ -319,7 +402,7 @@ Qed.
 Definition matches σ E v := List.Exists (fun σy => fst σy = σ /\ snd σy = v) (search σ E).
 
 Theorem search_sound:
-  forall σ E, List.Forall (fun '(σ, v) => sat σ E v) (search σ E).
+  forall σ E, List.Forall (fun '(σ, v) => exists c, sat σ c E v) (search σ E).
 Proof using.
   intros σ E.
   generalize dependent σ.
@@ -330,6 +413,7 @@ Proof using.
     2: constructor.
     constructor.
     2: constructor.
+    eexists.
     constructor.
   - apply Forall_flat_map.
     induction (generate t).
@@ -349,9 +433,11 @@ Proof using.
     subst.
     constructor.
     2: constructor.
+    destruct_conjs.
+    econstructor.
     constructor.
     rewrite Map.add_minus.
-    all: auto.
+    all: eauto.
   - admit.
   - admit.
   - admit.

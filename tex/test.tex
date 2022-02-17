@@ -28,7 +28,6 @@
 \newcommand{\ottmetavars}{
 \ottmetavartabular{
  $ \mathit{var} ,\, \mathit{x} ,\, \mathit{y} $ &  \\
- $ \ottmv{index} ,\, \ottmv{i} ,\, \ottmv{m} ,\, \ottmv{n} $ &  \\
 }}
 
 \newcommand{\otttype}{
@@ -54,6 +53,17 @@
 \ottprodline{|}{\ottnt{E}  \ottsym{,}  \ottnt{E'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottkw{let} \, \ottsym{(}  \mathit{x}  \ottsym{,}  \mathit{y}  \ottsym{)}  \mathbin{:=}  \ottnt{E} \, \ottkw{in} \, \ottnt{E'}}{}{\textsf{bind}\; \mathit{x} \cup  \mathit{y}\; \textsf{in}\; \ottnt{E'}}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{(}  \ottnt{E}  \ottsym{)}} {\textsf{S}}{}{}{}}
+
+\newcommand{\ottcommand}{
+\ottrulehead{\ottnt{command}  ,\ \ottnt{c}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\mathit{x}  \mathbin{:=}  \ottnt{N}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\lambda{} \, \mathit{x}  \colon{}  \ottnt{t}  \ottsym{.}  \ottnt{c}}{}{\textsf{bind}\; \mathit{x}\; \textsf{in}\; \ottnt{c}}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{c} \, \ottnt{c'}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\mathop{ \textbf ! }}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{c}  ;  \ottnt{c'}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{c}  \ottsym{,}  \ottnt{c'}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottkw{let} \, \ottsym{(}  \mathit{x}  \ottsym{,}  \mathit{y}  \ottsym{)}  \mathbin{:=}  \ottnt{c} \, \ottkw{in} \, \ottnt{c'}}{}{\textsf{bind}\; \mathit{x} \cup  \mathit{y}\; \textsf{in}\; \ottnt{c'}}{}{}\ottprodnewline
+\ottprodline{|}{\ottsym{(}  \ottnt{c}  \ottsym{)}} {\textsf{S}}{}{}{}}
 
 \newcommand{\ottenvironment}{
 \ottrulehead{\ottnt{environment}  ,\ \Gamma}{::=}{}\ottprodnewline
@@ -107,7 +117,7 @@
 
 \newcommand{\ottsat}{
 \ottrulehead{\ottnt{sat}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\sigma  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{N}  \ottsym{]}}{}{}{}{}}
+\ottfirstprodline{|}{\sigma  \vdash{}  \ottnt{c}  \colon{}  \ottnt{E}  \ottsym{[}  \ottnt{N}  \ottsym{]}}{}{}{}{}}
 
 \newcommand{\ottjudgement}{
 \ottrulehead{\ottnt{judgement}}{::=}{}\ottprodnewline
@@ -119,10 +129,10 @@
 \newcommand{\ottuserXXsyntax}{
 \ottrulehead{\ottnt{user\_syntax}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\mathit{var}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottmv{index}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{type}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{term}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{context}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{command}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{environment}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{store}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{normal}}{}{}{}{}\ottprodnewline
@@ -132,6 +142,7 @@
 \otttype\ottinterrule
 \ottterm\ottinterrule
 \ottcontext\ottinterrule
+\ottcommand\ottinterrule
 \ottenvironment\ottinterrule
 \ottstore\ottinterrule
 \ottnormal\ottinterrule
@@ -311,68 +322,68 @@
 %% defn sat
 \newcommand{\ottdrulesatXXvar}[1]{\ottdrule[#1]{%
 }{
-\bullet{}  \ottsym{,}  \mathit{x}  \ottsym{[}  \ottnt{N}  \ottsym{]}  \vdash{}  \mathit{x}  \ottsym{[}  \ottnt{N}  \ottsym{]}}{%
+\bullet{}  \ottsym{,}  \mathit{x}  \ottsym{[}  \ottnt{N}  \ottsym{]}  \vdash{}  \mathit{x}  \mathbin{:=}  \ottnt{N}  \colon{}  \mathit{x}  \ottsym{[}  \ottnt{N}  \ottsym{]}}{%
 {\ottdrulename{sat\_var}}{}%
 }}
 
 
 \newcommand{\ottdrulesatXXtt}[1]{\ottdrule[#1]{%
 }{
-\bullet{}  \vdash{}  \mathop{ \textbf ! }  \ottsym{[}  \mathop{ \textbf ! }  \ottsym{]}}{%
+\bullet{}  \vdash{}  \mathop{ \textbf ! }  \colon{}  \mathop{ \textbf ! }  \ottsym{[}  \mathop{ \textbf ! }  \ottsym{]}}{%
 {\ottdrulename{sat\_tt}}{}%
 }}
 
 
 \newcommand{\ottdrulesatXXstep}[1]{\ottdrule[#1]{%
-\ottpremise{\sigma  \vdash{}  \ottnt{E}  \ottsym{[}  \mathop{ \textbf ! }  \ottsym{]}}%
-\ottpremise{\sigma'  \vdash{}  \ottnt{E'}  \ottsym{[}  \ottnt{N}  \ottsym{]}}%
+\ottpremise{\sigma  \vdash{}  \ottnt{c}  \colon{}  \ottnt{E}  \ottsym{[}  \mathop{ \textbf ! }  \ottsym{]}}%
+\ottpremise{\sigma'  \vdash{}  \ottnt{c'}  \colon{}  \ottnt{E'}  \ottsym{[}  \ottnt{N}  \ottsym{]}}%
 }{
-\sigma  \cup{}  \sigma'  \vdash{}  \ottsym{(}  \ottnt{E}  ;  \ottnt{E'}  \ottsym{)}  \ottsym{[}  \ottnt{N}  \ottsym{]}}{%
+\sigma  \cup{}  \sigma'  \vdash{}  \ottnt{c}  ;  \ottnt{c'}  \colon{}  \ottsym{(}  \ottnt{E}  ;  \ottnt{E'}  \ottsym{)}  \ottsym{[}  \ottnt{N}  \ottsym{]}}{%
 {\ottdrulename{sat\_step}}{}%
 }}
 
 
 \newcommand{\ottdrulesatXXfanout}[1]{\ottdrule[#1]{%
-\ottpremise{\sigma  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{N}  \ottsym{]}}%
-\ottpremise{\sigma'  \vdash{}  \ottnt{E'}  \ottsym{[}  \ottnt{N'}  \ottsym{]}}%
+\ottpremise{\sigma  \vdash{}  \ottnt{c}  \colon{}  \ottnt{E}  \ottsym{[}  \ottnt{N}  \ottsym{]}}%
+\ottpremise{\sigma'  \vdash{}  \ottnt{c'}  \colon{}  \ottnt{E'}  \ottsym{[}  \ottnt{N'}  \ottsym{]}}%
 }{
-\sigma  \cup{}  \sigma'  \vdash{}  \ottsym{(}  \ottnt{E}  \ottsym{,}  \ottnt{E'}  \ottsym{)}  \ottsym{[}  \ottnt{N}  \ottsym{,}  \ottnt{N'}  \ottsym{]}}{%
+\sigma  \cup{}  \sigma'  \vdash{}  \ottnt{c}  \ottsym{,}  \ottnt{c'}  \colon{}  \ottsym{(}  \ottnt{E}  \ottsym{,}  \ottnt{E'}  \ottsym{)}  \ottsym{[}  \ottnt{N}  \ottsym{,}  \ottnt{N'}  \ottsym{]}}{%
 {\ottdrulename{sat\_fanout}}{}%
 }}
 
 
 \newcommand{\ottdrulesatXXlet}[1]{\ottdrule[#1]{%
-\ottpremise{\sigma  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{N_{{\mathrm{0}}}}  \ottsym{,}  \ottnt{N_{{\mathrm{1}}}}  \ottsym{]}}%
-\ottpremise{\sigma'  \ottsym{,}  \mathit{x}  \ottsym{[}  \ottnt{N_{{\mathrm{0}}}}  \ottsym{]}  \ottsym{,}  \mathit{y}  \ottsym{[}  \ottnt{N_{{\mathrm{1}}}}  \ottsym{]}  \vdash{}  \ottnt{E'}  \ottsym{[}  \ottnt{N_{{\mathrm{2}}}}  \ottsym{]}}%
+\ottpremise{\sigma  \vdash{}  \ottnt{c}  \colon{}  \ottnt{E}  \ottsym{[}  \ottnt{N_{{\mathrm{0}}}}  \ottsym{,}  \ottnt{N_{{\mathrm{1}}}}  \ottsym{]}}%
+\ottpremise{\sigma'  \ottsym{,}  \mathit{x}  \ottsym{[}  \ottnt{N_{{\mathrm{0}}}}  \ottsym{]}  \ottsym{,}  \mathit{y}  \ottsym{[}  \ottnt{N_{{\mathrm{1}}}}  \ottsym{]}  \vdash{}  \ottnt{c'}  \colon{}  \ottnt{E'}  \ottsym{[}  \ottnt{N_{{\mathrm{2}}}}  \ottsym{]}}%
 }{
-\sigma  \cup{}  \sigma'  \vdash{}  \ottsym{(}  \ottkw{let} \, \ottsym{(}  \mathit{x}  \ottsym{,}  \mathit{y}  \ottsym{)}  \mathbin{:=}  \ottnt{E} \, \ottkw{in} \, \ottnt{E'}  \ottsym{)}  \ottsym{[}  \ottnt{N_{{\mathrm{2}}}}  \ottsym{]}}{%
+\sigma  \cup{}  \sigma'  \vdash{}  \ottkw{let} \, \ottsym{(}  \mathit{x}  \ottsym{,}  \mathit{y}  \ottsym{)}  \mathbin{:=}  \ottnt{c} \, \ottkw{in} \, \ottnt{c'}  \colon{}  \ottsym{(}  \ottkw{let} \, \ottsym{(}  \mathit{x}  \ottsym{,}  \mathit{y}  \ottsym{)}  \mathbin{:=}  \ottnt{E} \, \ottkw{in} \, \ottnt{E'}  \ottsym{)}  \ottsym{[}  \ottnt{N_{{\mathrm{2}}}}  \ottsym{]}}{%
 {\ottdrulename{sat\_let}}{}%
 }}
 
 
-\newcommand{\ottdrulesatXXabs}[1]{\ottdrule[#1]{%
-\ottpremise{\sigma  \ottsym{,}  \mathit{x}  \ottsym{[}  \ottnt{N}  \ottsym{]}  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{N'}  \ottsym{]}}%
+\newcommand{\ottdrulesatXXlam}[1]{\ottdrule[#1]{%
+\ottpremise{\sigma  \ottsym{,}  \mathit{x}  \ottsym{[}  \ottnt{N}  \ottsym{]}  \vdash{}  \ottnt{c}  \colon{}  \ottnt{E}  \ottsym{[}  \ottnt{N'}  \ottsym{]}}%
 }{
-\sigma  \vdash{}  \ottsym{(}  \lambda{} \, \mathit{x}  \colon{}  \ottnt{t}  \ottsym{.}  \ottnt{E}  \ottsym{)}  \ottsym{[}  \ottnt{N}  \ottsym{,}  \ottnt{N'}  \ottsym{]}}{%
-{\ottdrulename{sat\_abs}}{}%
+\sigma  \vdash{}  \lambda{} \, \mathit{x}  \colon{}  \ottnt{t}  \ottsym{.}  \ottnt{c}  \colon{}  \ottsym{(}  \lambda{} \, \mathit{x}  \colon{}  \ottnt{t}  \ottsym{.}  \ottnt{E}  \ottsym{)}  \ottsym{[}  \ottnt{N}  \ottsym{,}  \ottnt{N'}  \ottsym{]}}{%
+{\ottdrulename{sat\_lam}}{}%
 }}
 
 
 \newcommand{\ottdrulesatXXapp}[1]{\ottdrule[#1]{%
-\ottpremise{\sigma  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{N}  \ottsym{,}  \ottnt{N'}  \ottsym{]}}%
-\ottpremise{\sigma'  \vdash{}  \ottnt{E'}  \ottsym{[}  \ottnt{N}  \ottsym{]}}%
+\ottpremise{\sigma  \vdash{}  \ottnt{c}  \colon{}  \ottnt{E}  \ottsym{[}  \ottnt{N}  \ottsym{,}  \ottnt{N'}  \ottsym{]}}%
+\ottpremise{\sigma'  \vdash{}  \ottnt{c'}  \colon{}  \ottnt{E'}  \ottsym{[}  \ottnt{N}  \ottsym{]}}%
 }{
-\sigma  \cup{}  \sigma'  \vdash{}  \ottsym{(}  \ottnt{E} \, \ottnt{E'}  \ottsym{)}  \ottsym{[}  \ottnt{N'}  \ottsym{]}}{%
+\sigma  \cup{}  \sigma'  \vdash{}  \ottnt{c} \, \ottnt{c'}  \colon{}  \ottsym{(}  \ottnt{E} \, \ottnt{E'}  \ottsym{)}  \ottsym{[}  \ottnt{N'}  \ottsym{]}}{%
 {\ottdrulename{sat\_app}}{}%
 }}
 
-\newcommand{\ottdefnsat}[1]{\begin{ottdefnblock}[#1]{$\sigma  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{N}  \ottsym{]}$}{}
+\newcommand{\ottdefnsat}[1]{\begin{ottdefnblock}[#1]{$\sigma  \vdash{}  \ottnt{c}  \colon{}  \ottnt{E}  \ottsym{[}  \ottnt{N}  \ottsym{]}$}{}
 \ottusedrule{\ottdrulesatXXvar{}}
 \ottusedrule{\ottdrulesatXXtt{}}
 \ottusedrule{\ottdrulesatXXstep{}}
 \ottusedrule{\ottdrulesatXXfanout{}}
 \ottusedrule{\ottdrulesatXXlet{}}
-\ottusedrule{\ottdrulesatXXabs{}}
+\ottusedrule{\ottdrulesatXXlam{}}
 \ottusedrule{\ottdrulesatXXapp{}}
 \end{ottdefnblock}}
 

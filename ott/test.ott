@@ -4,7 +4,6 @@ Require Blech.Map.
 }}
 
 metavar var, x, y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[var]]} }}
-indexvar index, i, m, n ::= {{ isa num }} {{ coq nat }}
 
 grammar
 type, t :: 't_' ::=
@@ -16,17 +15,28 @@ term, v :: 'v_' ::=
   | fst v        ::   :: fst
   | snd v        ::   :: snd
   | v , v'       ::   :: fanout
-  | ( v )        :: S :: paren {{ coq ([[v]]) }}
+  | ( v )        :: S :: paren {{ icho ([[v]]) }}
 
 context, E :: 'E_' ::=
   | x                        ::   :: var
   | lam x : t . E            ::   :: lam (+ bind x in E +)
   | E E'                     ::   :: app
   | tt                       ::   :: tt
-  | E ,, E'                  ::   :: step
+  | E ; E'                  ::   :: step
   | E , E'                   ::   :: fanout
   | let ( x , y ) := E in E' ::   :: let (+ bind x union y in E' +)
   | ( E )                    :: S :: paren {{ icho ([[E]]) }}
+
+command, c :: 'c_' ::=
+  | x := N                ::   :: var
+  | lam x : t . c         ::   :: lam (+ bind x in c +)
+  | c c'                  ::   :: app
+  | tt                    ::   :: tt
+  | c ; c'                ::   :: step
+  | c , c'                ::   :: fanout
+  | let ( x , y ) := c in c' ::   :: let (+ bind x union y in c' +)
+  | ( c )                    :: S :: paren {{ icho ([[c]]) }}
+
 
 environment, G {{ tex \Gamma }} :: 'G_' ::= {{ coq (Map.map type) }} {{ coq-universe Type }}
   | empty         ::   :: empty {{ coq Map.empty }}
@@ -50,7 +60,7 @@ terminals :: 'terminals_' ::=
   | ++           ::   :: merge   {{ tex \cup{} }}
   | unit         ::   :: unit  {{ tex \top{} }}
   | *            ::   :: prod  {{ tex \times{} }}
-  | ,,           ::   :: then  {{ tex ; }}
+  | ;           ::   :: then  {{ tex ; }}
   | tt           ::   :: tt   {{ tex \mathop{ \textbf ! } }}
   | fst          ::   :: fst  {{ tex \pi{}_1 }}
   | snd          ::   :: snd  {{ tex \pi{}_2 }}
@@ -96,7 +106,7 @@ empty |- tt: unit
 G1 |- E1: unit
 G2 |- E2: t
 ------------------- :: step
-G1 ++ G2 |- E1,, E2: t
+G1 ++ G2 |- E1; E2: t
 
 G1 |- E1: t1
 G2 |- E2: t2
@@ -161,36 +171,35 @@ defns
 sat :: '' ::=
 
 defn
-D |- E [ N ] ::   :: sat :: 'sat_'
+D |- c : E [ N ] ::   :: sat :: 'sat_'
 by
 
---------------------- :: var
-empty, x[N] |- x[N]
+----------------------------- :: var
+empty, x[N] |- x := N: x[N]
 
------------------ :: tt
-empty |- tt[tt]
+--------------------- :: tt
+empty |- tt: tt[tt]
 
-D |- E[tt]
-D' |- E'[N]
-------------------------- :: step
-D ++ D' |- (E,, E')[N]
+D |- c: E[tt]
+D' |- c': E'[N]
+------------------------------- :: step
+D ++ D' |- c; c': (E; E')[N]
 
-D |- E[N]
-D' |- E'[N']
---------------------- :: fanout
-D ++ D' |- (E, E')[N, N']
+D |- c: E[N]
+D' |- c': E'[N']
+--------------------------------- :: fanout
+D ++ D' |- c, c': (E, E')[N, N']
 
+D |- c: E[N0, N1]
+D', x[N0], y[N1] |- c': E'[N2]
+------------------------------- :: let
+D ++ D' |- let (x, y) := c in c': (let (x, y) := E in E')[N2]
 
-D |- E[N0, N1]
-D', x[N0], y[N1] |- E'[N2]
---------------------- :: let
-D ++ D' |- (let (x, y) := E in E')[N2]
+D, x[N] |- c: E[N']
+------------------------------- :: lam
+D |- lam x: t. c: (lam x: t. E) [N, N']
 
-D, x[N] |- E[N']
-------------------------------- :: abs
-D |- (lam x: t. E) [N, N']
-
-D |- E[N, N']
-D' |- E'[N]
------------------------- :: app
-D ++ D' |- (E E')[N']
+D |- c: E[N, N']
+D' |- c': E'[N]
+---------------------------- :: app
+D ++ D' |- c c': (E E')[N']

@@ -14,15 +14,14 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_var : ott_coq_equality.
-Definition index : Set := nat.
-
-Inductive normal : Set := 
- | N_tt : normal
- | N_fanout (N:normal) (N':normal).
 
 Inductive type : Set := 
  | t_unit : type
  | t_prod (t:type) (t':type).
+
+Inductive normal : Set := 
+ | N_tt : normal
+ | N_fanout (N:normal) (N':normal).
 
 Inductive term : Set := 
  | v_tt : term
@@ -30,7 +29,7 @@ Inductive term : Set :=
  | v_snd (v:term)
  | v_fanout (v:term) (v':term).
 
-Definition store : Type := (Map.map normal).
+Definition environment : Type := (Map.map type).
 
 Inductive context : Set := 
  | E_var (x:var)
@@ -41,7 +40,16 @@ Inductive context : Set :=
  | E_fanout (E:context) (E':context)
  | E_let (x:var) (y:var) (E:context) (E':context).
 
-Definition environment : Type := (Map.map type).
+Definition store : Type := (Map.map normal).
+
+Inductive command : Set := 
+ | c_var (x:var) (N:normal)
+ | c_lam (x:var) (t:type) (c:command)
+ | c_app (c:command) (c':command)
+ | c_tt : command
+ | c_step (c:command) (c':command)
+ | c_fanout (c:command) (c':command)
+ | c_let (x:var) (y:var) (c:command) (c':command).
 
 Module Examples.
 
@@ -113,29 +121,29 @@ Inductive big : term -> normal -> Type :=    (* defn big *)
 (** definitions *)
 
 (* defns sat *)
-Inductive sat : store -> context -> normal -> Prop :=    (* defn sat *)
+Inductive sat : store -> command -> context -> normal -> Prop :=    (* defn sat *)
  | sat_var : forall (x:var) (N:normal),
-     sat  (Map.add  x   N    Map.empty  )  (E_var x) N
+     sat  (Map.add  x   N    Map.empty  )  (c_var x N) (E_var x) N
  | sat_tt : 
-     sat  Map.empty  E_tt N_tt
- | sat_step : forall (D D':store) (E E':context) (N:normal),
-     sat D E N_tt ->
-     sat D' E' N ->
-     sat  (Map.merge  D   D' )   ( (E_step E E') )  N
- | sat_fanout : forall (D D':store) (E E':context) (N N':normal),
-     sat D E N ->
-     sat D' E' N' ->
-     sat  (Map.merge  D   D' )   ( (E_fanout E E') )  (N_fanout N N')
- | sat_let : forall (D D':store) (x y:var) (E E':context) (N2 N0 N1:normal),
-     sat D E (N_fanout N0 N1) ->
-     sat  (Map.add  y   N1    (Map.add  x   N0   D' )  )  E' N2 ->
-     sat  (Map.merge  D   D' )   ( (E_let x y E E') )  N2
- | sat_abs : forall (D:store) (x:var) (t:type) (E:context) (N N':normal),
-     sat  (Map.add  x   N   D )  E N' ->
-     sat D  ( (E_lam x t E) )  (N_fanout N N')
- | sat_app : forall (D D':store) (E E':context) (N' N:normal),
-     sat D E (N_fanout N N') ->
-     sat D' E' N ->
-     sat  (Map.merge  D   D' )   ( (E_app E E') )  N'.
+     sat  Map.empty  c_tt E_tt N_tt
+ | sat_step : forall (D D':store) (c c':command) (E E':context) (N:normal),
+     sat D c E N_tt ->
+     sat D' c' E' N ->
+     sat  (Map.merge  D   D' )  (c_step c c')  ( (E_step E E') )  N
+ | sat_fanout : forall (D D':store) (c c':command) (E E':context) (N N':normal),
+     sat D c E N ->
+     sat D' c' E' N' ->
+     sat  (Map.merge  D   D' )  (c_fanout c c')  ( (E_fanout E E') )  (N_fanout N N')
+ | sat_let : forall (D D':store) (x y:var) (c c':command) (E E':context) (N2 N0 N1:normal),
+     sat D c E (N_fanout N0 N1) ->
+     sat  (Map.add  y   N1    (Map.add  x   N0   D' )  )  c' E' N2 ->
+     sat  (Map.merge  D   D' )  (c_let x y c c')  ( (E_let x y E E') )  N2
+ | sat_lam : forall (D:store) (x:var) (t:type) (c:command) (E:context) (N N':normal),
+     sat  (Map.add  x   N   D )  c E N' ->
+     sat D (c_lam x t c)  ( (E_lam x t E) )  (N_fanout N N')
+ | sat_app : forall (D D':store) (c c':command) (E E':context) (N' N:normal),
+     sat D c E (N_fanout N N') ->
+     sat D' c' E' N ->
+     sat  (Map.merge  D   D' )  (c_app c c')  ( (E_app E E') )  N'.
 
 
