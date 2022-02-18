@@ -15,11 +15,11 @@ Proof.
 Defined.
 Hint Resolve eq_var : ott_coq_equality.
 
+Definition store : Type := (Map.map normal).
+
 Inductive normal : Set := 
  | N_tt : normal
  | N_fanout (N:normal) (N':normal).
-
-Definition store : Type := (Map.map normal).
 
 Inductive type : Set := 
  | t_unit : type
@@ -35,8 +35,6 @@ Inductive term : Set :=
  | v_snd (v:term)
  | v_fanout (v:term) (v':term).
 
-Definition linear : Type := (Map.map type).
-
 Inductive context : Set := 
  | E_var (x:var)
  | E_lam (x:var) (t:type) (E:context)
@@ -45,6 +43,8 @@ Inductive context : Set :=
  | E_step (E:context) (E':context)
  | E_fanout (E:context) (E':context)
  | E_let (x:var) (y:var) (E:context) (E':context).
+
+Definition linear : Type := (Map.map type).
 
 Definition environment : Set := (list (var * type)).
 
