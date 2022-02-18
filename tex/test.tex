@@ -56,12 +56,6 @@
 \ottprodline{|}{\ottsym{(}  \ottnt{v}  \ottsym{)}} {\textsf{S}}{}{}{}\ottprodnewline
 \ottprodline{|}{ \llbracket  \ottnt{N}  \rrbracket } {\textsf{M}}{}{}{}}
 
-\newcommand{\ottnormal}{
-\ottrulehead{\ottnt{normal}  ,\ \ottnt{N}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\mathop{ \textbf ! }}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{N}  \ottsym{,}  \ottnt{N'}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottsym{(}  \ottnt{N}  \ottsym{)}} {\textsf{S}}{}{}{}}
-
 \newcommand{\ottlinear}{
 \ottrulehead{\ottnt{linear}  ,\ \Delta}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\bullet{}} {\textsf{M}}{}{}{}\ottprodnewline
@@ -78,6 +72,12 @@
 \ottfirstprodline{|}{\bullet{}} {\textsf{M}}{}{}{}\ottprodnewline
 \ottprodline{|}{\sigma  \ottsym{,}  \mathit{x}  \mathbin{:=}  \ottnt{N}} {\textsf{M}}{}{}{}\ottprodnewline
 \ottprodline{|}{\sigma  \cup{}  \sigma'} {\textsf{M}}{}{}{}}
+
+\newcommand{\ottnormal}{
+\ottrulehead{\ottnt{normal}  ,\ \ottnt{N}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\mathop{ \textbf ! }}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{N}  \ottsym{,}  \ottnt{N'}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottsym{(}  \ottnt{N}  \ottsym{)}} {\textsf{S}}{}{}{}}
 
 \newcommand{\ottspan}{
 \ottrulehead{\ottnt{span}  ,\ \ottnt{P}}{::=}{}\ottprodnewline
@@ -145,10 +145,10 @@
 \ottprodline{|}{\ottnt{type}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{context}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{term}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{normal}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{linear}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{environment}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{store}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{normal}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{span}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{set}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{terminals}}{}{}{}{}}
@@ -157,10 +157,10 @@
 \otttype\ottinterrule
 \ottcontext\ottinterrule
 \ottterm\ottinterrule
-\ottnormal\ottinterrule
 \ottlinear\ottinterrule
 \ottenvironment\ottinterrule
 \ottstore\ottinterrule
+\ottnormal\ottinterrule
 \ottspan\ottinterrule
 \ottset\ottinterrule
 \ottterminals\ottinterrule

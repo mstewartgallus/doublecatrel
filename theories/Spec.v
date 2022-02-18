@@ -15,11 +15,11 @@ Proof.
 Defined.
 Hint Resolve eq_var : ott_coq_equality.
 
-Definition store : Type := (Map.map normal).
-
 Inductive normal : Set := 
  | N_tt : normal
  | N_fanout (N:normal) (N':normal).
+
+Definition store : Type := (Map.map normal).
 
 Inductive type : Set := 
  | t_unit : type

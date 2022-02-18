@@ -28,11 +28,6 @@ term, v :: 'v_' ::=
   | v , v'       ::   :: fanout
   | ( v )        :: S :: paren {{ icho ([[v]]) }}
 
-normal, N :: 'N_' ::=
-  | tt      ::   :: tt
-  | N , N'  ::   :: fanout
-  | ( N )   :: S :: paren {{ coq ([[N]]) }}
-
 linear, D {{ tex \Delta }} :: 'D_' ::= {{ coq (Map.map type) }} {{ coq-universe Type }}
   | nil           :: M :: nil {{ coq Map.empty }}
   | D , x : t     :: M :: add {{ coq (Map.add [[x]] [[t]] [[D]]) }}
@@ -46,6 +41,11 @@ store, S {{ tex \sigma }} :: 'S_'  ::= {{ coq (Map.map normal) }} {{ coq-univers
   | nil                   :: M :: nil {{ coq Map.empty }}
   | S , x := N            :: M :: add {{ coq (Map.add [[x]] [[N]] [[S]]) }}
   | S ++ S'               :: M :: merge {{ coq (Map.merge [[S]] [[S']]) }}
+
+normal, N :: 'N_' ::=
+  | tt      ::   :: tt
+  | N , N'  ::   :: fanout
+  | ( N )   :: S :: paren {{ coq ([[N]]) }}
 
 span, P :: 'P_' ::= {{ coq-universe Type }}
   | S |- N  ::   :: with
