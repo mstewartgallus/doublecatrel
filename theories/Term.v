@@ -8,7 +8,7 @@ Import IfNotations.
 
 Require Import FunInd.
 
-Function typecheck (Γ: list (var * type)) (v: term): option type :=
+Function typecheck (Γ: list (vvar * type)) (v: term): option type :=
   match v with
   | v_var x => find x Γ
   | v_tt => Some t_unit
@@ -206,14 +206,14 @@ Qed.
 
 Definition oftype Γ A := { v | Γ ⊢ v in A }.
 
-Inductive compat: environment -> list (var * normal) -> Prop :=
+Inductive compat: environment -> list (vvar * normal) -> Prop :=
 | compat_nil: compat nil nil
 | compat_cons x t (N: normal) Γ σ:
   nil ⊢ N in t ->
   compat Γ σ -> compat (cons (x, t) Γ) (cons (x, N) σ)
 .
 
-Fixpoint msubst (Γ: list (var * normal)) v :=
+Fixpoint msubst (Γ: list (vvar * normal)) v :=
   if Γ is cons (x, N) t
   then
      msubst t (subst_term N x v)
@@ -309,7 +309,7 @@ Proof using.
     subst.
     unfold find in H2.
     cbn in H2.
-    destruct (eq_var x x0).
+    destruct (eq_vvar x x0).
     1: subst.
     1: rewrite msubst_normal.
     1: inversion H2.

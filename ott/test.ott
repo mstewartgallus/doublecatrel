@@ -3,21 +3,22 @@ embed
 Require Blech.Map.
 }}
 
-metavar var, x, y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[var]]} }}
+metavar vvar, x, y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[vvar]]} }}
+metavar cvar, X, Y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[cvar]]} }}
 
 grammar
-type, t :: 't_' ::=
+type, t :: 't_' ::= {{ coq-equality }}
   | unit         ::   :: unit
   | t * t'       ::   :: prod
 
 context, E :: 'E_' ::=
-  | x                        ::   :: var
-  | lam x : t . E            ::   :: lam (+ bind x in E +)
+  | X                        ::   :: var
+  | lam X : t . E            ::   :: lam (+ bind X in E +)
   | E E'                     ::   :: app
   | tt                       ::   :: tt
   | E ; E'                   ::   :: step
   | E , E'                   ::   :: fanout
-  | let ( x , y ) := E in E' ::   :: let (+ bind x union y in E' +)
+  | let ( X , Y ) := E in E' ::   :: let (+ bind X union Y in E' +)
   | ( E )                    :: S :: paren {{ icho ([[E]]) }}
 
 term, v :: 'v_' ::=
@@ -28,32 +29,31 @@ term, v :: 'v_' ::=
   | v , v'       ::   :: fanout
   | ( v )        :: S :: paren {{ icho ([[v]]) }}
 
+normal, N :: 'N_' ::= {{ coq-equality }}
+  | tt      ::   :: tt
+  | N , N'  ::   :: fanout
+  | ( N )   :: S :: paren {{ coq ([[N]]) }}
+
 linear, D {{ tex \Delta }} :: 'D_' ::= {{ coq (Map.map type) }} {{ coq-universe Type }}
   | nil           :: M :: nil {{ coq Map.empty }}
-  | D , x : t     :: M :: add {{ coq (Map.add [[x]] [[t]] [[D]]) }}
+  | D , X : t     :: M :: add {{ coq (Map.add [[X]] [[t]] [[D]]) }}
   | D ++ D'       :: M :: merge {{ coq (Map.merge [[D]] [[D']]) }}
 
-environment, G {{ tex \Gamma }} :: 'G_' ::= {{ coq (list (var * type)) }}
+environment, G {{ tex \Gamma }} :: 'G_' ::= {{ coq (list (vvar * type)) }}
   | nil         ::   :: nil {{ coq nil }}
   | G , x : t     ::   :: add {{ coq (cons ([[x]], [[t]]) [[G]]) }}
 
 store, S {{ tex \sigma }} :: 'S_'  ::= {{ coq (Map.map normal) }} {{ coq-universe Type }}
   | nil                   :: M :: nil {{ coq Map.empty }}
-  | S , x := N            :: M :: add {{ coq (Map.add [[x]] [[N]] [[S]]) }}
+  | S , X := N            :: M :: add {{ coq (Map.add [[X]] [[N]] [[S]]) }}
   | S ++ S'               :: M :: merge {{ coq (Map.merge [[S]] [[S']]) }}
-
-normal, N :: 'N_' ::=
-  | tt      ::   :: tt
-  | N , N'  ::   :: fanout
-  | ( N )   :: S :: paren {{ coq ([[N]]) }}
 
 span, P :: 'P_' ::= {{ coq-universe Type }}
   | S |- N  ::   :: with
 
-set, X {{ tex P^* }} :: 'X_' ::= {{ coq (list span) }} {{ coq-universe Type }}
+set, Ps {{ tex P^* }} :: 'X_' ::= {{ coq (list span) }} {{ coq-universe Type }}
   | nil          ::   :: nil {{ coq nil }}
-  | X , P        ::   :: cons {{ coq (cons [[P]] [[X]]) }}
-
+  | Ps , P       ::   :: cons {{ coq (cons [[P]] [[Ps]]) }}
 
 terminals :: 'terminals_' ::=
   | :            ::   :: in     {{ tex \colon{} }}
@@ -71,7 +71,6 @@ terminals :: 'terminals_' ::=
 
 substitutions
   single v x :: subst
-  single E x :: subst 
 
 % subrules are awkward
 funs
@@ -87,8 +86,8 @@ embed
 
 Coercion toterm: normal >-> term.
 
-Definition find (x: var) (Γ: list (var * type)): option type :=
-  match List.find (fun '(k, _) => if eq_var x k then true else false) Γ with
+Definition find (x: vvar) (Γ: list (vvar * type)): option type :=
+  match List.find (fun '(k, _) => if eq_vvar x k then true else false) Γ with
   | Some (_, t) => Some t
   | _ => None
   end.
@@ -102,11 +101,11 @@ D |- E : t ::   :: E :: 'E_'
 by
 
 ------------ :: var
-nil , x: t |- x: t
+nil, X: t |- X: t
 
-D , x: t1 |- E: t2
+D, X: t1 |- E: t2
 -------------------------- :: abs
-D |- lam x: t1 . E: t1 * t2
+D |- lam X: t1 . E: t1 * t2
 
 D1 |- E1: t1 * t2
 D2 |- E2: t1
@@ -127,9 +126,9 @@ D2 |- E2: t2
 D1 ++ D2 |- E1, E2: t1 * t2
 
 D1 |- E1 : t1 * t2
-D2, x0: t1, x1: t2 |- E2: t3
+D2, X: t1, Y: t2 |- E2: t3
 ------------------- :: let
-D1 ++ D2 |- let (x0, x1) := E1 in E2: t3
+D1 ++ D2 |- let (X, Y) := E1 in E2: t3
 
 defns
 
@@ -192,7 +191,7 @@ E ! S |- N ::   :: sat :: 'sat_'
 by
 
 ---------------------- :: var
-x ! nil, x := N |- N
+X ! nil , X := N |- N
 
 ------------------ :: tt
 tt ! nil |- tt
@@ -208,13 +207,13 @@ E' !  S' |- N'
 (E, E') !  S ++ S' |- N, N'
 
 E ! S |- N0, N1 
-E' ! S', x := N0, y := N1 |- N2 
+E' ! S', X := N0, Y := N1 |- N2 
 ------------------------------------------- :: let
-(let (x, y) := E in E') ! S ++ S' |- N2 
+(let (X, Y) := E in E') ! S ++ S' |- N2 
 
-E ! S, x := N |- N' 
+E ! S, X := N |- N' 
 ------------------------------- :: lam
-(lam x: t. E) ! S |- N, N' 
+(lam X: t. E) ! S |- N, N' 
 
 E ! S |- N, N' 
 E' ! S' |- N 
@@ -226,13 +225,13 @@ defns
 sound :: '' ::=
 
 defn
-E ! X ::   :: sound :: 'sound_'
+E ! Ps ::   :: sound :: 'sound_'
 by
 
 ------- :: nil
 E ! nil
 
-E ! X
+E ! Ps
 E ! S |- N
 -------- :: cons
-E ! X, S |- N
+E ! Ps, S |- N

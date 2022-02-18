@@ -10,11 +10,6 @@ Require Import FunInd.
 Import List.ListNotations.
 Import IfNotations.
 
-Definition eq_type (x y: type): {x = y} + {x <> y}.
-Proof.
-  decide equality.
-Defined.
-
 Function typecheck (Γ: linear) (E: context): option (linear * type) :=
   match E with
   | E_var x =>
@@ -242,7 +237,7 @@ Proof using.
   induction E.
   all: intros.
   - cbn.
-    destruct (Map.find x σ) eqn:q.
+    destruct (Map.find X σ) eqn:q.
     2: constructor.
     apply sound_pure.
     constructor.
@@ -254,10 +249,10 @@ Proof using.
     apply sound_mon.
     2: auto.
     clear IHl.
-    induction (IHE (Map.add x a σ)).
+    induction (IHE (Map.add X a σ)).
     1: constructor.
     cbn.
-    destruct (Map.find x S) eqn:q.
+    destruct (Map.find X S) eqn:q.
     2: auto.
     destruct (eq_normal a n).
     2: auto.
@@ -331,17 +326,17 @@ Proof using.
     1: constructor.
     cbn.
     rewrite List.app_nil_r.
-    induction (IHE2 (Map.add x N1 (Map.add y N2 σ))).
+    induction (IHE2 (Map.add X N1 (Map.add Y N2 σ))).
     1: constructor.
     cbn.
-    destruct (Map.find x (Map.minus y S0)) eqn:q.
+    destruct (Map.find X (Map.minus Y S0)) eqn:q.
     2: auto.
     cbn in q.
     rewrite q.
     destruct (eq_normal N1 n).
     2: auto.
     subst.
-    destruct (Map.find y S0) eqn:q'.
+    destruct (Map.find Y S0) eqn:q'.
     destruct (eq_normal N2 n0).
     2: auto.
     subst.

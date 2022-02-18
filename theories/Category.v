@@ -36,7 +36,7 @@ Module Import Hor.
     induction f.
     all: cbn.
     all: intros g A B p C q.
-    - destruct (eq_var x 0).
+    - destruct (eq_vvar x 0).
       + subst.
         inversion q.
         subst.
@@ -48,7 +48,7 @@ Module Import Hor.
         subst.
         unfold find in H1.
         cbn in H1.
-        destruct (eq_var x 0).
+        destruct (eq_vvar x 0).
         1: contradiction.
         discriminate.
     - inversion q.
@@ -83,7 +83,7 @@ Module Import Vert.
     unfold Vert.
     apply (Context.typecheck_sound Map.empty).
     cbn.
-    destruct (Context.eq_type A A).
+    destruct (eq_type A A).
     2: contradiction.
     cbn.
     unfold Map.one.
