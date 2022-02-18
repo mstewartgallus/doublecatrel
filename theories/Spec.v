@@ -36,12 +36,7 @@ Inductive span : Type :=
 
 Definition environment : Set := (list (vvar * type)).
 
-Inductive term : Set := 
- | v_var (x:vvar)
- | v_tt : term
- | v_fst (v:term)
- | v_snd (v:term)
- | v_fanout (v:term) (v':term).
+Definition subst : Set := (list (vvar * normal)).
 
 Inductive context : Set := 
  | E_var (X:cvar)
@@ -52,9 +47,16 @@ Inductive context : Set :=
  | E_fanout (E:context) (E':context)
  | E_let (X:cvar) (Y:cvar) (E:context) (E':context).
 
-Definition set : Type := (list span).
-
 Definition linear : Type := (Map.map type).
+
+Inductive term : Set := 
+ | v_var (x:vvar)
+ | v_tt : term
+ | v_fst (v:term)
+ | v_snd (v:term)
+ | v_fanout (v:term) (v':term).
+
+Definition set : Type := (list span).
 Lemma eq_normal: forall (x y : normal), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -183,6 +185,16 @@ Inductive sat : context -> store -> normal -> Prop :=    (* defn sat *)
      sat E S (N_fanout N N') ->
      sat E' S' N ->
      sat (E_app E E')  (Map.merge  S   S' )  N'.
+(** definitions *)
+
+(* defns judge *)
+Inductive Jp : subst -> environment -> Prop :=    (* defn p *)
+ | Jp_nil : 
+     Jp  nil   nil 
+ | Jp_cons : forall (p:subst) (x:vvar) (N:normal) (G:environment) (t:type),
+     Jv  nil   (toterm N )  t ->
+     Jp p G ->
+     Jp  (cons ( x ,  N )  p )   (cons ( x ,  t )  G ) .
 (** definitions *)
 
 (* defns sound *)

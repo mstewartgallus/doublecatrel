@@ -55,6 +55,10 @@ set, Ps {{ tex P^* }} :: 'X_' ::= {{ coq (list span) }} {{ coq-universe Type }}
   | nil          ::   :: nil {{ coq nil }}
   | Ps , P       ::   :: cons {{ coq (cons [[P]] [[Ps]]) }}
 
+subst, p {{ tex \rho }} :: 'p_'  ::= {{ coq (list (vvar * normal)) }}
+  | nil                   :: M :: nil {{ coq nil }}
+  | p , x := N            :: M :: add {{ coq (cons ([[x]], [[N]]) [[p]]) }}
+
 terminals :: 'terminals_' ::=
   | :            ::   :: in     {{ tex \colon{} }}
   | |-           ::   :: turnstile   {{ tex \vdash{} }}
@@ -219,6 +223,22 @@ E ! S |- N, N'
 E' ! S' |- N 
 ------------------------- :: app
 E E' ! S ++ S' |- N' 
+
+defns
+
+judge :: 'J' ::=
+
+defn
+p : G ::   :: p :: 'p_'
+by
+
+---------- :: nil
+nil: nil
+
+nil |- [N] : t
+p: G
+------------------ :: cons
+p, x := N: G, x: t
 
 defns
 

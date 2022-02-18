@@ -57,6 +57,12 @@
 \ottprodline{|}{\ottsym{(}  \ottnt{v}  \ottsym{)}} {\textsf{S}}{}{}{}\ottprodnewline
 \ottprodline{|}{ \llbracket  \ottnt{N}  \rrbracket } {\textsf{M}}{}{}{}}
 
+\newcommand{\ottnormal}{
+\ottrulehead{\ottnt{normal}  ,\ \ottnt{N}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\mathop{ \textbf ! }}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{N}  \ottsym{,}  \ottnt{N'}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottsym{(}  \ottnt{N}  \ottsym{)}} {\textsf{S}}{}{}{}}
+
 \newcommand{\ottlinear}{
 \ottrulehead{\ottnt{linear}  ,\ \Delta}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\bullet{}} {\textsf{M}}{}{}{}\ottprodnewline
@@ -74,12 +80,6 @@
 \ottprodline{|}{\sigma  \ottsym{,}  \mathit{X}  \mathbin{:=}  \ottnt{N}} {\textsf{M}}{}{}{}\ottprodnewline
 \ottprodline{|}{\sigma  \cup{}  \sigma'} {\textsf{M}}{}{}{}}
 
-\newcommand{\ottnormal}{
-\ottrulehead{\ottnt{normal}  ,\ \ottnt{N}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\mathop{ \textbf ! }}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{N}  \ottsym{,}  \ottnt{N'}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottsym{(}  \ottnt{N}  \ottsym{)}} {\textsf{S}}{}{}{}}
-
 \newcommand{\ottspan}{
 \ottrulehead{\ottnt{span}  ,\ \ottnt{P}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\sigma  \vdash{}  \ottnt{N}}{}{}{}{}}
@@ -88,6 +88,11 @@
 \ottrulehead{\ottnt{set}  ,\ P^*}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{P^*  \ottsym{,}  \ottnt{P}}{}{}{}{}}
+
+\newcommand{\ottsubst}{
+\ottrulehead{\ottnt{subst}  ,\ \rho}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\bullet{}} {\textsf{M}}{}{}{}\ottprodnewline
+\ottprodline{|}{\rho  \ottsym{,}  \mathit{x}  \mathbin{:=}  \ottnt{N}} {\textsf{M}}{}{}{}}
 
 \newcommand{\ottterminals}{
 \ottrulehead{\ottnt{terminals}}{::=}{}\ottprodnewline
@@ -128,6 +133,10 @@
 \ottrulehead{\ottnt{sat}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottnt{E}  \mathrel{\Downarrow}  \sigma  \vdash{}  \ottnt{N}}{}{}{}{}}
 
+\newcommand{\ottjudge}{
+\ottrulehead{\ottnt{judge}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\rho  \colon{}  \Gamma}{}{}{}{}}
+
 \newcommand{\ottsound}{
 \ottrulehead{\ottnt{sound}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottnt{E}  \mathrel{\Downarrow}  P^*}{}{}{}{}}
@@ -138,6 +147,7 @@
 \ottprodline{|}{\ottnt{judge\_term}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{big}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{sat}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{judge}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{sound}}{}{}{}{}}
 
 \newcommand{\ottuserXXsyntax}{
@@ -147,24 +157,26 @@
 \ottprodline{|}{\ottnt{type}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{context}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{term}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{normal}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{linear}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{environment}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{store}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{normal}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{span}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{set}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{subst}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{terminals}}{}{}{}{}}
 
 \newcommand{\ottgrammar}{\ottgrammartabular{
 \otttype\ottinterrule
 \ottcontext\ottinterrule
 \ottterm\ottinterrule
+\ottnormal\ottinterrule
 \ottlinear\ottinterrule
 \ottenvironment\ottinterrule
 \ottstore\ottinterrule
-\ottnormal\ottinterrule
 \ottspan\ottinterrule
 \ottset\ottinterrule
+\ottsubst\ottinterrule
 \ottterminals\ottinterrule
 \ottformula\ottinterrule
 \otttoterm\ottinterrule
@@ -172,6 +184,7 @@
 \ottjudgeXXterm\ottinterrule
 \ottbig\ottinterrule
 \ottsat\ottinterrule
+\ottjudge\ottinterrule
 \ottsound\ottinterrule
 \ottjudgement\ottinterrule
 \ottuserXXsyntax\ottafterlastrule
@@ -433,6 +446,32 @@
 \newcommand{\ottdefnssat}{
 \ottdefnsat{}}
 
+% defns judge
+%% defn p
+\newcommand{\ottdruleJpXXnil}[1]{\ottdrule[#1]{%
+}{
+\bullet{}  \colon{}  \bullet{}}{%
+{\ottdrulename{Jp\_nil}}{}%
+}}
+
+
+\newcommand{\ottdruleJpXXcons}[1]{\ottdrule[#1]{%
+\ottpremise{\bullet{}  \vdash{}   \llbracket  \ottnt{N}  \rrbracket   \colon{}  \ottnt{t}}%
+\ottpremise{\rho  \colon{}  \Gamma}%
+}{
+\rho  \ottsym{,}  \mathit{x}  \mathbin{:=}  \ottnt{N}  \colon{}  \Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t}}{%
+{\ottdrulename{Jp\_cons}}{}%
+}}
+
+\newcommand{\ottdefnJp}[1]{\begin{ottdefnblock}[#1]{$\rho  \colon{}  \Gamma$}{}
+\ottusedrule{\ottdruleJpXXnil{}}
+\ottusedrule{\ottdruleJpXXcons{}}
+\end{ottdefnblock}}
+
+
+\newcommand{\ottdefnsjudge}{
+\ottdefnJp{}}
+
 % defns sound
 %% defn sound
 \newcommand{\ottdrulesoundXXnil}[1]{\ottdrule[#1]{%
@@ -465,6 +504,7 @@
 \ottdefnsjudgeXXterm
 \ottdefnsbig
 \ottdefnssat
+\ottdefnsjudge
 \ottdefnssound
 }
 

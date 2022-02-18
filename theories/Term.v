@@ -206,15 +206,8 @@ Qed.
 
 Definition oftype Γ A := { v | Γ ⊢ v in A }.
 
-Inductive compat: environment -> list (vvar * normal) -> Prop :=
-| compat_nil: compat nil nil
-| compat_cons x t (N: normal) Γ σ:
-  nil ⊢ N in t ->
-  compat Γ σ -> compat (cons (x, t) Γ) (cons (x, N) σ)
-.
-
-Fixpoint msubst (Γ: list (vvar * normal)) v :=
-  if Γ is cons (x, N) t
+Fixpoint msubst (p: subst) v :=
+  if p is cons (x, N) t
   then
      msubst t (subst_term N x v)
   else
@@ -233,11 +226,11 @@ Proof using.
 Qed.
 
 Lemma msubst_normal:
-  forall {Γ} {N: normal},
-    msubst Γ N = N.
+  forall {p} {N: normal},
+    msubst p N = N.
 Proof using.
   intros.
-  induction Γ.
+  induction p.
   1: reflexivity.
   cbn.
   destruct a.
@@ -246,66 +239,66 @@ Proof using.
 Qed.
 
 Lemma msubst_v_fst:
-  forall {Γ v},
-    msubst Γ (v_fst v) = v_fst (msubst Γ v).
+  forall {p v},
+    msubst p (v_fst v) = v_fst (msubst p v).
 Proof using.
-  intro Γ.
-  induction Γ.
+  intro p.
+  induction p.
   1: reflexivity.
   intro v.
   cbn.
   destruct a.
-  rewrite IHΓ.
+  rewrite IHp.
   cbn.
   reflexivity.
 Qed.
 
 Lemma msubst_v_snd:
-  forall {Γ v},
-    msubst Γ (v_snd v) = v_snd (msubst Γ v).
+  forall {p v},
+    msubst p (v_snd v) = v_snd (msubst p v).
 Proof using.
-  intro Γ.
-  induction Γ.
+  intro p.
+  induction p.
   1: reflexivity.
   intro v.
   cbn.
   destruct a.
-  rewrite IHΓ.
+  rewrite IHp.
   cbn.
   reflexivity.
 Qed.
 
 Lemma msubst_v_fanout:
-  forall {Γ v v'},
-    msubst Γ (v_fanout v v') = v_fanout (msubst Γ v) (msubst Γ v').
+  forall {p v v'},
+    msubst p (v_fanout v v') = v_fanout (msubst p v) (msubst p v').
 Proof using.
-  intro Γ.
-  induction Γ.
+  intro p.
+  induction p.
   1: reflexivity.
   intros ? ?.
   cbn.
   destruct a.
-  rewrite IHΓ.
+  rewrite IHp.
   cbn.
   reflexivity.
 Qed.
 
 Lemma msubst_preserve:
-  forall {v Γ σ t},
-    compat Γ σ ->
+  forall {v Γ p t},
+    Jp p Γ ->
     Γ ⊢ v in t ->
-    nil ⊢ msubst σ v in t.
+    nil ⊢ msubst p v in t.
 Proof using.
   intros v.
   induction v.
-  all: intros Γ σ t p q.
-  - induction p.
+  all: intros Γ p t q q'.
+  - induction q.
     1: cbn.
-    1: inversion q.
+    1: inversion q'.
     1: subst.
     1: discriminate.
     cbn.
-    1: inversion q.
+    1: inversion q'.
     subst.
     unfold find in H2.
     cbn in H2.
@@ -315,26 +308,26 @@ Proof using.
     1: inversion H2.
     1: subst.
     1: auto.
-    apply IHp.
+    apply IHq.
     constructor.
     auto.
   - replace v_tt with (N_tt : term).
     2: reflexivity.
     rewrite msubst_normal.
-    inversion q.
+    inversion q'.
     subst.
     constructor.
-  - inversion q.
+  - inversion q'.
     subst.
     rewrite msubst_v_fst.
     econstructor.
-    apply (IHv _ _ _ p H1).
-  - inversion q.
+    apply (IHv _ _ _ q H1).
+  - inversion q'.
     subst.
     rewrite msubst_v_snd.
     econstructor.
-    apply (IHv _ _ _ p H1).
-  - inversion q.
+    apply (IHv _ _ _ q H1).
+  - inversion q'.
     subst.
     rewrite msubst_v_fanout.
     econstructor.
@@ -342,9 +335,9 @@ Proof using.
 Qed.
 
 Definition equiv {Γ A}: Relation_Definitions.relation (oftype Γ A) := fun v v' =>
-  forall σ,
-    compat Γ σ ->
-    exists N, (msubst σ (proj1_sig v) ⇓ N) /\ (msubst σ (proj1_sig v') ⇓ N).
+  forall p,
+    Jp p Γ ->
+    exists N, (msubst p (proj1_sig v) ⇓ N) /\ (msubst p (proj1_sig v') ⇓ N).
 
 Instance equiv_Reflexive Γ A: Reflexive (@equiv Γ A).
 Proof using.
