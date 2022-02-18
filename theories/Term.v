@@ -338,7 +338,7 @@ Proof using.
     all: eauto.
 Qed.
 
-Definition equiv {Γ A} (v v': oftype Γ A) :=
+Definition equiv {Γ A}: Relation_Definitions.relation (oftype Γ A) := fun v v' =>
   forall σ,
     compat Γ σ ->
     exists N, (msubst σ (proj1_sig v) ⇓ N) /\ (msubst σ (proj1_sig v') ⇓ N).
@@ -362,3 +362,42 @@ Proof using.
   eapply msubst_preserve.
   all: eauto.
 Qed.
+
+Instance equiv_Symmetric Γ A: Symmetric (@equiv Γ A).
+Proof using.
+  unfold equiv.
+  intros [x p] [y q].
+  cbn.
+  intros t σ r.
+  destruct (t σ r).
+  destruct H.
+  exists x0.
+  split.
+  all: auto.
+Qed.
+
+Instance equiv_Transitive Γ A: Transitive (@equiv Γ A).
+Proof using.
+  unfold equiv.
+  intros [x p] [y q] [z r].
+  cbn.
+  intros s t σ u.
+  destruct (s σ u), (t σ u).
+  destruct H, H0.
+  set (H1' := eval_complete H1).
+  set (H0' := eval_complete H0).
+  rewrite H0' in H1'.
+  inversion H1'.
+  subst.
+  exists x0.
+  split.
+  all: auto.
+Qed.
+
+Instance equiv_Equivalence Γ A: Equivalence (@equiv Γ A) := {
+    Equivalence_Reflexive := _ ;
+}.
+
+Instance oftype_Setoid Γ A: Setoid (oftype Γ A) := {
+    equiv := equiv ;
+}.

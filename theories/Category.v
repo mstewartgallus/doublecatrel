@@ -3,7 +3,6 @@ Require Import Blech.SpecNotations.
 
 Require Blech.Term.
 Require Blech.Context.
-Require Blech.Sat.
 Require Blech.Map.
 
 Require Import Coq.Classes.SetoidClass.
@@ -13,7 +12,7 @@ Import IfNotations.
 
 Module Import Hor.
   (* FIXME preserve behaviour as well *)
-  Definition Hor (A B: type) := Term.oftype (Map.one 0 A) B.
+  Definition Hor (A B: type) := Term.oftype (cons (0, A) nil) B.
 
   #[program]
   Definition id A: Hor A A := v_var 0.
@@ -41,16 +40,17 @@ Module Import Hor.
       + subst.
         inversion q.
         subst.
-        unfold Map.one in H1.
-        rewrite Map.find_add in H1.
+        cbn in H1.
         inversion H1.
         subst.
         auto.
       + inversion q.
         subst.
-        rewrite Map.find_one_ne in H1.
-        1: discriminate.
-        auto.
+        unfold find in H1.
+        cbn in H1.
+        destruct (eq_var x 0).
+        1: contradiction.
+        discriminate.
     - inversion q.
       subst.
       constructor.
@@ -70,13 +70,6 @@ Module Import Hor.
       all: try eapply IHf1 ; try eapply IHf2.
       all: eauto.
   Defined.
-
-  Definition equiv {A B} (v v': Hor A B) :=
-    forall N,
-      Map.empty ⊢ Term.toterm N in A ->
-      exists N', (subst_term (Term.toterm N) 0 (proj1_sig v) ⇓ N') /\ (subst_term (Term.toterm N) 0 (proj1_sig v') ⇓ N').
-
-  (* FIXME define setoid equality and prove laws *)
 End Hor.
 
 Module Import Vert.
