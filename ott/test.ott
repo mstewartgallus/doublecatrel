@@ -28,18 +28,22 @@ context, E :: 'E_' ::=
   | let ( x , y ) := E in E' ::   :: let (+ bind x union y in E' +)
   | ( E )                    :: S :: paren {{ icho ([[E]]) }}
 
-environment, G {{ tex \Gamma }} :: 'G_' ::= {{ coq (Map.map type) }} {{ coq-universe Type }}
-  | nil         ::   :: nil {{ coq Map.empty }}
-  | G , x : t     ::   :: add {{ coq (Map.add [[x]] [[t]] [[G]]) }}
-  | G ++ G'       ::   :: merge {{ coq (Map.merge [[G]] [[G']]) }}
+environment, G {{ tex \Gamma }} :: 'G_' ::= {{ coq (list (var * type)) }}
+  | nil         ::   :: nil {{ coq nil }}
+  | G , x : t     ::   :: add {{ coq (cons ([[x]], [[t]]) [[G]]) }}
 
-store, D {{ tex \sigma }} :: 'D_'  ::= {{ coq (Map.map normal) }} {{ coq-universe Type }}
+linear, D {{ tex \Delta }} :: 'D_' ::= {{ coq (Map.map type) }} {{ coq-universe Type }}
+  | nil         ::   :: nil {{ coq Map.empty }}
+  | D , x : t     ::   :: add {{ coq (Map.add [[x]] [[t]] [[D]]) }}
+  | D ++ D'       ::   :: merge {{ coq (Map.merge [[D]] [[D']]) }}
+
+store, S {{ tex \sigma }} :: 'S_'  ::= {{ coq (Map.map normal) }} {{ coq-universe Type }}
   | nil                   ::   :: nil {{ coq Map.empty }}
-  | D , x [ N ]           ::   :: add {{ coq (Map.add [[x]] [[N]] [[D]]) }}
-  | D ++ D'               ::   :: merge {{ coq (Map.merge [[D]] [[D']]) }}
+  | S , x [ N ]           ::   :: add {{ coq (Map.add [[x]] [[N]] [[S]]) }}
+  | S ++ S'               ::   :: merge {{ coq (Map.merge [[S]] [[S']]) }}
 
 span, P :: 'P_' ::= {{ coq-universe Type }}
-  | D |- N  ::   :: with
+  | S |- N  ::   :: with
 
 set, X :: 'X_' ::= {{ coq (list span) }} {{ coq-universe Type }}
   | nil          ::   :: nil {{ coq nil }}
@@ -68,43 +72,52 @@ substitutions
   single v x :: subst
   single E x :: subst 
 
+embed
+{{ coq
+
+Definition find (x: var) (Γ: list (var * type)): option type :=
+  match List.find (fun '(k, _) => if eq_var x k then true else false) Γ with
+  | Some (_, t) => Some t
+  | _ => None
+  end.
+}}
 defns
 
 judge_context :: 'J' ::=
 
 defn
-G |- E : t ::   :: E :: 'E_'
+D |- E : t ::   :: E :: 'E_'
 by
 
 ------------ :: var
 nil , x: t |- x: t
 
-G , x: t1 |- E: t2
+D , x: t1 |- E: t2
 -------------------------- :: abs
-G |- lam x: t1 . E: t1 * t2
+D |- lam x: t1 . E: t1 * t2
 
-G1 |- E1: t1 * t2
-G2 |- E2: t1
+D1 |- E1: t1 * t2
+D2 |- E2: t1
 ------------------ :: app
-G1 ++ G2 |- E1 E2: t2
+D1 ++ D2 |- E1 E2: t2
 
 ------------------- :: tt
 nil |- tt: unit
 
-G1 |- E1: unit
-G2 |- E2: t
+D1 |- E1: unit
+D2 |- E2: t
 ------------------- :: step
-G1 ++ G2 |- E1; E2: t
+D1 ++ D2 |- E1; E2: t
 
-G1 |- E1: t1
-G2 |- E2: t2
+D1 |- E1: t1
+D2 |- E2: t2
 ------------------- :: fanout
-G1 ++ G2 |- E1, E2: t1 * t2
+D1 ++ D2 |- E1, E2: t1 * t2
 
-G1 |- E1 : t1 * t2
-G2, x0: t1, x1: t2 |- E2: t3
+D1 |- E1 : t1 * t2
+D2, x0: t1, x1: t2 |- E2: t3
 ------------------- :: let
-G1 ++ G2 |- let (x0, x1) := E1 in E2: t3
+D1 ++ D2 |- let (x0, x1) := E1 in E2: t3
 
 defns
 
@@ -114,7 +127,7 @@ defn
 G |- v : t ::   :: v :: 'v_'
 by
 
-{{ Map.find [[x]] [[G]] = Some [[t]] }}
+{{ find [[x]] [[G]] = Some [[t]] }}
 ------------ :: var
 G |- x: t
 
@@ -172,29 +185,29 @@ x ! nil, x[N] |- N
 ------------------ :: tt
 tt ! nil |- tt
 
-E !  D |- tt 
-E' !  D' |- N 
+E !  S |- tt 
+E' !  S' |- N 
 -------------------------- :: step
-(E; E') !  D ++ D' |- N 
+(E; E') !  S ++ S' |- N 
 
-E !  D |- N 
-E' !  D' |- N' 
+E !  S |- N 
+E' !  S' |- N' 
 -------------------------- :: fanout
-(E, E') !  D ++ D' |- N, N'
+(E, E') !  S ++ S' |- N, N'
 
-E !  D |- N0, N1 
-E' !  D', x[N0], y[N1] |- N2 
+E !  S |- N0, N1 
+E' !  S', x[N0], y[N1] |- N2 
 ------------------------------------------- :: let
-(let (x, y) := E in E') !  D ++ D' |- N2 
+(let (x, y) := E in E') !  S ++ S' |- N2 
 
-E !  D, x[N] |- N' 
+E !  S, x[N] |- N' 
 ------------------------------- :: lam
-(lam x: t. E) !  D |- N, N' 
+(lam x: t. E) !  S |- N, N' 
 
-E !  D |- N, N' 
-E' !  D' |- N 
+E !  S |- N, N' 
+E' !  S' |- N 
 ------------------------- :: app
-E E' !  D ++ D' |- N' 
+E E' !  S ++ S' |- N' 
 
 defns
 

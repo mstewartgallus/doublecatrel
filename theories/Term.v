@@ -2,6 +2,7 @@ Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
 
 Require Import Coq.Classes.SetoidClass.
+Require Coq.Lists.List.
 
 Import IfNotations.
 
@@ -15,9 +16,10 @@ Fixpoint toterm (v: normal): term :=
 
 Coercion toterm: normal >-> term.
 
-Function typecheck Γ (v: term): option type :=
+
+Function typecheck (Γ: list (var * type)) (v: term): option type :=
   match v with
-  | v_var x => Map.find x Γ
+  | v_var x => find x Γ
   | v_tt => Some t_unit
   | v_fst v =>
       if typecheck Γ v is Some (t0 * _)
@@ -150,10 +152,10 @@ Qed.
 
 Theorem normalize:
   forall {v t},
-   Map.empty ⊢ v in t ->
+   nil ⊢ v in t ->
    exists N, v ⇓ N.
 Proof using.
-  remember Map.empty as G.
+  remember nil as G.
   intros ? ? p.
   induction p.
   all: subst.
@@ -189,21 +191,174 @@ Proof using.
     all: eauto.
 Qed.
 
+Lemma big_normal:
+  forall {N: normal}, N ⇓ N.
+Proof using.
+  intro N.
+  induction N.
+  all: cbn.
+  all: constructor.
+  all: auto.
+Qed.
+
 Definition oftype Γ A := { v | Γ ⊢ v in A }.
 
-Inductive compat: Map.map type -> list (var * normal) -> Prop :=
-| compat_nil: compat Map.empty nil
-| compat_cons x t N Γ σ: compat Γ σ -> compat (Map.add x t Γ) (cons (x, N) σ)
+Inductive compat: environment -> list (var * normal) -> Prop :=
+| compat_nil: compat nil nil
+| compat_cons x t (N: normal) Γ σ:
+  nil ⊢ N in t ->
+  compat Γ σ -> compat (cons (x, t) Γ) (cons (x, N) σ)
 .
 
-Definition msubst (Γ: list (var * normal)): term -> term.
-Proof.
-  refine (List.fold_left _ Γ).
-  intros v xN.
-  apply (subst_term (snd xN) (fst xN) v).
-Defined.
+Fixpoint msubst (Γ: list (var * normal)) v :=
+  if Γ is cons (x, N) t
+  then
+     msubst t (subst_term N x v)
+  else
+    v.
+
+Lemma subst_normal:
+  forall v x {N: normal},
+    subst_term v x N = N.
+Proof using.
+  intros ? ? N.
+  induction N.
+  all: cbn.
+  1: reflexivity.
+  rewrite IHN1, IHN2.
+  reflexivity.
+Qed.
+
+Lemma msubst_normal:
+  forall {Γ} {N: normal},
+    msubst Γ N = N.
+Proof using.
+  intros.
+  induction Γ.
+  1: reflexivity.
+  cbn.
+  destruct a.
+  rewrite subst_normal.
+  auto.
+Qed.
+
+Lemma msubst_v_fst:
+  forall {Γ v},
+    msubst Γ (v_fst v) = v_fst (msubst Γ v).
+Proof using.
+  intro Γ.
+  induction Γ.
+  1: reflexivity.
+  intro v.
+  cbn.
+  destruct a.
+  rewrite IHΓ.
+  cbn.
+  reflexivity.
+Qed.
+
+Lemma msubst_v_snd:
+  forall {Γ v},
+    msubst Γ (v_snd v) = v_snd (msubst Γ v).
+Proof using.
+  intro Γ.
+  induction Γ.
+  1: reflexivity.
+  intro v.
+  cbn.
+  destruct a.
+  rewrite IHΓ.
+  cbn.
+  reflexivity.
+Qed.
+
+Lemma msubst_v_fanout:
+  forall {Γ v v'},
+    msubst Γ (v_fanout v v') = v_fanout (msubst Γ v) (msubst Γ v').
+Proof using.
+  intro Γ.
+  induction Γ.
+  1: reflexivity.
+  intros ? ?.
+  cbn.
+  destruct a.
+  rewrite IHΓ.
+  cbn.
+  reflexivity.
+Qed.
+
+Lemma msubst_preserve:
+  forall {v Γ σ t},
+    compat Γ σ ->
+    Γ ⊢ v in t ->
+    nil ⊢ msubst σ v in t.
+Proof using.
+  intros v.
+  induction v.
+  all: intros Γ σ t p q.
+  - induction p.
+    1: cbn.
+    1: inversion q.
+    1: subst.
+    1: discriminate.
+    cbn.
+    1: inversion q.
+    subst.
+    unfold find in H2.
+    cbn in H2.
+    destruct (eq_var x x0).
+    1: subst.
+    1: rewrite msubst_normal.
+    1: inversion H2.
+    1: subst.
+    1: auto.
+    apply IHp.
+    constructor.
+    auto.
+  - replace v_tt with (N_tt : term).
+    2: reflexivity.
+    rewrite msubst_normal.
+    inversion q.
+    subst.
+    constructor.
+  - inversion q.
+    subst.
+    rewrite msubst_v_fst.
+    econstructor.
+    apply (IHv _ _ _ p H1).
+  - inversion q.
+    subst.
+    rewrite msubst_v_snd.
+    econstructor.
+    apply (IHv _ _ _ p H1).
+  - inversion q.
+    subst.
+    rewrite msubst_v_fanout.
+    econstructor.
+    all: eauto.
+Qed.
 
 Definition equiv {Γ A} (v v': oftype Γ A) :=
   forall σ,
     compat Γ σ ->
     exists N, (msubst σ (proj1_sig v) ⇓ N) /\ (msubst σ (proj1_sig v') ⇓ N).
+
+Instance equiv_Reflexive Γ A: Reflexive (@equiv Γ A).
+Proof using.
+  unfold equiv.
+  intros [x p].
+  cbn.
+  generalize dependent p.
+  generalize dependent A.
+  generalize dependent Γ.
+  all: cbn.
+  all: intros Γ A p σ q.
+  destruct (@normalize (msubst σ x) A).
+  2: {
+    exists x0.
+    split.
+    all: auto.
+  }
+  eapply msubst_preserve.
+  all: eauto.
+Qed.
