@@ -8,8 +8,6 @@ Import IfNotations.
 
 Require Import FunInd.
 
-
-
 Function typecheck (Γ: list (var * type)) (v: term): option type :=
   match v with
   | v_var x => find x Γ
@@ -120,7 +118,7 @@ Proof using.
   all: reflexivity.
 Qed.
 
-Theorem eval_preserve:
+Theorem big_preserve:
   forall {v v'},
     v ⇓ v' ->
     forall Γ t, Γ ⊢ v in t -> Γ ⊢ v' in t.
@@ -143,6 +141,18 @@ Proof using.
     auto.
 Qed.
 
+Theorem big_unique:
+  forall {v N N'},
+    v ⇓ N -> v ⇓ N' -> N = N'.
+Proof using.
+  intros v N N' p q.
+  set (p' := eval_complete p).
+  set (q' := eval_complete q).
+  rewrite p' in q'.
+  inversion q'.
+  auto.
+Qed.
+
 Theorem normalize:
   forall {v t},
    nil ⊢ v in t ->
@@ -161,7 +171,7 @@ Proof using.
     constructor.
     all: auto.
   - destruct (IHp (eq_refl _)) as [v' s].
-    set (vwf := eval_preserve s _ _ p).
+    set (vwf := big_preserve s _ _ p).
     destruct v'.
     all: cbn in *.
     all: try discriminate.
@@ -172,7 +182,7 @@ Proof using.
     econstructor.
     all: eauto.
   - destruct (IHp (eq_refl _)) as [v' s].
-    set (vwf := eval_preserve s _ _ p).
+    set (vwf := big_preserve s _ _ p).
     destruct v'.
     all: cbn in *.
     all: try discriminate.
@@ -216,8 +226,8 @@ Lemma subst_normal:
 Proof using.
   intros ? ? N.
   induction N.
-  all: cbn.
   1: reflexivity.
+  cbn.
   rewrite IHN1, IHN2.
   reflexivity.
 Qed.
@@ -341,19 +351,13 @@ Proof using.
   unfold equiv.
   intros [x p].
   cbn.
-  generalize dependent p.
-  generalize dependent A.
-  generalize dependent Γ.
-  all: cbn.
-  all: intros Γ A p σ q.
+  intros σ ?.
   destruct (@normalize (msubst σ x) A).
-  2: {
-    exists x0.
+  - eapply msubst_preserve.
+    all: eauto.
+  - exists x0.
     split.
     all: auto.
-  }
-  eapply msubst_preserve.
-  all: eauto.
 Qed.
 
 Instance equiv_Symmetric Γ A: Symmetric (@equiv Γ A).
@@ -377,12 +381,9 @@ Proof using.
   intros s t σ u.
   destruct (s σ u), (t σ u).
   destruct H, H0.
-  set (H1' := eval_complete H1).
-  set (H0' := eval_complete H0).
-  rewrite H0' in H1'.
-  inversion H1'.
-  subst.
-  exists x0.
+  set (q' := big_unique H1 H0).
+  repeat rewrite q' in *.
+  exists x1.
   split.
   all: auto.
 Qed.
