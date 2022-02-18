@@ -80,7 +80,7 @@ end.
 (** definitions *)
 
 (* defns judge_context *)
-Inductive JE : environment -> context -> type -> Type :=    (* defn E *)
+Inductive JE : environment -> context -> type -> Prop :=    (* defn E *)
  | JE_var : forall (x:var) (t:type),
      JE  (Map.add  x   t    Map.empty  )  (E_var x) t
  | JE_abs : forall (G:environment) (x:var) (t1:type) (E:context) (t2:type),
@@ -107,7 +107,7 @@ Inductive JE : environment -> context -> type -> Type :=    (* defn E *)
 (** definitions *)
 
 (* defns judge_term *)
-Inductive Jv : environment -> term -> type -> Type :=    (* defn v *)
+Inductive Jv : environment -> term -> type -> Prop :=    (* defn v *)
  | Jv_var : forall (G:environment) (x:var) (t:type),
      Map.find x G = Some t  ->
      Jv G (v_var x) t
@@ -126,7 +126,7 @@ Inductive Jv : environment -> term -> type -> Type :=    (* defn v *)
 (** definitions *)
 
 (* defns big *)
-Inductive big : term -> normal -> Type :=    (* defn big *)
+Inductive big : term -> normal -> Prop :=    (* defn big *)
  | big_tt : 
      big v_tt N_tt
  | big_fanout : forall (v1 v2:term) (N1' N2':normal),

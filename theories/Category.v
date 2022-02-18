@@ -6,27 +6,30 @@ Require Blech.Context.
 Require Blech.Sat.
 Require Blech.Map.
 
+Require Import Coq.Classes.SetoidClass.
+Require Import Coq.Program.Tactics.
+
 Import IfNotations.
 
 Module Import Hor.
   (* FIXME preserve behaviour as well *)
-  Definition Hor (A B: type) v :=
-    Map.one 0 A ⊢ v in B.
-  Existing Class Hor.
+  Definition Hor (A B: type) := Term.oftype (Map.one 0 A) B.
 
-  Definition id: term := v_var 0.
-  Instance id_Hor A: Hor A A id.
-  Proof using.
-    unfold Hor.
+  #[program]
+  Definition id A: Hor A A := v_var 0.
+  Next Obligation.
     constructor.
     cbn.
     reflexivity.
   Defined.
 
-  Definition compose f g := subst_term g 0 f.
-  Instance compose_Hor f g {A B C} `{Hor B C f} `{Hor A B g}: Hor A C (compose f g).
+  #[program]
+  Definition compose {A B C} (f: Hor B C) (g: Hor A B): Hor A C := subst_term g 0 f.
+
+  Next Obligation.
   Proof.
-    unfold Hor in *.
+    destruct f as [f ?], g as [g ?].
+    cbn in *.
     generalize dependent C.
     generalize dependent B.
     generalize dependent A.
@@ -68,32 +71,10 @@ Module Import Hor.
       all: eauto.
   Defined.
 
-  Instance tt_Hor A: Hor A t_unit v_tt.
-  Proof.
-    constructor.
-  Defined.
-
-  Instance fanout_Hor f g {A B C} `{Hor C A f} `{Hor C B g}: Hor C (A * B) (v_fanout f g).
-  Proof.
-    constructor.
-    all: auto.
-  Defined.
-
-  Instance fst_Hor A B : Hor (A * B) A (v_fst (v_var 0)).
-  Proof.
-    econstructor.
-    constructor.
-    cbn.
-    reflexivity.
-  Defined.
-
-  Instance snd_Hor A B : Hor (A * B) B (v_snd (v_var 0)).
-  Proof.
-    econstructor.
-    constructor.
-    cbn.
-    reflexivity.
-  Defined.
+  Definition equiv {A B} (v v': Hor A B) :=
+    forall N,
+      Map.empty ⊢ Term.toterm N in A ->
+      exists N', (subst_term (Term.toterm N) 0 (proj1_sig v) ⇓ N') /\ (subst_term (Term.toterm N) 0 (proj1_sig v') ⇓ N').
 
   (* FIXME define setoid equality and prove laws *)
 End Hor.

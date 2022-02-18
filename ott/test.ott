@@ -70,7 +70,7 @@ substitutions
 
 defns
 
-judge_context :: 'J' ::= {{ coq-universe Type }}
+judge_context :: 'J' ::=
 
 defn
 G |- E : t ::   :: E :: 'E_'
@@ -108,7 +108,7 @@ G1 ++ G2 |- let (x0, x1) := E1 in E2: t3
 
 defns
 
-judge_term :: 'J' ::= {{ coq-universe Type }}
+judge_term :: 'J' ::=
 
 defn
 G |- v : t ::   :: v :: 'v_'
@@ -136,7 +136,7 @@ G |- snd v: t2
 
 defns
 
-big :: '' ::= {{ coq-universe Type }}
+big :: '' ::=
 
 defn
 v ! N ::   :: big :: 'big_'

@@ -138,20 +138,20 @@ Proof using.
   all: auto.
   - econstructor.
     all: eauto.
-  - set (p' := IHp _ _ X).
+  - set (p' := IHp _ _ H1).
     inversion p'.
     subst.
     auto.
-  - set (p' := IHp _ _ X).
+  - set (p' := IHp _ _ H1).
     inversion p'.
     subst.
     auto.
 Qed.
 
 Theorem normalize:
-  forall v t,
+  forall {v t},
    Map.empty ⊢ v in t ->
-   { N & v ⇓ N }.
+   exists N, v ⇓ N.
 Proof using.
   remember Map.empty as G.
   intros ? ? p.
@@ -188,3 +188,22 @@ Proof using.
     econstructor.
     all: eauto.
 Qed.
+
+Definition oftype Γ A := { v | Γ ⊢ v in A }.
+
+Inductive compat: Map.map type -> list (var * normal) -> Prop :=
+| compat_nil: compat Map.empty nil
+| compat_cons x t N Γ σ: compat Γ σ -> compat (Map.add x t Γ) (cons (x, N) σ)
+.
+
+Definition msubst (Γ: list (var * normal)): term -> term.
+Proof.
+  refine (List.fold_left _ Γ).
+  intros v xN.
+  apply (subst_term (snd xN) (fst xN) v).
+Defined.
+
+Definition equiv {Γ A} (v v': oftype Γ A) :=
+  forall σ,
+    compat Γ σ ->
+    exists N, (msubst σ (proj1_sig v) ⇓ N) /\ (msubst σ (proj1_sig v') ⇓ N).
