@@ -120,11 +120,6 @@ Proof using.
     all: auto.
 Qed.
 
-Definition eq_normal (x y: normal): {x = y} + {x <> y}.
-Proof.
-  decide equality.
-Defined.
-
 Notation "'do' x <- e0 ; e1" := (List.flat_map (fun x => e1) e0) (x pattern, at level 200, left associativity).
 
 Fixpoint app {A B} (f: list (A -> B)) x: list _ :=
@@ -227,6 +222,43 @@ Proof.
   inversion H.
   constructor.
   all: auto.
+Defined.
+
+Lemma sound_fst {E p p'}:
+  sound E ((p ++ p')%list) ->
+  sound E p.
+Proof.
+  intros.
+  induction p.
+  1: constructor.
+  destruct a.
+  cbn in H.
+  inversion H.
+  subst.
+  constructor.
+  all: auto.
+Defined.
+
+Lemma sound_snd {E p p'}:
+  sound E ((p ++ p')%list) ->
+  sound E p'.
+Proof.
+  intros.
+  induction p.
+  1: auto.
+  destruct a.
+  cbn in H.
+  inversion H.
+  subst.
+  auto.
+Defined.
+
+Lemma sound_split {E p p'}:
+  sound E ((p ++ p')%list) -> sound E p * sound E p'.
+Proof.
+  intros.
+  refine (sound_fst _, sound_snd _).
+  all:eauto.
 Defined.
 
 Theorem search_sound:
@@ -354,14 +386,29 @@ Proof using.
     auto.
 Qed.
 
-Definition oftype Γ A := { E | Γ ⊢ E ? A }.
+Theorem search_sound_sat:
+  forall σ E N, List.In (σ |- N) (search σ E) -> sat E σ N.
+Proof using.
+  intros σ E.
+  induction (search_sound σ E).
+  all: cbn.
+  1: contradiction.
+  intros N' p.
+  destruct p.
+  2: auto.
+  inversion H0.
+  subst.
+  auto.
+Defined.
 
-Definition equiv: Relation_Definitions.relation context :=
+Definition oftype t := { E | Map.empty ⊢ E ? t }.
+
+Definition equiv {t}: Relation_Definitions.relation (oftype t) :=
   fun E E' =>
-    forall σ N,
-      sat E σ N <-> sat E' σ N.
+    forall N,
+      sat (proj1_sig E) Map.empty N <-> sat (proj1_sig E') Map.empty N.
 
-Instance equiv_Reflexive: Reflexive equiv.
+Instance equiv_Reflexive A: Reflexive (@equiv A).
 Proof using.
   unfold equiv.
   unfold Reflexive.
@@ -369,7 +416,7 @@ Proof using.
   reflexivity.
 Qed.
 
-Instance equiv_Symmetric: Symmetric equiv.
+Instance equiv_Symmetric A: Symmetric (@equiv A).
 Proof using.
   unfold equiv.
   unfold Symmetric.
@@ -378,7 +425,7 @@ Proof using.
   auto.
 Qed.
 
-Instance equiv_Transitive: Transitive equiv.
+Instance equiv_Transitive A: Transitive (@equiv A).
 Proof using.
   unfold equiv.
   unfold Transitive.
@@ -388,24 +435,79 @@ Proof using.
   reflexivity.
 Qed.
 
-Instance equiv_Equivalence: Equivalence equiv := {
+Instance equiv_Equivalence A: Equivalence (@equiv A) := {
     Equivalence_Reflexive := _ ;
 }.
 
-Instance oftype_Setoid: Setoid context := {
+Instance oftype_Setoid A: Setoid (oftype A) := {
     equiv := equiv ;
 }.
 
-Example id t :=
+
+#[program]
+Definition id t: oftype (t * t) :=
   let x := 0 in
   E_lam x t (E_var x).
 
-Example conv E :=
+Next Obligation.
+Proof.
+  apply (@typecheck_sound Map.empty).
+  cbn.
+  unfold Map.one.
+  rewrite Map.minus_add.
+  destruct (eq_type t t).
+  2:contradiction.
+  reflexivity.
+Qed.
+
+#[program]
+Definition conv {t t'} (E: oftype (t * t')): oftype (t' * t) :=
   let x := 0 in
   let y := 1 in
   E_let x y E (E_fanout (E_var y) (E_var x)).
 
-Theorem conv_id t: conv (id t) == id t.
+Next Obligation.
 Proof.
+  destruct E.
+  cbn.
+  rewrite <- (@Map.merge_empty_l _ Map.empty).
+  econstructor.
+  all: eauto.
+  apply (@typecheck_sound (Map.add 1 t' (Map.add 0 t Map.empty))).
+  cbn.
   admit.
+Admitted.
+
+Lemma conv_id t:
+  conv (id t) == id t.
+Proof.
+  unfold conv, id.
+  cbn.
+  unfold equiv.
+  cbn.
+  intros.
+  split.
+  - intros p.
+    inversion p.
+    subst.
+    inversion H5.
+    subst.
+    inversion H3.
+    subst.
+    inversion H6.
+    subst.
+    constructor.
+    replace N' with N2.
+    1: constructor.
+    cbn in H2.
+    admit.
+  - intros p.
+    inversion p.
+    subst.
+    inversion H4.
+    subst.
+    rewrite <- (@Map.merge_empty_l _ Map.empty).
+    econstructor.
+    all: eauto.
+    admit.
 Admitted.

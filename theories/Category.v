@@ -11,7 +11,6 @@ Require Import Coq.Program.Tactics.
 Import IfNotations.
 
 Module Import Hor.
-  (* FIXME preserve behaviour as well *)
   Definition Hor (A B: type) := Term.oftype (cons (0, A) nil) B.
 
   #[program]
@@ -73,7 +72,7 @@ Module Import Hor.
 End Hor.
 
 Module Import Vert.
-  Definition Vert (A B: type) := Context.oftype Map.empty (A * B).
+  Definition Vert (A B: type) := Context.oftype (A * B).
 
   #[program]
   Definition id A: Vert A A := E_lam 0 A (E_var 0).

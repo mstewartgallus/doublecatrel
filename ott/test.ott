@@ -74,6 +74,7 @@ terminals :: 'terminals_' ::=
   | lam          ::   :: lam  {{ tex \lambda{} }}
   | nil          ::   :: nil   {{ tex \bullet{} }}
   | !            ::   :: big     {{ tex \mathrel{\Downarrow} }}
+  | ==           ::   :: equiv   {{ tex \mathrel{\sim} }}
 
 substitutions
   single v x :: subst
