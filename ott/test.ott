@@ -45,9 +45,9 @@ store, S {{ tex \sigma }} :: 'S_'  ::= {{ coq (Map.map normal) }} {{ coq-univers
 span, P :: 'P_' ::= {{ coq-universe Type }}
   | S |- N  ::   :: with
 
-set, X :: 'X_' ::= {{ coq (list span) }} {{ coq-universe Type }}
+set, X {{ tex P^* }} :: 'X_' ::= {{ coq (list span) }} {{ coq-universe Type }}
   | nil          ::   :: nil {{ coq nil }}
-  | X , P         ::   :: cons {{ coq (cons [[P]] [[X]]) }}
+  | X , P        ::   :: cons {{ coq (cons [[P]] [[X]]) }}
 
 normal, N :: 'N_' ::=
   | tt      ::  :: tt
@@ -76,7 +76,7 @@ substitutions
 funs
   toterm ::=
 fun
-  [ N ] :: v :: toterm
+  [ N ] :: v :: toterm {{ tex \llbracket [[N]] \rrbracket }}
 by
   [ tt ] === tt
   [ N, N' ] === [ N ], [ N' ]
@@ -187,7 +187,7 @@ defns
 sat :: '' ::=
 
 defn
-E ! P ::   :: sat :: 'sat_'
+E ! S |- N ::   :: sat :: 'sat_'
 by
 
 ---------------------- :: var
@@ -232,6 +232,6 @@ by
 E ! nil
 
 E ! X
-E ! P
+E ! S |- N
 -------- :: cons
-E ! X, P
+E ! X, S |- N

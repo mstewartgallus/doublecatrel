@@ -162,39 +162,39 @@ Inductive big : term -> normal -> Prop :=    (* defn big *)
 (** definitions *)
 
 (* defns sat *)
-Inductive sat : context -> span -> Prop :=    (* defn sat *)
+Inductive sat : context -> store -> normal -> Prop :=    (* defn sat *)
  | sat_var : forall (x:var) (N:normal),
-     sat (E_var x) (P_with  (Map.add  x   N    Map.empty  )  N)
+     sat (E_var x)  (Map.add  x   N    Map.empty  )  N
  | sat_tt : 
-     sat E_tt (P_with  Map.empty  N_tt)
+     sat E_tt  Map.empty  N_tt
  | sat_step : forall (E E':context) (S S':store) (N:normal),
-     sat E (P_with S N_tt) ->
-     sat E' (P_with S' N) ->
-     sat  ( (E_step E E') )  (P_with  (Map.merge  S   S' )  N)
+     sat E S N_tt ->
+     sat E' S' N ->
+     sat  ( (E_step E E') )   (Map.merge  S   S' )  N
  | sat_fanout : forall (E E':context) (S S':store) (N N':normal),
-     sat E (P_with S N) ->
-     sat E' (P_with S' N') ->
-     sat  ( (E_fanout E E') )  (P_with  (Map.merge  S   S' )  (N_fanout N N'))
+     sat E S N ->
+     sat E' S' N' ->
+     sat  ( (E_fanout E E') )   (Map.merge  S   S' )  (N_fanout N N')
  | sat_let : forall (x y:var) (E E':context) (S S':store) (N2 N0 N1:normal),
-     sat E (P_with S (N_fanout N0 N1)) ->
-     sat E' (P_with  (Map.add  y   N1    (Map.add  x   N0   S' )  )  N2) ->
-     sat  ( (E_let x y E E') )  (P_with  (Map.merge  S   S' )  N2)
+     sat E S (N_fanout N0 N1) ->
+     sat E'  (Map.add  y   N1    (Map.add  x   N0   S' )  )  N2 ->
+     sat  ( (E_let x y E E') )   (Map.merge  S   S' )  N2
  | sat_lam : forall (x:var) (t:type) (E:context) (S:store) (N N':normal),
-     sat E (P_with  (Map.add  x   N   S )  N') ->
-     sat  ( (E_lam x t E) )  (P_with S (N_fanout N N'))
+     sat E  (Map.add  x   N   S )  N' ->
+     sat  ( (E_lam x t E) )  S (N_fanout N N')
  | sat_app : forall (E E':context) (S S':store) (N' N:normal),
-     sat E (P_with S (N_fanout N N')) ->
-     sat E' (P_with S' N) ->
-     sat (E_app E E') (P_with  (Map.merge  S   S' )  N').
+     sat E S (N_fanout N N') ->
+     sat E' S' N ->
+     sat (E_app E E')  (Map.merge  S   S' )  N'.
 (** definitions *)
 
 (* defns sound *)
 Inductive sound : context -> set -> Prop :=    (* defn sound *)
  | sound_nil : forall (E:context),
      sound E  nil 
- | sound_cons : forall (E:context) (X:set) (P:span),
+ | sound_cons : forall (E:context) (X:set) (S:store) (N:normal),
      sound E X ->
-     sat E P ->
-     sound E  (cons  P   X ) .
+     sat E S N ->
+     sound E  (cons  (P_with S N)   X ) .
 
 

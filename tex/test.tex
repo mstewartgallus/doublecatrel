@@ -43,7 +43,7 @@
 \ottprodline{|}{\pi{}_2 \, \ottnt{v}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{v}  \ottsym{,}  \ottnt{v'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{(}  \ottnt{v}  \ottsym{)}} {\textsf{S}}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottsym{[}  \ottnt{N}  \ottsym{]}} {\textsf{M}}{}{}{}}
+\ottprodline{|}{ \llbracket  \ottnt{N}  \rrbracket } {\textsf{M}}{}{}{}}
 
 \newcommand{\ottcontext}{
 \ottrulehead{\ottnt{context}  ,\ \ottnt{E}}{::=}{}\ottprodnewline
@@ -78,9 +78,9 @@
 \ottfirstprodline{|}{\sigma  \vdash{}  \ottnt{N}}{}{}{}{}}
 
 \newcommand{\ottset}{
-\ottrulehead{\ottnt{set}  ,\ \ottnt{X}}{::=}{}\ottprodnewline
+\ottrulehead{\ottnt{set}  ,\ P^*}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{X}  \ottsym{,}  \ottnt{P}}{}{}{}{}}
+\ottprodline{|}{P^*  \ottsym{,}  \ottnt{P}}{}{}{}{}}
 
 \newcommand{\ottnormal}{
 \ottrulehead{\ottnt{normal}  ,\ \ottnt{N}}{::=}{}\ottprodnewline
@@ -109,7 +109,7 @@
 
 \newcommand{\otttoterm}{
 \ottrulehead{\ottnt{toterm}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\ottsym{[}  \ottnt{N}  \ottsym{]}  \ottsym{===}  \ottnt{v}}{}{}{}{}}
+\ottfirstprodline{|}{ \llbracket  \ottnt{N}  \rrbracket }{}{}{}{}}
 
 \newcommand{\ottjudgeXXcontext}{
 \ottrulehead{\ottnt{judge\_context}}{::=}{}\ottprodnewline
@@ -125,11 +125,11 @@
 
 \newcommand{\ottsat}{
 \ottrulehead{\ottnt{sat}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\ottnt{E}  \mathrel{\Downarrow}  \ottnt{P}}{}{}{}{}}
+\ottfirstprodline{|}{\ottnt{E}  \mathrel{\Downarrow}  \sigma  \vdash{}  \ottnt{N}}{}{}{}{}}
 
 \newcommand{\ottsound}{
 \ottrulehead{\ottnt{sound}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\ottnt{E}  \mathrel{\Downarrow}  \ottnt{X}}{}{}{}{}}
+\ottfirstprodline{|}{\ottnt{E}  \mathrel{\Downarrow}  P^*}{}{}{}{}}
 
 \newcommand{\ottjudgement}{
 \ottrulehead{\ottnt{judgement}}{::=}{}\ottprodnewline
@@ -179,9 +179,9 @@
 % fundefns toterm
 % fundefn toterm
 
-\newcommand{\ottfundefntoterm}[1]{\begin{ottfundefnblock}[#1]{$\ottsym{[}  \ottnt{N}  \ottsym{]}$}{}
-\ottfunclause{\ottsym{[}  \mathop{ \textbf ! }  \ottsym{]}}{\mathop{ \textbf ! }}%
-\ottfunclause{\ottsym{[}  \ottnt{N}  \ottsym{,}  \ottnt{N'}  \ottsym{]}}{\ottsym{[}  \ottnt{N}  \ottsym{]}  \ottsym{,}  \ottsym{[}  \ottnt{N'}  \ottsym{]}}%
+\newcommand{\ottfundefntoterm}[1]{\begin{ottfundefnblock}[#1]{$ \llbracket  \ottnt{N}  \rrbracket $}{}
+\ottfunclause{ \llbracket  \mathop{ \textbf ! }  \rrbracket }{\mathop{ \textbf ! }}%
+\ottfunclause{ \llbracket  \ottnt{N}  \ottsym{,}  \ottnt{N'}  \rrbracket }{ \llbracket  \ottnt{N}  \rrbracket   \ottsym{,}   \llbracket  \ottnt{N'}  \rrbracket }%
 \end{ottfundefnblock}}
 
 
@@ -417,7 +417,7 @@
 {\ottdrulename{sat\_app}}{}%
 }}
 
-\newcommand{\ottdefnsat}[1]{\begin{ottdefnblock}[#1]{$\ottnt{E}  \mathrel{\Downarrow}  \ottnt{P}$}{}
+\newcommand{\ottdefnsat}[1]{\begin{ottdefnblock}[#1]{$\ottnt{E}  \mathrel{\Downarrow}  \sigma  \vdash{}  \ottnt{N}$}{}
 \ottusedrule{\ottdrulesatXXvar{}}
 \ottusedrule{\ottdrulesatXXtt{}}
 \ottusedrule{\ottdrulesatXXstep{}}
@@ -441,14 +441,14 @@
 
 
 \newcommand{\ottdrulesoundXXcons}[1]{\ottdrule[#1]{%
-\ottpremise{\ottnt{E}  \mathrel{\Downarrow}  \ottnt{X}}%
-\ottpremise{\ottnt{E}  \mathrel{\Downarrow}  \ottnt{P}}%
+\ottpremise{\ottnt{E}  \mathrel{\Downarrow}  P^*}%
+\ottpremise{\ottnt{E}  \mathrel{\Downarrow}  \sigma  \vdash{}  \ottnt{N}}%
 }{
-\ottnt{E}  \mathrel{\Downarrow}  \ottnt{X}  \ottsym{,}  \ottnt{P}}{%
+\ottnt{E}  \mathrel{\Downarrow}  P^*  \ottsym{,}  \sigma  \vdash{}  \ottnt{N}}{%
 {\ottdrulename{sound\_cons}}{}%
 }}
 
-\newcommand{\ottdefnsound}[1]{\begin{ottdefnblock}[#1]{$\ottnt{E}  \mathrel{\Downarrow}  \ottnt{X}$}{}
+\newcommand{\ottdefnsound}[1]{\begin{ottdefnblock}[#1]{$\ottnt{E}  \mathrel{\Downarrow}  P^*$}{}
 \ottusedrule{\ottdrulesoundXXnil{}}
 \ottusedrule{\ottdrulesoundXXcons{}}
 \end{ottdefnblock}}

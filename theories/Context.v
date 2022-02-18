@@ -213,7 +213,7 @@ Fixpoint search (σ: Map.map normal) E: list span :=
         []
   end%list.
 
-Lemma sound_pure {E p}: sat E p -> sound E ([p]%list).
+Lemma sound_pure {E S N}: sat E S N -> sound E ([S |- N]%list).
 Proof.
   intro.
   constructor.
@@ -257,8 +257,6 @@ Proof using.
     induction (IHE (Map.add x a σ)).
     1: constructor.
     cbn.
-    destruct P.
-    cbn in *.
     destruct (Map.find x S) eqn:q.
     2: auto.
     destruct (eq_normal a n).
@@ -273,14 +271,12 @@ Proof using.
     induction (IHE1 σ).
     1: constructor.
     cbn.
-    destruct P.
     apply sound_mon.
     2: auto.
     clear IHs.
     induction (IHE2 σ).
     1: constructor.
     cbn in *.
-    destruct P.
     destruct N.
     1: auto.
     destruct (eq_normal N0 N1).
@@ -297,8 +293,6 @@ Proof using.
     induction (IHE1 σ).
     1: constructor.
     cbn.
-    destruct P.
-    cbn in *.
     apply sound_mon.
     2: auto.
     clear IHs.
@@ -307,8 +301,6 @@ Proof using.
     induction (IHE2 σ).
     1: constructor.
     cbn.
-    destruct P.
-    cbn in *.
     rewrite List.app_nil_r in *.
     constructor.
     1: auto.
@@ -319,16 +311,12 @@ Proof using.
     induction (IHE1 σ).
     1: constructor.
     cbn.
-    destruct P.
-    cbn in *.
     apply sound_mon.
     2: auto.
     clear IHs.
     induction (IHE2 σ).
     1: constructor.
     cbn.
-    destruct P.
-    cbn in *.
     constructor.
     1: auto.
     econstructor.
@@ -336,7 +324,6 @@ Proof using.
   - cbn.
     induction (IHE1 σ).
     1: constructor.
-    destruct P.
     apply sound_mon.
     2: auto.
     clear IHs.
@@ -347,7 +334,6 @@ Proof using.
     induction (IHE2 (Map.add x N1 (Map.add y N2 σ))).
     1: constructor.
     cbn.
-    destruct P.
     destruct (Map.find x (Map.minus y S0)) eqn:q.
     2: auto.
     cbn in q.
@@ -378,7 +364,7 @@ Definition oftype Γ A := { E | Γ ⊢ E ? A }.
 Definition equiv: Relation_Definitions.relation context :=
   fun E E' =>
     forall σ N,
-      sat E (σ |- N) <-> sat E' (σ |- N).
+      sat E σ N <-> sat E' σ N.
 
 Instance equiv_Reflexive: Reflexive equiv.
 Proof using.
