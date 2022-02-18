@@ -87,6 +87,15 @@ Fixpoint toterm (x1:normal) : term:=
   | (N_fanout N N') => (v_fanout  (toterm N )   (toterm N' ) )
 end.
 
+(** definitions *)
+
+(** funs msubst *)
+Fixpoint msubst (x1:subst) (x2:term) : term:=
+  match x1,x2 with
+  |  nil  , v' => v'
+  |  (cons ( x ,  N )  p )  , v' =>  (msubst p  (  (subst_term   (toterm N )    x   v' )  )  ) 
+end.
+
 
 Coercion toterm: normal >-> term.
 

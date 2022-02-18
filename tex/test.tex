@@ -55,7 +55,9 @@
 \ottprodline{|}{\pi{}_2 \, \ottnt{v}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{v}  \ottsym{,}  \ottnt{v'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{(}  \ottnt{v}  \ottsym{)}} {\textsf{S}}{}{}{}\ottprodnewline
-\ottprodline{|}{ \llbracket  \ottnt{N}  \rrbracket } {\textsf{M}}{}{}{}}
+\ottprodline{|}{\ottsym{[}  \mathit{x}  \mathbin{:=}  \ottnt{v}  \ottsym{]}  \ottnt{v'}} {\textsf{S}}{}{}{}\ottprodnewline
+\ottprodline{|}{ \llbracket  \ottnt{N}  \rrbracket } {\textsf{M}}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottsym{[}  \rho  \ottsym{]}  \ottnt{v'}} {\textsf{M}}{}{}{}}
 
 \newcommand{\ottnormal}{
 \ottrulehead{\ottnt{normal}  ,\ \ottnt{N}}{::=}{}\ottprodnewline
@@ -92,7 +94,8 @@
 \newcommand{\ottsubst}{
 \ottrulehead{\ottnt{subst}  ,\ \rho}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\bullet{}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\rho  \ottsym{,}  \mathit{x}  \mathbin{:=}  \ottnt{N}} {\textsf{M}}{}{}{}}
+\ottprodline{|}{\rho  \ottsym{,}  \mathit{x}  \mathbin{:=}  \ottnt{N}} {\textsf{M}}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottsym{(}  \rho  \ottsym{)}} {\textsf{S}}{}{}{}}
 
 \newcommand{\ottterminals}{
 \ottrulehead{\ottnt{terminals}}{::=}{}\ottprodnewline
@@ -116,6 +119,10 @@
 \newcommand{\otttoterm}{
 \ottrulehead{\ottnt{toterm}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{ \llbracket  \ottnt{N}  \rrbracket }{}{}{}{}}
+
+\newcommand{\ottmsubst}{
+\ottrulehead{\ottnt{msubst}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\ottsym{[}  \rho  \ottsym{]}  \ottnt{v'}  \ottsym{===}  \ottnt{v}}{}{}{}{}}
 
 \newcommand{\ottjudgeXXcontext}{
 \ottrulehead{\ottnt{judge\_context}}{::=}{}\ottprodnewline
@@ -180,6 +187,7 @@
 \ottterminals\ottinterrule
 \ottformula\ottinterrule
 \otttoterm\ottinterrule
+\ottmsubst\ottinterrule
 \ottjudgeXXcontext\ottinterrule
 \ottjudgeXXterm\ottinterrule
 \ottbig\ottinterrule
@@ -202,6 +210,18 @@
 
 \newcommand{\ottfundefnstoterm}{
 \ottfundefntoterm{}}
+
+% fundefns msubst
+% fundefn msubst
+
+\newcommand{\ottfundefnmsubst}[1]{\begin{ottfundefnblock}[#1]{$\ottsym{[}  \rho  \ottsym{]}  \ottnt{v'}$}{}
+\ottfunclause{\ottsym{[}  \bullet{}  \ottsym{]}  \ottnt{v'}}{\ottnt{v'}}%
+\ottfunclause{\ottsym{[}  \rho  \ottsym{,}  \mathit{x}  \mathbin{:=}  \ottnt{N}  \ottsym{]}  \ottnt{v'}}{\ottsym{[}  \rho  \ottsym{]}  \ottsym{(}  \ottsym{[}  \mathit{x}  \mathbin{:=}   \llbracket  \ottnt{N}  \rrbracket   \ottsym{]}  \ottnt{v'}  \ottsym{)}}%
+\end{ottfundefnblock}}
+
+
+\newcommand{\ottfundefnsmsubst}{
+\ottfundefnmsubst{}}
 
 % defns judge_context
 %% defn E
@@ -500,6 +520,7 @@
 
 \newcommand{\ottdefnss}{
 \ottfundefnstoterm
+\ottfundefnsmsubst
 \ottdefnsjudgeXXcontext
 \ottdefnsjudgeXXterm
 \ottdefnsbig

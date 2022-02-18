@@ -22,12 +22,13 @@ context, E :: 'E_' ::=
   | ( E )                    :: S :: paren {{ icho ([[E]]) }}
 
 term, v :: 'v_' ::=
-  | x            ::   :: var
-  | tt           ::   :: tt
-  | fst v        ::   :: fst
-  | snd v        ::   :: snd
-  | v , v'       ::   :: fanout
-  | ( v )        :: S :: paren {{ icho ([[v]]) }}
+  | x              ::   :: var
+  | tt             ::   :: tt
+  | fst v          ::   :: fst
+  | snd v          ::   :: snd
+  | v , v'         ::   :: fanout
+  | ( v )          :: S :: paren {{ icho ([[v]]) }}
+  | [ x := v ] v'  :: S :: subst {{ icho (subst_term [[v]] [[x]] [[v']]) }}
 
 normal, N :: 'N_' ::= {{ coq-equality }}
   | tt      ::   :: tt
@@ -58,6 +59,7 @@ set, Ps {{ tex P^* }} :: 'X_' ::= {{ coq (list span) }} {{ coq-universe Type }}
 subst, p {{ tex \rho }} :: 'p_'  ::= {{ coq (list (vvar * normal)) }}
   | nil                   :: M :: nil {{ coq nil }}
   | p , x := N            :: M :: add {{ coq (cons ([[x]], [[N]]) [[p]]) }}
+  | ( p )                 :: S :: paren {{ coq ([[p]]) }}
 
 terminals :: 'terminals_' ::=
   | :            ::   :: in     {{ tex \colon{} }}
@@ -84,6 +86,14 @@ fun
 by
   [ tt ] === tt
   [ N, N' ] === [ N ], [ N' ]
+
+funs
+  msubst ::=
+fun
+  [ p ] v' :: v :: msubst
+by
+  [ nil ] v' === v'
+  [p, x := N] v' === [p] ([ x := [N] ] v')
 
 embed
 {{ coq

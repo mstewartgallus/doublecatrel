@@ -206,13 +206,6 @@ Qed.
 
 Definition oftype Γ A := { v | Γ ⊢ v in A }.
 
-Fixpoint msubst (p: subst) v :=
-  if p is cons (x, N) t
-  then
-     msubst t (subst_term N x v)
-  else
-    v.
-
 Lemma subst_normal:
   forall v x {N: normal},
     subst_term v x N = N.
