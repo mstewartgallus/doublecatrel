@@ -73,12 +73,12 @@ Module Import Hor.
 End Hor.
 
 Module Import Vert.
-  Definition Vert (A B: type) f :=
-    Map.empty ⊢ f ? A * B.
-  Existing Class Vert.
+  Definition Vert (A B: type) := Context.oftype Map.empty (A * B).
 
-  Definition id A := E_lam 0 A (E_var 0).
-  Instance id_Vert A: Vert A A (id A).
+  #[program]
+  Definition id A: Vert A A := E_lam 0 A (E_var 0).
+
+  Next Obligation.
   Proof using.
     unfold Vert.
     apply (Context.typecheck_sound Map.empty).
@@ -91,11 +91,14 @@ Module Import Vert.
     reflexivity.
   Defined.
 
-  Definition compose (f g: context) A := E_lam 0 A (E_app f (E_app g (E_var 0))).
-  Instance compose_Vert f g {A B C} `{Vert B C f} `{Vert A B g}: Vert A C (compose f g A).
+  #[program]
+  Definition compose {A B C} (f: Vert B C) (g: Vert A B): Vert A C := E_lam 0 A (E_app f (E_app g (E_var 0))).
+
+  Next Obligation.
   Proof.
     unfold Vert in *.
     unfold compose.
+    destruct f as [f ?], g as [g ?].
     constructor.
     replace (Map.add 0 A _) with (Map.merge Map.empty (Map.one 0 A)).
     2: {

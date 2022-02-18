@@ -373,6 +373,48 @@ Proof using.
     auto.
 Qed.
 
+Definition oftype Γ A := { E | Γ ⊢ E ? A }.
+
+Definition equiv: Relation_Definitions.relation context :=
+  fun E E' =>
+    forall σ N,
+      sat E (σ |- N) <-> sat E' (σ |- N).
+
+Instance equiv_Reflexive: Reflexive equiv.
+Proof using.
+  unfold equiv.
+  unfold Reflexive.
+  intros.
+  reflexivity.
+Qed.
+
+Instance equiv_Symmetric: Symmetric equiv.
+Proof using.
+  unfold equiv.
+  unfold Symmetric.
+  intros.
+  symmetry.
+  auto.
+Qed.
+
+Instance equiv_Transitive: Transitive equiv.
+Proof using.
+  unfold equiv.
+  unfold Transitive.
+  intros.
+  rewrite H.
+  rewrite H0.
+  reflexivity.
+Qed.
+
+Instance equiv_Equivalence: Equivalence equiv := {
+    Equivalence_Reflexive := _ ;
+}.
+
+Instance oftype_Setoid: Setoid context := {
+    equiv := equiv ;
+}.
+
 Example id t :=
   let x := 0 in
   E_lam x t (E_var x).
@@ -381,3 +423,8 @@ Example conv E :=
   let x := 0 in
   let y := 1 in
   E_let x y E (E_fanout (E_var y) (E_var x)).
+
+Theorem conv_id t: conv (id t) == id t.
+Proof.
+  admit.
+Admitted.
