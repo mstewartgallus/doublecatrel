@@ -8,13 +8,6 @@ Import IfNotations.
 
 Require Import FunInd.
 
-Fixpoint toterm (v: normal): term :=
-  match v with
-  | N_tt => v_tt
-  | N_fanout v0 v1 => v_fanout (toterm v0) (toterm v1)
-  end.
-
-Coercion toterm: normal >-> term.
 
 
 Function typecheck (Γ: list (var * type)) (v: term): option type :=

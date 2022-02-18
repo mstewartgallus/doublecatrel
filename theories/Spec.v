@@ -79,6 +79,17 @@ Fixpoint subst_context (E5:context) (x5:var) (E_6:context) {struct E_6} : contex
   | (E_let x y E E') => E_let x y (subst_context E5 x5 E) (if list_mem eq_var x5 (app (cons x nil) (cons y nil)) then E' else (subst_context E5 x5 E'))
 end.
 
+(** definitions *)
+
+(** funs toterm *)
+Fixpoint toterm (x1:normal) : term:=
+  match x1 with
+  | N_tt => v_tt
+  | (N_fanout N N') => (v_fanout  (toterm N )   (toterm N' ) )
+end.
+
+
+Coercion toterm: normal >-> term.
 
 Definition find (x: var) (Γ: list (var * type)): option type :=
   match List.find (fun '(k, _) => if eq_var x k then true else false) Γ with

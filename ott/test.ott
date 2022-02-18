@@ -72,8 +72,19 @@ substitutions
   single v x :: subst
   single E x :: subst 
 
+% subrules are awkward
+funs
+  toterm ::=
+fun
+  [ N ] :: v :: toterm
+by
+  [ tt ] === tt
+  [ N, N' ] === [ N ], [ N' ]
+
 embed
 {{ coq
+
+Coercion toterm: normal >-> term.
 
 Definition find (x: var) (Γ: list (var * type)): option type :=
   match List.find (fun '(k, _) => if eq_var x k then true else false) Γ with

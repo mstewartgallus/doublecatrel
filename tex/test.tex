@@ -42,7 +42,8 @@
 \ottprodline{|}{\pi{}_1 \, \ottnt{v}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\pi{}_2 \, \ottnt{v}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{v}  \ottsym{,}  \ottnt{v'}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottsym{(}  \ottnt{v}  \ottsym{)}} {\textsf{S}}{}{}{}}
+\ottprodline{|}{\ottsym{(}  \ottnt{v}  \ottsym{)}} {\textsf{S}}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottsym{[}  \ottnt{N}  \ottsym{]}} {\textsf{M}}{}{}{}}
 
 \newcommand{\ottcontext}{
 \ottrulehead{\ottnt{context}  ,\ \ottnt{E}}{::=}{}\ottprodnewline
@@ -106,6 +107,10 @@
 \ottrulehead{\ottnt{formula}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottnt{judgement}}{}{}{}{}}
 
+\newcommand{\otttoterm}{
+\ottrulehead{\ottnt{toterm}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\ottsym{[}  \ottnt{N}  \ottsym{]}  \ottsym{===}  \ottnt{v}}{}{}{}{}}
+
 \newcommand{\ottjudgeXXcontext}{
 \ottrulehead{\ottnt{judge\_context}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\Delta  \vdash{}  \ottnt{E}  \colon{}  \ottnt{t}}{}{}{}{}}
@@ -160,6 +165,7 @@
 \ottnormal\ottinterrule
 \ottterminals\ottinterrule
 \ottformula\ottinterrule
+\otttoterm\ottinterrule
 \ottjudgeXXcontext\ottinterrule
 \ottjudgeXXterm\ottinterrule
 \ottbig\ottinterrule
@@ -170,6 +176,18 @@
 }}
 
 % defnss
+% fundefns toterm
+% fundefn toterm
+
+\newcommand{\ottfundefntoterm}[1]{\begin{ottfundefnblock}[#1]{$\ottsym{[}  \ottnt{N}  \ottsym{]}$}{}
+\ottfunclause{\ottsym{[}  \mathop{ \textbf ! }  \ottsym{]}}{\mathop{ \textbf ! }}%
+\ottfunclause{\ottsym{[}  \ottnt{N}  \ottsym{,}  \ottnt{N'}  \ottsym{]}}{\ottsym{[}  \ottnt{N}  \ottsym{]}  \ottsym{,}  \ottsym{[}  \ottnt{N'}  \ottsym{]}}%
+\end{ottfundefnblock}}
+
+
+\newcommand{\ottfundefnstoterm}{
+\ottfundefntoterm{}}
+
 % defns judge_context
 %% defn E
 \newcommand{\ottdruleJEXXvar}[1]{\ottdrule[#1]{%
@@ -440,6 +458,7 @@
 \ottdefnsound{}}
 
 \newcommand{\ottdefnss}{
+\ottfundefnstoterm
 \ottdefnsjudgeXXcontext
 \ottdefnsjudgeXXterm
 \ottdefnsbig
