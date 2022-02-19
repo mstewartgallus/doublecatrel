@@ -363,8 +363,6 @@ Proof using.
     cbn.
     destruct (Map.find X (Map.minus Y S0)) eqn:q.
     2: auto.
-    cbn in q.
-    rewrite q.
     destruct (eq_normal N1 n).
     2: auto.
     subst.
@@ -380,10 +378,6 @@ Proof using.
     all: repeat rewrite Map.add_minus.
     all: eauto.
     all: cbn.
-    cbn in q.
-    rewrite q.
-    cbn.
-    auto.
 Qed.
 
 Theorem search_sound_sat:
@@ -454,11 +448,10 @@ Proof.
   apply (@typecheck_sound Map.empty).
   cbn.
   unfold Map.one.
-  rewrite Map.minus_add.
   destruct (eq_type t t).
-  2:contradiction.
-  reflexivity.
-Qed.
+  2: contradiction.
+  admit.
+Admitted.
 
 #[program]
 Definition conv {t t'} (E: oftype (t * t')): oftype (t' * t) :=
@@ -497,9 +490,7 @@ Proof.
     inversion H6.
     subst.
     constructor.
-    replace N' with N2.
-    1: constructor.
-    cbn in H2.
+    cbn.
     admit.
   - intros p.
     inversion p.

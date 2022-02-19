@@ -86,9 +86,10 @@ Module Import Vert.
     2: contradiction.
     cbn.
     unfold Map.one.
-    rewrite Map.minus_add.
-    reflexivity.
-  Defined.
+    replace (Map.minus 0 _) with (@Map.empty type).
+    1: reflexivity.
+    admit.
+  Admitted.
 
   #[program]
   Definition compose {A B C} (f: Vert B C) (g: Vert A B): Vert A C := E_lam 0 A (E_app f (E_app g (E_var 0))).
