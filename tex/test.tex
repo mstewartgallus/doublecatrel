@@ -33,8 +33,8 @@
 
 \newcommand{\otttype}{
 \ottrulehead{\ottnt{type}  ,\ \ottnt{t}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\top{}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{t}  \times{}  \ottnt{t'}}{}{}{}{}}
+\ottfirstprodline{|}{\textbf{I}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{t}  \otimes{}  \ottnt{t'}}{}{}{}{}}
 
 \newcommand{\ottcontext}{
 \ottrulehead{\ottnt{context}  ,\ \ottnt{E}}{::=}{}\ottprodnewline
@@ -103,8 +103,8 @@
 \ottprodline{|}{ \vdash{} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathbin{:=} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \cup{} }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \top{} }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \times{} }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ \textbf{I} }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ \otimes{} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathop{ \textbf ! } }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \pi{}_1 }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \pi{}_2 }{}{}{}{}\ottprodnewline
@@ -236,13 +236,13 @@
 \newcommand{\ottdruleJEXXabs}[1]{\ottdrule[#1]{%
 \ottpremise{\Delta  \ottsym{,}  \mathit{X}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \vdash{}  \ottnt{E}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}%
 }{
-\Delta  \vdash{}  \lambda{} \, \mathit{X}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \ottsym{.}  \ottnt{E}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \times{}  \ottnt{t_{{\mathrm{2}}}}}{%
+\Delta  \vdash{}  \lambda{} \, \mathit{X}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \ottsym{.}  \ottnt{E}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{JE\_abs}}{}%
 }}
 
 
 \newcommand{\ottdruleJEXXapp}[1]{\ottdrule[#1]{%
-\ottpremise{\Delta_{{\mathrm{1}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \times{}  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\Delta_{{\mathrm{1}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}%
 \ottpremise{\Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}}%
 }{
 \Delta_{{\mathrm{1}}}  \cup{}  \Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}} \, \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}{%
@@ -252,13 +252,13 @@
 
 \newcommand{\ottdruleJEXXtt}[1]{\ottdrule[#1]{%
 }{
-\bullet{}  \vdash{}  \mathop{ \textbf ! }  \colon{}  \top{}}{%
+\bullet{}  \vdash{}  \mathop{ \textbf ! }  \colon{}  \textbf{I}}{%
 {\ottdrulename{JE\_tt}}{}%
 }}
 
 
 \newcommand{\ottdruleJEXXstep}[1]{\ottdrule[#1]{%
-\ottpremise{\Delta_{{\mathrm{1}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \colon{}  \top{}}%
+\ottpremise{\Delta_{{\mathrm{1}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \colon{}  \textbf{I}}%
 \ottpremise{\Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t}}%
 }{
 \Delta_{{\mathrm{1}}}  \cup{}  \Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{;}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t}}{%
@@ -270,13 +270,13 @@
 \ottpremise{\Delta_{{\mathrm{1}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}}%
 \ottpremise{\Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}%
 }{
-\Delta_{{\mathrm{1}}}  \cup{}  \Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \times{}  \ottnt{t_{{\mathrm{2}}}}}{%
+\Delta_{{\mathrm{1}}}  \cup{}  \Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{JE\_fanout}}{}%
 }}
 
 
 \newcommand{\ottdruleJEXXlet}[1]{\ottdrule[#1]{%
-\ottpremise{\Delta_{{\mathrm{1}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \times{}  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\Delta_{{\mathrm{1}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}%
 \ottpremise{\Delta_{{\mathrm{2}}}  \ottsym{,}  \mathit{X}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \ottsym{,}  \mathit{Y}  \colon{}  \ottnt{t_{{\mathrm{2}}}}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{3}}}}}%
 }{
 \Delta_{{\mathrm{1}}}  \cup{}  \Delta_{{\mathrm{2}}}  \vdash{}  \ottkw{let} \, \ottsym{(}  \mathit{X}  \ottsym{,}  \mathit{Y}  \ottsym{)}  \mathbin{:=}  \ottnt{E_{{\mathrm{1}}}} \, \ottkw{in} \, \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{3}}}}}{%
@@ -309,7 +309,7 @@
 
 \newcommand{\ottdruleJvXXtt}[1]{\ottdrule[#1]{%
 }{
-\Gamma  \vdash{}  \mathop{ \textbf ! }  \colon{}  \top{}}{%
+\Gamma  \vdash{}  \mathop{ \textbf ! }  \colon{}  \textbf{I}}{%
 {\ottdrulename{Jv\_tt}}{}%
 }}
 
@@ -318,13 +318,13 @@
 \ottpremise{\Gamma  \vdash{}  \ottnt{v_{{\mathrm{1}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}}%
 \ottpremise{\Gamma  \vdash{}  \ottnt{v_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}%
 }{
-\Gamma  \vdash{}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \times{}  \ottnt{t_{{\mathrm{2}}}}}{%
+\Gamma  \vdash{}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{Jv\_fanout}}{}%
 }}
 
 
 \newcommand{\ottdruleJvXXfst}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \vdash{}  \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \times{}  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\Gamma  \vdash{}  \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}%
 }{
 \Gamma  \vdash{}  \pi{}_1 \, \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{1}}}}}{%
 {\ottdrulename{Jv\_fst}}{}%
@@ -332,7 +332,7 @@
 
 
 \newcommand{\ottdruleJvXXsnd}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \vdash{}  \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \times{}  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\Gamma  \vdash{}  \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}%
 }{
 \Gamma  \vdash{}  \pi{}_2 \, \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{Jv\_snd}}{}%

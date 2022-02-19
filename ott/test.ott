@@ -66,8 +66,8 @@ terminals :: 'terminals_' ::=
   | |-           ::   :: turnstile   {{ tex \vdash{} }}
   | :=           ::   :: update  {{ tex \mathbin{:=} }}
   | ++           ::   :: merge   {{ tex \cup{} }}
-  | unit         ::   :: unit  {{ tex \top{} }}
-  | *            ::   :: prod  {{ tex \times{} }}
+  | unit         ::   :: unit  {{ tex \textbf{I} }}
+  | *            ::   :: prod  {{ tex \otimes{} }}
   | tt           ::   :: tt   {{ tex \mathop{ \textbf ! } }}
   | fst          ::   :: fst  {{ tex \pi{}_1 }}
   | snd          ::   :: snd  {{ tex \pi{}_2 }}
