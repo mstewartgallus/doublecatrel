@@ -18,7 +18,7 @@ context, E :: 'E_' ::=
   | tt                       ::   :: tt
   | E ; E'                   ::   :: step
   | E , E'                   ::   :: fanout
-  | let ( X , Y ) := E in E' ::   :: let (+ bind X union Y in E' +)
+  | let X , Y = E in E'      ::   :: let (+ bind X union Y in E' +)
   | ( E )                    :: S :: paren {{ icho ([[E]]) }}
 
 term, v :: 'v_' ::=
@@ -76,6 +76,8 @@ terminals :: 'terminals_' ::=
   | snd          ::   :: snd  {{ tex \pi{}_2 }}
   | lam          ::   :: lam  {{ tex \lambda{} }}
   | nil          ::   :: nil   {{ tex \bullet{} }}
+  | let          ::   :: let  {{ tex \mathrel{\textbf{let} } }}
+  | in           ::   :: letin  {{ tex \mathbin{\textbf{in} } }}
   | \in          ::   :: member  {{ tex \in{} }}
   | !            ::   :: big     {{ tex \mathrel{\Downarrow} }}
   | ==           ::   :: equiv   {{ tex \mathrel{\sim} }}
@@ -145,7 +147,7 @@ D1 ++ D2 |- E1, E2: t1 * t2
 D1 |- E1 : t1 * t2
 D2, X: t1, Y: t2 |- E2: t3
 ------------------- :: let
-D1 ++ D2 |- let (X, Y) := E1 in E2: t3
+D1 ++ D2 |- let X, Y = E1 in E2: t3
 
 defns
 
@@ -242,7 +244,7 @@ E' !  S' |- N'
 E ! S |- N0, N1 
 E' ! S', X := N0, Y := N1 |- N2 
 ------------------------------------------- :: let
-(let (X, Y) := E in E') ! S ++ S' |- N2 
+(let X, Y = E in E') ! S ++ S' |- N2 
 
 E ! S, X := N |- N' 
 ------------------------------- :: lam
