@@ -36,8 +36,9 @@ normal, N :: 'N_' ::= {{ coq-equality }}
   | ( N )   :: S :: paren {{ coq ([[N]]) }}
 
 linear, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (Map.map type) }} {{ coq-universe Type }}
-  | nil           :: M :: nil {{ coq Map.empty }}
-  | D , X : t     :: M :: add {{ coq (Map.add [[X]] [[t]] [[D]]) }}
+  | nil           :: M :: empty {{ coq (Map.empty) }}
+  | X : t         :: M :: one {{ coq (Map.one [[X]] [[t]]) }}
+  | D , D'        :: M :: add {{ coq (Map.merge [[D']] [[D]]) }}
   | D ++ D'       :: M :: merge {{ coq (Map.merge [[D]] [[D']]) }}
 
 environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (list (vvar * type)) }}
@@ -45,8 +46,9 @@ environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (list (vvar * ty
   | G , x : t     ::   :: add {{ coq (cons ([[x]], [[t]]) [[G]]) }}
 
 store, S {{ tex \sigma }} {{ coq σ }} :: 'S_'  ::= {{ coq (Map.map normal) }} {{ coq-universe Type }}
-  | nil                   :: M :: nil {{ coq Map.empty }}
-  | S , X := N            :: M :: add {{ coq (Map.add [[X]] [[N]] [[S]]) }}
+  | nil                   :: M :: empty {{ coq (Map.empty) }}
+  | X := N                :: M :: one {{ coq (Map.one [[X]] [[N]]) }}
+  | S , S'                :: M :: add {{ coq (Map.merge [[S']] [[S]]) }}
   | S ++ S'               :: M :: merge {{ coq (Map.merge [[S]] [[S']]) }}
 
 span, P :: 'P_' ::= {{ coq-universe Type }}
@@ -75,6 +77,10 @@ terminals :: 'terminals_' ::=
   | nil          ::   :: nil   {{ tex \bullet{} }}
   | !            ::   :: big     {{ tex \mathrel{\Downarrow} }}
   | ==           ::   :: equiv   {{ tex \mathrel{\sim} }}
+
+parsing
+  D_add left D_add
+  S_add left S_add
 
 substitutions
   single v x :: subst
@@ -116,7 +122,7 @@ D |- E : t ::   :: E :: 'E_'
 by
 
 ------------ :: var
-nil, X: t |- X: t
+X: t |- X: t
 
 D, X: t1 |- E: t2
 -------------------------- :: abs
@@ -206,7 +212,7 @@ E ! S |- N ::   :: sat :: 'sat_'
 by
 
 ---------------------- :: var
-X ! nil , X := N |- N
+X ! X := N |- N
 
 ------------------ :: tt
 tt ! nil |- tt

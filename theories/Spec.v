@@ -110,16 +110,16 @@ Definition find (x: vvar) (Γ: list (vvar * type)): option type :=
 (* defns judge_context *)
 Inductive JE : linear -> context -> type -> Prop :=    (* defn E *)
  | JE_var : forall (X:cvar) (t:type),
-     JE  (Map.add  X   t    Map.empty  )  (E_var X) t
+     JE  (Map.one  X   t )  (E_var X) t
  | JE_abs : forall (Δ:linear) (X:cvar) (t1:type) (E:context) (t2:type),
-     JE  (Map.add  X   t1   Δ )  E t2 ->
+     JE  (Map.merge   (Map.one  X   t1 )    Δ )  E t2 ->
      JE Δ (E_lam X t1 E) (t_prod t1 t2)
  | JE_app : forall (Δ1 Δ2:linear) (E1 E2:context) (t2 t1:type),
      JE Δ1 E1 (t_prod t1 t2) ->
      JE Δ2 E2 t1 ->
      JE  (Map.merge  Δ1   Δ2 )  (E_app E1 E2) t2
  | JE_tt : 
-     JE  Map.empty  E_tt t_unit
+     JE  (Map.empty)  E_tt t_unit
  | JE_step : forall (Δ1 Δ2:linear) (E1 E2:context) (t:type),
      JE Δ1 E1 t_unit ->
      JE Δ2 E2 t ->
@@ -130,7 +130,7 @@ Inductive JE : linear -> context -> type -> Prop :=    (* defn E *)
      JE  (Map.merge  Δ1   Δ2 )  (E_fanout E1 E2) (t_prod t1 t2)
  | JE_let : forall (Δ1 Δ2:linear) (X Y:cvar) (E1 E2:context) (t3 t1 t2:type),
      JE Δ1 E1 (t_prod t1 t2) ->
-     JE  (Map.add  Y   t2    (Map.add  X   t1   Δ2 )  )  E2 t3 ->
+     JE  (Map.merge   (Map.one  Y   t2 )     (Map.merge   (Map.one  X   t1 )    Δ2 )  )  E2 t3 ->
      JE  (Map.merge  Δ1   Δ2 )  (E_let X Y E1 E2) t3.
 (** definitions *)
 
@@ -172,9 +172,9 @@ Inductive big : term -> normal -> Prop :=    (* defn big *)
 (* defns sat *)
 Inductive sat : context -> store -> normal -> Prop :=    (* defn sat *)
  | sat_var : forall (X:cvar) (N:normal),
-     sat (E_var X)  (Map.add  X   N    Map.empty  )  N
+     sat (E_var X)  (Map.one  X   N )  N
  | sat_tt : 
-     sat E_tt  Map.empty  N_tt
+     sat E_tt  (Map.empty)  N_tt
  | sat_step : forall (E E':context) (σ σ':store) (N:normal),
      sat E σ N_tt ->
      sat E' σ' N ->
@@ -185,10 +185,10 @@ Inductive sat : context -> store -> normal -> Prop :=    (* defn sat *)
      sat  ( (E_fanout E E') )   (Map.merge  σ   σ' )  (N_fanout N N')
  | sat_let : forall (X Y:cvar) (E E':context) (σ σ':store) (N2 N0 N1:normal),
      sat E σ (N_fanout N0 N1) ->
-     sat E'  (Map.add  Y   N1    (Map.add  X   N0   σ' )  )  N2 ->
+     sat E'  (Map.merge   (Map.one  Y   N1 )     (Map.merge   (Map.one  X   N0 )    σ' )  )  N2 ->
      sat  ( (E_let X Y E E') )   (Map.merge  σ   σ' )  N2
  | sat_lam : forall (X:cvar) (t:type) (E:context) (σ:store) (N N':normal),
-     sat E  (Map.add  X   N   σ )  N' ->
+     sat E  (Map.merge   (Map.one  X   N )    σ )  N' ->
      sat  ( (E_lam X t E) )  σ (N_fanout N N')
  | sat_app : forall (E E':context) (σ σ':store) (N' N:normal),
      sat E σ (N_fanout N N') ->

@@ -114,20 +114,14 @@ Module Import Vert.
     unfold compose.
     destruct f as [f ?], g as [g ?].
     constructor.
-    replace (Map.add 0 A _) with (Map.merge Map.empty (Map.one 0 A)).
-    2: {
-      rewrite Map.merge_empty_l.
-      reflexivity.
-    }
+    cbn.
+    rewrite <- Map.merge_empty_l.
     econstructor.
     1: eauto.
-    replace (Map.one 0 A) with (Map.merge Map.empty (Map.one 0 A)).
-    2: {
-      rewrite Map.merge_empty_l.
-      reflexivity.
-    }
+    rewrite <- Map.merge_empty_l.
     econstructor.
     1: eauto.
+    rewrite Map.merge_empty_r.
     constructor.
-  Defined.
+  Qed.
 End Vert.

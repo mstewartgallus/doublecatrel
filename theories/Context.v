@@ -10,7 +10,6 @@ Require Import Coq.Logic.PropExtensionality.
 
 Require Import FunInd.
 
-Import Map.MapNotations.
 Import List.ListNotations.
 Import IfNotations.
 
@@ -21,22 +20,24 @@ Implicit Type N: normal.
 Implicit Types X Y: cvar.
 Implicit Type σ: store.
 
+Import Map.MapNotations.
+
 Function typecheck Δ E: option (linear * type) :=
   match E with
   | E_var X =>
       if Map.find X Δ is Some t
       then
-          Some (Map.one X t, t)
+        Some (Map.one X t, t)
       else
         None
   | E_lam X t1 E =>
-      if typecheck (Map.add X t1 Δ) E is Some (Δ', t2)
+      if typecheck (X ↦ t1 ∪ Δ) E is Some (Δ', t2)
       then
         if Map.find X Δ' is Some t1'
         then
           if eq_type t1 t1'
           then
-              Some (Δ' \ X, t1 * t2)
+            Some (Δ' \ X, t1 * t2)
           else
             None
         else
@@ -84,7 +85,7 @@ Function typecheck Δ E: option (linear * type) :=
   | E_let X Y E E' =>
       if typecheck Δ E is Some (Δ', t1 * t2)
       then
-        if typecheck (Map.add X t1 (Map.add Y t2 Δ)) E' is Some (Δ, t3)
+        if typecheck (X ↦ t1 ∪ Y ↦ t2 ∪ Δ) E' is Some (Δ, t3)
         then
           if Map.find X (Δ \ Y) is Some t1'
           then
@@ -108,7 +109,7 @@ Function typecheck Δ E: option (linear * type) :=
       else
         None
   end
-    %list.
+    %list %map.
 
 Theorem typecheck_sound:
   ∀ Δ {E Δ' t}, typecheck Δ E = Some (Δ', t) → Δ' ⊢ E ? t.
@@ -119,19 +120,18 @@ Proof using.
   all: intros ? ? p.
   all: inversion p.
   all: subst.
-  all: econstructor.
+  all: try econstructor.
   all: eauto.
   - apply IHo.
-    rewrite (Map.add_minus X t1 Δ').
-    2: auto.
-    auto.
+    rewrite Map.add_minus.
+    all: auto.
   - rewrite Map.add_minus.
     all: auto.
     1: rewrite Map.add_minus.
     all: auto.
 Qed.
 
-Notation "'do' x <- e0 ; e1" := (List.flat_map (λ x, e1) e0) (x pattern, at level 200, left associativity).
+Notation "'do' x <- e0 ; e1" := (List.flat_map (λ x, e1) e0) (x pattern, at level 200, left associativity): list_scope.
 
 Fixpoint app {A B} (f: list (A → B)) x: list _ :=
   if f is cons H T
@@ -154,7 +154,7 @@ Fixpoint search σ E: list span :=
 
   | E_lam X t E =>
       do N0 <- generate t ;
-      do (σ' |- N1) <- search (Map.add X N0 σ) E ;
+      do (σ' |- N1) <- search (X ↦ N0 ∪ σ) E ;
       if Map.find X σ' is Some N0'
       then
         if eq_normal N0 N0'
@@ -172,7 +172,7 @@ Fixpoint search σ E: list span :=
       then
         if eq_normal N0 N0'
         then
-          [(σ1 ∪ σ2) |- N1]
+          [(Map.merge σ1 σ2) |- N1]
         else
           []
       else
@@ -194,8 +194,8 @@ Fixpoint search σ E: list span :=
   | E_let X Y E E' =>
       do (σ1 |- N) <- search σ E ;
       do (a, b) <- (if N is N_fanout a b then [(a, b)] else []) ;
-      do (σ2 |- N') <- search (Map.add X a (Map.add Y b σ)) E' ;
-      if Map.find X (Map.minus Y σ2)is Some a'
+      do (σ2 |- N') <- search ((X ↦ a) ∪ (Y ↦ b) ∪ σ) E' ;
+      if Map.find X (σ2 \ Y)is Some a'
       then
         if eq_normal a a'
         then
@@ -212,7 +212,7 @@ Fixpoint search σ E: list span :=
           []
       else
         []
-  end%list.
+  end%list %map.
 
 Lemma sound_pure:
   ∀ {E S N}, sat E S N → sound E ([S |- N]%list).
@@ -274,6 +274,7 @@ Defined.
 Theorem search_sound:
   ∀ σ E, sound E (search σ E).
 Proof using.
+  Open Scope map.
   intros σ E.
   generalize dependent σ.
   induction E.
@@ -291,7 +292,7 @@ Proof using.
     apply sound_mon.
     2: auto.
     clear IHl.
-    induction (IHE (Map.add X a σ)).
+    induction (IHE (X ↦ a ∪ σ)).
     1: constructor.
     cbn.
     destruct (Map.find X σ0) eqn:q.
@@ -368,7 +369,7 @@ Proof using.
     1: constructor.
     cbn.
     rewrite List.app_nil_r.
-    induction (IHE2 (Map.add X N1 (Map.add Y N2 σ))).
+    induction (IHE2 (((X ↦ N1 ∪ Y ↦ N2) ∪ σ))).
     1: constructor.
     cbn.
     destruct (Map.find X (σ1 \ Y)) eqn:q.
@@ -611,7 +612,7 @@ Proof.
   rewrite <- (@Map.merge_empty_l _ Map.empty).
   econstructor.
   all: eauto.
-  apply (@typecheck_sound (Map.add 1 t' (Map.add 0 t Map.empty))).
+  apply (@typecheck_sound (1 ↦ t' ∪ (0 ↦ t ∪ ∅))).
   cbn.
   admit.
 Admitted.

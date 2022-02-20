@@ -68,7 +68,8 @@
 \newcommand{\ottlinear}{
 \ottrulehead{\ottnt{linear}  ,\ \Delta}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\bullet{}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\Delta  \ottsym{,}  \mathit{X}  \colon{}  \ottnt{t}} {\textsf{M}}{}{}{}\ottprodnewline
+\ottprodline{|}{\mathit{X}  \colon{}  \ottnt{t}} {\textsf{M}}{}{}{}\ottprodnewline
+\ottprodline{|}{\Delta  \ottsym{,}  \Delta'} {\textsf{M}}{}{}{}\ottprodnewline
 \ottprodline{|}{\Delta  \cup{}  \Delta'} {\textsf{M}}{}{}{}}
 
 \newcommand{\ottenvironment}{
@@ -79,7 +80,8 @@
 \newcommand{\ottstore}{
 \ottrulehead{\ottnt{store}  ,\ \sigma}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\bullet{}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\sigma  \ottsym{,}  \mathit{X}  \mathbin{:=}  \ottnt{N}} {\textsf{M}}{}{}{}\ottprodnewline
+\ottprodline{|}{\mathit{X}  \mathbin{:=}  \ottnt{N}} {\textsf{M}}{}{}{}\ottprodnewline
+\ottprodline{|}{\sigma  \ottsym{,}  \sigma'} {\textsf{M}}{}{}{}\ottprodnewline
 \ottprodline{|}{\sigma  \cup{}  \sigma'} {\textsf{M}}{}{}{}}
 
 \newcommand{\ottspan}{
@@ -228,7 +230,7 @@
 %% defn E
 \newcommand{\ottdruleJEXXvar}[1]{\ottdrule[#1]{%
 }{
-\bullet{}  \ottsym{,}  \mathit{X}  \colon{}  \ottnt{t}  \vdash{}  \mathit{X}  \colon{}  \ottnt{t}}{%
+\mathit{X}  \colon{}  \ottnt{t}  \vdash{}  \mathit{X}  \colon{}  \ottnt{t}}{%
 {\ottdrulename{JE\_var}}{}%
 }}
 
@@ -398,7 +400,7 @@
 %% defn sat
 \newcommand{\ottdrulesatXXvar}[1]{\ottdrule[#1]{%
 }{
-\mathit{X}  \mathrel{\Downarrow}  \bullet{}  \ottsym{,}  \mathit{X}  \mathbin{:=}  \ottnt{N}  \vdash{}  \ottnt{N}}{%
+\mathit{X}  \mathrel{\Downarrow}  \mathit{X}  \mathbin{:=}  \ottnt{N}  \vdash{}  \ottnt{N}}{%
 {\ottdrulename{sat\_var}}{}%
 }}
 

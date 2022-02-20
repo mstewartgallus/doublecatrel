@@ -1,58 +1,91 @@
 Require Import Coq.Unicode.Utf8.
 Require Import Coq.Arith.PeanoNat.
 Require Import Coq.Logic.FunctionalExtensionality.
+Require Coq.Lists.List.
 
 Import IfNotations.
+Import List.ListNotations.
+
+Definition map V := nat → option V.
+
+Implicit Type k: nat.
+
+Section Prim.
+  Context {V: Type}.
+
+  Implicit Type m: map V.
+
+  Definition find k m := m k.
+
+  Definition empty: map V := λ _, None.
+
+  Definition merge m m' :=
+    λ k,
+      if find k m is Some v
+      then
+        Some v
+      else
+        find k m'.
+
+  Definition one k (v: V): map V :=
+    λ k',
+      if Nat.eq_dec k k'
+      then
+        Some v
+      else
+        None.
+
+  Definition put k (v: option V) m: map V :=
+    λ k',
+      if Nat.eq_dec k k'
+      then
+        v
+      else
+        find k' m.
+
+  Definition minus k := put k None.
+
+  Definition disjoint m m' :=
+    ∀ k, m k = None \/ m' k = None.
+End Prim.
+
+Module Import MapNotations.
+  Declare Scope map_scope.
+  Bind Scope map_scope with map.
+  Delimit Scope map_scope with map.
+
+  Notation "∅" := empty: map_scope.
+  Notation "m \ k" := (minus k m) (at level 30): map_scope.
+  Infix "∪" := merge (at level 30): map_scope.
+
+  Notation "x '↦' v" := (one x v) (at level 20): map_scope.
+End MapNotations.
 
 Section Map.
   Context {V: Type}.
 
-  Definition map := nat → option V.
+  Implicit Type m: map V.
+  Implicit Type v: V.
 
-  Definition find n (m: map): option V := m n.
-  Definition empty: map := λ _, None.
+  Open Scope map.
 
-  Definition put (n: nat) (v: option V) (m: map): map :=
-    λ n',
-      if Nat.eq_dec n n'
-      then
-        v
-      else
-        find n' m.
-
-  Definition add n (v: V) := put n (Some v).
-  Definition minus (n: nat): map → _ := put n None.
-
-  Definition one (x: nat) (v: V) := add x v empty.
-
-  Definition merge (m m': map) :=
-    λ n,
-      if find n m is Some v
-      then
-        Some v
-      else
-        find n m'.
-
-  Fixpoint add_list (kv: list (nat * V)) (m: map): map :=
-    if kv is cons (k, v) t
+  Fixpoint add_list kv m :=
+    if kv is ((k, v) :: t)%list
     then
-      add k v (add_list t m)
+      k ↦ v ∪ add_list t m
     else
       m.
 
-  Definition of_list (kv: list (nat * V)) := add_list kv empty.
-
-  Definition disjoint (f g: map) :=
-    ∀ x, f x = None \/ g x = None.
+  Definition of_list kv := add_list kv empty.
 
   Lemma add_minus:
-    ∀ x (t: V) Γ,
-      find x Γ = Some t →
-      add x t (minus x Γ) = Γ.
+    ∀ {k v m},
+      find k m = Some v →
+      (k ↦ v ∪ (m \ k)) = m.
   Proof.
     intros ? ? ? p.
     extensionality n.
-    unfold add, minus.
+    unfold merge, one, minus, empty.
     unfold put.
     unfold find in p.
     unfold find.
@@ -64,71 +97,57 @@ Section Map.
   Qed.
 
   Lemma find_add:
-    ∀ x (t: V) Γ,
-      find x (add x t Γ) = Some t.
+    ∀ {k v m},
+      find k (k ↦ v ∪ m) = Some v.
   Proof.
-    intros x.
     intros.
-    unfold find, add, put.
+    unfold find, merge, one, put, empty, find.
     destruct Nat.eq_dec.
     1: reflexivity.
     contradiction.
   Qed.
 
-  Lemma add_add:
-    ∀ x (s t: V) Γ,
-      add x s (add x t Γ) = add x s Γ.
+  Lemma add_add {k m v v'}: (k ↦ v ∪ k ↦ v' ∪ m) = (k ↦ v ∪ m).
   Proof.
-    intros.
-    unfold add, put, find.
-    extensionality n.
+    unfold merge, put, find, one, put, empty.
+    extensionality k'.
     destruct Nat.eq_dec.
     all: reflexivity.
   Qed.
 
-  Lemma merge_assoc:
-    ∀ A B C,
-      merge (merge A B) C = merge A (merge B C).
+  Lemma merge_assoc {m0 m1 m2}: (m0 ∪ m1) ∪ m2 = m0 ∪ (m1 ∪ m2).
   Proof.
-    intros.
-    extensionality n.
+    extensionality k.
     unfold merge, find.
-    destruct (A n).
+    destruct (m0 k).
     1: reflexivity.
-    destruct (B n).
+    destruct (m1 k).
     1: reflexivity.
     reflexivity.
   Qed.
 
-  Lemma merge_empty_r:
-    ∀ (Γ: map),
-      merge Γ empty = Γ.
+  Lemma merge_empty_r {m}: m ∪ ∅ = m.
   Proof.
-    intros.
-    extensionality n.
+    extensionality k.
     unfold merge, find, empty.
-    destruct (Γ n).
+    destruct (m k).
     all: reflexivity.
   Qed.
 
-  Lemma merge_empty_l:
-    ∀ (Γ: map),
-      merge empty Γ = Γ.
+  Lemma merge_empty_l {m}: ∅ ∪ m = m.
   Proof.
     intros.
     unfold merge, empty, find.
-    extensionality n.
+    extensionality k.
     reflexivity.
   Qed.
 
-  Lemma find_one_ne:
-    ∀ {x x'} {t: V},
-      x <> x' →
-      find x (one x' t) = None.
+  Lemma find_one_ne {k k' v}:
+      k <> k' →
+      find k (one k' v) = None.
   Proof.
     intros.
     unfold find, one.
-    unfold add.
     unfold put, empty.
     destruct Nat.eq_dec.
     1: subst.
@@ -137,10 +156,3 @@ Section Map.
     reflexivity.
   Qed.
 End Map.
-
-Arguments map: clear implicits.
-
-Module MapNotations.
-  Notation "m \ k" := (minus k m) (at level 30).
-  Infix "∪" := merge (at level 30).
-End MapNotations.
