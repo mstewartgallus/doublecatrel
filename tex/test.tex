@@ -75,7 +75,8 @@
 \newcommand{\ottenvironment}{
 \ottrulehead{\ottnt{environment}  ,\ \Gamma}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t}}{}{}{}{}}
+\ottprodline{|}{\Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottsym{(}  \Gamma  \ottsym{)}} {\textsf{S}}{}{}{}}
 
 \newcommand{\ottstore}{
 \ottrulehead{\ottnt{store}  ,\ \sigma}{::=}{}\ottprodnewline
@@ -112,6 +113,7 @@
 \ottprodline{|}{ \pi{}_2 }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \lambda{} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \bullet{} }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ \in{} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathrel{\Downarrow} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathrel{\sim} }{}{}{}{}}
 
@@ -130,6 +132,10 @@
 \newcommand{\ottjudgeXXcontext}{
 \ottrulehead{\ottnt{judge\_context}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\Delta  \vdash{}  \ottnt{E}  \colon{}  \ottnt{t}}{}{}{}{}}
+
+\newcommand{\ottfind}{
+\ottrulehead{\ottnt{find}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\mathit{x}  \colon{}  \ottnt{t}  \in{}  \Gamma}{}{}{}{}}
 
 \newcommand{\ottjudgeXXterm}{
 \ottrulehead{\ottnt{judge\_term}}{::=}{}\ottprodnewline
@@ -154,6 +160,7 @@
 \newcommand{\ottjudgement}{
 \ottrulehead{\ottnt{judgement}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottnt{judge\_context}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{find}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{judge\_term}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{big}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{sat}}{}{}{}{}\ottprodnewline
@@ -192,6 +199,7 @@
 \otttoterm\ottinterrule
 \ottmsubst\ottinterrule
 \ottjudgeXXcontext\ottinterrule
+\ottfind\ottinterrule
 \ottjudgeXXterm\ottinterrule
 \ottbig\ottinterrule
 \ottsat\ottinterrule
@@ -299,10 +307,36 @@
 \newcommand{\ottdefnsjudgeXXcontext}{
 \ottdefnJE{}}
 
+% defns find
+%% defn mem
+\newcommand{\ottdrulememXXeq}[1]{\ottdrule[#1]{%
+}{
+\mathit{x}  \colon{}  \ottnt{t}  \in{}  \Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t}}{%
+{\ottdrulename{mem\_eq}}{}%
+}}
+
+
+\newcommand{\ottdrulememXXne}[1]{\ottdrule[#1]{%
+\ottpremise{\mathit{x}\texttt{ <> }\mathit{x'}\texttt{ }}%
+\ottpremise{\mathit{x}  \colon{}  \ottnt{t}  \in{}  \Gamma}%
+}{
+\mathit{x}  \colon{}  \ottnt{t}  \in{}  \Gamma  \ottsym{,}  \mathit{x'}  \colon{}  \ottnt{t'}}{%
+{\ottdrulename{mem\_ne}}{}%
+}}
+
+\newcommand{\ottdefnmem}[1]{\begin{ottdefnblock}[#1]{$\mathit{x}  \colon{}  \ottnt{t}  \in{}  \Gamma$}{}
+\ottusedrule{\ottdrulememXXeq{}}
+\ottusedrule{\ottdrulememXXne{}}
+\end{ottdefnblock}}
+
+
+\newcommand{\ottdefnsfind}{
+\ottdefnmem{}}
+
 % defns judge_term
 %% defn v
 \newcommand{\ottdruleJvXXvar}[1]{\ottdrule[#1]{%
-\ottpremise{\texttt{find }\mathit{x}\texttt{ }\Gamma\texttt{ = Some }\ottnt{t}\texttt{ }}%
+\ottpremise{\mathit{x}  \colon{}  \ottnt{t}  \in{}  \Gamma}%
 }{
 \Gamma  \vdash{}  \mathit{x}  \colon{}  \ottnt{t}}{%
 {\ottdrulename{Jv\_var}}{}%
@@ -525,6 +559,7 @@
 \ottfundefnstoterm
 \ottfundefnsmsubst
 \ottdefnsjudgeXXcontext
+\ottdefnsfind
 \ottdefnsjudgeXXterm
 \ottdefnsbig
 \ottdefnssat

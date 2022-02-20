@@ -1,6 +1,7 @@
-Require Import Blech.Spec.
 Require Blech.Map.
+Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
+Require Blech.OptionNotations.
 
 Require Import Coq.Unicode.Utf8.
 Require Import Coq.Classes.SetoidClass.
@@ -23,12 +24,7 @@ Implicit Type σ: store.
 Import Map.MapNotations.
 
 Section Typecheck.
-  Notation "'do' x ← e0 ; e1" :=
-    (match e0 with
-     | Some x => e1
-     | _ => None
-     end)
-      (x pattern, at level 200, left associativity).
+  Import OptionNotations.
 
   Function typecheck Δ E: option (linear * type) :=
     match E with
@@ -167,7 +163,7 @@ Fixpoint search σ E: list span :=
       do (σ1 |- N) ← search σ E ;
       do (a, b) ← (if N is N_fanout a b then [(a, b)] else []) ;
       do (σ2 |- N') ← search ((X ↦ a) ∪ (Y ↦ b) ∪ σ) E' ;
-      if Map.find X (σ2 \ Y)is Some a'
+      if Map.find X (σ2 \ Y) is Some a'
       then
         if eq_normal a a'
         then

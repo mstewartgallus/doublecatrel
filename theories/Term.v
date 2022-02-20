@@ -1,5 +1,6 @@
 Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
+Require Import Blech.OptionNotations.
 
 Require Import Coq.Unicode.Utf8.
 Require Import Coq.Classes.SetoidClass.
@@ -15,15 +16,45 @@ Implicit Type t: type.
 Implicit Type N: normal.
 Implicit Types x y: vvar.
 
-(* Define only as a notation becaues Function can't see through otherwise *)
-Notation "'do' x ← e0 ; e1" :=
-  (match e0 with
-   | Some x => e1
-   | _ => None
-   end)
-    (x pattern, at level 200, left associativity).
+Function find x Γ :=
+  if Γ is cons (x', t) T
+  then
+    if eq_vvar x x'
+    then
+      Some t
+    else
+      find x T
+  else
+    None.
 
-Function typecheck Γ v: option type :=
+Lemma find_sound:
+  ∀ {x Γ t}, find x Γ = Some t → mem x t Γ.
+Proof using .
+  intros x Γ.
+  functional induction (find x Γ).
+  all: intros ? p.
+  all: inversion p.
+  - subst.
+    constructor.
+  - constructor.
+    all: auto.
+Qed.
+
+Lemma find_complete {x Γ t}:
+  mem x t Γ → find x Γ = Some t.
+Proof using .
+  intro p.
+  induction p.
+  all: cbn.
+  - destruct (eq_vvar x x).
+    2: contradiction.
+    reflexivity.
+  - destruct (eq_vvar x x').
+    1: contradiction.
+    auto.
+Qed.
+
+Function typecheck Γ v :=
   match v with
   | v_var x => find x Γ
   | v_tt => Some t_unit
@@ -50,6 +81,8 @@ Proof using .
   all: subst.
   all: econstructor.
   all: eauto.
+  apply find_sound.
+  auto.
 Qed.
 
 Theorem typecheck_complete:
@@ -68,6 +101,8 @@ Proof using .
   all: try inversion IHp2.
   all: subst.
   all: auto.
+  apply find_complete.
+  auto.
 Qed.
 
 Function eval v :=
@@ -163,7 +198,7 @@ Proof using.
   intros ? ? p.
   induction p.
   all: subst.
-  - discriminate.
+  - inversion H.
   - exists N_tt.
     constructor.
   - destruct (IHp1 (eq_refl _)) as [v1' s1].
@@ -277,25 +312,26 @@ Proof using.
   intros v.
   induction v.
   all: intros Γ p t q q'.
-  - induction q.
-    1: cbn.
-    1: inversion q'.
-    1: subst.
-    1: discriminate.
-    cbn.
-    1: inversion q'.
+  - inversion q'.
     subst.
-    unfold find in H2.
-    cbn in H2.
+    induction q.
+    1: cbn.
+    1: inversion H1.
+    cbn in *.
     destruct (eq_vvar x x0).
-    1: subst.
-    1: rewrite msubst_normal.
-    1: inversion H2.
-    1: subst.
-    1: auto.
-    apply IHq.
-    constructor.
-    auto.
+    + subst.
+      rewrite msubst_normal.
+      inversion H1.
+      2: contradiction.
+      subst.
+      auto.
+    + inversion H1.
+      1: contradiction.
+      all: subst.
+      apply IHq.
+      all: auto.
+      constructor.
+      auto.
   - replace v_tt with (N_tt : term).
     2: reflexivity.
     rewrite msubst_normal.

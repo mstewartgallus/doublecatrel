@@ -43,7 +43,8 @@ linear, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (Map.map type) }} {{ 
 
 environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (list (vvar * type)) }}
   | nil         ::   :: nil {{ coq nil }}
-  | G , x : t     ::   :: add {{ coq (cons ([[x]], [[t]]) [[G]]) }}
+  | G , x : t   ::   :: add {{ coq (cons ([[x]], [[t]]) [[G]]) }}
+  | ( G )       :: S :: paren {{ coq ([[G]]) }}
 
 store, S {{ tex \sigma }} {{ coq σ }} :: 'S_'  ::= {{ coq (Map.map normal) }} {{ coq-universe Type }}
   | nil                   :: M :: empty {{ coq (Map.empty) }}
@@ -75,6 +76,7 @@ terminals :: 'terminals_' ::=
   | snd          ::   :: snd  {{ tex \pi{}_2 }}
   | lam          ::   :: lam  {{ tex \lambda{} }}
   | nil          ::   :: nil   {{ tex \bullet{} }}
+  | \in          ::   :: member  {{ tex \in{} }}
   | !            ::   :: big     {{ tex \mathrel{\Downarrow} }}
   | ==           ::   :: equiv   {{ tex \mathrel{\sim} }}
 
@@ -94,6 +96,11 @@ by
   [ tt ] === tt
   [ N, N' ] === [ N ], [ N' ]
 
+embed
+{{ coq
+Coercion toterm: normal >-> term.
+}}
+
 funs
   msubst ::=
 fun
@@ -102,17 +109,6 @@ by
   [ nil ] v' === v'
   [p, x := N] v' === [p] ([ x := [N] ] v')
 
-embed
-{{ coq
-
-Coercion toterm: normal >-> term.
-
-Definition find (x: vvar) (Γ: list (vvar * type)): option type :=
-  match List.find (fun '(k, _) => if eq_vvar x k then true else false) Γ with
-  | Some (_, t) => Some t
-  | _ => None
-  end.
-}}
 defns
 
 judge_context :: 'J' ::=
@@ -153,13 +149,29 @@ D1 ++ D2 |- let (X, Y) := E1 in E2: t3
 
 defns
 
+find :: '' ::=
+
+defn
+x : t \in G ::   :: mem :: 'mem_'
+by
+
+--------------------- :: eq
+x: t \in G, x : t
+
+{{ [[x]] <> [[x']] }}
+x: t \in G
+-------------------- :: ne
+x: t \in G, x' : t'
+
+defns
+
 judge_term :: 'J' ::=
 
 defn
 G |- v : t ::   :: v :: 'v_'
 by
 
-{{ find [[x]] [[G]] = Some [[t]] }}
+x: t \in G
 ------------ :: var
 G |- x: t
 

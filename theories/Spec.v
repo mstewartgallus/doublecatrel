@@ -34,9 +34,12 @@ Inductive type : Set :=
 Inductive span : Type := 
  | P_with (σ:store) (N:normal).
 
-Definition environment : Set := (list (vvar * type)).
-
-Definition subst : Set := (list (vvar * normal)).
+Inductive term : Set := 
+ | v_var (x:vvar)
+ | v_tt : term
+ | v_fst (v:term)
+ | v_snd (v:term)
+ | v_fanout (v:term) (v':term).
 
 Inductive context : Set := 
  | E_var (X:cvar)
@@ -49,14 +52,11 @@ Inductive context : Set :=
 
 Definition linear : Type := (Map.map type).
 
-Inductive term : Set := 
- | v_var (x:vvar)
- | v_tt : term
- | v_fst (v:term)
- | v_snd (v:term)
- | v_fanout (v:term) (v':term).
-
 Definition set : Type := (list span).
+
+Definition environment : Set := (list (vvar * type)).
+
+Definition subst : Set := (list (vvar * normal)).
 Lemma eq_normal: forall (x y : normal), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -87,6 +87,8 @@ Fixpoint toterm (x1:normal) : term:=
   | (N_fanout N N') => (v_fanout  (toterm N )   (toterm N' ) )
 end.
 
+Coercion toterm: normal >-> term.
+
 (** definitions *)
 
 (** funs msubst *)
@@ -95,15 +97,6 @@ Fixpoint msubst (x1:subst) (x2:term) : term:=
   |  nil  , v' => v'
   |  (cons ( x ,  N )  ρ )  , v' =>  (msubst ρ  (  (subst_term   (toterm N )    x   v' )  )  ) 
 end.
-
-
-Coercion toterm: normal >-> term.
-
-Definition find (x: vvar) (Γ: list (vvar * type)): option type :=
-  match List.find (fun '(k, _) => if eq_vvar x k then true else false) Γ with
-  | Some (_, t) => Some t
-  | _ => None
-  end.
 
 (** definitions *)
 
@@ -134,10 +127,20 @@ Inductive JE : linear -> context -> type -> Prop :=    (* defn E *)
      JE  (Map.merge  Δ1   Δ2 )  (E_let X Y E1 E2) t3.
 (** definitions *)
 
+(* defns find *)
+Inductive mem : vvar -> type -> environment -> Prop :=    (* defn mem *)
+ | mem_eq : forall (x:vvar) (t:type) (Γ:environment),
+     mem x t  (cons ( x ,  t )  Γ ) 
+ | mem_ne : forall (x:vvar) (t:type) (Γ:environment) (x':vvar) (t':type),
+     x <> x'  ->
+     mem x t Γ ->
+     mem x t  (cons ( x' ,  t' )  Γ ) .
+(** definitions *)
+
 (* defns judge_term *)
 Inductive Jv : environment -> term -> type -> Prop :=    (* defn v *)
  | Jv_var : forall (Γ:environment) (x:vvar) (t:type),
-     find x Γ = Some t  ->
+     mem x t Γ ->
      Jv Γ (v_var x) t
  | Jv_tt : forall (Γ:environment),
      Jv Γ v_tt t_unit
