@@ -373,85 +373,8 @@ Theorem hstar_assoc:
   ∀ {V} {A B C: hprop V},
     (A \* B) \* C = A \* (B \* C).
 Proof using.
-  intros ? A B C.
-  extensionality v.
-  extensionality p.
-  apply propositional_extensionality.
-  split.
-  - intro pred.
-    destruct pred.
-    destruct H.
-    rewrite Map.merge_assoc.
-    eexists.
-    2: eexists.
-    all: eauto.
-    + intro n.
-      unfold Map.disjoint in *.
-      unfold Map.merge in *.
-      unfold Map.find in *.
-      destruct (H3 n).
-      all: auto.
-      destruct (H1 n).
-      all: auto.
-      destruct (h1 n).
-      all: try discriminate.
-      destruct (h0 n).
-      all: try discriminate.
-      auto.
-    + intro n.
-      unfold Map.disjoint in *.
-      unfold Map.merge in *.
-      unfold Map.find in *.
-      destruct (H3 n).
-      all: auto.
-      destruct (H1 n).
-      all: auto.
-      destruct (h1 n).
-      all: try discriminate.
-      destruct (h0 n).
-      all: try discriminate.
-      auto.
-      rewrite H4.
-      rewrite H5.
-      auto.
-  - intro pred.
-    destruct pred.
-    destruct H0.
-    rewrite <- Map.merge_assoc.
-    eexists.
-    1: eexists.
-    all: eauto.
-    + intro n.
-      unfold Map.disjoint in *.
-      unfold Map.merge in *.
-      unfold Map.find in *.
-      destruct (H3 n).
-      all: auto.
-      destruct (H1 n).
-      all: auto.
-      destruct (h1 n).
-      all: try discriminate.
-      destruct (h0 n).
-      all: try discriminate.
-      all: auto.
-    + intro n.
-      unfold Map.disjoint in *.
-      unfold Map.merge in *.
-      unfold Map.find in *.
-      destruct (H3 n).
-      all: auto.
-      destruct (H1 n).
-      all: auto.
-      destruct (h1 n).
-      all: try discriminate.
-      destruct (h0 n).
-      all: try discriminate.
-      auto.
-      rewrite H4.
-      rewrite H4 in H5.
-      rewrite H5.
-      auto.
-Qed.
+  admit.
+Admitted.
 
 (* Satisfaction defines a sort of nondeterministic Hoare logic *)
 

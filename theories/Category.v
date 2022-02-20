@@ -92,16 +92,10 @@ Module Import Vert.
   Next Obligation.
   Proof using.
     unfold Vert.
-    apply (Context.typecheck_sound Map.empty).
-    cbn.
-    destruct (eq_type t t).
-    2: contradiction.
-    cbn.
-    unfold Map.one.
-    replace (Map.minus 0 _) with (@Map.empty type).
-    1: reflexivity.
-    admit.
-  Admitted.
+    constructor.
+    rewrite Map.merge_empty_r.
+    constructor.
+  Qed.
 
   #[program]
   Definition compose {A B C} (f: Vert B C) (g: Vert A B): Vert A C := E_lam 0 A (E_app f (E_app g (E_var 0))).
