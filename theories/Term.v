@@ -15,32 +15,28 @@ Implicit Type t: type.
 Implicit Type N: normal.
 Implicit Types x y: vvar.
 
+(* Define only as a notation becaues Function can't see through otherwise *)
+Notation "'do' x ← e0 ; e1" :=
+  (match e0 with
+   | Some x => e1
+   | _ => None
+   end)
+    (x pattern, at level 200, left associativity).
+
 Function typecheck Γ v: option type :=
   match v with
   | v_var x => find x Γ
   | v_tt => Some t_unit
   | v_fst v =>
-      if typecheck Γ v is Some (t0 * _)
-      then
-        Some t0
-      else
-        None
+      do t0 * _ ← typecheck Γ v ;
+      Some t0
   | v_snd v =>
-      if typecheck Γ v is Some (_ * t1)
-      then
-        Some t1
-      else
-        None
+      do _ * t1 ← typecheck Γ v ;
+      Some t1
   | v_fanout v0 v1 =>
-      if typecheck Γ v0 is Some t0
-      then
-        if typecheck Γ v1 is Some t1
-        then
-          Some (t0 * t1)
-        else
-          None
-      else
-        None
+      do t0 ← typecheck Γ v0 ;
+      do t1 ← typecheck Γ v1 ;
+      Some (t0 * t1)
   end.
 
 Theorem typecheck_sound:
@@ -78,18 +74,16 @@ Function eval v :=
   match v with
   | v_var _ => None
   | v_tt => Some N_tt
-  | v_fst v => if eval v is Some (N_fanout a _) then Some a else None
-  | v_snd v => if eval v is Some (N_fanout _ a) then Some a else None
+  | v_fst v =>
+      do N_fanout a _ ← eval v ;
+      Some a
+  | v_snd v =>
+      do N_fanout _ a ← eval v ;
+      Some a
   | v_fanout v0 v1 =>
-      if eval v0 is Some v0'
-      then
-        if eval v1 is Some v1'
-        then
-          Some (N_fanout v0' v1')
-        else
-          None
-      else
-        None
+      do v0' ← eval v0 ;
+      do v1' ← eval v1 ;
+      Some (N_fanout v0' v1')
   end.
 
 Theorem eval_sound:

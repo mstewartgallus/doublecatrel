@@ -22,94 +22,64 @@ Implicit Type σ: store.
 
 Import Map.MapNotations.
 
-Function typecheck Δ E: option (linear * type) :=
-  match E with
-  | E_var X =>
-      if Map.find X Δ is Some t
-      then
+Section Typecheck.
+  Notation "'do' x ← e0 ; e1" :=
+    (match e0 with
+     | Some x => e1
+     | _ => None
+     end)
+      (x pattern, at level 200, left associativity).
+
+  Function typecheck Δ E: option (linear * type) :=
+    match E with
+    | E_var X =>
+        do t ← Map.find X Δ ;
         Some (Map.one X t, t)
-      else
-        None
-  | E_lam X t1 E =>
-      if typecheck (X ↦ t1 ∪ Δ) E is Some (Δ', t2)
-      then
-        if Map.find X Δ' is Some t1'
+    | E_lam X t1 E =>
+        do (Δ', t2) ← typecheck (X ↦ t1 ∪ Δ) E ;
+        do t1' ← Map.find X Δ' ;
+        if eq_type t1 t1'
         then
-          if eq_type t1 t1'
+          Some (Δ' \ X, t1 * t2)
+        else
+          None
+    | E_app E E' =>
+        do (Δ', t1 * t2) ← typecheck Δ E ;
+        do (Δ, t1') ← typecheck Δ E' ;
+        if eq_type t1 t1'
+        then
+          Some (Δ' ∪ Δ, t2)
+        else
+          None
+
+    | E_tt => Some (Map.empty, t_unit)
+    | E_step E E' =>
+        do (Δ', t_unit) ← typecheck Δ E ;
+        do (Δ, t) ← typecheck Δ E' ;
+        Some (Δ' ∪ Δ, t)
+
+    | E_fanout E E' =>
+        do (Δ', t1) ← typecheck Δ E ;
+        do (Δ, t2) ← typecheck Δ E' ;
+        Some (Δ' ∪ Δ, t1 * t2)
+
+    | E_let X Y E E' =>
+        do (Δ', t1 * t2) ← typecheck Δ E ;
+        do (Δ, t3) ← typecheck (X ↦ t1 ∪ Y ↦ t2 ∪ Δ) E' ;
+        do t1' ← Map.find X (Δ \ Y) ;
+        do t2' ← Map.find Y Δ ;
+        if eq_type t1 t1'
+        then
+          if eq_type t2 t2'
           then
-            Some (Δ' \ X, t1 * t2)
+            Some (Δ' ∪ ((Δ \ Y) \ X), t3)
           else
             None
         else
           None
-      else
-        None
-  | E_app E E' =>
-      if typecheck Δ E is Some (Δ', t1 * t2)
-      then
-        if typecheck Δ E' is Some (Δ, t1')
-        then
-          if eq_type t1 t1'
-          then
-            Some (Δ' ∪ Δ, t2)
-          else
-            None
-        else
-          None
-      else
-        None
-
-  | E_tt => Some (Map.empty, t_unit)
-  | E_step E E' =>
-      if typecheck Δ E is Some (Δ', t_unit)
-      then
-        if typecheck Δ E' is Some (Δ, t)
-        then
-          Some (Δ' ∪ Δ, t)
-        else
-          None
-      else
-        None
-
-  | E_fanout E E' =>
-      if typecheck Δ E is Some (Δ', t1)
-      then
-        if typecheck Δ E' is Some (Δ, t2)
-        then
-          Some (Δ' ∪ Δ, t_prod t1 t2)
-        else
-          None
-      else
-        None
-
-  | E_let X Y E E' =>
-      if typecheck Δ E is Some (Δ', t1 * t2)
-      then
-        if typecheck (X ↦ t1 ∪ Y ↦ t2 ∪ Δ) E' is Some (Δ, t3)
-        then
-          if Map.find X (Δ \ Y) is Some t1'
-          then
-            if eq_type t1 t1'
-            then
-              if Map.find Y Δ is Some t2'
-              then
-                if eq_type t2 t2'
-                then
-                  Some (Δ' ∪ ((Δ \ Y) \ X), t3)
-                else
-                  None
-              else
-                None
-            else
-              None
-          else
-            None
-        else
-          None
-      else
-        None
-  end
-    %list %map.
+    end
+      %list %map.
+End Typecheck.
 
 Theorem typecheck_sound:
   ∀ Δ {E Δ' t}, typecheck Δ E = Some (Δ', t) → Δ' ⊢ E ? t.
@@ -131,7 +101,9 @@ Proof using.
     all: auto.
 Qed.
 
-Notation "'do' x <- e0 ; e1" := (List.flat_map (λ x, e1) e0) (x pattern, at level 200, left associativity): list_scope.
+Notation "'do' x ← e0 ; e1" :=
+  (List.flat_map (λ x, e1) e0)
+    (x pattern, at level 200, left associativity): list_scope.
 
 Fixpoint app {A B} (f: list (A → B)) x: list _ :=
   if f is cons H T
@@ -153,8 +125,8 @@ Fixpoint search σ E: list span :=
   | E_var X => if Map.find X σ is Some N then [Map.one X N |- N] else []
 
   | E_lam X t E =>
-      do N0 <- generate t ;
-      do (σ' |- N1) <- search (X ↦ N0 ∪ σ) E ;
+      do N0 ← generate t ;
+      do (σ' |- N1) ← search (X ↦ N0 ∪ σ) E ;
       if Map.find X σ' is Some N0'
       then
         if eq_normal N0 N0'
@@ -166,8 +138,8 @@ Fixpoint search σ E: list span :=
         []
 
   | E_app E E' =>
-      do (σ1 |- N) <- search σ E ;
-      do (σ2 |- N0) <- search σ E' ;
+      do (σ1 |- N) ← search σ E ;
+      do (σ2 |- N0) ← search σ E' ;
       if N is N_fanout N0' N1
       then
         if eq_normal N0 N0'
@@ -181,7 +153,7 @@ Fixpoint search σ E: list span :=
   | E_tt => [Map.empty |- N_tt]
 
   | E_step E E' =>
-      do (σ1 |- N) <- search σ E ;
+      do (σ1 |- N) ← search σ E ;
       if N is N_tt
       then
         [λ '(σ2 |- N'), (σ1 ∪ σ2) |- N'] <*> search σ E'
@@ -192,9 +164,9 @@ Fixpoint search σ E: list span :=
       [λ '(σ1 |- N) '(σ2 |- N'), (σ1 ∪ σ2) |- N_fanout N N'] <*> search σ E <*> search σ E'
 
   | E_let X Y E E' =>
-      do (σ1 |- N) <- search σ E ;
-      do (a, b) <- (if N is N_fanout a b then [(a, b)] else []) ;
-      do (σ2 |- N') <- search ((X ↦ a) ∪ (Y ↦ b) ∪ σ) E' ;
+      do (σ1 |- N) ← search σ E ;
+      do (a, b) ← (if N is N_fanout a b then [(a, b)] else []) ;
+      do (σ2 |- N') ← search ((X ↦ a) ∪ (Y ↦ b) ∪ σ) E' ;
       if Map.find X (σ2 \ Y)is Some a'
       then
         if eq_normal a a'
