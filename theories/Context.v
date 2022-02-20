@@ -131,7 +131,7 @@ Proof using.
     all: auto.
 Qed.
 
-Notation "'do' x <- e0 ; e1" := (List.flat_map (fun x => e1) e0) (x pattern, at level 200, left associativity).
+Notation "'do' x <- e0 ; e1" := (List.flat_map (λ x, e1) e0) (x pattern, at level 200, left associativity).
 
 Fixpoint app {A B} (f: list (A → B)) x: list _ :=
   if f is cons H T
@@ -184,12 +184,12 @@ Fixpoint search σ E: list span :=
       do (σ1 |- N) <- search σ E ;
       if N is N_tt
       then
-        [fun '(σ2 |- N') => (σ1 ∪ σ2) |- N'] <*> search σ E'
+        [λ '(σ2 |- N'), (σ1 ∪ σ2) |- N'] <*> search σ E'
       else
         []
 
   | E_fanout E E' =>
-      [fun '(σ1 |- N) '(σ2 |- N') => (σ1 ∪ σ2) |- N_fanout N N'] <*> search σ E <*> search σ E'
+      [λ '(σ1 |- N) '(σ2 |- N'), (σ1 ∪ σ2) |- N_fanout N N'] <*> search σ E <*> search σ E'
 
   | E_let X Y E E' =>
       do (σ1 |- N) <- search σ E ;
@@ -294,7 +294,7 @@ Proof using.
     induction (IHE (Map.add X a σ)).
     1: constructor.
     cbn.
-    destruct (Map.find X S) eqn:q.
+    destruct (Map.find X σ0) eqn:q.
     2: auto.
     destruct (eq_normal a n).
     2: auto.
@@ -371,12 +371,12 @@ Proof using.
     induction (IHE2 (Map.add X N1 (Map.add Y N2 σ))).
     1: constructor.
     cbn.
-    destruct (Map.find X (Map.minus Y S0)) eqn:q.
+    destruct (Map.find X (σ1 \ Y)) eqn:q.
     2: auto.
     destruct (eq_normal N1 n).
     2: auto.
     subst.
-    destruct (Map.find Y S0) eqn:q'.
+    destruct (Map.find Y σ1) eqn:q'.
     destruct (eq_normal N2 n0).
     2: auto.
     subst.
@@ -391,7 +391,7 @@ Proof using.
 Qed.
 
 Theorem search_sound_sat:
-  ∀ σ E N, List.In (σ |- N) (search σ E) → sat E σ N.
+  ∀ {σ E N}, List.In (σ |- N) (search σ E) → sat E σ N.
 Proof using.
   intros σ E.
   induction (search_sound σ E).
@@ -436,11 +436,11 @@ Notation "p '~~>' v" := (hsingle p v) (at level 32).
 Notation "H1 '\*' H2" := (hstar H1 H2) (at level 41, right associativity).
 
 Notation "'\exists' x1 .. xn , H" :=
-  (hexists (fun x1 => .. (hexists (fun xn => H)) ..))
+  (hexists (λ x1, .. (hexists (λ xn, H)) ..))
     (at level 39, x1 binder, H at level 50, right associativity,
       format "'[' '\exists' '/ ' x1 .. xn , '/ ' H ']'").
 
-Definition ig {A} (P: hprop unit): hprop A := fun _ => P tt.
+Definition ig {A} (P: hprop unit): hprop A := λ _, P tt.
 
 Theorem hstar_assoc:
   ∀ {V} {A B C: hprop V},
@@ -535,7 +535,7 @@ Inductive eval: context → store → normal → store → Prop :=
 Definition hoare E (H: hprop unit) (Q: hprop normal): Prop :=
   ∀ s,
     H tt s →
-    exists s' N, eval E s N s' /\ Q N s'.
+    ∃ s' N, eval E s N s' /\ Q N s'.
 
 Definition triple E H (Q: hprop normal) : Prop :=
   ∀ H', hoare E (H \* H') (Q \* ig H').
@@ -543,7 +543,7 @@ Definition triple E H (Q: hprop normal) : Prop :=
 Definition oftype t := { E | Map.empty ⊢ E ? t }.
 
 Definition equiv {t}: Relation_Definitions.relation (oftype t) :=
-  fun a b =>
+  λ a b,
     ∀ N,
       sat (proj1_sig a) Map.empty N ↔ sat (proj1_sig b) Map.empty N.
 

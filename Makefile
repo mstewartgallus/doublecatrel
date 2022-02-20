@@ -17,7 +17,7 @@ all: invoke-coqmakefile
 clean: invoke-coqmakefile
 	@true
 
-theories/Concrete.v: ott/test.ott
+theories/Spec.v: ott/test.ott
 	ott -i ott/test.ott -o $@
 
 tex/test.tex: ott/test.ott

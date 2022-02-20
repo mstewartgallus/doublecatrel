@@ -62,9 +62,9 @@ Proof using .
   intros Γ ? ? p.
   induction p.
   all: cbn.
-  all: try (destruct (typecheck G v) as [[]|]).
-  all: try (destruct (typecheck G v1)).
-  all: try (destruct (typecheck G v2)).
+  all: try (destruct (typecheck Γ v) as [[]|]).
+  all: try (destruct (typecheck Γ v1)).
+  all: try (destruct (typecheck Γ v2)).
   all: try inversion IHp.
   all: subst.
   all: try inversion IHp1.
@@ -110,7 +110,7 @@ Proof using.
   - econstructor.
     1: apply IHo.
     2: apply IHo0.
-    all:  eauto.
+    all: eauto.
 Qed.
 
 Theorem eval_complete:
@@ -163,7 +163,7 @@ Qed.
 Theorem normalize:
   ∀ {v t},
    nil ⊢ v in t →
-   exists N, v ⇓ N.
+   ∃ N, v ⇓ N.
 Proof using.
   remember nil as G.
   intros ? ? p.
@@ -325,10 +325,11 @@ Proof using.
     all: eauto.
 Qed.
 
-Definition equiv {Γ t}: Relation_Definitions.relation (oftype Γ t) := fun o o' =>
+Definition equiv {Γ t}: Relation_Definitions.relation (oftype Γ t) :=
+  λ o o',
   ∀ p,
     Jp p Γ →
-    exists N, (msubst p (proj1_sig o) ⇓ N) /\ (msubst p (proj1_sig o') ⇓ N).
+    ∃ N, (msubst p (proj1_sig o) ⇓ N) ∧ (msubst p (proj1_sig o') ⇓ N).
 
 Instance equiv_Reflexive Γ t: Reflexive (@equiv Γ t).
 Proof using.

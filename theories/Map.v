@@ -1,3 +1,4 @@
+Require Import Coq.Unicode.Utf8.
 Require Import Coq.Arith.PeanoNat.
 Require Import Coq.Logic.FunctionalExtensionality.
 
@@ -6,25 +7,26 @@ Import IfNotations.
 Section Map.
   Context {V: Type}.
 
-  Definition map := nat -> option V.
+  Definition map := nat → option V.
 
   Definition find n (m: map): option V := m n.
-  Definition empty: map := fun _ => None.
+  Definition empty: map := λ _, None.
 
-  Definition put (n: nat) (v: option V) (m: map): map := fun n' =>
-                                                           if Nat.eq_dec n n'
-                                                           then
-                                                             v
-                                                           else
-                                                             find n' m.
+  Definition put (n: nat) (v: option V) (m: map): map :=
+    λ n',
+      if Nat.eq_dec n n'
+      then
+        v
+      else
+        find n' m.
 
   Definition add n (v: V) := put n (Some v).
-  Definition minus (n: nat): map -> _ := put n None.
+  Definition minus (n: nat): map → _ := put n None.
 
   Definition one (x: nat) (v: V) := add x v empty.
 
   Definition merge (m m': map) :=
-    fun n =>
+    λ n,
       if find n m is Some v
       then
         Some v
@@ -41,11 +43,11 @@ Section Map.
   Definition of_list (kv: list (nat * V)) := add_list kv empty.
 
   Definition disjoint (f g: map) :=
-    forall x, f x = None \/ g x = None.
+    ∀ x, f x = None \/ g x = None.
 
   Lemma add_minus:
-    forall x (t: V) Γ,
-      find x Γ = Some t ->
+    ∀ x (t: V) Γ,
+      find x Γ = Some t →
       add x t (minus x Γ) = Γ.
   Proof.
     intros ? ? ? p.
@@ -62,7 +64,7 @@ Section Map.
   Qed.
 
   Lemma find_add:
-    forall x (t: V) Γ,
+    ∀ x (t: V) Γ,
       find x (add x t Γ) = Some t.
   Proof.
     intros x.
@@ -74,7 +76,7 @@ Section Map.
   Qed.
 
   Lemma add_add:
-    forall x (s t: V) Γ,
+    ∀ x (s t: V) Γ,
       add x s (add x t Γ) = add x s Γ.
   Proof.
     intros.
@@ -85,7 +87,7 @@ Section Map.
   Qed.
 
   Lemma merge_assoc:
-    forall A B C,
+    ∀ A B C,
       merge (merge A B) C = merge A (merge B C).
   Proof.
     intros.
@@ -99,7 +101,7 @@ Section Map.
   Qed.
 
   Lemma merge_empty_r:
-    forall (Γ: map),
+    ∀ (Γ: map),
       merge Γ empty = Γ.
   Proof.
     intros.
@@ -110,7 +112,7 @@ Section Map.
   Qed.
 
   Lemma merge_empty_l:
-    forall (Γ: map),
+    ∀ (Γ: map),
       merge empty Γ = Γ.
   Proof.
     intros.
@@ -120,8 +122,8 @@ Section Map.
   Qed.
 
   Lemma find_one_ne:
-    forall {x x'} {t: V},
-      x <> x' ->
+    ∀ {x x'} {t: V},
+      x <> x' →
       find x (one x' t) = None.
   Proof.
     intros.
