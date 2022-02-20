@@ -137,3 +137,8 @@ Section Map.
 End Map.
 
 Arguments map: clear implicits.
+
+Module MapNotations.
+  Notation "m \ k" := (minus k m) (at level 30).
+  Infix "∪" := merge (at level 30).
+End MapNotations.

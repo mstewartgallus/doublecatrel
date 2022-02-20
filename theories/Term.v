@@ -1,6 +1,7 @@
 Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
 
+Require Import Coq.Unicode.Utf8.
 Require Import Coq.Classes.SetoidClass.
 Require Coq.Lists.List.
 
@@ -8,7 +9,13 @@ Import IfNotations.
 
 Require Import FunInd.
 
-Function typecheck (Γ: list (vvar * type)) (v: term): option type :=
+Implicit Type Γ: environment.
+Implicit Type v: term.
+Implicit Type t: type.
+Implicit Type N: normal.
+Implicit Types x y: vvar.
+
+Function typecheck Γ v: option type :=
   match v with
   | v_var x => find x Γ
   | v_tt => Some t_unit
@@ -37,7 +44,7 @@ Function typecheck (Γ: list (vvar * type)) (v: term): option type :=
   end.
 
 Theorem typecheck_sound:
-  forall {Γ v t}, typecheck Γ v = Some t -> Γ ⊢ v in t.
+  ∀ {Γ v t}, typecheck Γ v = Some t → Γ ⊢ v in t.
 Proof using .
   intros Γ v.
   functional induction (typecheck Γ v).
@@ -50,7 +57,7 @@ Proof using .
 Qed.
 
 Theorem typecheck_complete:
-  forall {Γ v t}, Γ ⊢ v in t -> typecheck Γ v = Some t.
+  ∀ {Γ v t}, Γ ⊢ v in t → typecheck Γ v = Some t.
 Proof using .
   intros Γ ? ? p.
   induction p.
@@ -86,7 +93,7 @@ Function eval v :=
   end.
 
 Theorem eval_sound:
-  forall {v N}, eval v = Some N -> v ⇓ N.
+  ∀ {v N}, eval v = Some N → v ⇓ N.
 Proof using.
   intros v.
   functional induction (eval v).
@@ -107,7 +114,7 @@ Proof using.
 Qed.
 
 Theorem eval_complete:
-  forall {v v'}, v ⇓ v' -> eval v = Some v'.
+  ∀ {v N}, v ⇓ N → eval v = Some N.
 Proof using.
   intros ? ? p.
   induction p.
@@ -119,9 +126,9 @@ Proof using.
 Qed.
 
 Theorem big_preserve:
-  forall {v v'},
-    v ⇓ v' ->
-    forall Γ t, Γ ⊢ v in t -> Γ ⊢ v' in t.
+  ∀ {v N},
+    v ⇓ N →
+    ∀ Γ t, Γ ⊢ v in t → Γ ⊢ N in t.
 Proof using.
   intros v v' p.
   induction p.
@@ -142,8 +149,8 @@ Proof using.
 Qed.
 
 Theorem big_unique:
-  forall {v N N'},
-    v ⇓ N -> v ⇓ N' -> N = N'.
+  ∀ {v N N'},
+    v ⇓ N → v ⇓ N' → N = N'.
 Proof using.
   intros v N N' p q.
   set (p' := eval_complete p).
@@ -154,8 +161,8 @@ Proof using.
 Qed.
 
 Theorem normalize:
-  forall {v t},
-   nil ⊢ v in t ->
+  ∀ {v t},
+   nil ⊢ v in t →
    exists N, v ⇓ N.
 Proof using.
   remember nil as G.
@@ -195,7 +202,7 @@ Proof using.
 Qed.
 
 Lemma big_normal:
-  forall {N: normal}, N ⇓ N.
+  ∀ {N}, N ⇓ N.
 Proof using.
   intro N.
   induction N.
@@ -206,9 +213,7 @@ Qed.
 
 Definition oftype Γ A := { v | Γ ⊢ v in A }.
 
-Lemma subst_normal:
-  forall v x {N: normal},
-    subst_term v x N = N.
+Lemma subst_normal: ∀ v x N, subst_term v x N = N.
 Proof using.
   intros ? ? N.
   induction N.
@@ -218,9 +223,7 @@ Proof using.
   reflexivity.
 Qed.
 
-Lemma msubst_normal:
-  forall {p} {N: normal},
-    msubst p N = N.
+Lemma msubst_normal: ∀ {p N}, msubst p N = N.
 Proof using.
   intros.
   induction p.
@@ -231,9 +234,7 @@ Proof using.
   auto.
 Qed.
 
-Lemma msubst_v_fst:
-  forall {p v},
-    msubst p (v_fst v) = v_fst (msubst p v).
+Lemma msubst_v_fst: ∀ {p v}, msubst p (v_fst v) = v_fst (msubst p v).
 Proof using.
   intro p.
   induction p.
@@ -246,9 +247,7 @@ Proof using.
   reflexivity.
 Qed.
 
-Lemma msubst_v_snd:
-  forall {p v},
-    msubst p (v_snd v) = v_snd (msubst p v).
+Lemma msubst_v_snd: ∀ {p v}, msubst p (v_snd v) = v_snd (msubst p v).
 Proof using.
   intro p.
   induction p.
@@ -261,8 +260,7 @@ Proof using.
   reflexivity.
 Qed.
 
-Lemma msubst_v_fanout:
-  forall {p v v'},
+Lemma msubst_v_fanout: ∀ {p v v'},
     msubst p (v_fanout v v') = v_fanout (msubst p v) (msubst p v').
 Proof using.
   intro p.
@@ -277,9 +275,9 @@ Proof using.
 Qed.
 
 Lemma msubst_preserve:
-  forall {v Γ p t},
-    Jp p Γ ->
-    Γ ⊢ v in t ->
+  ∀ {v Γ p t},
+    Jp p Γ →
+    Γ ⊢ v in t →
     nil ⊢ msubst p v in t.
 Proof using.
   intros v.
@@ -327,45 +325,45 @@ Proof using.
     all: eauto.
 Qed.
 
-Definition equiv {Γ A}: Relation_Definitions.relation (oftype Γ A) := fun v v' =>
-  forall p,
-    Jp p Γ ->
-    exists N, (msubst p (proj1_sig v) ⇓ N) /\ (msubst p (proj1_sig v') ⇓ N).
+Definition equiv {Γ t}: Relation_Definitions.relation (oftype Γ t) := fun o o' =>
+  ∀ p,
+    Jp p Γ →
+    exists N, (msubst p (proj1_sig o) ⇓ N) /\ (msubst p (proj1_sig o') ⇓ N).
 
-Instance equiv_Reflexive Γ A: Reflexive (@equiv Γ A).
+Instance equiv_Reflexive Γ t: Reflexive (@equiv Γ t).
 Proof using.
   unfold equiv.
-  intros [x p].
+  intros [v p].
   cbn.
   intros σ ?.
-  destruct (@normalize (msubst σ x) A).
+  destruct (@normalize (msubst σ v) t).
   - eapply msubst_preserve.
     all: eauto.
-  - exists x0.
+  - exists x.
     split.
     all: auto.
 Qed.
 
-Instance equiv_Symmetric Γ A: Symmetric (@equiv Γ A).
+Instance equiv_Symmetric Γ t: Symmetric (@equiv Γ t).
 Proof using.
   unfold equiv.
-  intros [x p] [y q].
+  intros [v p] [v' q].
   cbn.
-  intros t σ r.
-  destruct (t σ r).
+  intros f σ r.
+  destruct (f σ r).
   destruct H.
-  exists x0.
+  exists x.
   split.
   all: auto.
 Qed.
 
-Instance equiv_Transitive Γ A: Transitive (@equiv Γ A).
+Instance equiv_Transitive Γ t: Transitive (@equiv Γ t).
 Proof using.
   unfold equiv.
   intros [x p] [y q] [z r].
   cbn.
-  intros s t σ u.
-  destruct (s σ u), (t σ u).
+  intros f g σ u.
+  destruct (f σ u), (g σ u).
   destruct H, H0.
   set (q' := big_unique H1 H0).
   repeat rewrite q' in *.
@@ -374,10 +372,10 @@ Proof using.
   all: auto.
 Qed.
 
-Instance equiv_Equivalence Γ A: Equivalence (@equiv Γ A) := {
+Instance equiv_Equivalence Γ t: Equivalence (@equiv Γ t) := {
     Equivalence_Reflexive := _ ;
 }.
 
-Instance oftype_Setoid Γ A: Setoid (oftype Γ A) := {
+Instance oftype_Setoid Γ t: Setoid (oftype Γ t) := {
     equiv := equiv ;
 }.

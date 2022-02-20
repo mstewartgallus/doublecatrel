@@ -9,12 +9,15 @@ CoqMakefile: Makefile _CoqProject
 invoke-coqmakefile: CoqMakefile
 	$(MAKE) --no-print-directory -f CoqMakefile $(filter-out $(KNOWNTARGETS),$(MAKECMDGOALS))
 
-.PHONY: invoke-coqmakefile $(KNOWNFILES)
+.PHONY: all clean invoke-coqmakefile $(KNOWNFILES)
 
-# %: invoke-coqmakefile
-# 	@true
+all: invoke-coqmakefile
+	@true
 
-theories/Spec.v: ott/test.ott
+clean: invoke-coqmakefile
+	@true
+
+theories/Concrete.v: ott/test.ott
 	ott -i ott/test.ott -o $@
 
 tex/test.tex: ott/test.ott

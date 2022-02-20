@@ -21,24 +21,24 @@ Proof.
 Defined.
 Hint Resolve eq_cvar : ott_coq_equality.
 
-Inductive normal : Set := 
+Inductive normal : Set :=
  | N_tt : normal
  | N_fanout (N:normal) (N':normal).
 
 Definition store : Type := (Map.map normal).
 
-Inductive type : Set := 
+Inductive type : Set :=
  | t_unit : type
  | t_prod (t:type) (t':type).
 
-Inductive span : Type := 
+Inductive span : Type :=
  | P_with (S:store) (N:normal).
 
 Definition environment : Set := (list (vvar * type)).
 
 Definition subst : Set := (list (vvar * normal)).
 
-Inductive context : Set := 
+Inductive context : Set :=
  | E_var (X:cvar)
  | E_lam (X:cvar) (t:type) (E:context)
  | E_app (E:context) (E':context)
@@ -49,7 +49,7 @@ Inductive context : Set :=
 
 Definition linear : Type := (Map.map type).
 
-Inductive term : Set := 
+Inductive term : Set :=
  | v_var (x:vvar)
  | v_tt : term
  | v_fst (v:term)
@@ -72,7 +72,7 @@ Hint Resolve eq_type : ott_coq_equality.
 Fixpoint subst_term (v5:term) (x5:vvar) (v_6:term) {struct v_6} : term :=
   match v_6 with
   | (v_var x) => (if eq_vvar x x5 then v5 else (v_var x))
-  | v_tt => v_tt 
+  | v_tt => v_tt
   | (v_fst v) => v_fst (subst_term v5 x5 v)
   | (v_snd v) => v_snd (subst_term v5 x5 v)
   | (v_fanout v v') => v_fanout (subst_term v5 x5 v) (subst_term v5 x5 v')
@@ -93,7 +93,7 @@ end.
 Fixpoint msubst (x1:subst) (x2:term) : term:=
   match x1,x2 with
   |  nil  , v' => v'
-  |  (cons ( x ,  N )  p )  , v' =>  (msubst p  (  (subst_term   (toterm N )    x   v' )  )  ) 
+  |  (cons ( x ,  N )  p )  , v' =>  (msubst p  (  (subst_term   (toterm N )    x   v' )  )  )
 end.
 
 
@@ -118,7 +118,7 @@ Inductive JE : linear -> context -> type -> Prop :=    (* defn E *)
      JE D1 E1 (t_prod t1 t2) ->
      JE D2 E2 t1 ->
      JE  (Map.merge  D1   D2 )  (E_app E1 E2) t2
- | JE_tt : 
+ | JE_tt :
      JE  Map.empty  E_tt t_unit
  | JE_step : forall (D1 D2:linear) (E1 E2:context) (t:type),
      JE D1 E1 t_unit ->
@@ -155,12 +155,12 @@ Inductive Jv : environment -> term -> type -> Prop :=    (* defn v *)
 
 (* defns big *)
 Inductive big : term -> normal -> Prop :=    (* defn big *)
- | big_tt : 
+ | big_tt :
      big v_tt N_tt
  | big_fanout : forall (v1 v2:term) (N1' N2':normal),
      big v1 N1' ->
      big v2 N2' ->
-     big  ( (v_fanout v1 v2) )   ( (N_fanout N1' N2') ) 
+     big  ( (v_fanout v1 v2) )   ( (N_fanout N1' N2') )
  | big_fst : forall (v:term) (N1 N2:normal),
      big v (N_fanout N1 N2) ->
      big (v_fst v) N1
@@ -173,7 +173,7 @@ Inductive big : term -> normal -> Prop :=    (* defn big *)
 Inductive sat : context -> store -> normal -> Prop :=    (* defn sat *)
  | sat_var : forall (X:cvar) (N:normal),
      sat (E_var X)  (Map.add  X   N    Map.empty  )  N
- | sat_tt : 
+ | sat_tt :
      sat E_tt  Map.empty  N_tt
  | sat_step : forall (E E':context) (S S':store) (N:normal),
      sat E S N_tt ->
@@ -198,8 +198,8 @@ Inductive sat : context -> store -> normal -> Prop :=    (* defn sat *)
 
 (* defns judge *)
 Inductive Jp : subst -> environment -> Prop :=    (* defn p *)
- | Jp_nil : 
-     Jp  nil   nil 
+ | Jp_nil :
+     Jp  nil   nil
  | Jp_cons : forall (p:subst) (x:vvar) (N:normal) (G:environment) (t:type),
      Jv  nil   (toterm N )  t ->
      Jp p G ->
@@ -209,10 +209,8 @@ Inductive Jp : subst -> environment -> Prop :=    (* defn p *)
 (* defns sound *)
 Inductive sound : context -> set -> Prop :=    (* defn sound *)
  | sound_nil : forall (E:context),
-     sound E  nil 
+     sound E  nil
  | sound_cons : forall (E:context) (Ps:set) (S:store) (N:normal),
      sound E Ps ->
      sat E S N ->
      sound E  (cons  (P_with S N)   Ps ) .
-
-

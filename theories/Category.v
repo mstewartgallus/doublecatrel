@@ -5,16 +5,30 @@ Require Blech.Term.
 Require Blech.Context.
 Require Blech.Map.
 
+Require Import Coq.Unicode.Utf8.
 Require Import Coq.Classes.SetoidClass.
 Require Import Coq.Program.Tactics.
 
 Import IfNotations.
+Import Map.MapNotations.
+
+Require Import FunInd.
+
+Implicit Type Γ: environment.
+Implicit Type Δ: linear.
+Implicit Type E: context.
+Implicit Type t: type.
+Implicit Type v: term.
+Implicit Type N: normal.
+Implicit Types x y: vvar.
+Implicit Types X Y: cvar.
+Implicit Type σ: store.
 
 Module Import Hor.
-  Definition Hor (A B: type) := Term.oftype (cons (0, A) nil) B.
+  Definition Hor t t' := Term.oftype (cons (0, t) nil) t'.
 
   #[program]
-  Definition id A: Hor A A := v_var 0.
+  Definition id t: Hor t t := v_var 0.
   Next Obligation.
     constructor.
     cbn.
@@ -72,17 +86,17 @@ Module Import Hor.
 End Hor.
 
 Module Import Vert.
-  Definition Vert (A B: type) := Context.oftype (A * B).
+  Definition Vert t t' := Context.oftype (t * t').
 
   #[program]
-  Definition id A: Vert A A := E_lam 0 A (E_var 0).
+  Definition id t: Vert t t := E_lam 0 t (E_var 0).
 
   Next Obligation.
   Proof using.
     unfold Vert.
     apply (Context.typecheck_sound Map.empty).
     cbn.
-    destruct (eq_type A A).
+    destruct (eq_type t t).
     2: contradiction.
     cbn.
     unfold Map.one.
