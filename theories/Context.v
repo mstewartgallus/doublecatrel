@@ -76,44 +76,17 @@ Section Typecheck.
     end
       %list %map.
 End Typecheck.
-
-Theorem typecheck_sound:
-  ∀ Δ {E Δ' t}, typecheck Δ E = Some (Δ', t) → Δ' ⊢ E ? t.
-Proof using.
-  intros Δ E.
-  functional induction (typecheck Δ E).
-  all: cbn.
-  all: intros ? ? p.
-  all: inversion p.
-  all: subst.
-  all: try econstructor.
-  all: eauto.
-  - apply IHo.
-    rewrite Map.add_minus.
-    all: auto.
-  - rewrite Map.add_minus.
-    all: auto.
-    1: rewrite Map.add_minus.
-    all: auto.
-Qed.
-
 Notation "'do' x ← e0 ; e1" :=
   (List.flat_map (λ x, e1) e0)
     (x pattern, at level 200, left associativity): list_scope.
 
-Fixpoint app {A B} (f: list (A → B)) x: list _ :=
-  if f is cons H T
-  then
-    List.app (List.map H x) (app T x)
-  else
-    nil%list.
-
-Infix "<*>" := app (at level 30).
-
 Fixpoint generate t :=
   match t with
   | t_unit => [N_tt]
-  | A * B => [N_fanout] <*> generate A <*> generate B
+  | t * t' =>
+      do N ← generate t ;
+      do N' ← generate t' ;
+      [N_fanout N N']
   end%list.
 
 Fixpoint search σ E: list span :=
@@ -127,7 +100,7 @@ Fixpoint search σ E: list span :=
       then
         if eq_normal N0 N0'
         then
-          [Map.minus X σ' |- N_fanout N0 N1]
+          [σ' \ X |- N_fanout N0 N1]
         else
           []
       else
@@ -140,7 +113,7 @@ Fixpoint search σ E: list span :=
       then
         if eq_normal N0 N0'
         then
-          [(Map.merge σ1 σ2) |- N1]
+          [σ1 ∪ σ2 |- N1]
         else
           []
       else
@@ -185,6 +158,26 @@ Fixpoint search σ E: list span :=
         []
   end%list %map.
 
+Theorem typecheck_sound:
+  ∀ Δ {E Δ' t}, typecheck Δ E = Some (Δ', t) → Δ' ⊢ E ? t.
+Proof using.
+  intros Δ E.
+  functional induction (typecheck Δ E).
+  all: cbn.
+  all: intros ? ? p.
+  all: inversion p.
+  all: subst.
+  all: try econstructor.
+  all: eauto.
+  - apply IHo.
+    rewrite Map.add_minus.
+    all: auto.
+  - rewrite Map.add_minus.
+    all: auto.
+    1: rewrite Map.add_minus.
+    all: auto.
+Qed.
+
 Lemma sound_pure:
   ∀ {E S N}, sat E S N → sound E ([S |- N]%list).
 Proof.
@@ -203,43 +196,6 @@ Proof.
   inversion H.
   constructor.
   all: auto.
-Defined.
-
-Lemma sound_fst {E p p'}:
-  sound E ((p ++ p')%list) →
-  sound E p.
-Proof.
-  intros.
-  induction p.
-  1: constructor.
-  destruct a.
-  cbn in H.
-  inversion H.
-  subst.
-  constructor.
-  all: auto.
-Defined.
-
-Lemma sound_snd {E p p'}:
-  sound E ((p ++ p')%list) →
-  sound E p'.
-Proof.
-  intros.
-  induction p.
-  1: auto.
-  destruct a.
-  cbn in H.
-  inversion H.
-  subst.
-  auto.
-Defined.
-
-Lemma sound_split {E p p'}:
-  sound E ((p ++ p')%list) → sound E p * sound E p'.
-Proof.
-  intros.
-  refine (sound_fst _, sound_snd _).
-  all:eauto.
 Defined.
 
 Theorem search_sound:
