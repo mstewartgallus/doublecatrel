@@ -17,7 +17,7 @@ Implicit Type N: normal.
 Implicit Types x y: vvar.
 
 Function find x Γ :=
-  if Γ is cons (x', t) T
+  if Γ is ((x', t) :: T)%list
   then
     if eq_vvar x x'
     then
@@ -26,33 +26,6 @@ Function find x Γ :=
       find x T
   else
     None.
-
-Lemma find_sound:
-  ∀ {x Γ t}, find x Γ = Some t → mem x t Γ.
-Proof using .
-  intros x Γ.
-  functional induction (find x Γ).
-  all: intros ? p.
-  all: inversion p.
-  - subst.
-    constructor.
-  - constructor.
-    all: auto.
-Qed.
-
-Lemma find_complete {x Γ t}:
-  mem x t Γ → find x Γ = Some t.
-Proof using .
-  intro p.
-  induction p.
-  all: cbn.
-  - destruct (eq_vvar x x).
-    2: contradiction.
-    reflexivity.
-  - destruct (eq_vvar x x').
-    1: contradiction.
-    auto.
-Qed.
 
 Function typecheck Γ v :=
   match v with
@@ -69,6 +42,48 @@ Function typecheck Γ v :=
       do t1 ← typecheck Γ v1 ;
       Some (t0 * t1)
   end.
+
+Function eval v :=
+  match v with
+  | v_var _ => None
+  | v_tt => Some N_tt
+  | v_fst v =>
+      do N_fanout a _ ← eval v ;
+      Some a
+  | v_snd v =>
+      do N_fanout _ a ← eval v ;
+      Some a
+  | v_fanout v0 v1 =>
+      do v0' ← eval v0 ;
+      do v1' ← eval v1 ;
+      Some (N_fanout v0' v1')
+  end.
+
+Lemma find_sound:
+  ∀ {x Γ t}, find x Γ = Some t → mem x t Γ.
+Proof using .
+  intros x Γ.
+  functional induction (find x Γ).
+  all: intros ? p.
+  all: inversion p.
+  all: subst.
+  all: constructor.
+  all: auto.
+Qed.
+
+Lemma find_complete {x Γ t}:
+  mem x t Γ → find x Γ = Some t.
+Proof using .
+  intro p.
+  induction p.
+  all: cbn.
+  - destruct (eq_vvar x x).
+    2: contradiction.
+    reflexivity.
+  - destruct (eq_vvar x x').
+    1: contradiction.
+    auto.
+Qed.
 
 Theorem typecheck_sound:
   ∀ {Γ v t}, typecheck Γ v = Some t → Γ ⊢ v in t.
@@ -105,22 +120,6 @@ Proof using .
   auto.
 Qed.
 
-Function eval v :=
-  match v with
-  | v_var _ => None
-  | v_tt => Some N_tt
-  | v_fst v =>
-      do N_fanout a _ ← eval v ;
-      Some a
-  | v_snd v =>
-      do N_fanout _ a ← eval v ;
-      Some a
-  | v_fanout v0 v1 =>
-      do v0' ← eval v0 ;
-      do v1' ← eval v1 ;
-      Some (N_fanout v0' v1')
-  end.
-
 Theorem eval_sound:
   ∀ {v N}, eval v = Some N → v ⇓ N.
 Proof using.
@@ -129,17 +128,8 @@ Proof using.
   all: intros ? p.
   all: inversion p.
   all: subst.
-  - constructor.
-  - econstructor.
-    apply IHo.
-    eauto.
-  - econstructor.
-    apply IHo.
-    eauto.
-  - econstructor.
-    1: apply IHo.
-    2: apply IHo0.
-    all: eauto.
+  all: econstructor.
+  all: eauto.
 Qed.
 
 Theorem eval_complete:
@@ -242,9 +232,8 @@ Qed.
 
 Definition oftype Γ A := { v | Γ ⊢ v in A }.
 
-Lemma subst_normal: ∀ v x N, subst_term v x N = N.
+Lemma subst_normal {v x N}: subst_term v x N = N.
 Proof using.
-  intros ? ? N.
   induction N.
   1: reflexivity.
   cbn.
@@ -252,9 +241,8 @@ Proof using.
   reflexivity.
 Qed.
 
-Lemma msubst_normal: ∀ {p N}, msubst p N = N.
+Lemma msubst_normal {p N}: msubst p N = N.
 Proof using.
-  intros.
   induction p.
   1: reflexivity.
   cbn.

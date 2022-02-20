@@ -2,6 +2,7 @@
 -arg -w
 -arg all
 
+theories/OptionNotations.v
 theories/Map.v
 theories/Spec.v
 theories/SpecNotations.v

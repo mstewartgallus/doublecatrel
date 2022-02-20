@@ -150,14 +150,17 @@ Fixpoint search σ E: list span :=
 
   | E_step E E' =>
       do (σ1 |- N) ← search σ E ;
+      do (σ2 |- N') ← search σ E' ;
       if N is N_tt
       then
-        [λ '(σ2 |- N'), (σ1 ∪ σ2) |- N'] <*> search σ E'
+        [σ1 ∪ σ2 |- N']
       else
         []
 
   | E_fanout E E' =>
-      [λ '(σ1 |- N) '(σ2 |- N'), (σ1 ∪ σ2) |- N_fanout N N'] <*> search σ E <*> search σ E'
+      do (σ1 |- N) ← search σ E ;
+      do (σ2 |- N') ← search σ E' ;
+      [σ1 ∪ σ2 |- N_fanout N N']
 
   | E_let X Y E E' =>
       do (σ1 |- N) ← search σ E ;
@@ -302,12 +305,11 @@ Proof using.
     apply sound_mon.
     2: auto.
     clear IHs.
-    destruct N.
-    2: constructor.
     induction (IHE2 σ).
     1: constructor.
     cbn.
-    rewrite List.app_nil_r in *.
+    destruct N.
+    2: auto.
     constructor.
     1: auto.
     clear IHs0.

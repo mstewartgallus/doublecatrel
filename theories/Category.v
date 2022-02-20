@@ -30,9 +30,7 @@ Module Import Hor.
   #[program]
   Definition id t: Hor t t := v_var 0.
   Next Obligation.
-    constructor.
-    cbn.
-    reflexivity.
+    repeat constructor.
   Defined.
 
   #[program]
@@ -55,15 +53,15 @@ Module Import Hor.
         subst.
         cbn in H1.
         inversion H1.
+        2: contradiction.
         subst.
         auto.
       + inversion q.
         subst.
-        unfold find in H1.
-        cbn in H1.
-        destruct (eq_vvar x 0).
+        inversion H1.
         1: contradiction.
-        discriminate.
+        subst.
+        inversion H6.
     - inversion q.
       subst.
       constructor.
