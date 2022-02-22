@@ -180,7 +180,7 @@ Proof using.
 Qed.
 
 Lemma sound_pure:
-  ∀ {E S N}, sat E S N → sound E ([S |- N]%list).
+  ∀ {σ E N}, sat σ E N → sound E ([σ |- N]%list).
 Proof.
   repeat constructor.
   auto.
@@ -319,7 +319,7 @@ Proof using.
 Qed.
 
 Theorem search_sound_sat:
-  ∀ {σ E N}, List.In (σ |- N) (search σ E) → sat E σ N.
+  ∀ {σ E N}, List.In (σ |- N) (search σ E) → sat σ E N.
 Proof using.
   intros σ E.
   induction (search_sound σ E).
@@ -381,7 +381,7 @@ Admitted.
 
 (* based on https://softwarefoundations.cis.upenn.edu/slf-current/Hprop.html *)
 Inductive eval: context → store → normal → store → Prop :=
-| eval_sat {E σ σ' N}: sat E σ' N → eval E σ N (Map.merge σ σ').
+| eval_sat {E σ σ' N}: sat σ' E N → eval E σ N (Map.merge σ σ').
 
 Definition hoare E (H: hprop unit) (Q: hprop normal): Prop :=
   ∀ s,
@@ -396,7 +396,7 @@ Definition oftype t := { E | Map.empty ⊢ E ? t }.
 Definition equiv {t}: Relation_Definitions.relation (oftype t) :=
   λ a b,
     ∀ N,
-      sat (proj1_sig a) Map.empty N ↔ sat (proj1_sig b) Map.empty N.
+      sat Map.empty (proj1_sig a) N ↔ sat Map.empty (proj1_sig b) N.
 
 Instance equiv_Reflexive t: Reflexive (@equiv t).
 Proof using.
@@ -481,11 +481,11 @@ Proof.
     subst.
     inversion H5.
     subst.
-    inversion H3.
+    inversion H2.
     subst.
     inversion H6.
     subst.
-    rewrite H4.
+    rewrite H.
     constructor.
     rewrite Map.merge_empty_r.
     admit.
@@ -497,14 +497,11 @@ Proof.
     rewrite <- (@Map.merge_empty_l _ Map.empty).
     econstructor.
     all: eauto.
-    rewrite <- H.
+    rewrite <- H0.
+    rewrite Map.merge_empty_r in H0.
+    destruct (Map.one_inj H0).
+    subst.
     constructor.
-    + rewrite Map.merge_empty_r in H.
-      destruct (Map.one_inj H).
-      subst.
-      constructor.
-    + rewrite Map.merge_empty_r in H.
-      destruct (Map.one_inj H).
-      subst.
-      constructor.
+    + constructor.
+    + constructor.
 Admitted.

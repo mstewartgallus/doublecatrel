@@ -76,7 +76,7 @@ terminals :: 'terminals_' ::=
   | snd          ::   :: snd  {{ tex \pi{}_2 }}
   | lam          ::   :: lam  {{ tex \lambda{} }}
   | nil          ::   :: nil   {{ tex \bullet{} }}
-  | let          ::   :: let  {{ tex \mathrel{\textbf{let} } }}
+  | let          ::   :: let  {{ tex \mathbin{\textbf{let} } }}
   | in           ::   :: letin  {{ tex \mathbin{\textbf{in} } }}
   | \in          ::   :: member  {{ tex \in{} }}
   | !            ::   :: big     {{ tex \mathrel{\Downarrow} }}
@@ -222,38 +222,38 @@ defns
 sat :: '' ::=
 
 defn
-E ! S |- N ::   :: sat :: 'sat_'
+S |- E ! N ::   :: sat :: 'sat_'
 by
 
 ---------------------- :: var
-X ! X := N |- N
+X := N |- X ! N
 
 ------------------ :: tt
-tt ! nil |- tt
+nil |- tt ! tt
 
-E ! S |- tt 
-E' ! S' |- N 
+S |- E ! tt
+S' |- E' ! N
 -------------------------- :: step
-(E; E') !  S ++ S' |- N 
+S ++ S' |- E; E' ! N 
 
-E !  S |- N 
-E' !  S' |- N' 
+S |-  E ! N
+S' |-  E' ! N'
 -------------------------- :: fanout
-(E, E') !  S ++ S' |- N, N'
+S ++ S' |- E, E' ! N, N'
 
-E ! S |- N0, N1 
-E' ! S', X := N0, Y := N1 |- N2 
-------------------------------------------- :: let
-(let X, Y = E in E') ! S ++ S' |- N2 
+S |- E ! N0, N1 
+S', X := N0, Y := N1 |- E' ! N2 
+----------------------------------- :: let
+S ++ S' |- let X, Y = E in E' ! N2 
 
-E ! S, X := N |- N' 
-------------------------------- :: lam
-(lam X: t. E) ! S |- N, N' 
+S, X := N |- E ! N' 
+------------------------- :: lam
+S |- lam X: t. E ! N, N' 
 
-E ! S |- N, N' 
-E' ! S' |- N 
-------------------------- :: app
-E E' ! S ++ S' |- N' 
+S |- E ! N, N' 
+S' |- E' ! N 
+--------------------- :: app
+S ++ S' |- E E' ! N' 
 
 defns
 
@@ -283,6 +283,6 @@ by
 E ! nil
 
 E ! Ps
-E ! S |- N
+S |- E ! N
 -------- :: cons
 E ! Ps, S |- N
