@@ -206,38 +206,38 @@ defns
 sat :: '' ::=
 
 defn
-S |- E ! N ::   :: sat :: 'sat_'
+S |- E [ N ] ::   :: sat :: 'sat_' {{ tex [[S]] \mathrel{\vdash} [[E]][ [[N]] ] }}
 by
 
 ---------------------- :: var
-X := N |- X ! N
+X := N |- X [ N ]
 
 ------------------ :: tt
-nil |- tt ! tt
+nil |- tt [tt]
 
-S |- E ! tt
-S' |- E' ! N
+S |- E [ tt ]
+S' |- E' [ N ]
 -------------------------- :: step
-S ++ S' |- E; E' ! N 
+S ++ S' |- (E; E') [ N ]
 
-S |-  E ! N
-S' |-  E' ! N'
+S |-  E [N]
+S' |-  E' [N']
 -------------------------- :: fanout
-S ++ S' |- E, E' ! N, N'
+S ++ S' |- (E, E') [N, N']
 
-S |- E ! N0, N1 
-S', X := N0, Y := N1 |- E' ! N2 
------------------------------------ :: let
-S ++ S' |- let X, Y = E in E' ! N2 
+S |- E [N0, N1]
+S', X := N0, Y := N1 |- E' [ N2 ]
+------------------------------------- :: let
+S ++ S' |- (let X, Y = E in E') [ N2 ]
 
-S, X := N |- E ! N' 
+S, X := N |- E [ N' ]
 ------------------------- :: lam
-S |- lam X: t. E ! N, N' 
+S |- (lam X: t. E) [ N, N' ]
 
-S |- E ! N, N' 
-S' |- E' ! N 
+S |- E [ N, N' ]
+S' |- E' [N]
 --------------------- :: app
-S ++ S' |- E E' ! N' 
+S ++ S' |- (E E') [ N' ]
 
 defns
 
@@ -284,13 +284,13 @@ defns
 sound :: '' ::=
 
 defn
-E ! Ps ::   :: sound :: 'sound_'
+E [ Ps ] ::   :: sound :: 'sound_'
 by
 
-------- :: nil
-E ! nil
+----------- :: nil
+E [ nil ]
 
-E ! Ps
-S |- E ! N
--------- :: cons
-E ! Ps, S |- N
+E [ Ps ]
+S |- E [N]
+---------------- :: cons
+E [ Ps, S |- N ]

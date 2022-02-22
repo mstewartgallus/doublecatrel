@@ -148,7 +148,7 @@
 
 \newcommand{\ottsat}{
 \ottrulehead{\ottnt{sat}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\sigma  \vdash{}  \ottnt{E}  \mathrel{\Downarrow}  \ottnt{N}}{}{}{}{}}
+\ottfirstprodline{|}{ \sigma  \mathrel{\vdash}  \ottnt{E} [  \ottnt{N}  ] }{}{}{}{}}
 
 \newcommand{\ottbig}{
 \ottrulehead{\ottnt{big}}{::=}{}\ottprodnewline
@@ -160,7 +160,7 @@
 
 \newcommand{\ottsound}{
 \ottrulehead{\ottnt{sound}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\ottnt{E}  \mathrel{\Downarrow}  P^*}{}{}{}{}}
+\ottfirstprodline{|}{\ottnt{E}  \ottsym{[}  P^*  \ottsym{]}}{}{}{}{}}
 
 \newcommand{\ottjudgement}{
 \ottrulehead{\ottnt{judgement}}{::=}{}\ottprodnewline
@@ -397,62 +397,62 @@
 %% defn sat
 \newcommand{\ottdrulesatXXvar}[1]{\ottdrule[#1]{%
 }{
-\mathit{X}  \mathbin{:=}  \ottnt{N}  \vdash{}  \mathit{X}  \mathrel{\Downarrow}  \ottnt{N}}{%
+ \mathit{X}  \mathbin{:=}  \ottnt{N}  \mathrel{\vdash}  \mathit{X} [  \ottnt{N}  ] }{%
 {\ottdrulename{sat\_var}}{}%
 }}
 
 
 \newcommand{\ottdrulesatXXtt}[1]{\ottdrule[#1]{%
 }{
-\bullet{}  \vdash{}  \mathop{ \textbf ! }  \mathrel{\Downarrow}  \mathop{ \textbf ! }}{%
+ \bullet{}  \mathrel{\vdash}  \mathop{ \textbf ! } [  \mathop{ \textbf ! }  ] }{%
 {\ottdrulename{sat\_tt}}{}%
 }}
 
 
 \newcommand{\ottdrulesatXXstep}[1]{\ottdrule[#1]{%
-\ottpremise{\sigma  \vdash{}  \ottnt{E}  \mathrel{\Downarrow}  \mathop{ \textbf ! }}%
-\ottpremise{\sigma'  \vdash{}  \ottnt{E'}  \mathrel{\Downarrow}  \ottnt{N}}%
+\ottpremise{ \sigma  \mathrel{\vdash}  \ottnt{E} [  \mathop{ \textbf ! }  ] }%
+\ottpremise{ \sigma'  \mathrel{\vdash}  \ottnt{E'} [  \ottnt{N}  ] }%
 }{
-\sigma  \cup{}  \sigma'  \vdash{}  \ottnt{E}  \ottsym{;}  \ottnt{E'}  \mathrel{\Downarrow}  \ottnt{N}}{%
+ \sigma  \cup{}  \sigma'  \mathrel{\vdash}  \ottsym{(}  \ottnt{E}  \ottsym{;}  \ottnt{E'}  \ottsym{)} [  \ottnt{N}  ] }{%
 {\ottdrulename{sat\_step}}{}%
 }}
 
 
 \newcommand{\ottdrulesatXXfanout}[1]{\ottdrule[#1]{%
-\ottpremise{\sigma  \vdash{}  \ottnt{E}  \mathrel{\Downarrow}  \ottnt{N}}%
-\ottpremise{\sigma'  \vdash{}  \ottnt{E'}  \mathrel{\Downarrow}  \ottnt{N'}}%
+\ottpremise{ \sigma  \mathrel{\vdash}  \ottnt{E} [  \ottnt{N}  ] }%
+\ottpremise{ \sigma'  \mathrel{\vdash}  \ottnt{E'} [  \ottnt{N'}  ] }%
 }{
-\sigma  \cup{}  \sigma'  \vdash{}  \ottnt{E}  \ottsym{,}  \ottnt{E'}  \mathrel{\Downarrow}  \ottnt{N}  \ottsym{,}  \ottnt{N'}}{%
+ \sigma  \cup{}  \sigma'  \mathrel{\vdash}  \ottsym{(}  \ottnt{E}  \ottsym{,}  \ottnt{E'}  \ottsym{)} [  \ottnt{N}  \ottsym{,}  \ottnt{N'}  ] }{%
 {\ottdrulename{sat\_fanout}}{}%
 }}
 
 
 \newcommand{\ottdrulesatXXlet}[1]{\ottdrule[#1]{%
-\ottpremise{\sigma  \vdash{}  \ottnt{E}  \mathrel{\Downarrow}  \ottnt{N_{{\mathrm{0}}}}  \ottsym{,}  \ottnt{N_{{\mathrm{1}}}}}%
-\ottpremise{\sigma'  \ottsym{,}  \mathit{X}  \mathbin{:=}  \ottnt{N_{{\mathrm{0}}}}  \ottsym{,}  \mathit{Y}  \mathbin{:=}  \ottnt{N_{{\mathrm{1}}}}  \vdash{}  \ottnt{E'}  \mathrel{\Downarrow}  \ottnt{N_{{\mathrm{2}}}}}%
+\ottpremise{ \sigma  \mathrel{\vdash}  \ottnt{E} [  \ottnt{N_{{\mathrm{0}}}}  \ottsym{,}  \ottnt{N_{{\mathrm{1}}}}  ] }%
+\ottpremise{ \sigma'  \ottsym{,}  \mathit{X}  \mathbin{:=}  \ottnt{N_{{\mathrm{0}}}}  \ottsym{,}  \mathit{Y}  \mathbin{:=}  \ottnt{N_{{\mathrm{1}}}}  \mathrel{\vdash}  \ottnt{E'} [  \ottnt{N_{{\mathrm{2}}}}  ] }%
 }{
-\sigma  \cup{}  \sigma'  \vdash{}  \mathbin{\textbf{let} } \, \mathit{X}  \ottsym{,}  \mathit{Y}  \ottsym{=}  \ottnt{E} \, \mathbin{\textbf{in} } \, \ottnt{E'}  \mathrel{\Downarrow}  \ottnt{N_{{\mathrm{2}}}}}{%
+ \sigma  \cup{}  \sigma'  \mathrel{\vdash}  \ottsym{(}  \mathbin{\textbf{let} } \, \mathit{X}  \ottsym{,}  \mathit{Y}  \ottsym{=}  \ottnt{E} \, \mathbin{\textbf{in} } \, \ottnt{E'}  \ottsym{)} [  \ottnt{N_{{\mathrm{2}}}}  ] }{%
 {\ottdrulename{sat\_let}}{}%
 }}
 
 
 \newcommand{\ottdrulesatXXlam}[1]{\ottdrule[#1]{%
-\ottpremise{\sigma  \ottsym{,}  \mathit{X}  \mathbin{:=}  \ottnt{N}  \vdash{}  \ottnt{E}  \mathrel{\Downarrow}  \ottnt{N'}}%
+\ottpremise{ \sigma  \ottsym{,}  \mathit{X}  \mathbin{:=}  \ottnt{N}  \mathrel{\vdash}  \ottnt{E} [  \ottnt{N'}  ] }%
 }{
-\sigma  \vdash{}  \lambda{} \, \mathit{X}  \colon{}  \ottnt{t}  \ottsym{.}  \ottnt{E}  \mathrel{\Downarrow}  \ottnt{N}  \ottsym{,}  \ottnt{N'}}{%
+ \sigma  \mathrel{\vdash}  \ottsym{(}  \lambda{} \, \mathit{X}  \colon{}  \ottnt{t}  \ottsym{.}  \ottnt{E}  \ottsym{)} [  \ottnt{N}  \ottsym{,}  \ottnt{N'}  ] }{%
 {\ottdrulename{sat\_lam}}{}%
 }}
 
 
 \newcommand{\ottdrulesatXXapp}[1]{\ottdrule[#1]{%
-\ottpremise{\sigma  \vdash{}  \ottnt{E}  \mathrel{\Downarrow}  \ottnt{N}  \ottsym{,}  \ottnt{N'}}%
-\ottpremise{\sigma'  \vdash{}  \ottnt{E'}  \mathrel{\Downarrow}  \ottnt{N}}%
+\ottpremise{ \sigma  \mathrel{\vdash}  \ottnt{E} [  \ottnt{N}  \ottsym{,}  \ottnt{N'}  ] }%
+\ottpremise{ \sigma'  \mathrel{\vdash}  \ottnt{E'} [  \ottnt{N}  ] }%
 }{
-\sigma  \cup{}  \sigma'  \vdash{}  \ottnt{E} \, \ottnt{E'}  \mathrel{\Downarrow}  \ottnt{N'}}{%
+ \sigma  \cup{}  \sigma'  \mathrel{\vdash}  \ottsym{(}  \ottnt{E} \, \ottnt{E'}  \ottsym{)} [  \ottnt{N'}  ] }{%
 {\ottdrulename{sat\_app}}{}%
 }}
 
-\newcommand{\ottdefnsat}[1]{\begin{ottdefnblock}[#1]{$\sigma  \vdash{}  \ottnt{E}  \mathrel{\Downarrow}  \ottnt{N}$}{}
+\newcommand{\ottdefnsat}[1]{\begin{ottdefnblock}[#1]{$ \sigma  \mathrel{\vdash}  \ottnt{E} [  \ottnt{N}  ] $}{}
 \ottusedrule{\ottdrulesatXXvar{}}
 \ottusedrule{\ottdrulesatXXtt{}}
 \ottusedrule{\ottdrulesatXXstep{}}
@@ -540,20 +540,20 @@
 %% defn sound
 \newcommand{\ottdrulesoundXXnil}[1]{\ottdrule[#1]{%
 }{
-\ottnt{E}  \mathrel{\Downarrow}  \bullet{}}{%
+\ottnt{E}  \ottsym{[}  \bullet{}  \ottsym{]}}{%
 {\ottdrulename{sound\_nil}}{}%
 }}
 
 
 \newcommand{\ottdrulesoundXXcons}[1]{\ottdrule[#1]{%
-\ottpremise{\ottnt{E}  \mathrel{\Downarrow}  P^*}%
-\ottpremise{\sigma  \vdash{}  \ottnt{E}  \mathrel{\Downarrow}  \ottnt{N}}%
+\ottpremise{\ottnt{E}  \ottsym{[}  P^*  \ottsym{]}}%
+\ottpremise{ \sigma  \mathrel{\vdash}  \ottnt{E} [  \ottnt{N}  ] }%
 }{
-\ottnt{E}  \mathrel{\Downarrow}  P^*  \ottsym{,}  \sigma  \vdash{}  \ottnt{N}}{%
+\ottnt{E}  \ottsym{[}  P^*  \ottsym{,}  \sigma  \vdash{}  \ottnt{N}  \ottsym{]}}{%
 {\ottdrulename{sound\_cons}}{}%
 }}
 
-\newcommand{\ottdefnsound}[1]{\begin{ottdefnblock}[#1]{$\ottnt{E}  \mathrel{\Downarrow}  P^*$}{}
+\newcommand{\ottdefnsound}[1]{\begin{ottdefnblock}[#1]{$\ottnt{E}  \ottsym{[}  P^*  \ottsym{]}$}{}
 \ottusedrule{\ottdrulesoundXXnil{}}
 \ottusedrule{\ottdrulesoundXXcons{}}
 \end{ottdefnblock}}

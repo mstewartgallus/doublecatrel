@@ -46,7 +46,7 @@
 \newcommand{\Span}{\textbf{Span}}
 \newcommand{\Vect}{\textbf{Vect}}
 \newcommand{\Prof}{\textbf{Prof}}
-\newcommand{\lk}{\(\bar{\lambda}\mu\tilde{\mu}\,\)}
+\newcommand{\lk}{\(\bar{\lambda{}}\mu\tilde{\mu}\,\)}
 
 \newcommand{\name}[1]{\LeftLabel{\fbox{#1}}}
 \newcommand{\apply}[1]{\RightLabel{\scriptsize{(#1)}}}
@@ -93,7 +93,7 @@
 \DeclareMathOperator{\head}{\textbf{h}}
 \DeclareMathOperator{\tail}{\textbf{t}}
 
-\newcommand{\Forall}{\Lambda}
+\newcommand{\Forall}{\lambda{}}
 
 \newcommand{\update}{\mathbin{:=}}
 
@@ -173,26 +173,26 @@ imperative.
 
 \subsection*{Identity}
 
-\( \textbf{id}_t = \lambda (x \colon t). \, x_t \)
+\( \textbf{id}_t = \lambda{} \mathit{X} \colon t . \mathit{X} \)
 {\taut
   \apply{V}
-  \UnaryInf$ \bullet , \, X \colon t \fCenter X \colon t $
+  \UnaryInf$ \bullet , \mathit{X} \colon t \fCenter \mathit{X} \colon t $
   \apply{\(\times\)I}
-  \UnaryInf$ \bullet \fCenter  \lambda X \colon t . \, X \colon t \otimes t $
+  \UnaryInf$ \bullet \fCenter \lambda{} X \colon t . \mathit{X} \colon t \otimes t $
   \DisplayProof}
 \hfill
 {\taut
   \apply{V}
-  \UnaryInf$ \Delta , \,  X \sat N \fCenter  x_t \sat N $
+  \UnaryInf$ \bullet , \mathit{X}[N] \fCenter \mathit{X}[N] $
   \apply{\(\times\)I}
-  \UnaryInf$ \Delta \fCenter \lambda X \colon t . \, X  \sat N , N $
+  \UnaryInf$ \bullet \fCenter (\lambda{} \mathit{X} \colon t . \mathit{X})[N , N] $
   \DisplayProof}
 
 \subsection*{Composition}
 
 \begin{center}
 
-  \[ f \circ_t g = \lambda X \colon t . \, f \, (g \, X) \]
+  \[ f \circ_t g = \lambda{} \mathit{X} \colon t . \, f \, (g \, \mathit{X}) \]
 
 \begin{prooftree}
 
@@ -209,27 +209,27 @@ imperative.
   \apply{\(\times\)E}
   \BinaryInf$ \bullet , \, X \colon t_0 \fCenter f \, (g \, X) \colon t_2 $
   \apply{\(\times\)I}
-  \UnaryInf$ \bullet \fCenter \lambda X \colon t_0. \, f \, (g \, X) \colon t_0 \otimes t_2 $
+  \UnaryInf$ \bullet \fCenter \lambda{} X \colon t_0. \, f \, (g \, X) \colon t_0 \otimes t_2 $
 
 \end{prooftree}
 
 \begin{prooftree}
 
-  \Axiom$ \bullet \fCenter f \sat N_1 , \, N_2 $
+  \Axiom$ \bullet \fCenter f[N_1, N_2] $
 
-  \Axiom$ \bullet \fCenter g \sat N_0 , \, N_1 $
+  \Axiom$ \bullet \fCenter g[N_0, N_1] $
 
   \taut
   \apply{V}
-  \UnaryInf$ \bullet , \, X \sat N_0 \fCenter X \sat N_0  $
+  \UnaryInf$ \bullet , \, X[N_0] \fCenter X[N_0]  $
 
   \apply{\(\times\)E}
-  \BinaryInf$ \bullet , \, X \sat N_0 \fCenter g \, X \sat N_1 $
+  \BinaryInf$ \bullet , \, X[N_0] \fCenter g \, X [N_1] $
 
   \apply{\(\times\)E}
-  \BinaryInf$ \bullet , \, X \sat N_0  \fCenter  f \, (g \, X)  \sat N_2 $
+  \BinaryInf$ \bullet , \, X[N_0]  \fCenter  f \, (g \, X) [N_2] $
   \apply{\(\times\)I}
-  \UnaryInf$ \bullet \fCenter \lambda X \colon t_0 . \, f \, (g \, X)  \sat N_0 , N_2 $
+  \UnaryInf$ \bullet \fCenter \lambda{} X \colon t_0 . \, f \, (g \, X)  [N_0 , N_2] $
 \end{prooftree}
 
 \end{center}
@@ -246,11 +246,17 @@ required.
 
 \begin{center}
 
-  $$ P(\bullet, \rho)_{\rho \colon \Gamma} = \bullet \vdash [\mathrel{:=} \rho] v \Downarrow N_\rho  $$
+  \begin{align*}
+  \Gamma & \vdash v \colon t \\
+  \Delta & \vdash E \colon t \\
+  & \sigma \colon \Delta \\
+  & \rho \colon \Gamma \\
+  & [:=\rho]v \Downarrow N
+  \end{align*}
 
   \begin{tikzcd}
-   \unit \arrow{dd}[']{\sigma} \arrow{rr}{P} & {} \arrow[Rightarrow]{dd}{\sigma \fCenter E \sat N_\rho} & \mathop{\bigotimes}\limits_{x\colon t \mathrel{\in} \Gamma} t \arrow{dd}{v} \\
-    &                               &                      \\
+    \unit \arrow{dd}[']{\sigma} \arrow[leftrightarrow]{rr}{\textbf{id}} & {} \arrow[Rightarrow,']{dd}{\sigma \vdash E[N]} & \unit  \arrow{d}{\rho} \\
+    &                                                                         & \mathop{\bigotimes}\limits_{x\colon t \mathrel{\in} \Gamma} t  \arrow{d}{v}   \\
     \mathop{\bigotimes}\limits_{X\colon t \mathrel{\in} \Delta} t \arrow{rr}[']{E}                           & {}                            & t                   
   \end{tikzcd}
 \end{center}
@@ -268,7 +274,7 @@ Really need to think about denotation again.
   \\
   \llbracket x_t \rrbracket(\sigma, s) & = \sigma(x, s) \\
   \llbracket E_0 \, E_1 \rrbracket(\sigma, s_0) & = \exists s_1,  \llbracket E_1 \rrbracket (\sigma, s_1) \wedge \llbracket E_0 \rrbracket (\sigma, (s_1, s_0))\\
-  \llbracket \lambda (x \colon t). E_0 \rrbracket(\sigma, (s_0, s_1)) & = \lambda E_1, \llbracket E_1 \rrbracket (\sigma, s_0) \rightarrow \llbracket E_0 \rrbracket ([x \update  s \mapsto \llbracket E_1 \rrbracket(\sigma, s)] \sigma, s_1) 
+  \llbracket \lambda{} (x \colon t). E_0 \rrbracket(\sigma, (s_0, s_1)) & = \lambda{} E_1, \llbracket E_1 \rrbracket (\sigma, s_0) \rightarrow \llbracket E_0 \rrbracket ([x \update  s \mapsto \llbracket E_1 \rrbracket(\sigma, s)] \sigma, s_1) 
 \end{aligned}
 \]
 
@@ -282,24 +288,24 @@ equivalence relation might be something like:
 
 \begin{center}
 
-{\axiom{object}{\( \cdot \fCenter O \colon \prop \)}\hfill
-\axiom{arrow}{\( \cdot \fCenter R \colon O \times O \)}}
+{\axiom{object}{\( \bullet \fCenter O \colon \prop \)}\hfill
+\axiom{arrow}{\( \bullet \fCenter R \colon O \times O \)}}
 
 \name{refl}
 \Axiom$\bullet \fCenter o \colon O$
-\UnaryInf$\bullet \fCenter R \sat o, o $
+\UnaryInf$\bullet \fCenter R[o, o] $
 \DisplayProof
 
 \name{trans}
-\Axiom$ \bullet \fCenter  \lambda (x\colon O). R \, (R \, x)  \sat o_0, o_1 $
+\Axiom$ \bullet \fCenter  \lambda{} \mathit{X} \colon O . R \, (R \, \mathit{X}) [o_0, o_1] $
 \side{\bullet \fCenter o_1, o_0 \colon O \times O}
-\UnaryInf$ \bullet \fCenter  R \sat o_0, o_1 $
+\UnaryInf$ \bullet \fCenter  R [ o_0, o_1 ]$
 \DisplayProof
 
 \name{sym}
-\Axiom$ \bullet \fCenter  R \sat o_0, o_1  $
+\Axiom$ \bullet \fCenter  R [ o_0, o_1 ] $
 \side{\bullet \fCenter o_1, o_0 \colon O \times O}
-\UnaryInf$ \bullet \fCenter  R \sat o_1, o_0 $
+\UnaryInf$ \bullet \fCenter  R [ o_1, o_0 ]$
 \DisplayProof
       
 \end{center}
@@ -325,9 +331,9 @@ think more about the issue.
 \[\begin{aligned}
 & \textbf{Types} & t & \bnfdef \ldots \mid \mt \mid t \oplus t \\
 & \textbf{Contexts} & E & \bnfdef \ldots \mid
-  \absurd_t(E) \mid \inl_t(E) \mid \inr_t(E) \mid \\
-&                     & & \case(E_0, X. E_1, Y. E_2) \mid \false \mid \lft(E) \mid \rgt(E) \mid E ; E'  \\
-& \textbf{Terms} & v & \bnfdef \ldots \mid \absurd_t(v) \mid \inl_t(v) \mid \inr_t(v) \mid
+  \absurd_t E \mid \inl_t E \mid \inr_t E \mid \\
+&                     & & \case(E_0, X. E_1, Y. E_2) \mid \false \mid \lft E \mid \rgt E \mid E ; E'  \\
+& \textbf{Terms} & v & \bnfdef \ldots \mid \absurd_t v \mid \inl_t v \mid \inr_t v \mid
   \case(v_0, x. v_1, y. v_2)
 \end{aligned}\]
 
@@ -335,17 +341,17 @@ think more about the issue.
 
 \name{\(\mt\text{E}^\text{T}\)}
 \Axiom$\Delta \fCenter E \colon \mt$
-\UnaryInf$\Delta \fCenter \absurd_t(E) \colon t$
+\UnaryInf$\Delta \fCenter \absurd_t E \colon t$
 \DisplayProof
 
 {\name{\(+\text{I}^\text{T}_1\)}
 \Axiom$\Delta \fCenter E \colon t_0$
-\UnaryInf$\Delta \fCenter \inl_{t_1}(E) \colon t_0 \oplus t_1$
+\UnaryInf$\Delta \fCenter \inl_{t_1} E \colon t_0 \oplus t_1$
 \DisplayProof
 \hfill
 \name{\(+\text{I}^\text{T}_2\)}
 \Axiom$\Delta \fCenter E \colon t_1$
-\UnaryInf$\Delta \fCenter \inr_{t_0}(E) \colon t_0 \oplus t_1$
+\UnaryInf$\Delta \fCenter \inr_{t_0} E \colon t_0 \oplus t_1$
 \DisplayProof}
 
 \name{\(+\text{E}^\text{T}\)}
@@ -360,12 +366,12 @@ think more about the issue.
 
 {\name{\(+\text{E}_1\)}
 \Axiom$\Delta \fCenter E \colon t_0 \oplus t_1$
-\UnaryInf$\Delta \fCenter \lft(E) \colon t_0$
+\UnaryInf$\Delta \fCenter \lft E \colon t_0$
 \DisplayProof
 \hfill
 \name{\(+\text{E}_2\)}
 \Axiom$\Delta \fCenter E \colon t_0 \oplus t_1$
-\UnaryInf$\Delta \fCenter \rgt(E) \colon t_1)$
+\UnaryInf$\Delta \fCenter \rgt E \colon t_1$
 \DisplayProof
 }
 
@@ -379,17 +385,17 @@ think more about the issue.
 
 \name{\(\mt\)E}
 \Axiom$\Gamma \fCenter v \colon \mt$
-\UnaryInf$\Gamma \fCenter \absurd_t(v) \colon t$
+\UnaryInf$\Gamma \fCenter \absurd_t v \colon t$
 \DisplayProof
 
 {\name{\(+\text{I}_1\)}
 \Axiom$\Gamma \fCenter v \colon t_0$
-\UnaryInf$\Gamma \fCenter \inl_{t_1}(v) \colon t_0 \oplus t_1$
+\UnaryInf$\Gamma \fCenter \inl_{t_1} v \colon t_0 \oplus t_1$
 \DisplayProof
 \hfill
 \name{\(+\text{I}_2\)}
 \Axiom$\Gamma \fCenter v \colon t_1$
-\UnaryInf$\Gamma \fCenter \inr_{t_0}(v) \colon t_0 \oplus t_1$
+\UnaryInf$\Gamma \fCenter \inr_{t_0} v \colon t_0 \oplus t_1$
 \DisplayProof
 }
 
@@ -409,20 +415,15 @@ think more about the issue.
 \subsubsection*{Command Calculus}
 
 {\name{\(+\text{I}_1\)}
-\Axiom$\Delta \fCenter E_0 \sat N $
-\UnaryInf$\Delta \fCenter E_0 ; E_1 \sat \inl_t(N) $
+\Axiom$\sigma \fCenter E_0 [ N ] $
+\UnaryInf$\sigma \fCenter ( E_0 ; E_1 ) [ \inl_t N ]$
 \DisplayProof
 \hfill
 \name{\(+\text{I}_2\)}
-\Axiom$\Delta \fCenter  E_1 \sat N$
-\UnaryInf$\Delta \fCenter  E_0 ; E_1 \sat \inr_t(N) $
+\Axiom$\sigma \fCenter  E_1 [ N ]$
+\UnaryInf$\sigma \fCenter ( E_0 ; E_1 ) [ \inr_t N] $
 \DisplayProof
 }
-
-\name{\(\mt\)I}
-\Axiom$\Delta \fCenter E \sat \absurd_t(N) $
-\UnaryInf$\Delta \fCenter \false \sat N $
-\DisplayProof
 
 \end{center}
 
@@ -443,9 +444,9 @@ Not really good at the typing judgements for dependent sum types.
 
 \[\begin{aligned}
 & \textbf{Types} & t & \bnfdef \ldots \mid x \mid \prop \mid \head(v) \mid \Sigma X \colon \prop . t  \\
-& \textbf{Contexts} &  E & \bnfdef \ldots \mid E \, t \mid \Lambda X \colon \prop . E  \\
+& \textbf{Contexts} &  E & \bnfdef \ldots \mid E \, t \mid \lambda{} X \colon \prop . E  \\
 & \textbf{Terms} &  v & \bnfdef \ldots \mid \tail(v) \mid \langle x \update t , v \rangle  \\
-& \textbf{Command Env} & \sigma & \bnfdef \ldots \mid \Delta , \, X \sat t 
+& \textbf{Command Env} & \sigma & \bnfdef \ldots \mid \Delta , \, X [ t ]
 \end{aligned}\]
 
 \subsubsection*{Context Calculus}
@@ -458,7 +459,7 @@ Not really good at the typing judgements for dependent sum types.
 
 \name{\(\Sigma\)I}
 \Axiom$ \Delta , \, x \colon \prop \fCenter E \colon t $
-\UnaryInf$ \Delta \fCenter \Lambda X \colon \prop. E \colon \Sigma X \colon \prop . t $
+\UnaryInf$ \Delta \fCenter \lambda{} X \colon \prop. E \colon \Sigma X \colon \prop . t $
 \DisplayProof
 
 \subsubsection*{Term Calculus}
@@ -503,8 +504,8 @@ Not really good at the typing judgements for dependent sum types.
 \subsubsection*{Command Calculus}
 
 \name{\(\Sigma\)I}
-\Axiom$ \sigma , \,  X \sat t  \fCenter E \sat N $
-\UnaryInf$ \sigma \fCenter  \Lambda X \colon \prop . E \sat \langle x \update t , N \rangle $
+\Axiom$ \sigma , \,  X [ t ]  \fCenter E [ N ] $
+\UnaryInf$ \sigma \fCenter (\lambda{} X \colon \prop . E) [ \langle x \update t , N \rangle ] $
 \DisplayProof
 
 \end{center}

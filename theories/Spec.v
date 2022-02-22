@@ -181,22 +181,22 @@ Inductive sat : store -> context -> normal -> Prop :=    (* defn sat *)
  | sat_step : forall (σ σ':store) (E E':context) (N:normal),
      sat σ E N_tt ->
      sat σ' E' N ->
-     sat  (Map.merge  σ   σ' )  (E_step E E') N
+     sat  (Map.merge  σ   σ' )   ( (E_step E E') )  N
  | sat_fanout : forall (σ σ':store) (E E':context) (N N':normal),
      sat σ E N ->
      sat σ' E' N' ->
-     sat  (Map.merge  σ   σ' )  (E_fanout E E') (N_fanout N N')
+     sat  (Map.merge  σ   σ' )   ( (E_fanout E E') )  (N_fanout N N')
  | sat_let : forall (σ σ':store) (X Y:cvar) (E E':context) (N2 N0 N1:normal),
      sat σ E (N_fanout N0 N1) ->
      sat  (Map.merge   (Map.one  Y   N1 )     (Map.merge   (Map.one  X   N0 )    σ' )  )  E' N2 ->
-     sat  (Map.merge  σ   σ' )  (E_let X Y E E') N2
+     sat  (Map.merge  σ   σ' )   ( (E_let X Y E E') )  N2
  | sat_lam : forall (σ:store) (X:cvar) (t:type) (E:context) (N N':normal),
      sat  (Map.merge   (Map.one  X   N )    σ )  E N' ->
-     sat σ (E_lam X t E) (N_fanout N N')
+     sat σ  ( (E_lam X t E) )  (N_fanout N N')
  | sat_app : forall (σ σ':store) (E E':context) (N' N:normal),
      sat σ E (N_fanout N N') ->
      sat σ' E' N ->
-     sat  (Map.merge  σ   σ' )  (E_app E E') N'.
+     sat  (Map.merge  σ   σ' )   ( (E_app E E') )  N'.
 (** definitions *)
 
 (* defns big *)
