@@ -1,5 +1,5 @@
 embed
-{{ coq
+{{ coq-preamble
 Require Blech.Map.
 }}
 
@@ -11,7 +11,7 @@ type, t :: 't_' ::= {{ coq-equality }}
   | unit         ::   :: unit
   | t * t'       ::   :: prod
 
-context, E :: 'E_' ::=
+context, E :: 'E_' ::= {{ coq-equality }}
   | X                        ::   :: var
   | lam X : t . E            ::   :: lam (+ bind X in E +)
   | E E'                     ::   :: app
@@ -21,7 +21,7 @@ context, E :: 'E_' ::=
   | let X , Y = E in E'      ::   :: let (+ bind X union Y in E' +)
   | ( E )                    :: S :: paren {{ icho ([[E]]) }}
 
-term, v :: 'v_' ::=
+term, v :: 'v_' ::= {{ coq-equality }}
   | x              ::   :: var
   | tt             ::   :: tt
   | fst v          ::   :: fst
@@ -35,7 +35,7 @@ normal, N :: 'N_' ::= {{ coq-equality }}
   | N , N'  ::   :: fanout
   | ( N )   :: S :: paren {{ coq ([[N]]) }}
 
-linear, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (Map.map type) }} {{ coq-universe Type }}
+linear, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (Map.map type) }}
   | nil           :: M :: empty {{ coq (Map.empty) }}
   | X : t         :: M :: one {{ coq (Map.one [[X]] [[t]]) }}
   | D , D'        :: M :: add {{ coq (Map.merge [[D']] [[D]]) }}
@@ -46,16 +46,16 @@ environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (list (vvar * ty
   | G , x : t   ::   :: add {{ coq (cons ([[x]], [[t]]) [[G]]) }}
   | ( G )       :: S :: paren {{ coq ([[G]]) }}
 
-store, S {{ tex \sigma }} {{ coq σ }} :: 'S_'  ::= {{ coq (Map.map normal) }} {{ coq-universe Type }}
+store, S {{ tex \sigma }} {{ coq σ }} :: 'S_'  ::= {{ coq (Map.map normal) }}
   | nil                   :: M :: empty {{ coq (Map.empty) }}
   | X := N                :: M :: one {{ coq (Map.one [[X]] [[N]]) }}
   | S , S'                :: M :: add {{ coq (Map.merge [[S']] [[S]]) }}
   | S ++ S'               :: M :: merge {{ coq (Map.merge [[S]] [[S']]) }}
 
-span, P :: 'P_' ::= {{ coq-universe Type }}
+span, P :: 'P_' ::=
   | S |- N  ::   :: with
 
-set, Ps {{ tex P^* }} :: 'X_' ::= {{ coq (list span) }} {{ coq-universe Type }}
+set, Ps {{ tex P^* }} :: 'X_' ::= {{ coq (list span) }}
   | nil          ::   :: nil {{ coq nil }}
   | Ps , P       ::   :: cons {{ coq (cons [[P]] [[Ps]]) }}
 

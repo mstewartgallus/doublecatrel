@@ -25,13 +25,13 @@ Inductive normal : Set :=
  | N_tt : normal
  | N_fanout (N:normal) (N':normal).
 
-Definition store : Type := (Map.map normal).
+Definition store : Set := (Map.map normal).
 
 Inductive type : Set := 
  | t_unit : type
  | t_prod (t:type) (t':type).
 
-Inductive span : Type := 
+Inductive span : Set := 
  | P_with (σ:store) (N:normal).
 
 Inductive term : Set := 
@@ -50,9 +50,9 @@ Inductive context : Set :=
  | E_fanout (E:context) (E':context)
  | E_let (X:cvar) (Y:cvar) (E:context) (E':context).
 
-Definition linear : Type := (Map.map type).
+Definition linear : Set := (Map.map type).
 
-Definition set : Type := (list span).
+Definition set : Set := (list span).
 
 Definition environment : Set := (list (vvar * type)).
 
@@ -67,6 +67,16 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_type : ott_coq_equality.
+Lemma eq_term: forall (x y : term), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_term : ott_coq_equality.
+Lemma eq_context: forall (x y : context), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_context : ott_coq_equality.
 
 (** substitutions *)
 Fixpoint subst_term (v5:term) (x5:vvar) (v_6:term) {struct v_6} : term :=
