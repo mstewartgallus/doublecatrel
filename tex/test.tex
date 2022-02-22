@@ -146,13 +146,13 @@
 \ottrulehead{\ottnt{judge\_term}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\Gamma  \vdash{}  \ottnt{v}  \colon{}  \ottnt{t}}{}{}{}{}}
 
-\newcommand{\ottbig}{
-\ottrulehead{\ottnt{big}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\ottnt{v}  \mathrel{\Downarrow}  \ottnt{N}}{}{}{}{}}
-
 \newcommand{\ottsat}{
 \ottrulehead{\ottnt{sat}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\sigma  \vdash{}  \ottnt{E}  \mathrel{\Downarrow}  \ottnt{N}}{}{}{}{}}
+
+\newcommand{\ottbig}{
+\ottrulehead{\ottnt{big}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\ottnt{v}  \mathrel{\Downarrow}  \ottnt{N}}{}{}{}{}}
 
 \newcommand{\ottjudge}{
 \ottrulehead{\ottnt{judge}}{::=}{}\ottprodnewline
@@ -167,8 +167,8 @@
 \ottfirstprodline{|}{\ottnt{judge\_context}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{find}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{judge\_term}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{big}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{sat}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{big}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{judge}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{sound}}{}{}{}{}}
 
@@ -208,8 +208,8 @@
 \ottjudgeXXcontext\ottinterrule
 \ottfind\ottinterrule
 \ottjudgeXXterm\ottinterrule
-\ottbig\ottinterrule
 \ottsat\ottinterrule
+\ottbig\ottinterrule
 \ottjudge\ottinterrule
 \ottsound\ottinterrule
 \ottjudgement\ottinterrule
@@ -393,50 +393,6 @@
 \newcommand{\ottdefnsjudgeXXterm}{
 \ottdefnJv{}}
 
-% defns big
-%% defn big
-\newcommand{\ottdrulebigXXtt}[1]{\ottdrule[#1]{%
-}{
-\mathop{ \textbf ! }  \mathrel{\Downarrow}  \mathop{ \textbf ! }}{%
-{\ottdrulename{big\_tt}}{}%
-}}
-
-
-\newcommand{\ottdrulebigXXfanout}[1]{\ottdrule[#1]{%
-\ottpremise{\ottnt{v_{{\mathrm{1}}}}  \mathrel{\Downarrow}  \ottnt{N'_{{\mathrm{1}}}}}%
-\ottpremise{\ottnt{v_{{\mathrm{2}}}}  \mathrel{\Downarrow}  \ottnt{N'_{{\mathrm{2}}}}}%
-}{
-\ottsym{(}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \ottsym{)}  \mathrel{\Downarrow}  \ottsym{(}  \ottnt{N'_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{N'_{{\mathrm{2}}}}  \ottsym{)}}{%
-{\ottdrulename{big\_fanout}}{}%
-}}
-
-
-\newcommand{\ottdrulebigXXfst}[1]{\ottdrule[#1]{%
-\ottpremise{\ottnt{v}  \mathrel{\Downarrow}  \ottnt{N_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{N_{{\mathrm{2}}}}}%
-}{
-\pi{}_1 \, \ottnt{v}  \mathrel{\Downarrow}  \ottnt{N_{{\mathrm{1}}}}}{%
-{\ottdrulename{big\_fst}}{}%
-}}
-
-
-\newcommand{\ottdrulebigXXsnd}[1]{\ottdrule[#1]{%
-\ottpremise{\ottnt{v}  \mathrel{\Downarrow}  \ottnt{N_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{N_{{\mathrm{2}}}}}%
-}{
-\pi{}_2 \, \ottnt{v}  \mathrel{\Downarrow}  \ottnt{N_{{\mathrm{2}}}}}{%
-{\ottdrulename{big\_snd}}{}%
-}}
-
-\newcommand{\ottdefnbig}[1]{\begin{ottdefnblock}[#1]{$\ottnt{v}  \mathrel{\Downarrow}  \ottnt{N}$}{}
-\ottusedrule{\ottdrulebigXXtt{}}
-\ottusedrule{\ottdrulebigXXfanout{}}
-\ottusedrule{\ottdrulebigXXfst{}}
-\ottusedrule{\ottdrulebigXXsnd{}}
-\end{ottdefnblock}}
-
-
-\newcommand{\ottdefnsbig}{
-\ottdefnbig{}}
-
 % defns sat
 %% defn sat
 \newcommand{\ottdrulesatXXvar}[1]{\ottdrule[#1]{%
@@ -510,6 +466,50 @@
 \newcommand{\ottdefnssat}{
 \ottdefnsat{}}
 
+% defns big
+%% defn big
+\newcommand{\ottdrulebigXXtt}[1]{\ottdrule[#1]{%
+}{
+\mathop{ \textbf ! }  \mathrel{\Downarrow}  \mathop{ \textbf ! }}{%
+{\ottdrulename{big\_tt}}{}%
+}}
+
+
+\newcommand{\ottdrulebigXXfanout}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{v_{{\mathrm{1}}}}  \mathrel{\Downarrow}  \ottnt{N'_{{\mathrm{1}}}}}%
+\ottpremise{\ottnt{v_{{\mathrm{2}}}}  \mathrel{\Downarrow}  \ottnt{N'_{{\mathrm{2}}}}}%
+}{
+\ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \mathrel{\Downarrow}  \ottnt{N'_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{N'_{{\mathrm{2}}}}}{%
+{\ottdrulename{big\_fanout}}{}%
+}}
+
+
+\newcommand{\ottdrulebigXXfst}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{v}  \mathrel{\Downarrow}  \ottnt{N_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{N_{{\mathrm{2}}}}}%
+}{
+\pi{}_1 \, \ottnt{v}  \mathrel{\Downarrow}  \ottnt{N_{{\mathrm{1}}}}}{%
+{\ottdrulename{big\_fst}}{}%
+}}
+
+
+\newcommand{\ottdrulebigXXsnd}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{v}  \mathrel{\Downarrow}  \ottnt{N_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{N_{{\mathrm{2}}}}}%
+}{
+\pi{}_2 \, \ottnt{v}  \mathrel{\Downarrow}  \ottnt{N_{{\mathrm{2}}}}}{%
+{\ottdrulename{big\_snd}}{}%
+}}
+
+\newcommand{\ottdefnbig}[1]{\begin{ottdefnblock}[#1]{$\ottnt{v}  \mathrel{\Downarrow}  \ottnt{N}$}{}
+\ottusedrule{\ottdrulebigXXtt{}}
+\ottusedrule{\ottdrulebigXXfanout{}}
+\ottusedrule{\ottdrulebigXXfst{}}
+\ottusedrule{\ottdrulebigXXsnd{}}
+\end{ottdefnblock}}
+
+
+\newcommand{\ottdefnsbig}{
+\ottdefnbig{}}
+
 % defns judge
 %% defn p
 \newcommand{\ottdruleJpXXnil}[1]{\ottdrule[#1]{%
@@ -568,8 +568,8 @@
 \ottdefnsjudgeXXcontext
 \ottdefnsfind
 \ottdefnsjudgeXXterm
-\ottdefnsbig
 \ottdefnssat
+\ottdefnsbig
 \ottdefnsjudge
 \ottdefnssound
 }

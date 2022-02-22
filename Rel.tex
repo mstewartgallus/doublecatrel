@@ -58,7 +58,7 @@
 
 \newcommand{\step}{\mathrel{\rightsquigarrow}}
 \newcommand{\with}{\;}
-\newcommand{\sat}{\mathbin{\otimes}}
+\newcommand{\sat}{\mathbin{\models}}
 
 \def\fCenter{\mathrel{\vdash}}
 
@@ -163,106 +163,6 @@ imperative.
 \ottdefnss
 \end{flushleft}
 
-\begin{center}
-
-\[\begin{aligned}
-&\textbf{Types} &  t & \bnfdef \prop \mid t \times t  \\
-&\textbf{Contexts}  & E & \bnfdef x_t \mid E \, E \mid \lambda (x \colon t) . E  \\
-&\textbf{Terms} &  v & \bnfdef x \mid \fst(v) \mid \snd(v) \mid v , v  \\
-&\textbf{Environment}  &  \Gamma & \bnfdef \cdot \mid \Gamma , \, x \colon t   \\
-&\textbf{Command Env}  &  \Delta & \bnfdef \cdot \mid \Delta , \, x \sat v  
-\end{aligned}\]
-
-
-\subsubsection*{Context Calculus}
- 
-\axiom{V}
-      {\(\cdot , \, x \colon t \vdash x_t \colon t\)}
-
-      
-\begin{prooftree}
-\name{\(\times\)I}
-\Axiom$\Gamma \fCenter E \colon t_1$
-\side{ x \colon t_0 \in \Gamma }
-\UnaryInf$\Gamma \setminus x \fCenter \lambda (x \colon t_0). E \colon t_0 \times t_1$
-\end{prooftree}
-
-\begin{prooftree}
-\name{\(\times\)E}
-\Axiom$\Gamma_0 \fCenter E_0 \colon t_0 \times t_1$
-\Axiom$\Gamma_1 \fCenter E_1 \colon t_0$
-\BinaryInf$\Gamma_0, \, \Gamma_1 \fCenter E_0 \, E_1 \colon t_1$
-\end{prooftree}
-
-\axiom{\(\times\beta\)}
-      {\( ( \lambda (x \colon t ). E_0) \, E_1 \step [x_t \update E_1] E_0 \)}
-
-\subsubsection*{Term Calculus}
-
-\begin{prooftree}
-\name{V}
-\AxiomC{\(x \colon t \in \Gamma\)}
-\UnaryInf$\Gamma \fCenter x \colon t$
-\end{prooftree}
-
-\begin{prooftree}
-\name{\(\times\)I}
-\Axiom$\Gamma \fCenter v_0 \colon t_0$
-\Axiom$\Gamma \fCenter v_1 \colon t_1$
-\BinaryInf$\Gamma \fCenter v_0, v_1 \colon t_0 \times t_1$
-\end{prooftree}
-
-{\name{\(\times\text{E}_1\)}
-\Axiom$\Gamma \fCenter v \colon t_0 \times t_1$
-\UnaryInf$\Gamma \fCenter \fst(v) \colon t_0$
-\DisplayProof
-\hfill
-\name{\(\times\text{E}_2\)}
-\Axiom$\Gamma \fCenter v \colon t_0 \times t_1$
-\UnaryInf$\Gamma \fCenter \snd(v) \colon t_1$
-\DisplayProof}
-
-{\axiom{\(\times\beta_1\)}
-       {\(\fst (v_0 , v_1 ) \step v_0 \)}
-\hfill
-\axiom{\(\times\beta_2\)}
-      {\(\snd (v_0 , v_1 ) \step v_1 \)}
-}
-
-\subsubsection*{Command Calculus}
-
-\axiom{V}
-      {\(\cdot , \, x_t \sat v  \fCenter  x_t \sat v \)}
-
-{\name{v}
-\Axiom$\Delta \fCenter E \sat v_0$
-\AxiomC{\(v_0 \step v_1\)}
-\BinaryInf$\Delta \fCenter E \sat v_1$
-\DisplayProof
-\hfill
-\name{E}
-\Axiom$\Delta \fCenter E_0 \sat v$
-\AxiomC{\(E_0 \step E_1\)}
-\BinaryInf$\Delta \fCenter E_1 \sat v$
-\DisplayProof}
-
-\begin{prooftree}
-\name{\(\times\)I}
-\Axiom$ \Delta , \,  x_t \sat v_0  \fCenter E \sat v_1 $
-\UnaryInf$ \Delta \fCenter \lambda (x \colon t ). E \sat  v_0 , v_1 $
-\end{prooftree}
-
-
-\begin{prooftree}
-\name{\(\times\)E}
-\Axiom$ \Delta_0 \fCenter E_0 \sat v $
-\Axiom$ \Delta_1 \fCenter E_1 \sat \fst(v) $
-\BinaryInf$ \Delta_0 , \, \Delta_1 \fCenter E_0 \, E_1 \sat \snd(v) $
-\end{prooftree}
-
-
-\end{center}
-
 \section*{Examples}
 
 %% Technical choices
@@ -276,60 +176,60 @@ imperative.
 \( \textbf{id}_t = \lambda (x \colon t). \, x_t \)
 {\taut
   \apply{V}
-  \UnaryInf$ \cdot , \, x \colon t \fCenter x_t \colon t $
+  \UnaryInf$ \bullet , \, X \colon t \fCenter X \colon t $
   \apply{\(\times\)I}
-  \UnaryInf$ \cdot \fCenter  \lambda (x \colon t). \, x_t \colon t \times t $
+  \UnaryInf$ \bullet \fCenter  \lambda X \colon t . \, X \colon t \otimes t $
   \DisplayProof}
 \hfill
 {\taut
   \apply{V}
-  \UnaryInf$ \Delta , \,  x_t \sat v  \fCenter  x_t \sat v $
+  \UnaryInf$ \Delta , \,  X \sat N \fCenter  x_t \sat N $
   \apply{\(\times\)I}
-  \UnaryInf$ \Delta \fCenter  \lambda (x \colon t). \, x_t  \sat v , v $
+  \UnaryInf$ \Delta \fCenter \lambda X \colon t . \, X  \sat N , N $
   \DisplayProof}
 
 \subsection*{Composition}
 
 \begin{center}
 
-  \[ f \circ_t g = \lambda (x \colon t). \, f \, (g \, x_t) \]
+  \[ f \circ_t g = \lambda X \colon t . \, f \, (g \, X) \]
 
 \begin{prooftree}
 
-  \Axiom$ \cdot \fCenter f \colon t_1 \times t_2 $
+  \Axiom$ \bullet \fCenter f \colon t_1 \otimes t_2 $
 
-  \Axiom$ \cdot \fCenter g \colon t_0 \times t_1 $
+  \Axiom$ \bullet \fCenter g \colon t_0 \otimes t_1 $
   \taut
   \apply{\(\times\)V}
-  \UnaryInf$ \cdot , \, x \colon t_0 \fCenter x_{t_0} \colon t_0 $
+  \UnaryInf$ \bullet , \, X \colon t_0 \fCenter X \colon t_0 $
 
   \apply{\(\times\)E}
-  \BinaryInf$ \cdot , \, x \colon t_0 \fCenter g \, x_{t_0} \colon t_1 $
+  \BinaryInf$ \bullet , \, X \colon t_0 \fCenter g \, X \colon t_1 $
 
   \apply{\(\times\)E}
-  \BinaryInf$ \cdot , \, x \colon t_0 \fCenter f \, (g \, x_{t_0}) \colon t_2 $
+  \BinaryInf$ \bullet , \, X \colon t_0 \fCenter f \, (g \, X) \colon t_2 $
   \apply{\(\times\)I}
-  \UnaryInf$ \cdot \fCenter \lambda (x \colon t_0). \, f \, (g \, x_{t_0}) \colon t_0 \times t_2 $
+  \UnaryInf$ \bullet \fCenter \lambda X \colon t_0. \, f \, (g \, X) \colon t_0 \otimes t_2 $
 
 \end{prooftree}
 
 \begin{prooftree}
 
-  \Axiom$ \cdot \fCenter f \sat v_1 , \, v_2 $
+  \Axiom$ \bullet \fCenter f \sat N_1 , \, N_2 $
 
-  \Axiom$ \cdot \fCenter g \sat v_0 , \, v_1 $
+  \Axiom$ \bullet \fCenter g \sat N_0 , \, N_1 $
 
   \taut
   \apply{V}
-  \UnaryInf$ \cdot , \, x_{t_0} \sat v_0 \fCenter x_{t_0} \sat v_0  $
+  \UnaryInf$ \bullet , \, X \sat N_0 \fCenter X \sat N_0  $
 
   \apply{\(\times\)E}
-  \BinaryInf$ \cdot , \,  x_{t_0} \sat v_0 \fCenter g \, x_{t_0} \sat v_1 $
+  \BinaryInf$ \bullet , \, X \sat N_0 \fCenter g \, X \sat N_1 $
 
   \apply{\(\times\)E}
-  \BinaryInf$ \cdot , \,  x_{t_0} \sat v_0  \fCenter  f \, (g \, x_{t_0})  \sat v_2 $
+  \BinaryInf$ \bullet , \, X \sat N_0  \fCenter  f \, (g \, X)  \sat N_2 $
   \apply{\(\times\)I}
-  \UnaryInf$ \cdot \fCenter \lambda (x \colon t_0). \, f \, (g \, x_{t_0})  \sat v_0 , v_2 $
+  \UnaryInf$ \bullet \fCenter \lambda X \colon t_0 . \, f \, (g \, X)  \sat N_0 , N_2 $
 \end{prooftree}
 
 \end{center}
@@ -346,9 +246,9 @@ I think you want pullbacks for the environment arrows?
 
 \begin{center}
   \begin{tikzcd}
-   ? \arrow{dd}[']{?} \arrow{rr}{?} & {} \arrow[Rightarrow]{dd}{\Delta \fCenter E \sat v} & \times_{x\colon t \in \Gamma_v} t \arrow{dd}{v} \\
+   ? \arrow{dd}[']{?} \arrow{rr}{?} & {} \arrow[Rightarrow]{dd}{\sigma \fCenter E \sat N} & \mathop{\bigotimes}\limits_{x\colon t \mathrel{\in} \Gamma} t \arrow{dd}{N} \\
     &                               &                      \\
-    \times_{x\colon t \in \Gamma_E} t \arrow{rr}[']{E}                           & {}                            & t                   
+    \mathop{\bigotimes}\limits_{X\colon t \mathrel{\in} \Delta} t \arrow{rr}[']{E}                           & {}                            & t                   
   \end{tikzcd}
 \end{center}
 
@@ -406,157 +306,71 @@ groupoids is future work.
 
 \section*{Extensions}
 
-Singleton set, disjoint union and dependent sum types.
-
-\subsection*{Unit Type}
-
-\begin{center}
-
-\[\begin{aligned}
-&\textbf{Types} &  t & \bnfdef \ldots \mid 1  \\
-&\textbf{Contexts}  & E & \bnfdef \ldots \mid \success \mid E \pass E  \\
-&\textbf{Terms} &  v & \bnfdef \ldots \mid \coin 
-\end{aligned}\]
-
-\subsubsection*{Context Calculus}
-
-{\axiom{\(\unit\)I}
-      {\(\cdot \vdash \success \colon \unit\)}
-\hfill
-\begin{prooftree}
-\name{\(\unit\)E}
-\Axiom$\Gamma_0 \fCenter p_0 \colon \unit$
-\Axiom$\Gamma_1 \fCenter p_1 \colon t$
-\BinaryInf$\Gamma_0, \, \Gamma_1 \fCenter E_0 \pass E_1 \colon t$
-\end{prooftree}}
-
-\axiom{\(\unit\beta\)}
-      {\(\success \pass E \step E \)}
-
-\subsubsection*{Term Calculus}
-
-\axiom{\(\unit\)I}
-      {\(\Gamma \fCenter \coin \colon \unit \)}
-
-\subsubsection*{Command Calculus}
-
-\axiom{\(\unit\)I}
-      {\(\cdot \fCenter \success \sat \coin \)}
-
-\begin{prooftree}
-\name{\(\unit\)E}
-\Axiom$ \Delta_0 \fCenter \success \sat \coin $
-\Axiom$ \Delta_1 \fCenter E \sat v $
-\BinaryInf$ \Delta_0 , \, \Delta_1 \fCenter E \sat v $
-\end{prooftree}
-
-\end{center}
+Disjoint union and dependent sum types.
 
 \section*{Disjoint Unions}
 
 Disjoint unions in \Set{} become Cartesian products/coproducts in
 \Rel{}.
 
-%% I have a hunch it is proper for the combination of product/coproduct
-%% to introduce nondeterminism in the operational semantics but I need to
-%% think more about the issue.
-
-As a technical hack \(\false\) is explicitly indexed by the environment it ignores.
-This hack also requires inferring the environment in certain reduction rules.
+I have a hunch it is proper for the combination of product/coproduct
+to introduce nondeterminism in the operational semantics but I need to
+think more about the issue.
 
 \begin{center}
 
 \[\begin{aligned}
-& \textbf{Types} & t & \bnfdef \ldots \mid \mt \mid t + t \\
+& \textbf{Types} & t & \bnfdef \ldots \mid \mt \mid t \oplus t \\
 & \textbf{Contexts} & E & \bnfdef \ldots \mid
   \absurd_t(E) \mid \inl_t(E) \mid \inr_t(E) \mid \\
-&                     & & \case(v, E. v, x. E) \mid \false_\Gamma \mid \lft(E) \mid \rgt(E) \mid E ; E  \\
+&                     & & \case(E_0, X. E_1, Y. E_2) \mid \false \mid \lft(E) \mid \rgt(E) \mid E ; E'  \\
 & \textbf{Terms} & v & \bnfdef \ldots \mid \absurd_t(v) \mid \inl_t(v) \mid \inr_t(v) \mid
-  \case(v, x. v, x. v)
+  \case(v_0, x. v_1, y. v_2)
 \end{aligned}\]
 
 \subsubsection*{Context Calculus}
 
 \name{\(\mt\text{E}^\text{T}\)}
-\Axiom$\Gamma \fCenter E \colon \mt$
-\UnaryInf$\Gamma \fCenter \absurd_t(E) \colon t$
+\Axiom$\Delta \fCenter E \colon \mt$
+\UnaryInf$\Delta \fCenter \absurd_t(E) \colon t$
 \DisplayProof
 
 {\name{\(+\text{I}^\text{T}_1\)}
-\Axiom$\Gamma \fCenter E \colon t_0$
-\UnaryInf$\Gamma \fCenter \inl_{t_1}(E) \colon t_0 + t_1$
+\Axiom$\Delta \fCenter E \colon t_0$
+\UnaryInf$\Delta \fCenter \inl_{t_1}(E) \colon t_0 \oplus t_1$
 \DisplayProof
 \hfill
 \name{\(+\text{I}^\text{T}_2\)}
-\Axiom$\Gamma \fCenter E \colon t_1$
-\UnaryInf$\Gamma \fCenter \inr_{t_0}(E) \colon t_0 + t_1$
+\Axiom$\Delta \fCenter E \colon t_1$
+\UnaryInf$\Delta \fCenter \inr_{t_0}(E) \colon t_0 \oplus t_1$
 \DisplayProof}
 
 \name{\(+\text{E}^\text{T}\)}
-\Axiom$ \Gamma \fCenter E_0 \colon t_0 + t_1 $
-\Axiom$ \Gamma , \, x_0 \colon t_0 \fCenter E_1 \colon t_2 $
-\Axiom$ \Gamma , \, x_1 \colon t_1 \fCenter E_1 \colon t_2 $
-\TrinaryInf$ \Gamma \fCenter \case(E_0, x_0. E_1, x_1. E_2) \colon t_2 $
+\Axiom$ \Delta \fCenter E_0 \colon t_0 \oplus t_1 $
+\Axiom$ \Delta , \, X_0 \colon t_0 \fCenter E_1 \colon t_2 $
+\Axiom$ \Delta , \, X_1 \colon t_1 \fCenter E_1 \colon t_2 $
+\TrinaryInf$ \Delta \fCenter \case(E_0, x_0. E_1, x_1. E_2) \colon t_2 $
 \DisplayProof
 
 \axiom{\(\mt\)I}
-      {\( \Gamma \fCenter \false_\Gamma \colon \mt \)}
+      {\( \Delta \fCenter \false \colon \mt \)}
 
 {\name{\(+\text{E}_1\)}
-\Axiom$\Gamma \fCenter E \colon t_0 + t_1$
-\UnaryInf$\Gamma \fCenter \lft(E) \colon t_0$
+\Axiom$\Delta \fCenter E \colon t_0 \oplus t_1$
+\UnaryInf$\Delta \fCenter \lft(E) \colon t_0$
 \DisplayProof
 \hfill
 \name{\(+\text{E}_2\)}
-\Axiom$\Gamma \fCenter E \colon t_0 + t_1$
-\UnaryInf$\Gamma \fCenter \rgt(E) \colon t_1)$
+\Axiom$\Delta \fCenter E \colon t_0 \oplus t_1$
+\UnaryInf$\Delta \fCenter \rgt(E) \colon t_1)$
 \DisplayProof
 }
 
 \name{\(+\)I}
-\Axiom$ \Gamma \fCenter E_0 \colon t_0 $
-\Axiom$ \Gamma \fCenter E_1 \colon t_1 $
-\BinaryInf$ \Gamma \fCenter E_0 ; E_1 \colon t_0 + t_1 $
+\Axiom$ \Delta \fCenter E_0 \colon t_0 $
+\Axiom$ \Delta \fCenter E_1 \colon t_1 $
+\BinaryInf$ \Delta \fCenter E_0 ; E_1 \colon t_0 \oplus t_1 $
 \DisplayProof
-
-\axiom{\(+\beta^\text{T}_1\)}
-      {\(
-  \case(\inl_t(E_0), x_0. E_1, x_1. E_2) \step [x_0 \update E_0] E_1
-  \)}
-
-\axiom{\(+\beta^\text{T}_2\)}
-      {\(
-  \case(\inr_t(E_0), x_0. E_1, x_1. E_2) \step [x_1 \update E_0] E_2
-  \)}
-
-{\axiom{\(+\beta_1\)}{\( \lft(E_0 ; E_1) \step E_0 \)}
-\hfill
-\axiom{\(+\beta_2\)}{\( \rgt(E_0 ; E_1) \step E_1 \)}}
-
-{
-\axiom{\(+\beta\beta^\text{T}_1\)}
-      {\( \lft(\inl_t(E)) \step E \)}
-\hfill
-\axiom{\(+\beta\beta^\text{T}_2\)}
-      {\( \rgt(\inr_t(E)) \step E \)}
-}
-
-{\name{\(+\text{R}\text{R}^\text{T}_3\)}
-\Axiom$\Gamma \fCenter E \colon t$
-\UnaryInfC{\(\lft(\inr_t(E)) \step \absurd_t(\false_\Gamma)\)}
-\DisplayProof
-\hfill
-\name{\(+\text{R}\text{R}^\text{T}_4\)}
-\Axiom$\Gamma \fCenter E \colon t$
-\UnaryInfC{\(\rgt(\inl_t(E)) \step \absurd_t(\false_\Gamma)\)}
-\DisplayProof
-}
-
-\axiom{\(+\text{R}^\text{T}\text{R}_1\)}
-      {\(\case(E_0 ; E_1, x_0. E_2, x_1. E_3) \step [x_0 := E_0] E_2\)}
-
-\axiom{\(+\text{R}^\text{T}\text{R}_2\)}
-      {\( \case(E_0 ; E_1, x_0. E_2, x_1. E_3) \step [x_1 := E_1] E_3 \)}
 
 \subsubsection*{Term Calculus}
 
@@ -567,17 +381,17 @@ This hack also requires inferring the environment in certain reduction rules.
 
 {\name{\(+\text{I}_1\)}
 \Axiom$\Gamma \fCenter v \colon t_0$
-\UnaryInf$\Gamma \fCenter \inl_{t_1}(v) \colon t_0 + t_1$
+\UnaryInf$\Gamma \fCenter \inl_{t_1}(v) \colon t_0 \oplus t_1$
 \DisplayProof
 \hfill
 \name{\(+\text{I}_2\)}
 \Axiom$\Gamma \fCenter v \colon t_1$
-\UnaryInf$\Gamma \fCenter \inr_{t_0}(v) \colon t_0 + t_1$
+\UnaryInf$\Gamma \fCenter \inr_{t_0}(v) \colon t_0 \oplus t_1$
 \DisplayProof
 }
 
 \name{\(+\)E}
-\Axiom$ \Gamma \fCenter v_0 \colon t_0 + t_1 $
+\Axiom$ \Gamma \fCenter v_0 \colon t_0 \oplus t_1 $
 \Axiom$ \Gamma , \, x_0 \colon t_0 \fCenter v_1 \colon t_2 $
 \Axiom$ \Gamma , \, x_1 \colon t_1 \fCenter v_1 \colon t_2 $
 \TrinaryInf$ \Gamma \fCenter \case(v_0, x_0. v_1, x_1. v_2) \colon t_2 $
@@ -592,19 +406,19 @@ This hack also requires inferring the environment in certain reduction rules.
 \subsubsection*{Command Calculus}
 
 {\name{\(+\text{I}_1\)}
-\Axiom$\Delta \fCenter E_0 \sat v $
-\UnaryInf$\Delta \fCenter E_0 ; E_1 \sat \inl_t(v) $
+\Axiom$\Delta \fCenter E_0 \sat N $
+\UnaryInf$\Delta \fCenter E_0 ; E_1 \sat \inl_t(N) $
 \DisplayProof
 \hfill
 \name{\(+\text{I}_2\)}
-\Axiom$\Delta \fCenter  E_1 \sat v$
-\UnaryInf$\Delta \fCenter  E_0 ; E_1 \sat \inr_t(v) $
+\Axiom$\Delta \fCenter  E_1 \sat N$
+\UnaryInf$\Delta \fCenter  E_0 ; E_1 \sat \inr_t(N) $
 \DisplayProof
 }
 
 \name{\(\mt\)I}
-\Axiom$\Delta \fCenter E \sat \absurd_t(v) $
-\UnaryInf$\Delta \fCenter \false_\Gamma \sat v $
+\Axiom$\Delta \fCenter E \sat \absurd_t(N) $
+\UnaryInf$\Delta \fCenter \false \sat N $
 \DisplayProof
 
 \end{center}
@@ -625,26 +439,24 @@ Not really good at the typing judgements for dependent sum types.
 \begin{center}
 
 \[\begin{aligned}
-& \textbf{Types} & t & \bnfdef \ldots \mid x \mid \prop \mid \head(v) \mid \Sigma (x \colon \prop). t  \\
-& \textbf{Contexts} &  E & \bnfdef \ldots \mid E \, t \mid \lambda (x \colon \prop). E  \\
+& \textbf{Types} & t & \bnfdef \ldots \mid x \mid \prop \mid \head(v) \mid \Sigma X \colon \prop . t  \\
+& \textbf{Contexts} &  E & \bnfdef \ldots \mid E \, t \mid \Lambda X \colon \prop . E  \\
 & \textbf{Terms} &  v & \bnfdef \ldots \mid \tail(v) \mid \langle x \update t , v \rangle  \\
-& \textbf{Command Env} & \Delta & \bnfdef \ldots \mid \Delta , \, x \sat t 
+& \textbf{Command Env} & \sigma & \bnfdef \ldots \mid \Delta , \, X \sat t 
 \end{aligned}\]
 
 \subsubsection*{Context Calculus}
 
 \name{\(\Sigma\)E}
-\Axiom$ \Gamma_0 \fCenter E \colon \Sigma (x\colon \prop). t_1 $
-\Axiom$ \Gamma_1 \fCenter t_0 \colon \prop $
-\BinaryInf$ \Gamma_0, \, \Gamma_1 \fCenter E_0 \, t_0 \colon [x \update t_0] t_1 $
+\Axiom$ \Delta_0 \fCenter E \colon \Sigma X \colon \prop. t_1 $
+\Axiom$ \Delta_1 \fCenter t_0 \colon \prop $
+\BinaryInf$ \Delta_0, \, \Delta_1 \fCenter E_0 \, t_0 \colon [X \update t_0] t_1 $
 \DisplayProof
 
 \name{\(\Sigma\)I}
-\Axiom$ \Gamma , \, x \colon \prop \fCenter E \colon t $
-\UnaryInf$ \Gamma \fCenter \lambda (x \colon \prop). E \colon \Sigma (x \colon \prop). t $
+\Axiom$ \Delta , \, x \colon \prop \fCenter E \colon t $
+\UnaryInf$ \Delta \fCenter \Lambda X \colon \prop. E \colon \Sigma X \colon \prop . t $
 \DisplayProof
-
-\axiom{\(\Sigma\beta\)}{\( ( \lambda (x \colon \prop). E) \, t \step [x \update t] E \)}
 
 \subsubsection*{Term Calculus}
 
@@ -665,19 +477,19 @@ Not really good at the typing judgements for dependent sum types.
 %% \DisplayProof
 
 \name{\(\Sigma\text{E}_1\)}
-\Axiom$\Gamma \fCenter E \colon \Sigma (x \colon \prop). t$
+\Axiom$\Gamma \fCenter E \colon \Sigma x \colon \prop . t$
 \UnaryInf$\Gamma \fCenter \head(v) \colon \prop$
 \DisplayProof
 
 \name{\(\Sigma\text{E}_2\)}
-\Axiom$\Gamma \fCenter v \colon \Sigma (x \colon \prop). t$
+\Axiom$\Gamma \fCenter v \colon \Sigma x \colon \prop . t$
 \UnaryInf$\Gamma \fCenter \tail(v) \colon [x \update \head(v)] t$
 \DisplayProof
 
 \name{\(\Sigma\)I}
 \Axiom$ \Gamma \fCenter t_0 \colon \prop $
 \Axiom$ \Gamma , \, x \colon \prop \fCenter v \colon t_1 $
-\BinaryInf$\Gamma \fCenter \langle x \update t_0 , v \rangle \colon \Sigma (x \colon \prop). t_0 $
+\BinaryInf$\Gamma \fCenter \langle x \update t_0 , v \rangle \colon \Sigma x \colon \prop. t_0 $
 \DisplayProof
 
 {\axiom{\(\Sigma\beta_1\)}{\( \head(\langle x \update t , v \rangle) \step t \)}
@@ -688,8 +500,8 @@ Not really good at the typing judgements for dependent sum types.
 \subsubsection*{Command Calculus}
 
 \name{\(\Sigma\)I}
-\Axiom$ \Delta , \,  x \sat t  \fCenter E \sat v $
-\UnaryInf$ \Delta \fCenter  \lambda (x \colon \prop). E \sat \langle x \update t , v \rangle $
+\Axiom$ \sigma , \,  X \sat t  \fCenter E \sat N $
+\UnaryInf$ \sigma \fCenter  \Lambda X \colon \prop . E \sat \langle x \update t , N \rangle $
 \DisplayProof
 
 \end{center}

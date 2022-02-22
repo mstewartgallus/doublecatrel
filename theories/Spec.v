@@ -40,6 +40,13 @@ Inductive type : Set :=
 Inductive span : Set := 
  | P_with (σ:store) (N:normal).
 
+Inductive term : Set := 
+ | v_var (x:vvar)
+ | v_tt : term
+ | v_fst (v:term)
+ | v_snd (v:term)
+ | v_fanout (v:term) (v':term).
+
 Inductive context : Set := 
  | E_var (X:cvar)
  | E_lam (X:cvar) (t:type) (E:context)
@@ -48,13 +55,6 @@ Inductive context : Set :=
  | E_step (E:context) (E':context)
  | E_fanout (E:context) (E':context)
  | E_let (X:cvar) (Y:cvar) (E:context) (E':context).
-
-Inductive term : Set := 
- | v_var (x:vvar)
- | v_tt : term
- | v_fst (v:term)
- | v_snd (v:term)
- | v_fanout (v:term) (v':term).
 
 Definition linear : Set := (Map.map type).
 
@@ -73,16 +73,16 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_type : ott_coq_equality.
-Lemma eq_context: forall (x y : context), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-Hint Resolve eq_context : ott_coq_equality.
 Lemma eq_term: forall (x y : term), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_term : ott_coq_equality.
+Lemma eq_context: forall (x y : context), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_context : ott_coq_equality.
 
 (** substitutions *)
 Fixpoint subst_term (v5:term) (x5:vvar) (v_6:term) {struct v_6} : term :=
@@ -172,22 +172,6 @@ Inductive Jv : environment -> term -> type -> Prop :=    (* defn v *)
      Jv Γ (v_snd v) t2.
 (** definitions *)
 
-(* defns big *)
-Inductive big : term -> normal -> Prop :=    (* defn big *)
- | big_tt : 
-     big v_tt N_tt
- | big_fanout : forall (v1 v2:term) (N1' N2':normal),
-     big v1 N1' ->
-     big v2 N2' ->
-     big  ( (v_fanout v1 v2) )   ( (N_fanout N1' N2') ) 
- | big_fst : forall (v:term) (N1 N2:normal),
-     big v (N_fanout N1 N2) ->
-     big (v_fst v) N1
- | big_snd : forall (v:term) (N2 N1:normal),
-     big v (N_fanout N1 N2) ->
-     big (v_snd v) N2.
-(** definitions *)
-
 (* defns sat *)
 Inductive sat : store -> context -> normal -> Prop :=    (* defn sat *)
  | sat_var : forall (X:cvar) (N:normal),
@@ -213,6 +197,22 @@ Inductive sat : store -> context -> normal -> Prop :=    (* defn sat *)
      sat σ E (N_fanout N N') ->
      sat σ' E' N ->
      sat  (Map.merge  σ   σ' )  (E_app E E') N'.
+(** definitions *)
+
+(* defns big *)
+Inductive big : term -> normal -> Prop :=    (* defn big *)
+ | big_tt : 
+     big v_tt N_tt
+ | big_fanout : forall (v1 v2:term) (N1' N2':normal),
+     big v1 N1' ->
+     big v2 N2' ->
+     big (v_fanout v1 v2) (N_fanout N1' N2')
+ | big_fst : forall (v:term) (N1 N2:normal),
+     big v (N_fanout N1 N2) ->
+     big (v_fst v) N1
+ | big_snd : forall (v:term) (N2 N1:normal),
+     big v (N_fanout N1 N2) ->
+     big (v_snd v) N2.
 (** definitions *)
 
 (* defns judge *)
