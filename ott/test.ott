@@ -6,6 +6,8 @@ Require Blech.Map.
 metavar vvar, x, y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[vvar]]} }}
 metavar cvar, X, Y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[cvar]]} }}
 
+indexvar index, i, n ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[index]]} }}
+
 grammar
 type, t :: 't_' ::= {{ coq-equality }}
   | unit         ::   :: unit
@@ -80,6 +82,7 @@ terminals :: 'terminals_' ::=
   | in           ::   :: letin  {{ tex \mathbin{\textbf{in} } }}
   | \in          ::   :: member  {{ tex \in{} }}
   | !            ::   :: big     {{ tex \mathrel{\Downarrow} }}
+  | !=           ::   :: ne     {{ tex \mathrel{\ne} }}
   | ==           ::   :: equiv   {{ tex \mathrel{\sim} }}
 
 parsing
@@ -111,6 +114,11 @@ by
   [ nil ] v' === v'
   [p, x := N] v' === [p] ([ x := [N] ] v')
 
+grammar
+formula :: formula_ ::=  
+ | judgement                        ::   :: judgement
+ | x != y                           :: M :: neq {{ icho ([[x]] <> [[y]]) }}
+
 defns
 
 judge_context :: 'J' ::=
@@ -123,7 +131,7 @@ by
 X: t |- X: t
 
 D, X: t1 |- E: t2
--------------------------- :: abs
+-------------------------- :: lam
 D |- lam X: t1 . E: t1 * t2
 
 D1 |- E1: t1 * t2
@@ -157,10 +165,10 @@ defn
 x : t \in G ::   :: mem :: 'mem_'
 by
 
---------------------- :: eq
+----------------- :: eq
 x: t \in G, x : t
 
-{{ [[x]] <> [[x']] }}
+x != x'
 x: t \in G
 -------------------- :: ne
 x: t \in G, x' : t'

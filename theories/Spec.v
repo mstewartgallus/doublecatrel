@@ -20,6 +20,12 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_cvar : ott_coq_equality.
+Definition index : Set := nat.
+Lemma eq_index: forall (x y : index), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_index : ott_coq_equality.
 
 Inductive normal : Set := 
  | N_tt : normal
@@ -34,13 +40,6 @@ Inductive type : Set :=
 Inductive span : Set := 
  | P_with (σ:store) (N:normal).
 
-Inductive term : Set := 
- | v_var (x:vvar)
- | v_tt : term
- | v_fst (v:term)
- | v_snd (v:term)
- | v_fanout (v:term) (v':term).
-
 Inductive context : Set := 
  | E_var (X:cvar)
  | E_lam (X:cvar) (t:type) (E:context)
@@ -50,13 +49,20 @@ Inductive context : Set :=
  | E_fanout (E:context) (E':context)
  | E_let (X:cvar) (Y:cvar) (E:context) (E':context).
 
+Inductive term : Set := 
+ | v_var (x:vvar)
+ | v_tt : term
+ | v_fst (v:term)
+ | v_snd (v:term)
+ | v_fanout (v:term) (v':term).
+
 Definition linear : Set := (Map.map type).
 
-Definition set : Set := (list span).
+Definition subst : Set := (list (vvar * normal)).
 
 Definition environment : Set := (list (vvar * type)).
 
-Definition subst : Set := (list (vvar * normal)).
+Definition set : Set := (list span).
 Lemma eq_normal: forall (x y : normal), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -67,16 +73,16 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_type : ott_coq_equality.
-Lemma eq_term: forall (x y : term), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-Hint Resolve eq_term : ott_coq_equality.
 Lemma eq_context: forall (x y : context), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_context : ott_coq_equality.
+Lemma eq_term: forall (x y : term), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_term : ott_coq_equality.
 
 (** substitutions *)
 Fixpoint subst_term (v5:term) (x5:vvar) (v_6:term) {struct v_6} : term :=
@@ -114,7 +120,7 @@ end.
 Inductive JE : linear -> context -> type -> Prop :=    (* defn E *)
  | JE_var : forall (X:cvar) (t:type),
      JE  (Map.one  X   t )  (E_var X) t
- | JE_abs : forall (Δ:linear) (X:cvar) (t1:type) (E:context) (t2:type),
+ | JE_lam : forall (Δ:linear) (X:cvar) (t1:type) (E:context) (t2:type),
      JE  (Map.merge   (Map.one  X   t1 )    Δ )  E t2 ->
      JE Δ (E_lam X t1 E) (t_prod t1 t2)
  | JE_app : forall (Δ1 Δ2:linear) (E1 E2:context) (t2 t1:type),
@@ -142,7 +148,7 @@ Inductive mem : vvar -> type -> environment -> Prop :=    (* defn mem *)
  | mem_eq : forall (x:vvar) (t:type) (Γ:environment),
      mem x t  (cons ( x ,  t )  Γ ) 
  | mem_ne : forall (x:vvar) (t:type) (Γ:environment) (x':vvar) (t':type),
-     x <> x'  ->
+      ( x  <>  x' )  ->
      mem x t Γ ->
      mem x t  (cons ( x' ,  t' )  Γ ) .
 (** definitions *)
