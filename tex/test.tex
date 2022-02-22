@@ -56,9 +56,9 @@
 \ottprodline{|}{\pi{}_2 \, \ottnt{v}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{v}  \ottsym{,}  \ottnt{v'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{(}  \ottnt{v}  \ottsym{)}} {\textsf{S}}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottsym{[}  \mathit{x}  \mathbin{:=}  \ottnt{v}  \ottsym{]}  \ottnt{v'}} {\textsf{S}}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottsym{[}  \mathit{x}  \mathbin{:=}  \ottnt{v}  \ottsym{]}  \ottnt{v'}} {\textsf{M}}{}{}{}\ottprodnewline
 \ottprodline{|}{ \llbracket  \ottnt{N}  \rrbracket } {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottsym{[}  \rho  \ottsym{]}  \ottnt{v'}} {\textsf{M}}{}{}{}}
+\ottprodline{|}{\ottsym{[}  \mathbin{:=}  \rho  \ottsym{]}  \ottnt{v'}} {\textsf{M}}{}{}{}}
 
 \newcommand{\ottnormal}{
 \ottrulehead{\ottnt{normal}  ,\ \ottnt{N}}{::=}{}\ottprodnewline
@@ -132,7 +132,7 @@
 
 \newcommand{\ottmsubst}{
 \ottrulehead{\ottnt{msubst}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\ottsym{[}  \rho  \ottsym{]}  \ottnt{v'}  \ottsym{===}  \ottnt{v}}{}{}{}{}}
+\ottfirstprodline{|}{\ottsym{[}  \mathbin{:=}  \rho  \ottsym{]}  \ottnt{v'}  \ottsym{===}  \ottnt{v}}{}{}{}{}}
 
 \newcommand{\ottjudgeXXcontext}{
 \ottrulehead{\ottnt{judge\_context}}{::=}{}\ottprodnewline
@@ -232,9 +232,9 @@
 % fundefns msubst
 % fundefn msubst
 
-\newcommand{\ottfundefnmsubst}[1]{\begin{ottfundefnblock}[#1]{$\ottsym{[}  \rho  \ottsym{]}  \ottnt{v'}$}{}
-\ottfunclause{\ottsym{[}  \bullet{}  \ottsym{]}  \ottnt{v'}}{\ottnt{v'}}%
-\ottfunclause{\ottsym{[}  \rho  \ottsym{,}  \mathit{x}  \mathbin{:=}  \ottnt{N}  \ottsym{]}  \ottnt{v'}}{\ottsym{[}  \rho  \ottsym{]}  \ottsym{(}  \ottsym{[}  \mathit{x}  \mathbin{:=}   \llbracket  \ottnt{N}  \rrbracket   \ottsym{]}  \ottnt{v'}  \ottsym{)}}%
+\newcommand{\ottfundefnmsubst}[1]{\begin{ottfundefnblock}[#1]{$\ottsym{[}  \mathbin{:=}  \rho  \ottsym{]}  \ottnt{v'}$}{}
+\ottfunclause{\ottsym{[}  \mathbin{:=}  \bullet{}  \ottsym{]}  \ottnt{v'}}{\ottnt{v'}}%
+\ottfunclause{\ottsym{[}  \mathbin{:=}  \rho  \ottsym{,}  \mathit{x}  \mathbin{:=}  \ottnt{N}  \ottsym{]}  \ottnt{v'}}{\ottsym{[}  \mathbin{:=}  \rho  \ottsym{]}  \ottsym{(}  \ottsym{[}  \mathit{x}  \mathbin{:=}   \llbracket  \ottnt{N}  \rrbracket   \ottsym{]}  \ottnt{v'}  \ottsym{)}}%
 \end{ottfundefnblock}}
 
 

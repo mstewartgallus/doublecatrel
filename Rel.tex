@@ -69,7 +69,7 @@
 \DeclareMathOperator{\val}{\textbf{v}}
 \DeclareMathOperator{\prd}{\textbf{p}}
 
-\DeclareMathOperator{\unit}{\top}
+\DeclareMathOperator{\unit}{\textbf{I}}
 \DeclareMathOperator{\mt}{\emptyset}
 \DeclareMathOperator{\coin}{\textbf{!}}
 \DeclareMathOperator{\fst}{\pi_1}
@@ -240,13 +240,16 @@ imperative.
 
 The intent is to create calculi encoding the core features of the
 double category \Rel{}.  If this is successful then terms and types
-ought to map to \Rel{} as follows.
-
-I think you want pullbacks for the environment arrows?
+ought to map to \Rel{} as follows. Note that defining normalization in
+terms of closed terms means a little workaround of multisubstition is
+required.
 
 \begin{center}
+
+  $$ P(\bullet, \rho)_{\rho \colon \Gamma} = \bullet \vdash [\mathrel{:=} \rho] v \Downarrow N_\rho  $$
+
   \begin{tikzcd}
-   ? \arrow{dd}[']{?} \arrow{rr}{?} & {} \arrow[Rightarrow]{dd}{\sigma \fCenter E \sat N} & \mathop{\bigotimes}\limits_{x\colon t \mathrel{\in} \Gamma} t \arrow{dd}{N} \\
+   \unit \arrow{dd}[']{\sigma} \arrow{rr}{P} & {} \arrow[Rightarrow]{dd}{\sigma \fCenter E \sat N_\rho} & \mathop{\bigotimes}\limits_{x\colon t \mathrel{\in} \Gamma} t \arrow{dd}{v} \\
     &                               &                      \\
     \mathop{\bigotimes}\limits_{X\colon t \mathrel{\in} \Delta} t \arrow{rr}[']{E}                           & {}                            & t                   
   \end{tikzcd}
@@ -283,20 +286,20 @@ equivalence relation might be something like:
 \axiom{arrow}{\( \cdot \fCenter R \colon O \times O \)}}
 
 \name{refl}
-\Axiom$\cdot \fCenter o \colon O$
-\UnaryInf$\cdot \fCenter R \sat o, o $
+\Axiom$\bullet \fCenter o \colon O$
+\UnaryInf$\bullet \fCenter R \sat o, o $
 \DisplayProof
 
 \name{trans}
-\Axiom$ \cdot \fCenter  \lambda (x\colon O). R \, (R \, x)  \sat o_0, o_1 $
-\side{\cdot \fCenter o_1, o_0 \colon O \times O}
-\UnaryInf$ \cdot \fCenter  R \sat o_0, o_1 $
+\Axiom$ \bullet \fCenter  \lambda (x\colon O). R \, (R \, x)  \sat o_0, o_1 $
+\side{\bullet \fCenter o_1, o_0 \colon O \times O}
+\UnaryInf$ \bullet \fCenter  R \sat o_0, o_1 $
 \DisplayProof
 
 \name{sym}
-\Axiom$ \cdot \fCenter  R \sat o_0, o_1  $
-\side{\cdot \fCenter o_1, o_0 \colon O \times O}
-\UnaryInf$ \cdot \fCenter  R \sat o_1, o_0 $
+\Axiom$ \bullet \fCenter  R \sat o_0, o_1  $
+\side{\bullet \fCenter o_1, o_0 \colon O \times O}
+\UnaryInf$ \bullet \fCenter  R \sat o_1, o_0 $
 \DisplayProof
       
 \end{center}

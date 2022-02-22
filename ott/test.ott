@@ -30,7 +30,7 @@ term, v :: 'v_' ::= {{ coq-equality }}
   | snd v          ::   :: snd
   | v , v'         ::   :: fanout
   | ( v )          :: S :: paren {{ icho ([[v]]) }}
-  | [ x := v ] v'  :: S :: subst {{ icho (subst_term [[v]] [[x]] [[v']]) }}
+  | [ x := v ] v'  :: M :: subst {{ icho (subst_term [[v]] [[x]] [[v']]) }}
 
 normal, N :: 'N_' ::= {{ coq-equality }}
   | tt      ::   :: tt
@@ -109,10 +109,10 @@ Coercion toterm: normal >-> term.
 funs
   msubst ::=
 fun
-  [ p ] v' :: v :: msubst
+  [ := p ] v' :: v :: msubst
 by
-  [ nil ] v' === v'
-  [p, x := N] v' === [p] ([ x := [N] ] v')
+  [ := nil ] v' === v'
+  [ := p, x := N] v' === [:= p] ([ x := [N] ] v')
 
 grammar
 formula :: formula_ ::=  
