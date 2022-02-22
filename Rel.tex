@@ -272,9 +272,12 @@ Really need to think about denotation again.
   \llbracket x \rrbracket(\sigma) & = \sigma(x) \\
   \llbracket v_0 , v_1 \rrbracket(\sigma) & =( \llbracket v_0 \rrbracket(\sigma) , \llbracket v_1 \rrbracket(\sigma) ) \\
   \\
-  \llbracket x_t \rrbracket(\sigma, s) & = \sigma(x, s) \\
+  \llbracket X \rrbracket(\sigma, s) & = \sigma(X, s) \\
+  \llbracket \coin \rrbracket(\bullet, \coin) & = \top \\
+  \llbracket E_0 ; E_1 \rrbracket(\sigma_0 \cup \sigma_1, s) & = \llbracket E_0 \rrbracket(\sigma_0, \coin) \wedge \llbracket E_1 \rrbracket(\sigma_1, s) \\
+  \llbracket E_0 , E_1 \rrbracket(\sigma_0 \cup \sigma_1, (s_0 , s_1)) & = \llbracket E_0 \rrbracket(\sigma_0, s_0) \wedge \llbracket E_1 \rrbracket(\sigma_1, s_1) \\
   \llbracket E_0 \, E_1 \rrbracket(\sigma, s_0) & = \exists s_1,  \llbracket E_1 \rrbracket (\sigma, s_1) \wedge \llbracket E_0 \rrbracket (\sigma, (s_1, s_0))\\
-  \llbracket \lambda{} (x \colon t). E_0 \rrbracket(\sigma, (s_0, s_1)) & = \lambda{} E_1, \llbracket E_1 \rrbracket (\sigma, s_0) \rightarrow \llbracket E_0 \rrbracket ([x \update  s \mapsto \llbracket E_1 \rrbracket(\sigma, s)] \sigma, s_1) 
+  \llbracket \lambda{} X \colon t . E_0 \rrbracket(\sigma, (s_0, s_1)) & = \forall E_1, \llbracket E_1 \rrbracket (\sigma, s_0) \rightarrow \llbracket E_0 \rrbracket ([X \update  s \mapsto \llbracket E_1 \rrbracket(\sigma, s)] \sigma, s_1) 
 \end{aligned}
 \]
 
