@@ -434,26 +434,25 @@ Instance oftype_Setoid t: Setoid (oftype t) := {
 }.
 
 
+Import RelNotations.
+
 #[program]
-Definition id t: oftype (t * t) :=
-  let X := 0 in
-  E_lam X t (E_var X).
+ Definition id t: oftype (t * t) :=
+  let X: cvar := 0 in
+   <{ λ X : t, X }>.
 
 Next Obligation.
 Proof.
-  apply (@typecheck_sound Map.empty).
-  cbn.
-  unfold Map.one.
-  destruct (eq_type t t).
-  2: contradiction.
-  admit.
-Admitted.
+  constructor.
+  rewrite Map.merge_empty_r.
+  constructor.
+Qed.
 
 #[program]
 Definition conv {t t'} (E: oftype (t * t')): oftype (t' * t) :=
-  let X := 0 in
-  let Y := 1 in
-  E_let X Y E (E_fanout (E_var Y) (E_var X)).
+  let X: cvar := 0 in
+  let Y: cvar := 1 in
+  <{ let (X, Y) := E in (Y, X) }>.
 
 Next Obligation.
 Proof.
@@ -462,10 +461,11 @@ Proof.
   rewrite <- (@Map.merge_empty_l _ Map.empty).
   econstructor.
   all: eauto.
-  apply (@typecheck_sound (1 ↦ t' ∪ (0 ↦ t ∪ ∅))).
-  cbn.
-  admit.
-Admitted.
+  constructor.
+  - constructor.
+  - rewrite Map.merge_empty_r.
+    constructor.
+Qed.
 
 Lemma conv_id t:
   conv (id t) == id t.
