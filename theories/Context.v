@@ -76,6 +76,7 @@ Section Typecheck.
     end
       %list %map.
 End Typecheck.
+
 Notation "'do' x ← e0 ; e1" :=
   (List.flat_map (λ x, e1) e0)
     (x pattern, at level 200, left associativity): list_scope.
@@ -484,8 +485,9 @@ Proof.
     subst.
     inversion H6.
     subst.
+    rewrite H4.
     constructor.
-    cbn.
+    rewrite Map.merge_empty_r.
     admit.
   - intros p.
     inversion p.
@@ -495,5 +497,14 @@ Proof.
     rewrite <- (@Map.merge_empty_l _ Map.empty).
     econstructor.
     all: eauto.
-    admit.
+    rewrite <- H.
+    constructor.
+    + rewrite Map.merge_empty_r in H.
+      destruct (Map.one_inj H).
+      subst.
+      constructor.
+    + rewrite Map.merge_empty_r in H.
+      destruct (Map.one_inj H).
+      subst.
+      constructor.
 Admitted.

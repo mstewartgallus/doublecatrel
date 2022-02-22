@@ -25,6 +25,9 @@ Module Type MapInterface.
     Axiom find: ∀ k m, option V.
     Axiom disjoint: ∀ m m', Prop.
 
+    Axiom one_inj:
+      ∀ {k v k' v'}, one k v = one k' v' → (k = k' ∧ v = v').
+
     Axiom add_minus:
       ∀ {k v m},
         find k m = Some v →
@@ -92,6 +95,31 @@ Module FnMap: MapInterface with Definition K := nat.
       ∀ k, m k = None ∨ m' k = None.
 
     Definition find k m := m k.
+
+    #[local]
+    Lemma weaken {A B} {f f': A -> B}:
+      f = f' → ∀ x, f x = f' x.
+    Proof.
+      intros.
+      subst.
+      reflexivity.
+    Qed.
+
+    Lemma one_inj {k v k' v'}:
+      one k v = one k' v' → (k = k' ∧ v = v').
+    Proof.
+      intro p.
+      destruct (Nat.eq_dec k k) eqn:q,  (Nat.eq_dec k' k') eqn:q'.
+      all: try contradiction.
+      set (p' := weaken p k').
+      unfold one in p'.
+      rewrite q' in p'.
+      destruct Nat.eq_dec in p'.
+      2: discriminate.
+      inversion p'.
+      subst.
+      auto.
+    Qed.
 
     Lemma add_minus {k v m}:
         find k m = Some v →
