@@ -77,6 +77,14 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_term : ott_coq_equality.
+(** library functions *)
+Fixpoint list_mem A (eq:forall a b:A,{a=b}+{a<>b}) (x:A) (l:list A) {struct l} : bool :=
+  match l with
+  | nil => false
+  | cons h t => if eq h x then true else list_mem A eq x t
+end.
+Arguments list_mem [A] _ _ _.
+
 
 (** substitutions *)
 Fixpoint subst_term (v5:term) (x5:vvar) (v_6:term) {struct v_6} : term :=
@@ -86,6 +94,17 @@ Fixpoint subst_term (v5:term) (x5:vvar) (v_6:term) {struct v_6} : term :=
   | (v_fst v) => v_fst (subst_term v5 x5 v)
   | (v_snd v) => v_snd (subst_term v5 x5 v)
   | (v_fanout v v') => v_fanout (subst_term v5 x5 v) (subst_term v5 x5 v')
+end.
+
+Fixpoint subst_context (E5:context) (X5:cvar) (E_6:context) {struct E_6} : context :=
+  match E_6 with
+  | (E_var X) => (if eq_cvar X X5 then E5 else (E_var X))
+  | (E_lam X t E) => E_lam X t (if list_mem eq_cvar X5 (cons X nil) then E else (subst_context E5 X5 E))
+  | (E_app E E') => E_app (subst_context E5 X5 E) (subst_context E5 X5 E')
+  | E_tt => E_tt 
+  | (E_step E E') => E_step (subst_context E5 X5 E) (subst_context E5 X5 E')
+  | (E_fanout E E') => E_fanout (subst_context E5 X5 E) (subst_context E5 X5 E')
+  | (E_let X Y E E') => E_let X Y (subst_context E5 X5 E) (if list_mem eq_cvar X5 (app (cons X nil) (cons Y nil)) then E' else (subst_context E5 X5 E'))
 end.
 
 (** definitions *)

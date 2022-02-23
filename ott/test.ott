@@ -91,6 +91,7 @@ parsing
 
 substitutions
   single v x :: subst
+  single E X :: subst
 
 % subrules are awkward
 funs

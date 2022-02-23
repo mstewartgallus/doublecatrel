@@ -50,6 +50,14 @@ Module Type MapInterface.
       ∀ {k k' v},
       k <> k' →
       find k (one k' v) = None.
+
+    Axiom minus_one:
+      ∀ {k v},
+      minus k (one k v) = empty.
+    Axiom add_swap:
+      ∀ {m k k' v v'},
+        k ≠ k' →
+        merge (one k v) (merge (one k' v') m) = merge (one k' v') (merge (one k v) m).
   End Prim.
 End MapInterface.
 
@@ -191,6 +199,31 @@ Module FnMap: MapInterface with Definition K := nat.
       1: subst.
       1: contradiction.
       reflexivity.
+    Qed.
+
+    Lemma minus_one {k v}:
+      minus k (one k v) = empty.
+    Proof.
+      unfold minus, one, empty.
+      extensionality k'.
+      destruct Nat.eq_dec.
+      all: auto.
+    Qed.
+
+    Lemma add_swap {m k k' v v'}:
+      k ≠ k' →
+      merge (one k v) (merge (one k' v') m) = merge (one k' v') (merge (one k v) m).
+    Proof.
+      unfold merge, one.
+      intro p.
+      extensionality k''.
+      destruct Nat.eq_dec.
+      all: auto.
+      subst.
+      destruct Nat.eq_dec.
+      all: subst.
+      all: auto.
+      contradiction.
     Qed.
   End Map.
 End FnMap.

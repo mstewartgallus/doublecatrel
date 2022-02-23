@@ -30,7 +30,7 @@ Section Typecheck.
     match E with
     | E_var X =>
         do t ← Map.find X Δ ;
-        Some (Map.one X t, t)
+        Some (X ↦ t, t)
     | E_lam X t1 E =>
         do (Δ', t2) ← typecheck (X ↦ t1 ∪ Δ) E ;
         do t1' ← Map.find X Δ' ;
@@ -48,7 +48,7 @@ Section Typecheck.
         else
           None
 
-    | E_tt => Some (Map.empty, t_unit)
+    | E_tt => Some (∅, t_unit)
     | E_step E E' =>
         do (Δ', t_unit) ← typecheck Δ E ;
         do (Δ, t) ← typecheck Δ E' ;
@@ -92,7 +92,7 @@ Fixpoint generate t :=
 
 Fixpoint search σ E: list span :=
   match E with
-  | E_var X => if Map.find X σ is Some N then [Map.one X N |- N] else []
+  | E_var X => if Map.find X σ is Some N then [X ↦ N |- N] else []
 
   | E_lam X t E =>
       do N0 ← generate t ;
@@ -120,7 +120,7 @@ Fixpoint search σ E: list span :=
       else
         []
 
-  | E_tt => [Map.empty |- N_tt]
+  | E_tt => [∅ |- N_tt]
 
   | E_step E E' =>
       do (σ1 |- N) ← search σ E ;
