@@ -33,6 +33,29 @@ Module Import Hor.
     repeat constructor.
   Defined.
 
+  #[local]
+   Lemma shadow:
+    ∀ {v Γ x t0 t1 t2},
+      ((x, t0) :: Γ)%list ⊢ v in t2 →
+      ((x, t0) :: (x, t1) :: Γ)%list ⊢ v in t2.
+  Proof.
+    intro v.
+    induction v.
+    all: intros ? ? ? ? ? p.
+    all: inversion p.
+    all: subst.
+    all: try econstructor.
+    all: try eauto.
+    inversion H1.
+    - subst.
+      constructor.
+    - subst.
+      constructor.
+      all: auto.
+      constructor.
+      all: auto.
+  Qed.
+
   #[program]
   Definition compose {A B C} (f: Hor B C) (g: Hor A B): Hor A C := subst_term g 0 f.
 
@@ -40,46 +63,10 @@ Module Import Hor.
   Proof.
     destruct f as [f ?], g as [g ?].
     cbn in *.
-    generalize dependent C.
-    generalize dependent B.
-    generalize dependent A.
-    generalize dependent g.
-    induction f.
-    all: cbn.
-    all: intros g A B p C q.
-    - destruct (eq_vvar x 0).
-      + subst.
-        inversion q.
-        subst.
-        cbn in H1.
-        inversion H1.
-        2: contradiction.
-        subst.
-        auto.
-      + inversion q.
-        subst.
-        inversion H1.
-        1: contradiction.
-        subst.
-        inversion H6.
-    - inversion q.
-      subst.
-      constructor.
-    - inversion q.
-      subst.
-      econstructor.
-      eapply IHf.
-      all: eauto.
-    - inversion q.
-      subst.
-      econstructor.
-      eapply IHf.
-      all: eauto.
-    - inversion q.
-      subst.
-      econstructor.
-      all: try eapply IHf1 ; try eapply IHf2.
-      all: eauto.
+    eapply Term.subst_preserve.
+    all: eauto.
+    apply shadow.
+    auto.
   Defined.
 End Hor.
 
