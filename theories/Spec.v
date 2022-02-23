@@ -20,12 +20,6 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_cvar : ott_coq_equality.
-Definition index : Set := nat.
-Lemma eq_index: forall (x y : index), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-Hint Resolve eq_index : ott_coq_equality.
 
 Inductive normal : Set := 
  | N_tt : normal
@@ -40,8 +34,6 @@ Inductive type : Set :=
 Inductive span : Set := 
  | P_with (σ:store) (N:normal).
 
-Definition linear : Set := (Map.map type).
-
 Inductive context : Set := 
  | E_var (X:cvar)
  | E_lam (X:cvar) (t:type) (E:context)
@@ -53,14 +45,16 @@ Inductive context : Set :=
 
 Definition environment : Set := (list (vvar * type)).
 
-Definition subst : Set := (list (vvar * normal)).
-
 Inductive term : Set := 
  | v_var (x:vvar)
  | v_tt : term
  | v_fst (v:term)
  | v_snd (v:term)
  | v_fanout (v:term) (v':term).
+
+Definition linear : Set := (Map.map type).
+
+Definition subst : Set := (list (vvar * term)).
 
 Definition set : Set := (list span).
 Lemma eq_normal: forall (x y : normal), {x = y} + {x <> y}.
@@ -110,8 +104,8 @@ Coercion toterm: normal >-> term.
 (** funs msubst *)
 Fixpoint msubst (x1:subst) (x2:term) : term:=
   match x1,x2 with
-  |  nil  , v' => v'
-  |  (cons ( x ,  N )  ρ )  , v' =>  (msubst ρ  (  (subst_term   (toterm N )    x   v' )  )  ) 
+  |  nil  , v => v
+  |  (cons ( x ,  v' )  ρ )  , v =>  (msubst ρ  (  (subst_term  v'   x   v )  )  ) 
 end.
 
 (** definitions *)
@@ -219,10 +213,10 @@ Inductive big : term -> normal -> Prop :=    (* defn big *)
 Inductive Jp : subst -> environment -> Prop :=    (* defn p *)
  | Jp_nil : 
      Jp  nil   nil 
- | Jp_cons : forall (ρ:subst) (x:vvar) (N:normal) (Γ:environment) (t:type),
-     Jv Γ  (toterm N )  t ->
+ | Jp_cons : forall (ρ:subst) (x:vvar) (v:term) (Γ:environment) (t:type),
+     Jv Γ v t ->
      Jp ρ Γ ->
-     Jp  (cons ( x ,  N )  ρ )   (cons ( x ,  t )  Γ ) .
+     Jp  (cons ( x ,  v )  ρ )   (cons ( x ,  t )  Γ ) .
 (** definitions *)
 
 (* defns judgeS *)

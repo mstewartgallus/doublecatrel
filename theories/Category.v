@@ -62,7 +62,7 @@ Module Import Hor.
   Next Obligation.
   Proof.
     destruct f as [f ?], g as [g ?].
-    cbn in *.
+    cbn.
     eapply Term.subst_preserve.
     all: eauto.
     apply shadow.

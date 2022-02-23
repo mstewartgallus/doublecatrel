@@ -6,22 +6,10 @@ Require Blech.Map.
 metavar vvar, x, y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[vvar]]} }}
 metavar cvar, X, Y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[cvar]]} }}
 
-indexvar index, i, n ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[index]]} }}
-
 grammar
 type, t :: 't_' ::= {{ coq-equality }}
   | unit         ::   :: unit
   | t * t'       ::   :: prod
-
-context, E :: 'E_' ::= {{ coq-equality }}
-  | X                        ::   :: var
-  | lam X : t . E            ::   :: lam (+ bind X in E +)
-  | E E'                     ::   :: app
-  | tt                       ::   :: tt
-  | E ; E'                   ::   :: step
-  | E , E'                   ::   :: fanout
-  | let X , Y = E in E'      ::   :: let (+ bind X union Y in E' +)
-  | ( E )                    :: S :: paren {{ icho ([[E]]) }}
 
 term, v :: 'v_' ::= {{ coq-equality }}
   | x              ::   :: var
@@ -36,6 +24,18 @@ normal, N :: 'N_' ::= {{ coq-equality }}
   | tt      ::   :: tt
   | N , N'  ::   :: fanout
   | ( N )   :: S :: paren {{ coq ([[N]]) }}
+
+context, E :: 'E_' ::= {{ coq-equality }}
+  | X                        ::   :: var
+  | lam X : t . E            ::   :: lam (+ bind X in E +)
+  | E E'                     ::   :: app
+  | tt                       ::   :: tt
+  | E ; E'                   ::   :: step
+  | E , E'                   ::   :: fanout
+  | let X , Y = E in E'      ::   :: let (+ bind X union Y in E' +)
+  | ( E )                    :: S :: paren {{ icho ([[E]]) }}
+
+grammar
 
 linear, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (Map.map type) }}
   | nil           :: M :: empty {{ coq (Map.empty) }}
@@ -61,9 +61,9 @@ set, Ps {{ tex P^* }} :: 'X_' ::= {{ coq (list span) }}
   | nil          ::   :: nil {{ coq nil }}
   | Ps , P       ::   :: cons {{ coq (cons [[P]] [[Ps]]) }}
 
-subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (list (vvar * normal)) }}
+subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (list (vvar * term)) }}
   | nil                   :: M :: nil {{ coq nil }}
-  | p , x := N            :: M :: add {{ coq (cons ([[x]], [[N]]) [[p]]) }}
+  | p , x := v            :: M :: add {{ coq (cons ([[x]], [[v]]) [[p]]) }}
   | ( p )                 :: S :: paren {{ coq ([[p]]) }}
 
 terminals :: 'terminals_' ::=
@@ -111,8 +111,8 @@ funs
 fun
   [ := p ] v' :: v :: msubst
 by
-  [ := nil ] v' === v'
-  [ := p, x := N] v' === [:= p] ([ x := [N] ] v')
+  [ := nil ] v === v
+  [ := p, x := v'] v === [:= p] ([ x := v'] v)
 
 grammar
 formula :: formula_ ::=  
@@ -274,10 +274,10 @@ by
 ---------- :: nil
 nil: nil
 
-G |- [N] : t
+G |- v : t
 p: G
 ------------------ :: cons
-p, x := N: G, x: t
+p, x := v: G, x: t
 
 defns
 
