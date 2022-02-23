@@ -8,4 +8,5 @@ theories/Spec.v
 theories/SpecNotations.v
 theories/Term.v
 theories/Context.v
+theories/Hoare.v
 theories/Category.v
