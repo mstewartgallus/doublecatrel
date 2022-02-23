@@ -124,7 +124,8 @@
 \newcommand{\ottformula}{
 \ottrulehead{\ottnt{formula}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottnt{judgement}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\mathit{x}  \mathrel{\ne}  \mathit{y}} {\textsf{M}}{}{}{}}
+\ottprodline{|}{\mathit{x}  \mathrel{\ne}  \mathit{y}} {\textsf{M}}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottkw{forall} \, \mathit{x}  \ottsym{.}  \ottnt{formula}} {\textsf{M}}{}{}{}}
 
 \newcommand{\otttoterm}{
 \ottrulehead{\ottnt{toterm}}{::=}{}\ottprodnewline
@@ -158,6 +159,10 @@
 \ottrulehead{\ottnt{judge}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\rho  \colon{}  \Gamma}{}{}{}{}}
 
+\newcommand{\ottjudgeS}{
+\ottrulehead{\ottnt{judgeS}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\sigma  \colon{}  \Delta}{}{}{}{}}
+
 \newcommand{\ottsound}{
 \ottrulehead{\ottnt{sound}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottnt{E}  \ottsym{[}  P^*  \ottsym{]}}{}{}{}{}}
@@ -170,6 +175,7 @@
 \ottprodline{|}{\ottnt{sat}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{big}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{judge}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{judgeS}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{sound}}{}{}{}{}}
 
 \newcommand{\ottuserXXsyntax}{
@@ -211,6 +217,7 @@
 \ottsat\ottinterrule
 \ottbig\ottinterrule
 \ottjudge\ottinterrule
+\ottjudgeS\ottinterrule
 \ottsound\ottinterrule
 \ottjudgement\ottinterrule
 \ottuserXXsyntax\ottafterlastrule
@@ -499,11 +506,20 @@
 {\ottdrulename{big\_snd}}{}%
 }}
 
+
+\newcommand{\ottdrulebigXXfoo}[1]{\ottdrule[#1]{%
+\ottpremise{\ottkw{forall} \, \mathit{x}  \ottsym{.}  \mathit{x}  \mathrel{\Downarrow}  \ottnt{N}}%
+}{
+\pi{}_2 \, \ottnt{v}  \mathrel{\Downarrow}  \ottnt{N_{{\mathrm{2}}}}}{%
+{\ottdrulename{big\_foo}}{}%
+}}
+
 \newcommand{\ottdefnbig}[1]{\begin{ottdefnblock}[#1]{$\ottnt{v}  \mathrel{\Downarrow}  \ottnt{N}$}{}
 \ottusedrule{\ottdrulebigXXtt{}}
 \ottusedrule{\ottdrulebigXXfanout{}}
 \ottusedrule{\ottdrulebigXXfst{}}
 \ottusedrule{\ottdrulebigXXsnd{}}
+\ottusedrule{\ottdrulebigXXfoo{}}
 \end{ottdefnblock}}
 
 
@@ -535,6 +551,41 @@
 
 \newcommand{\ottdefnsjudge}{
 \ottdefnJp{}}
+
+% defns judgeS
+%% defn S
+\newcommand{\ottdruleJSXXnil}[1]{\ottdrule[#1]{%
+}{
+\bullet{}  \colon{}  \bullet{}}{%
+{\ottdrulename{JS\_nil}}{}%
+}}
+
+
+\newcommand{\ottdruleJSXXmerge}[1]{\ottdrule[#1]{%
+\ottpremise{\sigma  \colon{}  \Delta}%
+\ottpremise{\sigma'  \colon{}  \Delta'}%
+}{
+\sigma  \cup{}  \sigma'  \colon{}  \Delta  \cup{}  \Delta'}{%
+{\ottdrulename{JS\_merge}}{}%
+}}
+
+
+\newcommand{\ottdruleJSXXone}[1]{\ottdrule[#1]{%
+\ottpremise{\bullet{}  \vdash{}   \llbracket  \ottnt{N}  \rrbracket   \colon{}  \ottnt{t}}%
+}{
+\mathit{X}  \mathbin{:=}  \ottnt{N}  \colon{}  \mathit{X}  \colon{}  \ottnt{t}}{%
+{\ottdrulename{JS\_one}}{}%
+}}
+
+\newcommand{\ottdefnJS}[1]{\begin{ottdefnblock}[#1]{$\sigma  \colon{}  \Delta$}{}
+\ottusedrule{\ottdruleJSXXnil{}}
+\ottusedrule{\ottdruleJSXXmerge{}}
+\ottusedrule{\ottdruleJSXXone{}}
+\end{ottdefnblock}}
+
+
+\newcommand{\ottdefnsjudgeS}{
+\ottdefnJS{}}
 
 % defns sound
 %% defn sound
@@ -571,6 +622,7 @@
 \ottdefnssat
 \ottdefnsbig
 \ottdefnsjudge
+\ottdefnsjudgeS
 \ottdefnssound
 }
 

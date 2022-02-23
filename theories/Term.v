@@ -241,6 +241,32 @@ Proof using.
   reflexivity.
 Qed.
 
+Lemma subst_preserve:
+  ∀ {v v' Γ x t t'},
+    Γ ⊢ v' in t →
+    cons (x, t) Γ ⊢ v in t' →
+    Γ ⊢ subst_term v' x v in t'.
+Proof using.
+  intros v.
+  induction v.
+  all: cbn.
+  all: intros v' Γ p t t' q q'.
+  all: inversion q'.
+  all: subst.
+  all: try (econstructor; eauto).
+  destruct (eq_vvar x p).
+  - subst.
+    inversion H1.
+    2: contradiction.
+    subst.
+    auto.
+  - inversion H1.
+    1: contradiction.
+    subst.
+    constructor.
+    auto.
+Qed.
+
 Lemma msubst_normal {p N}: msubst p N = N.
 Proof using.
   induction p.
@@ -251,95 +277,24 @@ Proof using.
   auto.
 Qed.
 
-Lemma msubst_v_fst: ∀ {p v}, msubst p (v_fst v) = v_fst (msubst p v).
-Proof using.
-  intro p.
-  induction p.
-  1: reflexivity.
-  intro v.
-  cbn.
-  destruct a.
-  rewrite IHp.
-  cbn.
-  reflexivity.
-Qed.
-
-Lemma msubst_v_snd: ∀ {p v}, msubst p (v_snd v) = v_snd (msubst p v).
-Proof using.
-  intro p.
-  induction p.
-  1: reflexivity.
-  intro v.
-  cbn.
-  destruct a.
-  rewrite IHp.
-  cbn.
-  reflexivity.
-Qed.
-
-Lemma msubst_v_fanout: ∀ {p v v'},
-    msubst p (v_fanout v v') = v_fanout (msubst p v) (msubst p v').
-Proof using.
-  intro p.
-  induction p.
-  1: reflexivity.
-  intros ? ?.
-  cbn.
-  destruct a.
-  rewrite IHp.
-  cbn.
-  reflexivity.
-Qed.
-
 Lemma msubst_preserve:
-  ∀ {v Γ p t},
+  ∀ {p Γ v t},
     Jp p Γ →
     Γ ⊢ v in t →
     nil ⊢ msubst p v in t.
 Proof using.
-  intros v.
-  induction v.
-  all: intros Γ p t q q'.
-  - inversion q'.
+  intros p.
+  induction p.
+  all: cbn.
+  all: intros.
+  - inversion H.
     subst.
-    induction q.
-    1: cbn.
-    1: inversion H1.
-    cbn in *.
-    destruct (eq_vvar x x0).
-    + subst.
-      rewrite msubst_normal.
-      inversion H1.
-      2: contradiction.
-      subst.
-      auto.
-    + inversion H1.
-      1: contradiction.
-      all: subst.
-      apply IHq.
-      all: auto.
-      constructor.
-      auto.
-  - replace v_tt with (N_tt : term).
-    2: reflexivity.
-    rewrite msubst_normal.
-    inversion q'.
+    auto.
+  - destruct a.
+    inversion H.
     subst.
-    constructor.
-  - inversion q'.
-    subst.
-    rewrite msubst_v_fst.
-    econstructor.
-    apply (IHv _ _ _ q H1).
-  - inversion q'.
-    subst.
-    rewrite msubst_v_snd.
-    econstructor.
-    apply (IHv _ _ _ q H1).
-  - inversion q'.
-    subst.
-    rewrite msubst_v_fanout.
-    econstructor.
+    eapply IHp.
+    2: eapply subst_preserve.
     all: eauto.
 Qed.
 

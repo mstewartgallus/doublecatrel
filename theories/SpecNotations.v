@@ -13,18 +13,16 @@ Module RelNotations.
   Declare Custom Entry rel.
 
   Notation "<{ E }>" := E (E custom rel at level 99).
-
-  Notation "( x )" := x (in custom rel, x at level 99).
-  Notation "x" := x (in custom rel at level 0, x constr at level 0).
+  Notation "x" := x (in custom rel, x ident).
+  Notation "${ e }" := e (in custom rel, e constr).
 
   Notation "'I'" := t_unit (in custom rel at level 0).
   Notation "S ⊗ T" := (t_prod S T) (in custom rel at level 50, right associativity).
 
-
   Notation "'λ' X : t , E" :=
     (E_lam X t E)
       (in custom rel at level 200,
-          X at level 99,
+          X constr at level 99,
           t custom rel at level 99,
           E custom rel at level 99,
           left associativity).
@@ -33,7 +31,7 @@ Module RelNotations.
   Notation "'let' ( X , Y ) := E 'in' E'" :=
     (E_let X Y E E')
       (in custom rel at level 90,
-          X at level 99, Y at level 99,
+          X constr at level 99, Y constr at level 99,
           E custom rel at level 99, E' custom rel at level 99,
           left associativity).
 

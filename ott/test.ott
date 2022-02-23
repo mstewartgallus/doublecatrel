@@ -274,10 +274,30 @@ by
 ---------- :: nil
 nil: nil
 
-nil |- [N] : t
+G |- [N] : t
 p: G
 ------------------ :: cons
 p, x := N: G, x: t
+
+defns
+
+judgeS :: 'J' ::=
+
+defn
+S : D ::   :: S :: 'S_'
+by
+
+---------- :: nil
+nil: nil
+
+S: D
+S': D'
+------------------ :: merge
+S ++ S': D ++ D'
+
+nil |- [N] : t
+------------------ :: one
+X := N : X: t
 
 defns
 

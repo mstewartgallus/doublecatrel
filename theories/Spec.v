@@ -40,12 +40,7 @@ Inductive type : Set :=
 Inductive span : Set := 
  | P_with (σ:store) (N:normal).
 
-Inductive term : Set := 
- | v_var (x:vvar)
- | v_tt : term
- | v_fst (v:term)
- | v_snd (v:term)
- | v_fanout (v:term) (v':term).
+Definition linear : Set := (Map.map type).
 
 Inductive context : Set := 
  | E_var (X:cvar)
@@ -56,11 +51,16 @@ Inductive context : Set :=
  | E_fanout (E:context) (E':context)
  | E_let (X:cvar) (Y:cvar) (E:context) (E':context).
 
-Definition linear : Set := (Map.map type).
+Definition environment : Set := (list (vvar * type)).
 
 Definition subst : Set := (list (vvar * normal)).
 
-Definition environment : Set := (list (vvar * type)).
+Inductive term : Set := 
+ | v_var (x:vvar)
+ | v_tt : term
+ | v_fst (v:term)
+ | v_snd (v:term)
+ | v_fanout (v:term) (v':term).
 
 Definition set : Set := (list span).
 Lemma eq_normal: forall (x y : normal), {x = y} + {x <> y}.
@@ -73,16 +73,16 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_type : ott_coq_equality.
-Lemma eq_term: forall (x y : term), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-Hint Resolve eq_term : ott_coq_equality.
 Lemma eq_context: forall (x y : context), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_context : ott_coq_equality.
+Lemma eq_term: forall (x y : term), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_term : ott_coq_equality.
 
 (** substitutions *)
 Fixpoint subst_term (v5:term) (x5:vvar) (v_6:term) {struct v_6} : term :=
@@ -220,9 +220,22 @@ Inductive Jp : subst -> environment -> Prop :=    (* defn p *)
  | Jp_nil : 
      Jp  nil   nil 
  | Jp_cons : forall (ρ:subst) (x:vvar) (N:normal) (Γ:environment) (t:type),
-     Jv  nil   (toterm N )  t ->
+     Jv Γ  (toterm N )  t ->
      Jp ρ Γ ->
      Jp  (cons ( x ,  N )  ρ )   (cons ( x ,  t )  Γ ) .
+(** definitions *)
+
+(* defns judgeS *)
+Inductive JS : store -> linear -> Prop :=    (* defn S *)
+ | JS_nil : 
+     JS  (Map.empty)   (Map.empty) 
+ | JS_merge : forall (σ σ':store) (Δ Δ':linear),
+     JS σ Δ ->
+     JS σ' Δ' ->
+     JS  (Map.merge  σ   σ' )   (Map.merge  Δ   Δ' ) 
+ | JS_one : forall (X:cvar) (N:normal) (t:type),
+     Jv  nil   (toterm N )  t ->
+     JS  (Map.one  X   N )   (Map.one  X   t ) .
 (** definitions *)
 
 (* defns sound *)
