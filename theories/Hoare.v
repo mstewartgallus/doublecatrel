@@ -3,7 +3,7 @@ Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
 
 Require Import Coq.Unicode.Utf8.
-Require Coq.Lists.List.
+Require Import Coq.Classes.SetoidClass.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Coq.Logic.PropExtensionality.
 
@@ -59,21 +59,6 @@ Notation "'\exists' x1 .. xn , H" :=
 
 Definition ig {A} (P: hprop unit): hprop A := λ _, P tt.
 
-Lemma disjointness {h0 h1 h2: store}:
-    Map.disjoint h1 h0 → Map.disjoint (h1 ∪ h0) h2 →
-    Map.disjoint h0 h2.
-Proof.
-  unfold Map.disjoint.
-  intros p q.
-  intro k.
-  destruct (p k).
-  all: auto.
-  destruct (q k).
-  all: auto.
-  rewrite Map.find_merge_r in H0.
-  all: auto.
-Qed.
-
 Theorem hstar_assoc:
   ∀ {V} {A B C: hprop V},
     (A \* B) \* C = A \* (B \* C).
@@ -87,14 +72,55 @@ Proof using.
     destruct p.
     destruct H.
     rewrite Map.merge_assoc.
+    set (dis0 := Map.fst_disjoint H1).
+    set (dis1 := Map.snd_disjoint H1).
     constructor.
     1: auto.
     1: constructor.
     all: auto.
-    + eapply disjointness.
-      all: eauto.
-    + admit.
-Admitted.
+    intro k.
+    destruct (Map.find k h0) eqn:q0, (Map.find k h1) eqn:q1, (Map.find k h2) eqn:q2.
+    all: set (H3' := H3 k).
+    all: set (dis0' := dis0 k).
+    all: set (dis1' := dis1 k).
+    all: try rewrite q0 in *.
+    all: try rewrite q1 in *.
+    all: try rewrite q2 in *.
+    all: destruct H3', dis0', dis1'.
+    all: auto.
+    all: try discriminate.
+    + rewrite Map.find_merge_r.
+      all: auto.
+    + rewrite Map.find_merge_r.
+      all: auto.
+  - intro p.
+    destruct p.
+    destruct H0.
+    rewrite <- Map.merge_assoc.
+    set (H' := @Map.disjoint_Symmetric normal).
+    symmetry in H1.
+    set (dis0 := Map.fst_disjoint H1).
+    set (dis1 := Map.snd_disjoint H1).
+    constructor.
+    1: auto.
+    1: constructor.
+    all: auto.
+    intro k.
+    destruct (Map.find k h0) eqn:q0, (Map.find k h1) eqn:q1, (Map.find k h2) eqn:q2.
+    all: set (H3' := H3 k).
+    all: set (dis0' := dis0 k).
+    all: set (dis1' := dis1 k).
+    all: try rewrite q0 in *.
+    all: try rewrite q1 in *.
+    all: try rewrite q2 in *.
+    all: destruct H3', dis0', dis1'.
+    all: auto.
+    all: try discriminate.
+    + rewrite Map.find_merge_r.
+      all: auto.
+    + rewrite Map.find_merge_r.
+      all: auto.
+Qed.
 
 Inductive eval: context → store → normal → store → Prop :=
 | eval_sat {E σ σ' N}: sat σ' E N → eval E σ N (Map.merge σ σ').

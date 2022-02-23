@@ -1,10 +1,9 @@
 Require Import Coq.Unicode.Utf8.
 Require Import Coq.Arith.PeanoNat.
 Require Import Coq.Logic.FunctionalExtensionality.
-Require Coq.Lists.List.
+Require Import Coq.Classes.SetoidClass.
 
 Import IfNotations.
-Import List.ListNotations.
 
 Module Type MapInterface.
   Axiom K: Set.
@@ -202,9 +201,6 @@ Section Map.
   Implicit Type m: map V.
   Implicit Type v: V.
 
-  Definition disjoint m m' :=
-    ∀ k, find k m = None ∨ find k m' = None.
-
   #[local]
    Lemma weaken {m m'}:
     m = m' →
@@ -400,5 +396,57 @@ Section Map.
     - rewrite find_one_ne in p1.
       all: try discriminate.
       auto.
+  Qed.
+
+  Definition disjoint m m' :=
+    ∀ k, find k m = None ∨ find k m' = None.
+
+  #[export]
+  Instance disjoint_Symmetric: Symmetric disjoint.
+  Proof.
+    intros m m' p k.
+    destruct (p k).
+    all: auto.
+  Qed.
+
+  Definition fst_disjoint {m0 m1 m2}:
+    Map.disjoint (m0 ∪ m1) m2 → Map.disjoint m0 m2.
+  Proof.
+    intros p k.
+    destruct (find k m0) eqn:q0, (find k m2) eqn:q2.
+    all: auto.
+    destruct (p k).
+    2: {
+      rewrite H in q2.
+      discriminate.
+    }
+    erewrite Map.find_merge_l in H.
+    2: eauto.
+    discriminate.
+  Qed.
+
+  Definition snd_disjoint {m0 m1 m2}:
+    Map.disjoint (m0 ∪ m1) m2 → Map.disjoint m1 m2.
+  Proof.
+    intros p k.
+    destruct (find k m0) eqn:q0, (find k m1) eqn:q1, (find k m2) eqn:q2.
+    all: auto.
+    - destruct (p k).
+      2: {
+        rewrite H in q2.
+        discriminate.
+      }
+      erewrite Map.find_merge_l in H.
+      2: eauto.
+      discriminate.
+    - destruct (p k).
+      2: {
+        rewrite H in q2.
+        discriminate.
+      }
+      rewrite Map.find_merge_r in H.
+      2: auto.
+      rewrite H in q1.
+      discriminate.
   Qed.
 End Map.
