@@ -332,65 +332,142 @@ Proof using.
 Defined.
 
 
-Function linear_subst ES X E :=
+Inductive one :=
+| o_hole
+| o_lam (X: cvar) (t: type) (o: one)
+
+| o_app_l (o: one) (E: context)
+| o_app_r (E: context) (o: one)
+
+| o_step_l (o: one) (E: context)
+| o_step_r (E: context) (o: one)
+
+| o_fanout_l (o: one) (E: context)
+| o_fanout_r (E: context) (o: one)
+
+| o_let_l (X Y: cvar) (o: one) (E: context)
+| o_let_r (X Y: cvar) (E: context) (o: one)
+.
+
+Function D X E :=
   match E with
-  | E_var Y => if eq_cvar X Y then Some ES else None
+  | E_var Y => if eq_cvar X Y then Some o_hole else None
+
   | E_lam Y t E0 =>
       if eq_cvar X Y
       then
         None
       else
-        if linear_subst ES X E0 is Some E0'
+        if D X E0 is Some o'
         then
-          Some (E_lam Y t E0')
+          Some (o_lam Y t o')
         else
           None
+
   | E_app E0 E1 =>
-      match linear_subst ES X E0, linear_subst ES X E1 with
-      | Some E0', None => Some (E_app E0' E1)
-      | None, Some E1' => Some (E_app E0 E1')
+      match D X E0, D X E1 with
+      | Some o, None => Some (o_app_l o E1)
+      | None, Some o => Some (o_app_r E0 o)
       | _, _ => None
       end
 
   | E_tt => None
 
   | E_step E0 E1 =>
-      match linear_subst ES X E0, linear_subst ES X E1 with
-      | Some E0', None => Some (E_step E0' E1)
-      | None, Some E1' => Some (E_step E0 E1')
+      match D X E0, D X E1 with
+      | Some o, None => Some (o_step_l o E1)
+      | None, Some o => Some (o_step_r E0 o)
       | _, _ => None
       end
 
   | E_fanout E0 E1 =>
-      match linear_subst ES X E0, linear_subst ES X E1 with
-      | Some E0', None => Some (E_fanout E0' E1)
-      | None, Some E1' => Some (E_fanout E0 E1')
+      match D X E0, D X E1 with
+      | Some o, None => Some (o_fanout_l o E1)
+      | None, Some o => Some (o_fanout_r E0 o)
       | _, _ => None
       end
 
   | E_let Y0 Y1 E0 E1 =>
       if eq_cvar X Y0
       then
-        if linear_subst ES X E0 is Some E0'
+        if D X E0 is Some E0'
         then
-          Some (E_let Y0 Y1 E0' E1)
+          Some (o_let_l Y0 Y1 E0' E1)
         else
           None
       else
         if eq_cvar X Y1
         then
-          if linear_subst ES X E0 is Some E0'
+          if D X E0 is Some E0'
           then
-            Some (E_let Y0 Y1 E0' E1)
+            Some (o_let_l Y0 Y1 E0' E1)
           else
             None
         else
-          match linear_subst ES X E0, linear_subst ES X E1 with
-          | Some E0', None => Some (E_let Y0 Y1 E0' E1)
-          | None, Some E1' => Some (E_let Y0 Y1 E0 E1')
+          match D X E0, D X E1 with
+          | Some E0', None => Some (o_let_l Y0 Y1 E0' E1)
+          | None, Some E1' => Some (o_let_r Y0 Y1 E0 E1')
           | _, _ => None
           end
   end.
+
+Function I ES o :=
+  match o with
+  | o_hole => ES
+
+  | o_lam X t o => E_lam X t (I ES o)
+
+  | o_app_l o E => E_app (I ES o) E
+  | o_app_r E o => E_app E (I ES o)
+
+  | o_step_l o E => E_step (I ES o) E
+  | o_step_r E o => E_step E (I ES o)
+
+  | o_fanout_l o E => E_fanout (I ES o) E
+  | o_fanout_r E o => E_fanout E (I ES o)
+
+  | o_let_l X Y o E => E_let X Y (I ES o) E
+  | o_let_r X Y E o => E_let X Y E (I ES o)
+  end.
+
+Lemma DI_preserve:
+  ∀ {Δ' E' t},
+    Δ' ⊢ E' ? t →
+    ∀ {X E o Δ t'},
+      Map.merge (Map.one X t) Δ ⊢ E ? t' →
+      D X E = Some o →
+      Map.merge Δ' Δ ⊢ I E' o ? t'.
+Proof using.
+  intros Δ' E' t p X.
+  intros E.
+  induction E.
+  all: cbn.
+  all: intros.
+  - cbn.
+    destruct eq_cvar.
+    2: discriminate.
+    subst.
+    inversion H0.
+    subst.
+    inversion H.
+    subst.
+    cbn.
+    set (H2' := Map.weaken H2 X0).
+    rewrite Map.find_one in H2'.
+    rewrite Map.find_add in H2'.
+    destruct PeanoNat.Nat.eq_dec.
+    2: contradiction.
+    inversion H2'.
+    subst.
+    auto.
+    admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+Admitted.
 
 Lemma subst_preserve:
   ∀ {Δ' E' t},
