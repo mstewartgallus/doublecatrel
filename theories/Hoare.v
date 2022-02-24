@@ -79,6 +79,7 @@ Proof using.
     1: constructor.
     all: auto.
     intro k.
+    rewrite Map.find_merge.
     destruct (Map.find k h0) eqn:q0, (Map.find k h1) eqn:q1, (Map.find k h2) eqn:q2.
     all: set (H3' := H3 k).
     all: set (dis0' := dis0 k).
@@ -86,13 +87,7 @@ Proof using.
     all: try rewrite q0 in *.
     all: try rewrite q1 in *.
     all: try rewrite q2 in *.
-    all: destruct H3', dis0', dis1'.
     all: auto.
-    all: try discriminate.
-    + rewrite Map.find_merge_r.
-      all: auto.
-    + rewrite Map.find_merge_r.
-      all: auto.
   - intro p.
     destruct p.
     destruct H0.
@@ -106,6 +101,7 @@ Proof using.
     1: constructor.
     all: auto.
     intro k.
+    rewrite Map.find_merge.
     destruct (Map.find k h0) eqn:q0, (Map.find k h1) eqn:q1, (Map.find k h2) eqn:q2.
     all: set (H3' := H3 k).
     all: set (dis0' := dis0 k).
@@ -115,11 +111,6 @@ Proof using.
     all: try rewrite q2 in *.
     all: destruct H3', dis0', dis1'.
     all: auto.
-    all: try discriminate.
-    + rewrite Map.find_merge_r.
-      all: auto.
-    + rewrite Map.find_merge_r.
-      all: auto.
 Qed.
 
 Inductive eval: context → store → normal → store → Prop :=

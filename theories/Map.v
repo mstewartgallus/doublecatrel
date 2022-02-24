@@ -6,7 +6,7 @@ Require Import Coq.Classes.SetoidClass.
 Import IfNotations.
 
 Module Type MapInterface.
-  Axiom K: Set.
+  Definition K: Set := nat.
   Axiom map: Set → Set.
 
   Implicit Type k: K.
@@ -31,30 +31,20 @@ Module Type MapInterface.
       ∀ {k},
         find k empty = None.
 
-    Axiom find_merge_l:
-      ∀ {k v m m'},
-        find k m = Some v →
-        find k (merge m m') = Some v.
-    Axiom find_merge_r:
+    Axiom find_merge:
       ∀ {k m m'},
-        find k m = None →
-        find k (merge m m') = find k m'.
+        find k (merge m m') =
+          if find k m is Some v
+          then Some v
+          else find k m'.
 
     Axiom find_one:
-      ∀ {k v},
-      find k (one k v) = Some v.
-    Axiom find_one_ne:
       ∀ {k k' v},
-      k <> k' →
-      find k (one k' v) = None.
+      find k (one k' v) = if Nat.eq_dec k k' then Some v else None.
 
     Axiom find_minus:
-      ∀ {k m},
-      find k (minus k m) = None.
-    Axiom find_minus_ne:
       ∀ {k k' m},
-        k ≠ k' →
-        find k (minus k' m) = find k m.
+      find k (minus k' m) = if Nat.eq_dec k k' then None else find k m.
   End Prim.
 End MapInterface.
 
@@ -82,7 +72,7 @@ Module FnMap: MapInterface with Definition K := nat.
 
     Definition one k (v: V): map V :=
       λ k',
-        if Nat.eq_dec k k'
+        if Nat.eq_dec k' k
         then
           Some v
         else
@@ -90,7 +80,7 @@ Module FnMap: MapInterface with Definition K := nat.
 
     Definition minus k m: map V :=
       λ k',
-        if Nat.eq_dec k k'
+        if Nat.eq_dec k' k
         then
           None
         else
@@ -106,73 +96,30 @@ Module FnMap: MapInterface with Definition K := nat.
       apply H.
     Qed.
 
-    Lemma find_merge_l {k v m m'}:
-        find k m = Some v →
-        find k (merge m m') = Some v.
+    Lemma find_empty {k}: find k empty = None.
     Proof.
-      unfold find, merge.
-      intro p.
-      rewrite p.
       auto.
     Qed.
 
-    Lemma find_merge_r {k m m'}:
-        find k m = None →
-        find k (merge m m') = find k m'.
+    Lemma find_merge {k m m'}:
+        find k (merge m m') =
+          if find k m is Some v
+          then Some v
+          else find k m'.
     Proof.
-      unfold find, merge.
-      intros p.
-      rewrite p.
       auto.
     Qed.
 
-    Lemma find_one {k v}:
-      find k (one k v) = Some v.
+    Lemma find_one {k k' v}:
+      find k (one k' v) = if Nat.eq_dec k k' then Some v else None.
     Proof.
-      unfold find, one.
-      destruct Nat.eq_dec.
-      2: contradiction.
       auto.
     Qed.
 
-    Lemma find_one_ne {k k' v}:
-      k <> k' →
-      find k (one k' v) = None.
+    Lemma find_minus {k k' m}:
+      find k (minus k' m) = if Nat.eq_dec k k' then None else find k m.
     Proof.
-      intros.
-      unfold find, one.
-      unfold empty.
-      destruct Nat.eq_dec.
-      1: subst.
-      1: contradiction.
-      reflexivity.
-    Qed.
-
-    Lemma find_minus {k m}:
-      find k (minus k m) = None.
-    Proof.
-      unfold find, minus.
-      destruct Nat.eq_dec.
-      2: contradiction.
       auto.
-    Qed.
-
-    Lemma find_minus_ne {k k' m}:
-        k ≠ k' →
-        find k (minus k' m) = find k m.
-    Proof.
-      unfold find, minus.
-      intro p.
-      destruct Nat.eq_dec.
-      1: subst; contradiction.
-      auto.
-    Qed.
-
-    Lemma find_empty {k}:
-      find k empty = None.
-    Proof.
-      unfold find, empty.
-      reflexivity.
     Qed.
   End Map.
 End FnMap.
@@ -217,6 +164,8 @@ Section Map.
     intro p.
     set (p' := weaken p k).
     repeat rewrite find_one in p'.
+    destruct Nat.eq_dec.
+    2: contradiction.
     inversion p'.
     auto.
   Qed.
@@ -225,89 +174,59 @@ Section Map.
     find k (one k v ∪ m) = Some v.
   Proof.
     intros.
-    erewrite find_merge_l.
-    2: rewrite find_one.
-    all: eauto.
+    rewrite find_merge.
+    rewrite find_one.
+    destruct Nat.eq_dec.
+    2: contradiction.
+    auto.
   Qed.
 
   Lemma add_add {k m v v'}: merge (one k v) (merge (one k v') m) = merge (one k v) m.
   Proof.
     apply extensional.
     intro k'.
-    destruct (Nat.eq_dec k k') eqn:q.
+    rewrite find_merge.
+    rewrite find_one.
+    destruct (Nat.eq_dec k' k) eqn:q.
     - subst.
-      repeat rewrite find_add.
+      rewrite find_add.
       reflexivity.
-    - erewrite find_merge_r.
-      2: {
-        rewrite find_one_ne.
-        all: auto.
-      }
-      erewrite find_merge_r.
-      2: rewrite find_one_ne.
-      all: auto.
-      erewrite find_merge_r.
-      2:rewrite find_one_ne.
-      all: auto.
+    - rewrite find_merge.
+      rewrite find_one.
+      rewrite q.
+      rewrite find_merge.
+      rewrite find_one.
+      rewrite q.
+      reflexivity.
   Qed.
 
   Lemma merge_assoc {m0 m1 m2}: merge (merge m0 m1) m2 = merge m0 (merge m1 m2).
   Proof.
     apply extensional.
     intro k.
-    destruct (find k m0) eqn:q0.
-    - erewrite find_merge_l.
-      2: erewrite find_merge_l.
-      3: apply q0.
-      2: reflexivity.
-      erewrite find_merge_l.
-      2: apply q0.
-      auto.
-    - destruct (find k m1) eqn:q1.
-      + erewrite find_merge_l.
-        2: erewrite find_merge_r.
-        3: auto.
-        2: apply q1.
-        erewrite find_merge_r.
-        2: auto.
-        erewrite find_merge_l.
-        2: apply q1.
-        auto.
-      + erewrite find_merge_r.
-        2: erewrite find_merge_r.
-        all: eauto.
-        erewrite find_merge_r.
-        2: apply q0.
-        erewrite find_merge_r.
-        all: eauto.
+    repeat rewrite find_merge.
+    destruct (find k m0) eqn:q0, (find k m1) eqn:q1.
+    all: auto.
   Qed.
 
   Lemma merge_empty_r {m}: merge m empty = m.
   Proof.
     apply extensional.
     intro k.
+    rewrite find_merge.
+    rewrite find_empty.
     destruct (find k m) eqn:q.
-    - erewrite find_merge_l.
-      all: eauto.
-    - erewrite find_merge_r.
-      all: eauto.
-      rewrite find_empty.
-      auto.
+    all: auto.
   Qed.
 
   Lemma merge_empty_l {m}: merge empty m = m.
   Proof.
     apply extensional.
     intro k.
+    rewrite find_merge.
+    rewrite find_empty.
     destruct (find k m) eqn:q.
-    - erewrite find_merge_r.
-      all: eauto.
-      rewrite find_empty.
-      auto.
-    - erewrite find_merge_r.
-      all: eauto.
-      rewrite find_empty.
-      auto.
+    all: auto.
   Qed.
 
   Lemma add_swap {m k k' v v'}:
@@ -317,31 +236,12 @@ Section Map.
     intro p.
     apply extensional.
     intro k''.
-    destruct (Nat.eq_dec k k'').
-    - subst.
-      rewrite find_add.
-      erewrite find_merge_r.
-      2: rewrite find_one_ne.
-      all: auto.
-      rewrite find_add.
-      reflexivity.
-    - erewrite find_merge_r.
-      2: rewrite find_one_ne.
-      all: auto.
-      destruct (Nat.eq_dec k' k'').
-      + subst.
-        rewrite find_add.
-        rewrite find_add.
-        reflexivity.
-      + erewrite find_merge_r.
-        2:rewrite find_one_ne.
-        all: auto.
-        erewrite find_merge_r.
-        2: rewrite find_one_ne.
-        all: auto.
-        erewrite find_merge_r.
-        2: rewrite find_one_ne.
-        all: auto.
+    repeat rewrite find_merge.
+    repeat rewrite find_one.
+    destruct (Nat.eq_dec k'' k'), (Nat.eq_dec k'' k).
+    all: auto.
+    subst.
+    contradiction.
   Qed.
 
   Lemma add_minus {k v m}:
@@ -351,15 +251,11 @@ Section Map.
     intro p.
     apply extensional.
     intro k'.
-    destruct (Nat.eq_dec k k').
-    - subst.
-      rewrite find_add.
-      auto.
-    - rewrite find_merge_r.
-      2: rewrite find_one_ne.
-      all: auto.
-      rewrite find_minus_ne.
-      all: auto.
+    rewrite find_merge, find_one, find_minus.
+    destruct (Nat.eq_dec k' k).
+    all: auto.
+    subst.
+    auto.
   Qed.
 
   Lemma minus_one {k v}:
@@ -367,15 +263,11 @@ Section Map.
   Proof.
     apply extensional.
     intro k'.
-    rewrite find_empty.
-    destruct (Nat.eq_dec k k').
+    rewrite find_empty, find_minus, find_one.
+    destruct (Nat.eq_dec k' k).
     - subst.
-      rewrite find_minus.
       reflexivity.
-    - rewrite find_minus_ne.
-      2: auto.
-      rewrite find_one_ne.
-      all: auto.
+    - auto.
   Qed.
 
   Lemma one_inj {k v k' v'}:
@@ -384,18 +276,22 @@ Section Map.
     intro p.
     set (p1 := weaken p k).
     set (p2 := weaken p k').
-    rewrite find_one in p1.
-    rewrite find_one in p2.
-    destruct (Nat.eq_dec k k') eqn:q.
+    repeat rewrite find_one in p1.
+    repeat rewrite find_one in p2.
+    destruct (Nat.eq_dec k k).
+    2: contradiction.
+    destruct (Nat.eq_dec k' k) eqn:q.
     - subst.
-      rewrite find_one in p1.
+      destruct (Nat.eq_dec k k).
+      2: contradiction.
       inversion p1.
       subst.
       split.
       all: auto.
-    - rewrite find_one_ne in p1.
-      all: try discriminate.
-      auto.
+    - subst.
+      destruct  (Nat.eq_dec k' k').
+      2: contradiction.
+      discriminate.
   Qed.
 
   Definition disjoint m m' :=
@@ -412,41 +308,24 @@ Section Map.
   Definition fst_disjoint {m0 m1 m2}:
     Map.disjoint (m0 ∪ m1) m2 → Map.disjoint m0 m2.
   Proof.
+    unfold disjoint.
     intros p k.
+    set (p' := p k).
+    rewrite find_merge in p'.
     destruct (find k m0) eqn:q0, (find k m2) eqn:q2.
     all: auto.
-    destruct (p k).
-    2: {
-      rewrite H in q2.
-      discriminate.
-    }
-    erewrite Map.find_merge_l in H.
-    2: eauto.
-    discriminate.
   Qed.
 
   Definition snd_disjoint {m0 m1 m2}:
     Map.disjoint (m0 ∪ m1) m2 → Map.disjoint m1 m2.
   Proof.
+    unfold disjoint.
     intros p k.
+    set (p' := p k).
+    rewrite find_merge in p'.
     destruct (find k m0) eqn:q0, (find k m1) eqn:q1, (find k m2) eqn:q2.
     all: auto.
-    - destruct (p k).
-      2: {
-        rewrite H in q2.
-        discriminate.
-      }
-      erewrite Map.find_merge_l in H.
-      2: eauto.
-      discriminate.
-    - destruct (p k).
-      2: {
-        rewrite H in q2.
-        discriminate.
-      }
-      rewrite Map.find_merge_r in H.
-      2: auto.
-      rewrite H in q1.
-      discriminate.
+    destruct p'.
+    all: discriminate.
   Qed.
 End Map.
