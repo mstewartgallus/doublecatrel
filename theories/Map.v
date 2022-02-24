@@ -185,19 +185,9 @@ Section Map.
   Proof.
     apply extensional.
     intro k'.
-    rewrite find_merge.
-    rewrite find_one.
+    repeat rewrite find_merge, find_one.
     destruct (Nat.eq_dec k' k) eqn:q.
-    - subst.
-      rewrite find_add.
-      reflexivity.
-    - rewrite find_merge.
-      rewrite find_one.
-      rewrite q.
-      rewrite find_merge.
-      rewrite find_one.
-      rewrite q.
-      reflexivity.
+    all: auto.
   Qed.
 
   Lemma merge_assoc {m0 m1 m2}: merge (merge m0 m1) m2 = merge m0 (merge m1 m2).
@@ -213,8 +203,7 @@ Section Map.
   Proof.
     apply extensional.
     intro k.
-    rewrite find_merge.
-    rewrite find_empty.
+    rewrite find_merge, find_empty.
     destruct (find k m) eqn:q.
     all: auto.
   Qed.
@@ -223,8 +212,7 @@ Section Map.
   Proof.
     apply extensional.
     intro k.
-    rewrite find_merge.
-    rewrite find_empty.
+    rewrite find_merge, find_empty.
     destruct (find k m) eqn:q.
     all: auto.
   Qed.
@@ -236,8 +224,7 @@ Section Map.
     intro p.
     apply extensional.
     intro k''.
-    repeat rewrite find_merge.
-    repeat rewrite find_one.
+    repeat rewrite find_merge, find_one.
     destruct (Nat.eq_dec k'' k'), (Nat.eq_dec k'' k).
     all: auto.
     subst.
@@ -292,6 +279,22 @@ Section Map.
       destruct  (Nat.eq_dec k' k').
       2: contradiction.
       discriminate.
+  Qed.
+
+  Lemma merge_empty {m m'}:
+    merge m m' = empty → (m = empty ∧ m' = empty).
+  Proof.
+    intros p.
+    split.
+    all: apply Map.extensional.
+    all: intro k'.
+    all: set (p' := weaken p k').
+    all: rewrite Map.find_empty.
+    all: rewrite Map.find_merge in p'.
+    all: rewrite Map.find_empty in p'.
+    all: destruct (Map.find k' m), (Map.find k' m').
+    all: try discriminate.
+    all: auto.
   Qed.
 
   Definition disjoint m m' :=

@@ -407,6 +407,14 @@ Proof.
     constructor.
 Qed.
 
+Lemma weaken {m m': store}:
+  m = m' → ∀ k, Map.find k m = Map.find k m'.
+Proof.
+  intros.
+  subst.
+  auto.
+Qed.
+
 Lemma conv_id t:
   conv (id t) == id t.
 Proof.
@@ -419,13 +427,19 @@ Proof.
   - intros p.
     inversion p.
     subst.
+    rewrite H.
+    destruct (Map.merge_empty H).
+    subst.
+    rewrite Map.merge_empty_r in H6.
     inversion H5.
     subst.
+    rewrite Map.merge_empty_r in H2.
     inversion H2.
+    subst.
+    destruct (Map.one_inj H1).
     subst.
     inversion H6.
     subst.
-    rewrite H.
     constructor.
     rewrite Map.merge_empty_r.
     admit.
