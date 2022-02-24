@@ -217,6 +217,20 @@ Section Map.
     all: auto.
   Qed.
 
+  Lemma add_inj {m k v v'}:
+    merge (one k v) m = merge (one k v') m → v = v'.
+  Proof.
+    intro p.
+    set (p' := weaken p k).
+    repeat rewrite Map.find_merge in p'.
+    repeat rewrite Map.find_one in p'.
+    destruct (Nat.eq_dec k k).
+    2: contradiction.
+    inversion p'.
+    subst.
+    auto.
+  Qed.
+
   Lemma add_swap {m k k' v v'}:
     k ≠ k' →
     merge (one k v) (merge (one k' v') m) = merge (one k' v') (merge (one k v) m).

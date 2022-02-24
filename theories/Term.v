@@ -232,6 +232,22 @@ Qed.
 
 Definition oftype Γ A := { v | Γ ⊢ v in A }.
 
+Lemma subst_var {x v}:
+  subst_term (v_var x) x v = v.
+Proof.
+  induction v.
+  all: cbn.
+  all: auto.
+  - destruct (eq_vvar x0 x).
+    all: auto.
+  - rewrite IHv.
+    auto.
+  - rewrite IHv.
+    auto.
+  - rewrite IHv1, IHv2.
+    auto.
+Qed.
+
 Lemma subst_normal {v x N}: subst_term v x N = N.
 Proof using.
   induction N.
@@ -267,6 +283,26 @@ Proof using.
     auto.
 Qed.
 
+Lemma subst_assoc {x f g h}:
+  subst_term (subst_term h x g) x f = subst_term h x (subst_term g x f).
+Proof.
+  induction f.
+  all: cbn.
+  all: auto.
+  - destruct eq_vvar eqn:q.
+    1: auto.
+    cbn.
+    rewrite q.
+    auto.
+  - rewrite IHf.
+    auto.
+  - rewrite IHf.
+    auto.
+  - rewrite IHf1.
+    rewrite IHf2.
+    auto.
+Qed.
+
 Lemma msubst_normal {p N}: msubst p N = N.
 Proof using.
   induction p.
@@ -296,6 +332,42 @@ Proof using.
     eapply IHp.
     2: eapply subst_preserve.
     all: eauto.
+Qed.
+
+Lemma msubst_fst {p}:
+  ∀ {v}, msubst p (v_fst v) = v_fst (msubst p v).
+Proof.
+  induction p.
+  all: cbn.
+  1: auto.
+  destruct a.
+  intro.
+  rewrite IHp.
+  reflexivity.
+Qed.
+
+Lemma msubst_snd {p}:
+  ∀ {v}, msubst p (v_snd v) = v_snd (msubst p v).
+Proof.
+  induction p.
+  all: cbn.
+  1: auto.
+  destruct a.
+  intro.
+  rewrite IHp.
+  reflexivity.
+Qed.
+
+Lemma msubst_fanout {p}:
+  ∀ {v v'}, msubst p (v_fanout v v') = v_fanout (msubst p v) (msubst p v').
+Proof.
+  induction p.
+  all: cbn.
+  1: auto.
+  destruct a.
+  intros.
+  rewrite IHp.
+  reflexivity.
 Qed.
 
 Definition equiv {Γ t}: Relation_Definitions.relation (oftype Γ t) :=
