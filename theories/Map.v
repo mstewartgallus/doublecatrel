@@ -271,6 +271,19 @@ Section Map.
     - auto.
   Qed.
 
+  Lemma minus_merge {k m m'}:
+    minus k (merge m m') = merge (minus k m) (minus k m').
+  Proof.
+    apply extensional.
+    intro k'.
+    repeat rewrite find_minus.
+    repeat rewrite find_merge.
+    repeat rewrite find_minus.
+    destruct Nat.eq_dec.
+    1: auto.
+    auto.
+  Qed.
+
   Lemma one_inj {k v k' v'}:
     one k v = one k' v' → (k = k' ∧ v = v').
   Proof.

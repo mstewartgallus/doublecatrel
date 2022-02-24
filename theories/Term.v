@@ -258,19 +258,20 @@ Proof using.
 Qed.
 
 Lemma subst_preserve:
-  ∀ {v v' Γ x t t'},
+  ∀ {Γ v' t x},
     Γ ⊢ v' in t →
+  ∀ {v t'},
     cons (x, t) Γ ⊢ v in t' →
     Γ ⊢ subst_term v' x v in t'.
 Proof using.
-  intros v.
+  intros Γ v' t x p v.
   induction v.
   all: cbn.
-  all: intros v' Γ p t t' q q'.
-  all: inversion q'.
+  all: intros t' q.
+  all: inversion q.
   all: subst.
   all: try (econstructor; eauto).
-  destruct (eq_vvar x p).
+  destruct eq_vvar.
   - subst.
     inversion H1.
     2: contradiction.

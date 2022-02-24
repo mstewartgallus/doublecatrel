@@ -228,36 +228,59 @@ Module Import Hor.
 End Hor.
 
 Module Import Vert.
-  Definition Vert t t' := Context.oftype (t * t').
+  #[local]
+  Definition X: cvar := 0.
+
+  Definition Vert t t' := Context.oftype (Map.one X t) t'.
 
   #[program]
-  Definition id t: Vert t t := E_lam 0 t (E_var 0).
-
-  Next Obligation.
-  Proof using.
-    unfold Vert.
-    constructor.
-    rewrite Map.merge_empty_r.
-    constructor.
-  Qed.
+  Definition id t: Vert t t := E_var X.
 
   #[program]
-  Definition compose {A B C} (f: Vert B C) (g: Vert A B): Vert A C := E_lam 0 A (E_app f (E_app g (E_var 0))).
+  Definition compose {A B C} (f: Vert B C) (g: Vert A B): Vert A C := subst_context g X f.
 
   Next Obligation.
   Proof.
     unfold Vert in *.
     unfold compose.
     destruct f as [f ?], g as [g ?].
-    constructor.
     cbn.
-    rewrite <- Map.merge_empty_l.
-    econstructor.
-    1: eauto.
-    rewrite <- Map.merge_empty_l.
-    econstructor.
-    1: eauto.
+    rewrite <- Map.merge_empty_r.
+    erewrite <- Map.add_add.
+    eapply Context.subst_preserve.
+    all: eauto.
+    rewrite Map.add_add.
     rewrite Map.merge_empty_r.
+    auto.
+    Unshelve.
+    apply B.
+  Qed.
+
+  Next Obligation.
+  Proof using.
+    unfold Vert.
     constructor.
+  Qed.
+
+  Lemma compose_id_right {A B} (f: Vert A B): compose f (id _) == f.
+  Proof.
+    destruct f as [f ?].
+    unfold compose, id.
+    cbn.
+    intros ?.
+    cbn.
+    rewrite Context.subst_var.
+    reflexivity.
+  Qed.
+
+  Lemma compose_assoc {A B C D} (f: Vert C D) (g: Vert B C) (h: Vert A B):
+    compose f (compose g h) == compose (compose f g) h.
+  Proof.
+    destruct f as [f ?], g as [g ?], h as [h ?].
+    cbn.
+    intros ?.
+    cbn.
+    rewrite Context.subst_assoc.
+    reflexivity.
   Qed.
 End Vert.

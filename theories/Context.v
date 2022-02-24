@@ -331,14 +331,87 @@ Proof using.
   auto.
 Defined.
 
-Definition oftype t := { E | Map.empty ⊢ E ? t }.
+Lemma subst_preserve:
+  ∀ {Δ' E' t},
+    Δ' ⊢ E' ? t →
+    ∀ {X E Δ t'},
+      Map.merge (Map.one X t) Δ ⊢ E ? t' →
+      Map.merge Δ' Δ ⊢ subst_context E' X E ? t'.
+Proof using.
+  intros Δ' E' t p X.
+  intros E.
+  induction E.
+  all: cbn.
+  all: admit.
+Admitted.
 
-Definition equiv {t}: Relation_Definitions.relation (oftype t) :=
+Lemma subst_var {X E}:
+  subst_context (E_var X) X E = E.
+Proof.
+  induction E.
+  all: cbn.
+  all: auto.
+  - destruct eq_cvar.
+    all: auto.
+  - rewrite IHE.
+    destruct eq_cvar.
+    all: auto.
+  - rewrite IHE1, IHE2.
+    auto.
+  - rewrite IHE1, IHE2.
+    auto.
+  - rewrite IHE1, IHE2.
+    auto.
+  - rewrite IHE1, IHE2.
+    destruct eq_cvar.
+    1: auto.
+    destruct eq_cvar.
+    1: auto.
+    auto.
+Qed.
+
+Lemma subst_assoc {X f g h}:
+  subst_context (subst_context h X g) X f = subst_context h X (subst_context g X f).
+Proof.
+  induction f.
+  all: cbn.
+  all: auto.
+  - destruct eq_cvar eqn:q.
+    1: auto.
+    cbn.
+    rewrite q.
+    auto.
+  - rewrite IHf.
+    destruct eq_cvar eqn:q.
+    all: auto.
+  - rewrite IHf1.
+    rewrite IHf2.
+    auto.
+  - rewrite IHf1.
+    rewrite IHf2.
+    auto.
+  - rewrite IHf1.
+    rewrite IHf2.
+    auto.
+  - rewrite IHf1.
+    rewrite IHf2.
+    auto.
+    destruct eq_cvar.
+    1: auto.
+    destruct eq_cvar.
+    1: auto.
+    auto.
+Qed.
+
+Definition oftype Δ t := { E | Δ ⊢ E ? t }.
+
+Definition equiv {Δ t}: Relation_Definitions.relation (oftype Δ t) :=
   λ a b,
     ∀ N,
+      (* FIXME substitute in contexts *)
       sat Map.empty (proj1_sig a) N ↔ sat Map.empty (proj1_sig b) N.
 
-Instance equiv_Reflexive t: Reflexive (@equiv t).
+Instance equiv_Reflexive Δ t: Reflexive (@equiv Δ t).
 Proof using.
   unfold equiv.
   unfold Reflexive.
@@ -346,7 +419,7 @@ Proof using.
   reflexivity.
 Qed.
 
-Instance equiv_Symmetric t: Symmetric (@equiv t).
+Instance equiv_Symmetric Δ t: Symmetric (@equiv Δ t).
 Proof using.
   unfold equiv.
   unfold Symmetric.
@@ -355,7 +428,7 @@ Proof using.
   auto.
 Qed.
 
-Instance equiv_Transitive t: Transitive (@equiv t).
+Instance equiv_Transitive Δ t: Transitive (@equiv Δ t).
 Proof using.
   unfold equiv.
   unfold Transitive.
@@ -365,11 +438,11 @@ Proof using.
   reflexivity.
 Qed.
 
-Instance equiv_Equivalence t: Equivalence (@equiv t) := {
+Instance equiv_Equivalence Δ t: Equivalence (@equiv Δ t) := {
     Equivalence_Reflexive := _ ;
 }.
 
-Instance oftype_Setoid t: Setoid (oftype t) := {
+Instance oftype_Setoid Δ t: Setoid (oftype Δ t) := {
     equiv := equiv ;
 }.
 
@@ -377,7 +450,7 @@ Instance oftype_Setoid t: Setoid (oftype t) := {
 Import RelNotations.
 
 #[program]
- Definition id t: oftype (t * t) :=
+ Definition id t: oftype Map.empty (t * t) :=
   let X: cvar := 0 in
    <{ λ X : t, X }>.
 
@@ -389,7 +462,7 @@ Proof.
 Qed.
 
 #[program]
-Definition conv {t t'} (E: oftype (t * t')): oftype (t' * t) :=
+Definition conv {t t'} (E: oftype Map.empty (t * t')): oftype Map.empty (t' * t) :=
   let X: cvar := 0 in
   let Y: cvar := 1 in
   <{ let (X, Y) := E in (Y, X) }>.
