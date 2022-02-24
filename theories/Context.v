@@ -331,6 +331,67 @@ Proof using.
   auto.
 Defined.
 
+
+Function linear_subst ES X E :=
+  match E with
+  | E_var Y => if eq_cvar X Y then Some ES else None
+  | E_lam Y t E0 =>
+      if eq_cvar X Y
+      then
+        None
+      else
+        if linear_subst ES X E0 is Some E0'
+        then
+          Some (E_lam Y t E0')
+        else
+          None
+  | E_app E0 E1 =>
+      match linear_subst ES X E0, linear_subst ES X E1 with
+      | Some E0', None => Some (E_app E0' E1)
+      | None, Some E1' => Some (E_app E0 E1')
+      | _, _ => None
+      end
+
+  | E_tt => None
+
+  | E_step E0 E1 =>
+      match linear_subst ES X E0, linear_subst ES X E1 with
+      | Some E0', None => Some (E_step E0' E1)
+      | None, Some E1' => Some (E_step E0 E1')
+      | _, _ => None
+      end
+
+  | E_fanout E0 E1 =>
+      match linear_subst ES X E0, linear_subst ES X E1 with
+      | Some E0', None => Some (E_fanout E0' E1)
+      | None, Some E1' => Some (E_fanout E0 E1')
+      | _, _ => None
+      end
+
+  | E_let Y0 Y1 E0 E1 =>
+      if eq_cvar X Y0
+      then
+        if linear_subst ES X E0 is Some E0'
+        then
+          Some (E_let Y0 Y1 E0' E1)
+        else
+          None
+      else
+        if eq_cvar X Y1
+        then
+          if linear_subst ES X E0 is Some E0'
+          then
+            Some (E_let Y0 Y1 E0' E1)
+          else
+            None
+        else
+          match linear_subst ES X E0, linear_subst ES X E1 with
+          | Some E0', None => Some (E_let Y0 Y1 E0' E1)
+          | None, Some E1' => Some (E_let Y0 Y1 E0 E1')
+          | _, _ => None
+          end
+  end.
+
 Lemma subst_preserve:
   ∀ {Δ' E' t},
     Δ' ⊢ E' ? t →
