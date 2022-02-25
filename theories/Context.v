@@ -6,6 +6,7 @@ Require Blech.OptionNotations.
 Require Import Coq.Unicode.Utf8.
 Require Import Coq.Classes.SetoidClass.
 Require Coq.Lists.List.
+Require Import Coq.Logic.PropExtensionality.
 
 Require Import FunInd.
 
@@ -331,143 +332,261 @@ Proof using.
   auto.
 Defined.
 
+Variant occur := z | o | m.
 
-Inductive one :=
-| o_hole
-| o_lam (X: cvar) (t: type) (o: one)
+Definition add e0 e1 :=
+  match e0, e1 with
+  | z, m => m
+  | o, m => m
+  | m, m => m
+  | m, o => m
+  | m, z => m
 
-| o_app_l (o: one) (E: context)
-| o_app_r (E: context) (o: one)
+  | o, z => o
+  | o, o => m
+  | z, o => o
 
-| o_step_l (o: one) (E: context)
-| o_step_r (E: context) (o: one)
+  | z, z => z
+  end.
 
-| o_fanout_l (o: one) (E: context)
-| o_fanout_r (E: context) (o: one)
+Infix "+" := add.
 
-| o_let_l (X Y: cvar) (o: one) (E: context)
-| o_let_r (X Y: cvar) (E: context) (o: one)
-.
-
-Function D X E :=
+Function count X E :=
   match E with
-  | E_var Y => if eq_cvar X Y then Some o_hole else None
+  | E_var Y => if eq_cvar X Y then o else z
 
-  | E_lam Y t E0 =>
+  | E_lam Y t E =>
+      if eq_cvar X Y then z else count X E
+
+  | E_app E E' => count X E + count X E'
+
+  | E_tt => z
+
+  | E_step E E' => count X E + count X E'
+
+  | E_fanout E E' => count X E + count X E'
+
+  | E_let Y Y' E E' =>
       if eq_cvar X Y
       then
-        None
+        count X E
       else
-        if D X E0 is Some o'
+        if eq_cvar X Y'
         then
-          Some (o_lam Y t o')
+          count X E
         else
-          None
+          count X E + count X E'
+  end.
+
+(* Import Blech.OptionNotations. *)
+
+Inductive result := one (c: context) | zero | many.
+
+Function subst (S: context) (X: cvar) (E: context): result :=
+  match E with
+  | E_var Y => if eq_cvar X Y then one S else zero
+  | E_lam Y t E =>
+      if eq_cvar X Y
+      then
+        zero
+      else
+        match subst S X E with
+        | one E' => one (E_lam Y t E')
+        | p => p
+        end
 
   | E_app E0 E1 =>
-      match D X E0, D X E1 with
-      | Some o, None => Some (o_app_l o E1)
-      | None, Some o => Some (o_app_r E0 o)
-      | _, _ => None
+      match subst S X E0, subst S X E1 with
+      | one E0', zero => one (E_app E0' E1)
+      | zero, one E1' => one (E_app E0 E1')
+
+      | zero, zero => zero
+      | _, _ => many
       end
 
-  | E_tt => None
+  | E_tt => zero
 
   | E_step E0 E1 =>
-      match D X E0, D X E1 with
-      | Some o, None => Some (o_step_l o E1)
-      | None, Some o => Some (o_step_r E0 o)
-      | _, _ => None
+      match subst S X E0, subst S X E1 with
+      | one E0', zero => one (E_step E0' E1)
+      | zero, one E1' => one (E_step E0 E1')
+
+      | zero, zero => zero
+      | _, _ => many
       end
 
   | E_fanout E0 E1 =>
-      match D X E0, D X E1 with
-      | Some o, None => Some (o_fanout_l o E1)
-      | None, Some o => Some (o_fanout_r E0 o)
-      | _, _ => None
+      match subst S X E0, subst S X E1 with
+      | one E0', zero => one (E_fanout E0' E1)
+      | zero, one E1' => one (E_fanout E0 E1')
+
+      | zero, zero => zero
+      | _, _ => many
       end
 
-  | E_let Y0 Y1 E0 E1 =>
-      if eq_cvar X Y0
+  | E_let Y Y' E0 E1 =>
+      if eq_cvar X Y
       then
-        if D X E0 is Some E0'
-        then
-          Some (o_let_l Y0 Y1 E0' E1)
-        else
-          None
+        match subst S X E0 with
+        | one E0' => one (E_let Y Y' E0' E1)
+        | p => p
+        end
       else
-        if eq_cvar X Y1
+        if eq_cvar X Y'
         then
-          if D X E0 is Some E0'
-          then
-            Some (o_let_l Y0 Y1 E0' E1)
-          else
-            None
-        else
-          match D X E0, D X E1 with
-          | Some E0', None => Some (o_let_l Y0 Y1 E0' E1)
-          | None, Some E1' => Some (o_let_r Y0 Y1 E0 E1')
-          | _, _ => None
+          match subst S X E0 with
+          | one E0' => one (E_let Y Y' E0' E1)
+          | p => p
           end
+        else
+          match subst S X E0, subst S X E1 with
+          | one E0', zero => one (E_let Y Y' E0' E1)
+          | zero, one E1' => one (E_let Y Y' E0 E1')
+
+          | zero, zero => zero
+          | _, _ => many
+          end
+
   end.
 
-Function I ES o :=
-  match o with
-  | o_hole => ES
 
-  | o_lam X t o => E_lam X t (I ES o)
-
-  | o_app_l o E => E_app (I ES o) E
-  | o_app_r E o => E_app E (I ES o)
-
-  | o_step_l o E => E_step (I ES o) E
-  | o_step_r E o => E_step E (I ES o)
-
-  | o_fanout_l o E => E_fanout (I ES o) E
-  | o_fanout_r E o => E_fanout E (I ES o)
-
-  | o_let_l X Y o E => E_let X Y (I ES o) E
-  | o_let_r X Y E o => E_let X Y E (I ES o)
+Lemma linear {S X E}:
+  match count X E with
+  | z => subst S X E = zero: Type
+  | o => { E' | subst S X E = one E' }
+  | m =>  subst S X E = many: Type
   end.
-
-Lemma DI_preserve:
-  ∀ {Δ' E' t},
-    Δ' ⊢ E' ? t →
-    ∀ {X E o Δ t'},
-      Map.merge (Map.one X t) Δ ⊢ E ? t' →
-      D X E = Some o →
-      Map.merge Δ' Δ ⊢ I E' o ? t'.
-Proof using.
-  intros Δ' E' t p X.
-  intros E.
+Proof.
   induction E.
   all: cbn.
-  all: intros.
-  - cbn.
-    destruct eq_cvar.
-    2: discriminate.
-    subst.
-    inversion H0.
-    subst.
-    inversion H.
-    subst.
-    cbn.
-    set (H2' := Map.weaken H2 X0).
-    rewrite Map.find_one in H2'.
-    rewrite Map.find_add in H2'.
-    destruct PeanoNat.Nat.eq_dec.
-    2: contradiction.
-    inversion H2'.
-    subst.
+  all: try destruct eq_cvar.
+  all: subst.
+  all: try contradiction.
+  all: try discriminate.
+  all: auto.
+  - econstructor.
     auto.
-    admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-  - admit.
-Admitted.
+  - destruct (count X E).
+    all: try rewrite IHE.
+    all: auto.
+    destruct IHE.
+    rewrite e.
+    econstructor.
+    auto.
+  - destruct (count X E1), (count X E2).
+    all: cbn.
+    all: auto.
+    all: try rewrite IHE1.
+    all: try rewrite IHE2.
+    all: auto.
+    + destruct IHE2.
+      rewrite e.
+      econstructor.
+      auto.
+    + destruct IHE1.
+      rewrite e.
+      econstructor.
+      auto.
+    + destruct IHE1, IHE2.
+      rewrite e, e0.
+      auto.
+    + destruct IHE1.
+      rewrite e.
+      auto.
+  - destruct (count X E1), (count X E2).
+    all: cbn.
+    all: auto.
+    all: try rewrite IHE1.
+    all: try rewrite IHE2.
+    all: auto.
+    + destruct IHE2.
+      rewrite e.
+      econstructor.
+      auto.
+    + destruct IHE1.
+      rewrite e.
+      econstructor.
+      auto.
+    + destruct IHE1, IHE2.
+      rewrite e, e0.
+      auto.
+    + destruct IHE1.
+      rewrite e.
+      auto.
+  - destruct (count X E1), (count X E2).
+    all: cbn.
+    all: auto.
+    all: try rewrite IHE1.
+    all: try rewrite IHE2.
+    all: auto.
+    + destruct IHE2.
+      rewrite e.
+      econstructor.
+      auto.
+    + destruct IHE1.
+      rewrite e.
+      econstructor.
+      auto.
+    + destruct IHE1, IHE2.
+      rewrite e, e0.
+      auto.
+    + destruct IHE1.
+      rewrite e.
+      auto.
+  - destruct (count X0 E1), (count X0 E2).
+    all: cbn.
+    all: auto.
+    all: try rewrite IHE1.
+    all: try rewrite IHE2.
+    all: auto.
+    + destruct IHE1.
+      rewrite e.
+      econstructor.
+      auto.
+    + destruct IHE1, IHE2.
+      rewrite e.
+      econstructor.
+      auto.
+    + destruct IHE1.
+      rewrite e.
+      econstructor.
+      auto.
+  - destruct (count X E1), (count X E2).
+    all: cbn.
+    all: auto.
+    all: try rewrite IHE1.
+    all: try rewrite IHE2.
+    all: auto.
+    all: destruct eq_cvar.
+    all: subst.
+    all: auto.
+    + destruct IHE2.
+      rewrite e.
+      econstructor.
+      auto.
+    + destruct IHE1.
+      rewrite e.
+      econstructor.
+      auto.
+    + destruct IHE1.
+      rewrite e.
+      econstructor.
+      auto.
+    + destruct IHE1, IHE2.
+      rewrite e.
+      econstructor.
+      auto.
+    + destruct IHE1, IHE2.
+      rewrite e, e0.
+      auto.
+    + destruct IHE1.
+      rewrite e.
+      econstructor.
+      auto.
+    + destruct IHE1.
+      rewrite e.
+      auto.
+Defined.
 
 Lemma subst_preserve:
   ∀ {Δ' E' t},
