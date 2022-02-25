@@ -449,144 +449,161 @@ Function subst (S: context) (X: cvar) (E: context): result :=
 
   end.
 
-
-Lemma linear {S X E}:
-  match count X E with
-  | z => subst S X E = zero: Type
-  | o => { E' | subst S X E = one E' }
-  | m =>  subst S X E = many: Type
-  end.
+Lemma subst_id {E X E'}:
+  count X E' = z → subst_context E X E' = E'.
 Proof.
-  induction E.
+  functional induction (count X E').
   all: cbn.
+  all: intros p.
+  all: try destruct eq_cvar.
+  all: subst.
+  all: try discriminate.
+  all: try destruct eq_cvar.
+  all: subst.
+  all: try contradiction.
+  all: auto.
+  all: try rewrite IHo0.
+  all: try rewrite IHo1.
+  all: auto.
+  all: try destruct (count X E1), (count X E').
+  all: try discriminate.
+  all: cbn in p.
+  all: auto.
+  all: try destruct eq_cvar.
+  all: subst.
+  all: auto.
+  all: try destruct eq_cvar.
+  all: auto.
+Qed.
+
+Lemma subst_count {E X E'}:
+  count X E' = match subst E X E' with
+               | zero => z
+               | one _ => o
+               | many => m
+               end.
+Proof.
+  functional induction (subst E X E').
+  all: cbn.
+  all: try destruct eq_cvar.
+  all: auto.
+  all: try discriminate.
+  all: try contradiction.
+  all: try rewrite IHr.
+  all: try rewrite IHr0.
+  all: try rewrite e0.
+  all: try rewrite e1.
+  all: auto.
+  all: try destruct (subst E X E1), (subst E X E2).
+  all: cbn.
+  all: auto.
+  all: try discriminate.
+  all: try contradiction.
+Qed.
+
+Lemma linear {E X E'}:
+  subst E X E' =
+    match count X E' with
+    | z => zero
+    | o => one (subst_context E X E')
+    | m => many
+    end.
+Proof.
+  induction E'.
+  all: cbn.
+  all: try destruct eq_cvar.
   all: try destruct eq_cvar.
   all: subst.
   all: try contradiction.
   all: try discriminate.
   all: auto.
-  - econstructor.
-    auto.
-  - destruct (count X E).
-    all: try rewrite IHE.
+  - rewrite IHE'.
+    destruct (count X E').
     all: auto.
-    destruct IHE.
-    rewrite e.
-    econstructor.
-    auto.
-  - destruct (count X E1), (count X E2).
+  - destruct (count X E'1), (count X E'2).
     all: cbn.
+    all: try rewrite IHE'1.
+    all: try rewrite IHE'2.
     all: auto.
-    all: try rewrite IHE1.
-    all: try rewrite IHE2.
-    all: auto.
-    + destruct IHE2.
-      rewrite e.
-      econstructor.
+    + rewrite (@subst_id _ _ E'1) .
+      2: erewrite subst_count.
+      2: rewrite IHE'1.
+      2: auto.
       auto.
-    + destruct IHE1.
-      rewrite e.
-      econstructor.
+    + rewrite (@subst_id _ _ E'2) .
+      2: erewrite subst_count.
+      2: rewrite IHE'2.
+      2: auto.
       auto.
-    + destruct IHE1, IHE2.
-      rewrite e, e0.
-      auto.
-    + destruct IHE1.
-      rewrite e.
-      auto.
-  - destruct (count X E1), (count X E2).
+  - destruct (count X E'1), (count X E'2).
     all: cbn.
+    all: try rewrite IHE'1.
+    all: try rewrite IHE'2.
     all: auto.
-    all: try rewrite IHE1.
-    all: try rewrite IHE2.
-    all: auto.
-    + destruct IHE2.
-      rewrite e.
-      econstructor.
+    + rewrite (@subst_id _ _ E'1) .
+      2: erewrite subst_count.
+      2: rewrite IHE'1.
+      2: auto.
       auto.
-    + destruct IHE1.
-      rewrite e.
-      econstructor.
+    + rewrite (@subst_id _ _ E'2) .
+      2: erewrite subst_count.
+      2: rewrite IHE'2.
+      2: auto.
       auto.
-    + destruct IHE1, IHE2.
-      rewrite e, e0.
-      auto.
-    + destruct IHE1.
-      rewrite e.
-      auto.
-  - destruct (count X E1), (count X E2).
+  - destruct (count X E'1), (count X E'2).
     all: cbn.
+    all: try rewrite IHE'1.
+    all: try rewrite IHE'2.
     all: auto.
-    all: try rewrite IHE1.
-    all: try rewrite IHE2.
-    all: auto.
-    + destruct IHE2.
-      rewrite e.
-      econstructor.
+    + rewrite (@subst_id _ _ E'1) .
+      2: erewrite subst_count.
+      2: rewrite IHE'1.
+      2: auto.
       auto.
-    + destruct IHE1.
-      rewrite e.
-      econstructor.
+    + rewrite (@subst_id _ _ E'2) .
+      2: erewrite subst_count.
+      2: rewrite IHE'2.
+      2: auto.
       auto.
-    + destruct IHE1, IHE2.
-      rewrite e, e0.
-      auto.
-    + destruct IHE1.
-      rewrite e.
-      auto.
-  - destruct (count X0 E1), (count X0 E2).
+  - destruct (count X0 E'1), (count X0 E'2).
     all: cbn.
+    all: try rewrite IHE'1.
+    all: try rewrite IHE'2.
     all: auto.
-    all: try rewrite IHE1.
-    all: try rewrite IHE2.
-    all: auto.
-    + destruct IHE1.
-      rewrite e.
-      econstructor.
-      auto.
-    + destruct IHE1, IHE2.
-      rewrite e.
-      econstructor.
-      auto.
-    + destruct IHE1.
-      rewrite e.
-      econstructor.
-      auto.
-  - destruct (count X E1), (count X E2).
+  - destruct (count Y E'1), (count Y E'2).
     all: cbn.
+    all: try rewrite IHE'1.
+    all: try rewrite IHE'2.
     all: auto.
-    all: try rewrite IHE1.
-    all: try rewrite IHE2.
-    all: auto.
-    all: destruct eq_cvar.
+    all: try destruct eq_cvar.
     all: subst.
+    all: try contradiction.
+    all: try destruct eq_cvar.
+    all: subst.
+    all: try contradiction.
     all: auto.
-    + destruct IHE2.
-      rewrite e.
-      econstructor.
+  - destruct (count X E'1), (count X E'2).
+    all: cbn.
+    all: try rewrite IHE'1.
+    all: try rewrite IHE'2.
+    all: auto.
+    all: try destruct eq_cvar.
+    all: subst.
+    all: try contradiction.
+    all: try destruct eq_cvar.
+    all: subst.
+    all: try contradiction.
+    + rewrite (@subst_id _ _ E'1).
+      2: erewrite subst_count.
+      2: rewrite IHE'1.
+      2: auto.
       auto.
-    + destruct IHE1.
-      rewrite e.
-      econstructor.
+    + rewrite (@subst_id _ _ E'2) .
+      2: erewrite subst_count.
+      2: rewrite IHE'2.
+      2: auto.
       auto.
-    + destruct IHE1.
-      rewrite e.
-      econstructor.
-      auto.
-    + destruct IHE1, IHE2.
-      rewrite e.
-      econstructor.
-      auto.
-    + destruct IHE1, IHE2.
-      rewrite e, e0.
-      auto.
-    + destruct IHE1.
-      rewrite e.
-      econstructor.
-      auto.
-    + destruct IHE1.
-      rewrite e.
-      auto.
-Defined.
+Qed.
 
 Lemma subst_preserve:
   ∀ {Δ' E' t},
