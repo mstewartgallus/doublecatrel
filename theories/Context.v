@@ -626,9 +626,11 @@ Proof.
   all: cbn.
   all: auto.
   - destruct eq_cvar.
+    all: subst.
     all: auto.
   - rewrite IHE.
     destruct eq_cvar.
+    all: subst.
     all: auto.
   - rewrite IHE1, IHE2.
     auto.
@@ -638,8 +640,10 @@ Proof.
     auto.
   - rewrite IHE1, IHE2.
     destruct eq_cvar.
+    all: subst.
     1: auto.
     destruct eq_cvar.
+    all: subst.
     1: auto.
     auto.
 Qed.
@@ -719,90 +723,3 @@ Instance equiv_Equivalence Δ t: Equivalence (@equiv Δ t) := {
 Instance oftype_Setoid Δ t: Setoid (oftype Δ t) := {
     equiv := equiv ;
 }.
-
-
-Import RelNotations.
-
-#[program]
- Definition id t: oftype Map.empty (t * t) :=
-  let X: cvar := 0 in
-   <{ λ X : t, X }>.
-
-Next Obligation.
-Proof.
-  constructor.
-  rewrite Map.merge_empty_r.
-  constructor.
-Qed.
-
-#[program]
-Definition conv {t t'} (E: oftype Map.empty (t * t')): oftype Map.empty (t' * t) :=
-  let X: cvar := 0 in
-  let Y: cvar := 1 in
-  <{ let (X, Y) := E in (Y, X) }>.
-
-Next Obligation.
-Proof.
-  destruct E.
-  cbn.
-  rewrite <- (@Map.merge_empty_l _ Map.empty).
-  econstructor.
-  all: eauto.
-  constructor.
-  - constructor.
-  - rewrite Map.merge_empty_r.
-    constructor.
-Qed.
-
-Lemma weaken {m m': store}:
-  m = m' → ∀ k, Map.find k m = Map.find k m'.
-Proof.
-  intros.
-  subst.
-  auto.
-Qed.
-
-Lemma conv_id t:
-  conv (id t) == id t.
-Proof.
-  unfold conv, id.
-  cbn.
-  unfold equiv.
-  cbn.
-  intros.
-  split.
-  - intros p.
-    inversion p.
-    subst.
-    rewrite H.
-    destruct (Map.merge_empty H).
-    subst.
-    rewrite Map.merge_empty_r in H6.
-    inversion H5.
-    subst.
-    rewrite Map.merge_empty_r in H2.
-    inversion H2.
-    subst.
-    destruct (Map.one_inj H1).
-    subst.
-    inversion H6.
-    subst.
-    constructor.
-    rewrite Map.merge_empty_r.
-    admit.
-  - intros p.
-    inversion p.
-    subst.
-    inversion H4.
-    subst.
-    rewrite <- (@Map.merge_empty_l _ Map.empty).
-    econstructor.
-    all: eauto.
-    rewrite <- H0.
-    rewrite Map.merge_empty_r in H0.
-    destruct (Map.one_inj H0).
-    subst.
-    constructor.
-    + constructor.
-    + constructor.
-Admitted.

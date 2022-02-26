@@ -133,11 +133,12 @@ Inductive Jp : subst -> environment -> Prop :=    (* defn p *)
      Jp ρ Γ ->
      Jp  (cons ( x ,  v )  ρ )   (cons ( x ,  t )  Γ ) .
 Require Blech.Map.
+Require Import Metalib.Metatheory.
 
-Definition cvar : Set := nat.
+Definition cvar : Set := var.
 Lemma eq_cvar: forall (x y : cvar), {x = y} + {x <> y}.
 Proof.
-  decide equality; auto with ott_coq_equality arith.
+apply Atom.eq_dec.
 Defined.
 Hint Resolve eq_cvar : ott_coq_equality.
 

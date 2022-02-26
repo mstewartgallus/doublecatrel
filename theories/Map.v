@@ -3,10 +3,12 @@ Require Import Coq.Arith.PeanoNat.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Coq.Classes.SetoidClass.
 
+Require Import Metalib.Metatheory.
+
 Import IfNotations.
 
 Module Type MapInterface.
-  Definition K: Set := nat.
+  Definition K: Set := var.
   Axiom map: Set → Set.
 
   Implicit Type k: K.
@@ -40,16 +42,16 @@ Module Type MapInterface.
 
     Axiom find_one:
       ∀ {k k' v},
-      find k (one k' v) = if Nat.eq_dec k k' then Some v else None.
+      find k (one k' v) = if eq_dec k k' then Some v else None.
 
     Axiom find_minus:
       ∀ {k k' m},
-      find k (minus k' m) = if Nat.eq_dec k k' then None else find k m.
+      find k (minus k' m) = if eq_dec k k' then None else find k m.
   End Prim.
 End MapInterface.
 
-Module FnMap: MapInterface with Definition K := nat.
-  Definition K := nat.
+Module FnMap: MapInterface with Definition K := var.
+  Definition K := var.
   Definition map (V: Set) := K → option V.
 
   Implicit Type k: K.
@@ -72,7 +74,7 @@ Module FnMap: MapInterface with Definition K := nat.
 
     Definition one k (v: V): map V :=
       λ k',
-        if Nat.eq_dec k' k
+        if eq_dec k' k
         then
           Some v
         else
@@ -80,7 +82,7 @@ Module FnMap: MapInterface with Definition K := nat.
 
     Definition minus k m: map V :=
       λ k',
-        if Nat.eq_dec k' k
+        if eq_dec k' k
         then
           None
         else
@@ -111,13 +113,13 @@ Module FnMap: MapInterface with Definition K := nat.
     Qed.
 
     Lemma find_one {k k' v}:
-      find k (one k' v) = if Nat.eq_dec k k' then Some v else None.
+      find k (one k' v) = if eq_dec k k' then Some v else None.
     Proof.
       auto.
     Qed.
 
     Lemma find_minus {k k' m}:
-      find k (minus k' m) = if Nat.eq_dec k k' then None else find k m.
+      find k (minus k' m) = if eq_dec k k' then None else find k m.
     Proof.
       auto.
     Qed.
@@ -164,7 +166,7 @@ Section Map.
     intro p.
     set (p' := weaken p k).
     repeat rewrite find_one in p'.
-    destruct Nat.eq_dec.
+    destruct eq_dec.
     2: contradiction.
     inversion p'.
     auto.
@@ -176,7 +178,7 @@ Section Map.
     intros.
     rewrite find_merge.
     rewrite find_one.
-    destruct Nat.eq_dec.
+    destruct eq_dec.
     2: contradiction.
     auto.
   Qed.
@@ -186,7 +188,7 @@ Section Map.
     apply extensional.
     intro k'.
     repeat rewrite find_merge, find_one.
-    destruct (Nat.eq_dec k' k) eqn:q.
+    destruct (eq_dec k' k) eqn:q.
     all: auto.
   Qed.
 
@@ -224,7 +226,7 @@ Section Map.
     set (p' := weaken p k).
     repeat rewrite Map.find_merge in p'.
     repeat rewrite Map.find_one in p'.
-    destruct (Nat.eq_dec k k).
+    destruct (eq_dec k k).
     2: contradiction.
     inversion p'.
     subst.
@@ -239,7 +241,7 @@ Section Map.
     apply extensional.
     intro k''.
     repeat rewrite find_merge, find_one.
-    destruct (Nat.eq_dec k'' k'), (Nat.eq_dec k'' k).
+    destruct (eq_dec k'' k'), (eq_dec k'' k).
     all: auto.
     subst.
     contradiction.
@@ -253,7 +255,7 @@ Section Map.
     apply extensional.
     intro k'.
     rewrite find_merge, find_one, find_minus.
-    destruct (Nat.eq_dec k' k).
+    destruct (eq_dec k' k).
     all: auto.
     subst.
     auto.
@@ -265,7 +267,7 @@ Section Map.
     apply extensional.
     intro k'.
     rewrite find_empty, find_minus, find_one.
-    destruct (Nat.eq_dec k' k).
+    destruct (eq_dec k' k).
     - subst.
       reflexivity.
     - auto.
@@ -279,7 +281,7 @@ Section Map.
     repeat rewrite find_minus.
     repeat rewrite find_merge.
     repeat rewrite find_minus.
-    destruct Nat.eq_dec.
+    destruct eq_dec.
     1: auto.
     auto.
   Qed.
@@ -292,18 +294,18 @@ Section Map.
     set (p2 := weaken p k').
     repeat rewrite find_one in p1.
     repeat rewrite find_one in p2.
-    destruct (Nat.eq_dec k k).
+    destruct (eq_dec k k).
     2: contradiction.
-    destruct (Nat.eq_dec k' k) eqn:q.
+    destruct (eq_dec k' k) eqn:q.
     - subst.
-      destruct (Nat.eq_dec k k).
+      destruct (eq_dec k k).
       2: contradiction.
       inversion p1.
       subst.
       split.
       all: auto.
     - subst.
-      destruct  (Nat.eq_dec k' k').
+      destruct  (eq_dec k' k').
       2: contradiction.
       discriminate.
   Qed.

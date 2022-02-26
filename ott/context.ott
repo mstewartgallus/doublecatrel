@@ -1,9 +1,10 @@
 embed
 {{ coq-preamble
 Require Blech.Map.
+Require Import Metalib.Metatheory.
 }}
 
-metavar cvar, X, Y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[cvar]]} }}
+metavar cvar, X, Y ::= {{ coq var }} {{ coq-equality apply Atom.eq_dec. }} {{ lex alphanum}} {{ tex \mathit{[[cvar]]} }}
 grammar
 
 context, E :: 'E_' ::= {{ coq-equality }}
