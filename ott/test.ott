@@ -4,8 +4,6 @@ Require Blech.Map.
 }}
 
 metavar vvar, x, y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[vvar]]} }}
-metavar cvar, X, Y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[cvar]]} }}
-
 grammar
 type, t :: 't_' ::= {{ coq-equality }}
   | unit         ::   :: unit
@@ -18,12 +16,134 @@ term, v :: 'v_' ::= {{ coq-equality }}
   | snd v          ::   :: snd
   | v , v'         ::   :: fanout
   | ( v )          :: S :: paren {{ icho ([[v]]) }}
-  | [ x := v ] v'  :: M :: subst {{ icho (subst_term [[v]] [[x]] [[v']]) }}
+  | [ x := v ] v'  :: S :: subst {{ icho (subst_term [[v]] [[x]] [[v']]) }}
 
 normal, N :: 'N_' ::= {{ coq-equality }}
   | tt      ::   :: tt
   | N , N'  ::   :: fanout
   | ( N )   :: S :: paren {{ coq ([[N]]) }}
+
+environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (list (vvar * type)) }}
+  | nil         ::   :: nil {{ coq nil }}
+  | G , x : t   ::   :: add {{ coq (cons ([[x]], [[t]]) [[G]]) }}
+  | ( G )       :: S :: paren {{ coq ([[G]]) }}
+
+subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (list (vvar * term)) }}
+  | nil                   :: M :: nil {{ coq nil }}
+  | p , x := v            :: M :: add {{ coq (cons ([[x]], [[v]]) [[p]]) }}
+  | ( p )                 :: S :: paren {{ coq ([[p]]) }}
+
+substitutions
+  single v x :: subst
+
+% subrules are awkward
+funs
+  toterm ::=
+fun
+  [ N ] :: v :: toterm {{ tex \llbracket [[N]] \rrbracket }}
+by
+  [ tt ] === tt
+  [ N, N' ] === [ N ], [ N' ]
+
+embed
+{{ coq
+Coercion toterm: normal >-> term.
+}}
+
+funs
+  msubst ::=
+fun
+  [ := p ] v' :: v :: msubst
+by
+  [ := nil ] v === v
+  [ := p, x := v'] v === [:= p] ([ x := v'] v)
+
+defns
+
+find :: '' ::=
+
+defn
+x : t \in G ::   :: mem :: 'mem_'
+by
+
+----------------- :: eq
+x: t \in G, x : t
+
+x != y
+x: t \in G
+-------------------- :: ne
+x: t \in G, y : t'
+
+defns
+
+judge_term :: 'J' ::=
+
+defn
+G |- v : t ::   :: v :: 'v_'
+by
+
+x: t \in G
+------------ :: var
+G |- x: t
+
+------------ :: tt
+G |- tt: unit
+
+G |- v1: t1
+G |- v2: t2
+------------------ :: fanout
+G |- v1, v2: t1 * t2
+
+G |- v: t1 * t2
+------------------ :: fst
+G |- fst v: t1
+
+G |- v: t1 * t2
+------------------ :: snd
+G |- snd v: t2
+
+defns
+
+big :: '' ::=
+
+defn
+v ! N ::   :: big :: 'big_'
+by
+
+-------------------- :: tt
+tt ! tt
+
+v1 ! N1'
+v2 ! N2'
+-------------------- :: fanout
+v1, v2 ! N1', N2'
+
+v ! N1, N2
+-------------------- :: fst
+fst v ! N1
+
+v ! N1, N2
+------------------- :: snd
+snd v ! N2
+
+defns
+
+judge :: 'J' ::=
+
+defn
+p : G ::   :: p :: 'p_'
+by
+
+---------- :: nil
+nil: nil
+
+G |- v : t
+p: G
+------------------ :: cons
+p, x := v: G, x: t
+
+metavar cvar, X, Y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[cvar]]} }}
+grammar
 
 context, E :: 'E_' ::= {{ coq-equality }}
   | X                        ::   :: var
@@ -35,18 +155,11 @@ context, E :: 'E_' ::= {{ coq-equality }}
   | let X , Y = E in E'      ::   :: let (+ bind X union Y in E' +)
   | ( E )                    :: S :: paren {{ icho ([[E]]) }}
 
-grammar
-
 linear, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (Map.map type) }}
   | nil           :: M :: empty {{ coq (Map.empty) }}
   | X : t         :: M :: one {{ coq (Map.one [[X]] [[t]]) }}
   | D , D'        :: M :: add {{ coq (Map.merge [[D']] [[D]]) }}
   | D ++ D'       :: M :: merge {{ coq (Map.merge [[D]] [[D']]) }}
-
-environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (list (vvar * type)) }}
-  | nil         ::   :: nil {{ coq nil }}
-  | G , x : t   ::   :: add {{ coq (cons ([[x]], [[t]]) [[G]]) }}
-  | ( G )       :: S :: paren {{ coq ([[G]]) }}
 
 store, S {{ tex \sigma }} {{ coq σ }} :: 'S_'  ::= {{ coq (Map.map normal) }}
   | nil                   :: M :: empty {{ coq (Map.empty) }}
@@ -60,11 +173,6 @@ span, P :: 'P_' ::=
 set, Ps {{ tex P^* }} :: 'X_' ::= {{ coq (list span) }}
   | nil          ::   :: nil {{ coq nil }}
   | Ps , P       ::   :: cons {{ coq (cons [[P]] [[Ps]]) }}
-
-subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (list (vvar * term)) }}
-  | nil                   :: M :: nil {{ coq nil }}
-  | p , x := v            :: M :: add {{ coq (cons ([[x]], [[v]]) [[p]]) }}
-  | ( p )                 :: S :: paren {{ coq ([[p]]) }}
 
 terminals :: 'terminals_' ::=
   | :            ::   :: in     {{ tex \colon{} }}
@@ -90,30 +198,7 @@ parsing
   S_add left S_add
 
 substitutions
-  single v x :: subst
   single E X :: subst
-
-% subrules are awkward
-funs
-  toterm ::=
-fun
-  [ N ] :: v :: toterm {{ tex \llbracket [[N]] \rrbracket }}
-by
-  [ tt ] === tt
-  [ N, N' ] === [ N ], [ N' ]
-
-embed
-{{ coq
-Coercion toterm: normal >-> term.
-}}
-
-funs
-  msubst ::=
-fun
-  [ := p ] v' :: v :: msubst
-by
-  [ := nil ] v === v
-  [ := p, x := v'] v === [:= p] ([ x := v'] v)
 
 grammar
 formula :: formula_ ::=  
@@ -160,50 +245,6 @@ D1 ++ D2 |- let X, Y = E1 in E2: t3
 
 defns
 
-find :: '' ::=
-
-defn
-x : t \in G ::   :: mem :: 'mem_'
-by
-
------------------ :: eq
-x: t \in G, x : t
-
-x != x'
-x: t \in G
--------------------- :: ne
-x: t \in G, x' : t'
-
-defns
-
-judge_term :: 'J' ::=
-
-defn
-G |- v : t ::   :: v :: 'v_'
-by
-
-x: t \in G
------------- :: var
-G |- x: t
-
------------- :: tt
-G |- tt: unit
-
-G |- v1: t1
-G |- v2: t2
------------------- :: fanout
-G |- v1, v2: t1 * t2
-
-G |- v: t1 * t2
------------------- :: fst
-G |- fst v: t1
-
-G |- v: t1 * t2
------------------- :: snd
-G |- snd v: t2
-
-defns
-
 sat :: '' ::=
 
 defn
@@ -239,46 +280,6 @@ S |- E [ N, N' ]
 S' |- E' [N]
 --------------------- :: app
 S ++ S' |- (E E') [ N' ]
-
-defns
-
-big :: '' ::=
-
-defn
-v ! N ::   :: big :: 'big_'
-by
-
--------------------- :: tt
-tt ! tt
-
-v1 ! N1'
-v2 ! N2'
--------------------- :: fanout
-v1, v2 ! N1', N2'
-
-v ! N1, N2
--------------------- :: fst
-fst v ! N1
-
-v ! N1, N2
-------------------- :: snd
-snd v ! N2
-
-defns
-
-judge :: 'J' ::=
-
-defn
-p : G ::   :: p :: 'p_'
-by
-
----------- :: nil
-nil: nil
-
-G |- v : t
-p: G
------------------- :: cons
-p, x := v: G, x: t
 
 defns
 

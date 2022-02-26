@@ -77,10 +77,10 @@ Proof using .
   intro p.
   induction p.
   all: cbn.
-  - destruct (eq_vvar x x).
+  - destruct eq_vvar.
     2: contradiction.
     reflexivity.
-  - destruct (eq_vvar x x').
+  - destruct eq_vvar.
     1: contradiction.
     auto.
 Qed.

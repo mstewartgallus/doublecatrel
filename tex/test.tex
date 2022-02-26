@@ -29,13 +29,42 @@
 \ottmetavartabular{
  $ \mathit{vvar} ,\, \mathit{x} ,\, \mathit{y} $ &  \\
  $ \mathit{cvar} ,\, \mathit{X} ,\, \mathit{Y} $ &  \\
- $ \mathit{index} ,\, \mathit{i} ,\, \mathit{n} $ &  \\
 }}
 
 \newcommand{\otttype}{
 \ottrulehead{\ottnt{type}  ,\ \ottnt{t}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\textbf{I}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{t}  \otimes{}  \ottnt{t'}}{}{}{}{}}
+
+\newcommand{\ottterm}{
+\ottrulehead{\ottnt{term}  ,\ \ottnt{v}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\mathit{x}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\mathop{ \textbf ! }}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\pi{}_1 \, \ottnt{v}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\pi{}_2 \, \ottnt{v}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{v}  \ottsym{,}  \ottnt{v'}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottsym{(}  \ottnt{v}  \ottsym{)}} {\textsf{S}}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottsym{[}  \mathit{x}  \mathbin{:=}  \ottnt{v}  \ottsym{]}  \ottnt{v'}} {\textsf{S}}{}{}{}\ottprodnewline
+\ottprodline{|}{ \llbracket  \ottnt{N}  \rrbracket } {\textsf{M}}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottsym{[}  \mathbin{:=}  \rho  \ottsym{]}  \ottnt{v'}} {\textsf{M}}{}{}{}}
+
+\newcommand{\ottnormal}{
+\ottrulehead{\ottnt{normal}  ,\ \ottnt{N}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\mathop{ \textbf ! }}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{N}  \ottsym{,}  \ottnt{N'}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottsym{(}  \ottnt{N}  \ottsym{)}} {\textsf{S}}{}{}{}}
+
+\newcommand{\ottenvironment}{
+\ottrulehead{\ottnt{environment}  ,\ \Gamma}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottsym{(}  \Gamma  \ottsym{)}} {\textsf{S}}{}{}{}}
+
+\newcommand{\ottsubst}{
+\ottrulehead{\ottnt{subst}  ,\ \rho}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\bullet{}} {\textsf{M}}{}{}{}\ottprodnewline
+\ottprodline{|}{\rho  \ottsym{,}  \mathit{x}  \mathbin{:=}  \ottnt{v}} {\textsf{M}}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottsym{(}  \rho  \ottsym{)}} {\textsf{S}}{}{}{}}
 
 \newcommand{\ottcontext}{
 \ottrulehead{\ottnt{context}  ,\ \ottnt{E}}{::=}{}\ottprodnewline
@@ -48,36 +77,12 @@
 \ottprodline{|}{\mathbin{\textbf{let} } \, \mathit{X}  \ottsym{,}  \mathit{Y}  \ottsym{=}  \ottnt{E} \, \mathbin{\textbf{in} } \, \ottnt{E'}}{}{\textsf{bind}\; \mathit{X} \cup  \mathit{Y}\; \textsf{in}\; \ottnt{E'}}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{(}  \ottnt{E}  \ottsym{)}} {\textsf{S}}{}{}{}}
 
-\newcommand{\ottterm}{
-\ottrulehead{\ottnt{term}  ,\ \ottnt{v}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\mathit{x}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\mathop{ \textbf ! }}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\pi{}_1 \, \ottnt{v}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\pi{}_2 \, \ottnt{v}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{v}  \ottsym{,}  \ottnt{v'}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottsym{(}  \ottnt{v}  \ottsym{)}} {\textsf{S}}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottsym{[}  \mathit{x}  \mathbin{:=}  \ottnt{v}  \ottsym{]}  \ottnt{v'}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{ \llbracket  \ottnt{N}  \rrbracket } {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottsym{[}  \mathbin{:=}  \rho  \ottsym{]}  \ottnt{v'}} {\textsf{M}}{}{}{}}
-
-\newcommand{\ottnormal}{
-\ottrulehead{\ottnt{normal}  ,\ \ottnt{N}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\mathop{ \textbf ! }}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{N}  \ottsym{,}  \ottnt{N'}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottsym{(}  \ottnt{N}  \ottsym{)}} {\textsf{S}}{}{}{}}
-
 \newcommand{\ottlinear}{
 \ottrulehead{\ottnt{linear}  ,\ \Delta}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\bullet{}} {\textsf{M}}{}{}{}\ottprodnewline
 \ottprodline{|}{\mathit{X}  \colon{}  \ottnt{t}} {\textsf{M}}{}{}{}\ottprodnewline
 \ottprodline{|}{\Delta  \ottsym{,}  \Delta'} {\textsf{M}}{}{}{}\ottprodnewline
 \ottprodline{|}{\Delta  \cup{}  \Delta'} {\textsf{M}}{}{}{}}
-
-\newcommand{\ottenvironment}{
-\ottrulehead{\ottnt{environment}  ,\ \Gamma}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottsym{(}  \Gamma  \ottsym{)}} {\textsf{S}}{}{}{}}
 
 \newcommand{\ottstore}{
 \ottrulehead{\ottnt{store}  ,\ \sigma}{::=}{}\ottprodnewline
@@ -94,12 +99,6 @@
 \ottrulehead{\ottnt{set}  ,\ P^*}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{P^*  \ottsym{,}  \ottnt{P}}{}{}{}{}}
-
-\newcommand{\ottsubst}{
-\ottrulehead{\ottnt{subst}  ,\ \rho}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\bullet{}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\rho  \ottsym{,}  \mathit{x}  \mathbin{:=}  \ottnt{N}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottsym{(}  \rho  \ottsym{)}} {\textsf{S}}{}{}{}}
 
 \newcommand{\ottterminals}{
 \ottrulehead{\ottnt{terminals}}{::=}{}\ottprodnewline
@@ -124,8 +123,7 @@
 \newcommand{\ottformula}{
 \ottrulehead{\ottnt{formula}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottnt{judgement}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\mathit{x}  \mathrel{\ne}  \mathit{y}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottkw{forall} \, \mathit{x}  \ottsym{.}  \ottnt{formula}} {\textsf{M}}{}{}{}}
+\ottprodline{|}{\mathit{x}  \mathrel{\ne}  \mathit{y}} {\textsf{M}}{}{}{}}
 
 \newcommand{\otttoterm}{
 \ottrulehead{\ottnt{toterm}}{::=}{}\ottprodnewline
@@ -135,10 +133,6 @@
 \ottrulehead{\ottnt{msubst}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottsym{[}  \mathbin{:=}  \rho  \ottsym{]}  \ottnt{v'}  \ottsym{===}  \ottnt{v}}{}{}{}{}}
 
-\newcommand{\ottjudgeXXcontext}{
-\ottrulehead{\ottnt{judge\_context}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\Delta  \vdash{}  \ottnt{E}  \colon{}  \ottnt{t}}{}{}{}{}}
-
 \newcommand{\ottfind}{
 \ottrulehead{\ottnt{find}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\mathit{x}  \colon{}  \ottnt{t}  \in{}  \Gamma}{}{}{}{}}
@@ -147,10 +141,6 @@
 \ottrulehead{\ottnt{judge\_term}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\Gamma  \vdash{}  \ottnt{v}  \colon{}  \ottnt{t}}{}{}{}{}}
 
-\newcommand{\ottsat}{
-\ottrulehead{\ottnt{sat}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{ \sigma  \mathrel{\vdash}  \ottnt{E} [  \ottnt{N}  ] }{}{}{}{}}
-
 \newcommand{\ottbig}{
 \ottrulehead{\ottnt{big}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottnt{v}  \mathrel{\Downarrow}  \ottnt{N}}{}{}{}{}}
@@ -158,6 +148,14 @@
 \newcommand{\ottjudge}{
 \ottrulehead{\ottnt{judge}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\rho  \colon{}  \Gamma}{}{}{}{}}
+
+\newcommand{\ottjudgeXXcontext}{
+\ottrulehead{\ottnt{judge\_context}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\Delta  \vdash{}  \ottnt{E}  \colon{}  \ottnt{t}}{}{}{}{}}
+
+\newcommand{\ottsat}{
+\ottrulehead{\ottnt{sat}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{ \sigma  \mathrel{\vdash}  \ottnt{E} [  \ottnt{N}  ] }{}{}{}{}}
 
 \newcommand{\ottjudgeS}{
 \ottrulehead{\ottnt{judgeS}}{::=}{}\ottprodnewline
@@ -169,12 +167,12 @@
 
 \newcommand{\ottjudgement}{
 \ottrulehead{\ottnt{judgement}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\ottnt{judge\_context}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{find}}{}{}{}{}\ottprodnewline
+\ottfirstprodline{|}{\ottnt{find}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{judge\_term}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{sat}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{big}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{judge}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{judge\_context}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{sat}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{judgeS}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{sound}}{}{}{}{}}
 
@@ -182,41 +180,40 @@
 \ottrulehead{\ottnt{user\_syntax}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\mathit{vvar}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\mathit{cvar}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\mathit{index}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{type}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{context}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{term}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{normal}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{linear}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{environment}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{subst}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{context}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{linear}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{store}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{span}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{set}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{subst}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{terminals}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{formula}}{}{}{}{}}
 
 \newcommand{\ottgrammar}{\ottgrammartabular{
 \otttype\ottinterrule
-\ottcontext\ottinterrule
 \ottterm\ottinterrule
 \ottnormal\ottinterrule
-\ottlinear\ottinterrule
 \ottenvironment\ottinterrule
+\ottsubst\ottinterrule
+\ottcontext\ottinterrule
+\ottlinear\ottinterrule
 \ottstore\ottinterrule
 \ottspan\ottinterrule
 \ottset\ottinterrule
-\ottsubst\ottinterrule
 \ottterminals\ottinterrule
 \ottformula\ottinterrule
 \otttoterm\ottinterrule
 \ottmsubst\ottinterrule
-\ottjudgeXXcontext\ottinterrule
 \ottfind\ottinterrule
 \ottjudgeXXterm\ottinterrule
-\ottsat\ottinterrule
 \ottbig\ottinterrule
 \ottjudge\ottinterrule
+\ottjudgeXXcontext\ottinterrule
+\ottsat\ottinterrule
 \ottjudgeS\ottinterrule
 \ottsound\ottinterrule
 \ottjudgement\ottinterrule
@@ -240,13 +237,162 @@
 % fundefn msubst
 
 \newcommand{\ottfundefnmsubst}[1]{\begin{ottfundefnblock}[#1]{$\ottsym{[}  \mathbin{:=}  \rho  \ottsym{]}  \ottnt{v'}$}{}
-\ottfunclause{\ottsym{[}  \mathbin{:=}  \bullet{}  \ottsym{]}  \ottnt{v'}}{\ottnt{v'}}%
-\ottfunclause{\ottsym{[}  \mathbin{:=}  \rho  \ottsym{,}  \mathit{x}  \mathbin{:=}  \ottnt{N}  \ottsym{]}  \ottnt{v'}}{\ottsym{[}  \mathbin{:=}  \rho  \ottsym{]}  \ottsym{(}  \ottsym{[}  \mathit{x}  \mathbin{:=}   \llbracket  \ottnt{N}  \rrbracket   \ottsym{]}  \ottnt{v'}  \ottsym{)}}%
+\ottfunclause{\ottsym{[}  \mathbin{:=}  \bullet{}  \ottsym{]}  \ottnt{v}}{\ottnt{v}}%
+\ottfunclause{\ottsym{[}  \mathbin{:=}  \rho  \ottsym{,}  \mathit{x}  \mathbin{:=}  \ottnt{v'}  \ottsym{]}  \ottnt{v}}{\ottsym{[}  \mathbin{:=}  \rho  \ottsym{]}  \ottsym{(}  \ottsym{[}  \mathit{x}  \mathbin{:=}  \ottnt{v'}  \ottsym{]}  \ottnt{v}  \ottsym{)}}%
 \end{ottfundefnblock}}
 
 
 \newcommand{\ottfundefnsmsubst}{
 \ottfundefnmsubst{}}
+
+% defns find
+%% defn mem
+\newcommand{\ottdrulememXXeq}[1]{\ottdrule[#1]{%
+}{
+\mathit{x}  \colon{}  \ottnt{t}  \in{}  \Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t}}{%
+{\ottdrulename{mem\_eq}}{}%
+}}
+
+
+\newcommand{\ottdrulememXXne}[1]{\ottdrule[#1]{%
+\ottpremise{\mathit{x}  \mathrel{\ne}  \mathit{y}}%
+\ottpremise{\mathit{x}  \colon{}  \ottnt{t}  \in{}  \Gamma}%
+}{
+\mathit{x}  \colon{}  \ottnt{t}  \in{}  \Gamma  \ottsym{,}  \mathit{y}  \colon{}  \ottnt{t'}}{%
+{\ottdrulename{mem\_ne}}{}%
+}}
+
+\newcommand{\ottdefnmem}[1]{\begin{ottdefnblock}[#1]{$\mathit{x}  \colon{}  \ottnt{t}  \in{}  \Gamma$}{}
+\ottusedrule{\ottdrulememXXeq{}}
+\ottusedrule{\ottdrulememXXne{}}
+\end{ottdefnblock}}
+
+
+\newcommand{\ottdefnsfind}{
+\ottdefnmem{}}
+
+% defns judge_term
+%% defn v
+\newcommand{\ottdruleJvXXvar}[1]{\ottdrule[#1]{%
+\ottpremise{\mathit{x}  \colon{}  \ottnt{t}  \in{}  \Gamma}%
+}{
+\Gamma  \vdash{}  \mathit{x}  \colon{}  \ottnt{t}}{%
+{\ottdrulename{Jv\_var}}{}%
+}}
+
+
+\newcommand{\ottdruleJvXXtt}[1]{\ottdrule[#1]{%
+}{
+\Gamma  \vdash{}  \mathop{ \textbf ! }  \colon{}  \textbf{I}}{%
+{\ottdrulename{Jv\_tt}}{}%
+}}
+
+
+\newcommand{\ottdruleJvXXfanout}[1]{\ottdrule[#1]{%
+\ottpremise{\Gamma  \vdash{}  \ottnt{v_{{\mathrm{1}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}}%
+\ottpremise{\Gamma  \vdash{}  \ottnt{v_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}%
+}{
+\Gamma  \vdash{}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}{%
+{\ottdrulename{Jv\_fanout}}{}%
+}}
+
+
+\newcommand{\ottdruleJvXXfst}[1]{\ottdrule[#1]{%
+\ottpremise{\Gamma  \vdash{}  \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}%
+}{
+\Gamma  \vdash{}  \pi{}_1 \, \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{1}}}}}{%
+{\ottdrulename{Jv\_fst}}{}%
+}}
+
+
+\newcommand{\ottdruleJvXXsnd}[1]{\ottdrule[#1]{%
+\ottpremise{\Gamma  \vdash{}  \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}%
+}{
+\Gamma  \vdash{}  \pi{}_2 \, \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}{%
+{\ottdrulename{Jv\_snd}}{}%
+}}
+
+\newcommand{\ottdefnJv}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \vdash{}  \ottnt{v}  \colon{}  \ottnt{t}$}{}
+\ottusedrule{\ottdruleJvXXvar{}}
+\ottusedrule{\ottdruleJvXXtt{}}
+\ottusedrule{\ottdruleJvXXfanout{}}
+\ottusedrule{\ottdruleJvXXfst{}}
+\ottusedrule{\ottdruleJvXXsnd{}}
+\end{ottdefnblock}}
+
+
+\newcommand{\ottdefnsjudgeXXterm}{
+\ottdefnJv{}}
+
+% defns big
+%% defn big
+\newcommand{\ottdrulebigXXtt}[1]{\ottdrule[#1]{%
+}{
+\mathop{ \textbf ! }  \mathrel{\Downarrow}  \mathop{ \textbf ! }}{%
+{\ottdrulename{big\_tt}}{}%
+}}
+
+
+\newcommand{\ottdrulebigXXfanout}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{v_{{\mathrm{1}}}}  \mathrel{\Downarrow}  \ottnt{N'_{{\mathrm{1}}}}}%
+\ottpremise{\ottnt{v_{{\mathrm{2}}}}  \mathrel{\Downarrow}  \ottnt{N'_{{\mathrm{2}}}}}%
+}{
+\ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \mathrel{\Downarrow}  \ottnt{N'_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{N'_{{\mathrm{2}}}}}{%
+{\ottdrulename{big\_fanout}}{}%
+}}
+
+
+\newcommand{\ottdrulebigXXfst}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{v}  \mathrel{\Downarrow}  \ottnt{N_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{N_{{\mathrm{2}}}}}%
+}{
+\pi{}_1 \, \ottnt{v}  \mathrel{\Downarrow}  \ottnt{N_{{\mathrm{1}}}}}{%
+{\ottdrulename{big\_fst}}{}%
+}}
+
+
+\newcommand{\ottdrulebigXXsnd}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{v}  \mathrel{\Downarrow}  \ottnt{N_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{N_{{\mathrm{2}}}}}%
+}{
+\pi{}_2 \, \ottnt{v}  \mathrel{\Downarrow}  \ottnt{N_{{\mathrm{2}}}}}{%
+{\ottdrulename{big\_snd}}{}%
+}}
+
+\newcommand{\ottdefnbig}[1]{\begin{ottdefnblock}[#1]{$\ottnt{v}  \mathrel{\Downarrow}  \ottnt{N}$}{}
+\ottusedrule{\ottdrulebigXXtt{}}
+\ottusedrule{\ottdrulebigXXfanout{}}
+\ottusedrule{\ottdrulebigXXfst{}}
+\ottusedrule{\ottdrulebigXXsnd{}}
+\end{ottdefnblock}}
+
+
+\newcommand{\ottdefnsbig}{
+\ottdefnbig{}}
+
+% defns judge
+%% defn p
+\newcommand{\ottdruleJpXXnil}[1]{\ottdrule[#1]{%
+}{
+\bullet{}  \colon{}  \bullet{}}{%
+{\ottdrulename{Jp\_nil}}{}%
+}}
+
+
+\newcommand{\ottdruleJpXXcons}[1]{\ottdrule[#1]{%
+\ottpremise{\Gamma  \vdash{}  \ottnt{v}  \colon{}  \ottnt{t}}%
+\ottpremise{\rho  \colon{}  \Gamma}%
+}{
+\rho  \ottsym{,}  \mathit{x}  \mathbin{:=}  \ottnt{v}  \colon{}  \Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t}}{%
+{\ottdrulename{Jp\_cons}}{}%
+}}
+
+\newcommand{\ottdefnJp}[1]{\begin{ottdefnblock}[#1]{$\rho  \colon{}  \Gamma$}{}
+\ottusedrule{\ottdruleJpXXnil{}}
+\ottusedrule{\ottdruleJpXXcons{}}
+\end{ottdefnblock}}
+
+
+\newcommand{\ottdefnsjudge}{
+\ottdefnJp{}}
 
 % defns judge_context
 %% defn E
@@ -321,85 +467,6 @@
 \newcommand{\ottdefnsjudgeXXcontext}{
 \ottdefnJE{}}
 
-% defns find
-%% defn mem
-\newcommand{\ottdrulememXXeq}[1]{\ottdrule[#1]{%
-}{
-\mathit{x}  \colon{}  \ottnt{t}  \in{}  \Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t}}{%
-{\ottdrulename{mem\_eq}}{}%
-}}
-
-
-\newcommand{\ottdrulememXXne}[1]{\ottdrule[#1]{%
-\ottpremise{\mathit{x}  \mathrel{\ne}  \mathit{x'}}%
-\ottpremise{\mathit{x}  \colon{}  \ottnt{t}  \in{}  \Gamma}%
-}{
-\mathit{x}  \colon{}  \ottnt{t}  \in{}  \Gamma  \ottsym{,}  \mathit{x'}  \colon{}  \ottnt{t'}}{%
-{\ottdrulename{mem\_ne}}{}%
-}}
-
-\newcommand{\ottdefnmem}[1]{\begin{ottdefnblock}[#1]{$\mathit{x}  \colon{}  \ottnt{t}  \in{}  \Gamma$}{}
-\ottusedrule{\ottdrulememXXeq{}}
-\ottusedrule{\ottdrulememXXne{}}
-\end{ottdefnblock}}
-
-
-\newcommand{\ottdefnsfind}{
-\ottdefnmem{}}
-
-% defns judge_term
-%% defn v
-\newcommand{\ottdruleJvXXvar}[1]{\ottdrule[#1]{%
-\ottpremise{\mathit{x}  \colon{}  \ottnt{t}  \in{}  \Gamma}%
-}{
-\Gamma  \vdash{}  \mathit{x}  \colon{}  \ottnt{t}}{%
-{\ottdrulename{Jv\_var}}{}%
-}}
-
-
-\newcommand{\ottdruleJvXXtt}[1]{\ottdrule[#1]{%
-}{
-\Gamma  \vdash{}  \mathop{ \textbf ! }  \colon{}  \textbf{I}}{%
-{\ottdrulename{Jv\_tt}}{}%
-}}
-
-
-\newcommand{\ottdruleJvXXfanout}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \vdash{}  \ottnt{v_{{\mathrm{1}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}}%
-\ottpremise{\Gamma  \vdash{}  \ottnt{v_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}%
-}{
-\Gamma  \vdash{}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}{%
-{\ottdrulename{Jv\_fanout}}{}%
-}}
-
-
-\newcommand{\ottdruleJvXXfst}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \vdash{}  \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}%
-}{
-\Gamma  \vdash{}  \pi{}_1 \, \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{1}}}}}{%
-{\ottdrulename{Jv\_fst}}{}%
-}}
-
-
-\newcommand{\ottdruleJvXXsnd}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \vdash{}  \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}%
-}{
-\Gamma  \vdash{}  \pi{}_2 \, \ottnt{v}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}{%
-{\ottdrulename{Jv\_snd}}{}%
-}}
-
-\newcommand{\ottdefnJv}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \vdash{}  \ottnt{v}  \colon{}  \ottnt{t}$}{}
-\ottusedrule{\ottdruleJvXXvar{}}
-\ottusedrule{\ottdruleJvXXtt{}}
-\ottusedrule{\ottdruleJvXXfanout{}}
-\ottusedrule{\ottdruleJvXXfst{}}
-\ottusedrule{\ottdruleJvXXsnd{}}
-\end{ottdefnblock}}
-
-
-\newcommand{\ottdefnsjudgeXXterm}{
-\ottdefnJv{}}
-
 % defns sat
 %% defn sat
 \newcommand{\ottdrulesatXXvar}[1]{\ottdrule[#1]{%
@@ -473,85 +540,6 @@
 \newcommand{\ottdefnssat}{
 \ottdefnsat{}}
 
-% defns big
-%% defn big
-\newcommand{\ottdrulebigXXtt}[1]{\ottdrule[#1]{%
-}{
-\mathop{ \textbf ! }  \mathrel{\Downarrow}  \mathop{ \textbf ! }}{%
-{\ottdrulename{big\_tt}}{}%
-}}
-
-
-\newcommand{\ottdrulebigXXfanout}[1]{\ottdrule[#1]{%
-\ottpremise{\ottnt{v_{{\mathrm{1}}}}  \mathrel{\Downarrow}  \ottnt{N'_{{\mathrm{1}}}}}%
-\ottpremise{\ottnt{v_{{\mathrm{2}}}}  \mathrel{\Downarrow}  \ottnt{N'_{{\mathrm{2}}}}}%
-}{
-\ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \mathrel{\Downarrow}  \ottnt{N'_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{N'_{{\mathrm{2}}}}}{%
-{\ottdrulename{big\_fanout}}{}%
-}}
-
-
-\newcommand{\ottdrulebigXXfst}[1]{\ottdrule[#1]{%
-\ottpremise{\ottnt{v}  \mathrel{\Downarrow}  \ottnt{N_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{N_{{\mathrm{2}}}}}%
-}{
-\pi{}_1 \, \ottnt{v}  \mathrel{\Downarrow}  \ottnt{N_{{\mathrm{1}}}}}{%
-{\ottdrulename{big\_fst}}{}%
-}}
-
-
-\newcommand{\ottdrulebigXXsnd}[1]{\ottdrule[#1]{%
-\ottpremise{\ottnt{v}  \mathrel{\Downarrow}  \ottnt{N_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{N_{{\mathrm{2}}}}}%
-}{
-\pi{}_2 \, \ottnt{v}  \mathrel{\Downarrow}  \ottnt{N_{{\mathrm{2}}}}}{%
-{\ottdrulename{big\_snd}}{}%
-}}
-
-
-\newcommand{\ottdrulebigXXfoo}[1]{\ottdrule[#1]{%
-\ottpremise{\ottkw{forall} \, \mathit{x}  \ottsym{.}  \mathit{x}  \mathrel{\Downarrow}  \ottnt{N}}%
-}{
-\pi{}_2 \, \ottnt{v}  \mathrel{\Downarrow}  \ottnt{N_{{\mathrm{2}}}}}{%
-{\ottdrulename{big\_foo}}{}%
-}}
-
-\newcommand{\ottdefnbig}[1]{\begin{ottdefnblock}[#1]{$\ottnt{v}  \mathrel{\Downarrow}  \ottnt{N}$}{}
-\ottusedrule{\ottdrulebigXXtt{}}
-\ottusedrule{\ottdrulebigXXfanout{}}
-\ottusedrule{\ottdrulebigXXfst{}}
-\ottusedrule{\ottdrulebigXXsnd{}}
-\ottusedrule{\ottdrulebigXXfoo{}}
-\end{ottdefnblock}}
-
-
-\newcommand{\ottdefnsbig}{
-\ottdefnbig{}}
-
-% defns judge
-%% defn p
-\newcommand{\ottdruleJpXXnil}[1]{\ottdrule[#1]{%
-}{
-\bullet{}  \colon{}  \bullet{}}{%
-{\ottdrulename{Jp\_nil}}{}%
-}}
-
-
-\newcommand{\ottdruleJpXXcons}[1]{\ottdrule[#1]{%
-\ottpremise{\bullet{}  \vdash{}   \llbracket  \ottnt{N}  \rrbracket   \colon{}  \ottnt{t}}%
-\ottpremise{\rho  \colon{}  \Gamma}%
-}{
-\rho  \ottsym{,}  \mathit{x}  \mathbin{:=}  \ottnt{N}  \colon{}  \Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t}}{%
-{\ottdrulename{Jp\_cons}}{}%
-}}
-
-\newcommand{\ottdefnJp}[1]{\begin{ottdefnblock}[#1]{$\rho  \colon{}  \Gamma$}{}
-\ottusedrule{\ottdruleJpXXnil{}}
-\ottusedrule{\ottdruleJpXXcons{}}
-\end{ottdefnblock}}
-
-
-\newcommand{\ottdefnsjudge}{
-\ottdefnJp{}}
-
 % defns judgeS
 %% defn S
 \newcommand{\ottdruleJSXXnil}[1]{\ottdrule[#1]{%
@@ -616,12 +604,12 @@
 \newcommand{\ottdefnss}{
 \ottfundefnstoterm
 \ottfundefnsmsubst
-\ottdefnsjudgeXXcontext
 \ottdefnsfind
 \ottdefnsjudgeXXterm
-\ottdefnssat
 \ottdefnsbig
 \ottdefnsjudge
+\ottdefnsjudgeXXcontext
+\ottdefnssat
 \ottdefnsjudgeS
 \ottdefnssound
 }
