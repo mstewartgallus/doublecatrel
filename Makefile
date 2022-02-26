@@ -17,10 +17,10 @@ all: invoke-coqmakefile
 clean: invoke-coqmakefile
 	@true
 
-theories/Spec.v: ott/test.ott
-	ott -i ott/test.ott -o $@
+theories/Spec.v: ott/type.ott ott/term.ott ott/context.ott
+	ott -i ott/type.ott -i ott/term.ott -i ott/context.ott -o $@
 
-tex/test.tex: ott/test.ott
-	ott -tex_wrap false -i ott/test.ott -o $@
+tex/test.tex: ott/type.ott ott/term.ott ott/context.ott
+	ott -tex_wrap false -i ott/type.ott -i ott/term.ott -i ott/context.ott -o $@
 Rel.pdf: Rel.tex tex/test.tex
 	xelatex Rel.tex -o $@

@@ -1,0 +1,4 @@
+grammar
+type, t :: 't_' ::= {{ coq-equality }}
+  | unit         ::   :: unit
+  | t * t'       ::   :: prod
