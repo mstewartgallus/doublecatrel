@@ -23,6 +23,9 @@ linear, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (Map.map type) }}
   | D , D'        :: M :: add {{ coq (Map.merge [[D']] [[D]]) }}
   | D ++ D'       :: M :: merge {{ coq (Map.merge [[D]] [[D']]) }}
 
+lindef, l :: 'l_' ::=
+  | D |- E      ::   :: with
+
 store, S {{ tex \sigma }} {{ coq σ }} :: 'S_'  ::= {{ coq (Map.map normal) }}
   | nil                   :: M :: empty {{ coq (Map.empty) }}
   | X := N                :: M :: one {{ coq (Map.one [[X]] [[N]]) }}
@@ -67,7 +70,7 @@ defns
 judge_context :: 'J' ::=
 
 defn
-D |- E : t ::   :: E :: 'E_'
+l : t ::   :: E :: 'E_'
 by
 
 ------------ :: var

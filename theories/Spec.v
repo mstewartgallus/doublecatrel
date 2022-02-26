@@ -35,10 +35,10 @@ Inductive term : Set :=
 
 Definition environment : Set := (list (vvar * type)).
 
-Definition subst : Set := (list (vvar * term)).
-
 Inductive definition : Set := 
  | d_with (Γ:environment) (v:term).
+
+Definition subst : Set := (list (vvar * term)).
 Lemma eq_normal: forall (x y : normal), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -167,6 +167,9 @@ Inductive context : Set :=
  | E_let (X:cvar) (Y:cvar) (E:context) (E':context).
 
 Definition set : Set := (list span).
+
+Inductive lindef : Set := 
+ | l_with (Δ:linear) (E:context).
 Lemma eq_context: forall (x y : context), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -193,33 +196,38 @@ Fixpoint subst_context (E5:context) (X5:cvar) (E_6:context) {struct E_6} : conte
   | (E_let X Y E E') => E_let X Y (subst_context E5 X5 E) (if list_mem eq_cvar X5 (app (cons X nil) (cons Y nil)) then E' else (subst_context E5 X5 E'))
 end.
 
+Definition subst_lindef (E5:context) (X5:cvar) (l5:lindef) : lindef :=
+  match l5 with
+  | (l_with Δ E) => l_with Δ (subst_context E5 X5 E)
+end.
+
 (** definitions *)
 
 (* defns judge_context *)
-Inductive JE : linear -> context -> type -> Prop :=    (* defn E *)
+Inductive JE : lindef -> type -> Prop :=    (* defn E *)
  | JE_var : forall (X:cvar) (t:type),
-     JE  (Map.one  X   t )  (E_var X) t
+     JE (l_with  (Map.one  X   t )  (E_var X)) t
  | JE_lam : forall (Δ:linear) (X:cvar) (t1:type) (E:context) (t2:type),
-     JE  (Map.merge   (Map.one  X   t1 )    Δ )  E t2 ->
-     JE Δ (E_lam X t1 E) (t_prod t1 t2)
+     JE (l_with  (Map.merge   (Map.one  X   t1 )    Δ )  E) t2 ->
+     JE (l_with Δ (E_lam X t1 E)) (t_prod t1 t2)
  | JE_app : forall (Δ1 Δ2:linear) (E1 E2:context) (t2 t1:type),
-     JE Δ1 E1 (t_prod t1 t2) ->
-     JE Δ2 E2 t1 ->
-     JE  (Map.merge  Δ1   Δ2 )  (E_app E1 E2) t2
+     JE (l_with Δ1 E1) (t_prod t1 t2) ->
+     JE (l_with Δ2 E2) t1 ->
+     JE (l_with  (Map.merge  Δ1   Δ2 )  (E_app E1 E2)) t2
  | JE_tt : 
-     JE  (Map.empty)  E_tt t_unit
+     JE (l_with  (Map.empty)  E_tt) t_unit
  | JE_step : forall (Δ1 Δ2:linear) (E1 E2:context) (t:type),
-     JE Δ1 E1 t_unit ->
-     JE Δ2 E2 t ->
-     JE  (Map.merge  Δ1   Δ2 )  (E_step E1 E2) t
+     JE (l_with Δ1 E1) t_unit ->
+     JE (l_with Δ2 E2) t ->
+     JE (l_with  (Map.merge  Δ1   Δ2 )  (E_step E1 E2)) t
  | JE_fanout : forall (Δ1 Δ2:linear) (E1 E2:context) (t1 t2:type),
-     JE Δ1 E1 t1 ->
-     JE Δ2 E2 t2 ->
-     JE  (Map.merge  Δ1   Δ2 )  (E_fanout E1 E2) (t_prod t1 t2)
+     JE (l_with Δ1 E1) t1 ->
+     JE (l_with Δ2 E2) t2 ->
+     JE (l_with  (Map.merge  Δ1   Δ2 )  (E_fanout E1 E2)) (t_prod t1 t2)
  | JE_let : forall (Δ1 Δ2:linear) (X Y:cvar) (E1 E2:context) (t3 t1 t2:type),
-     JE Δ1 E1 (t_prod t1 t2) ->
-     JE  (Map.merge   (Map.one  Y   t2 )     (Map.merge   (Map.one  X   t1 )    Δ2 )  )  E2 t3 ->
-     JE  (Map.merge  Δ1   Δ2 )  (E_let X Y E1 E2) t3.
+     JE (l_with Δ1 E1) (t_prod t1 t2) ->
+     JE (l_with  (Map.merge   (Map.one  Y   t2 )     (Map.merge   (Map.one  X   t1 )    Δ2 )  )  E2) t3 ->
+     JE (l_with  (Map.merge  Δ1   Δ2 )  (E_let X Y E1 E2)) t3.
 (** definitions *)
 
 (* defns sat *)
