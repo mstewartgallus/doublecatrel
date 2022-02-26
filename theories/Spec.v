@@ -36,6 +36,9 @@ Inductive term : Set :=
 Definition environment : Set := (list (vvar * type)).
 
 Definition subst : Set := (list (vvar * term)).
+
+Inductive definition : Set := 
+ | d_with (Γ:environment) (v:term).
 Lemma eq_normal: forall (x y : normal), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -55,6 +58,11 @@ Fixpoint subst_term (v5:term) (x5:vvar) (v_6:term) {struct v_6} : term :=
   | (v_fst v) => v_fst (subst_term v5 x5 v)
   | (v_snd v) => v_snd (subst_term v5 x5 v)
   | (v_fanout v v') => v_fanout (subst_term v5 x5 v) (subst_term v5 x5 v')
+end.
+
+Definition subst_definition (v5:term) (x5:vvar) (d5:definition) : definition :=
+  match d5 with
+  | (d_with Γ v) => d_with Γ (subst_term v5 x5 v)
 end.
 
 (** definitions *)
@@ -90,22 +98,22 @@ Inductive mem : vvar -> type -> environment -> Prop :=    (* defn mem *)
 (** definitions *)
 
 (* defns judge_term *)
-Inductive Jv : environment -> term -> type -> Prop :=    (* defn v *)
+Inductive Jv : definition -> type -> Prop :=    (* defn v *)
  | Jv_var : forall (Γ:environment) (x:vvar) (t:type),
      mem x t Γ ->
-     Jv Γ (v_var x) t
+     Jv (d_with Γ (v_var x)) t
  | Jv_tt : forall (Γ:environment),
-     Jv Γ v_tt t_unit
+     Jv (d_with Γ v_tt) t_unit
  | Jv_fanout : forall (Γ:environment) (v1 v2:term) (t1 t2:type),
-     Jv Γ v1 t1 ->
-     Jv Γ v2 t2 ->
-     Jv Γ (v_fanout v1 v2) (t_prod t1 t2)
+     Jv (d_with Γ v1) t1 ->
+     Jv (d_with Γ v2) t2 ->
+     Jv (d_with Γ (v_fanout v1 v2)) (t_prod t1 t2)
  | Jv_fst : forall (Γ:environment) (v:term) (t1 t2:type),
-     Jv Γ v (t_prod t1 t2) ->
-     Jv Γ (v_fst v) t1
+     Jv (d_with Γ v) (t_prod t1 t2) ->
+     Jv (d_with Γ (v_fst v)) t1
  | Jv_snd : forall (Γ:environment) (v:term) (t2 t1:type),
-     Jv Γ v (t_prod t1 t2) ->
-     Jv Γ (v_snd v) t2.
+     Jv (d_with Γ v) (t_prod t1 t2) ->
+     Jv (d_with Γ (v_snd v)) t2.
 (** definitions *)
 
 (* defns big *)
@@ -129,7 +137,7 @@ Inductive Jp : subst -> environment -> Prop :=    (* defn p *)
  | Jp_nil : 
      Jp  nil   nil 
  | Jp_cons : forall (ρ:subst) (x:vvar) (v:term) (Γ:environment) (t:type),
-     Jv Γ v t ->
+     Jv (d_with Γ v) t ->
      Jp ρ Γ ->
      Jp  (cons ( x ,  v )  ρ )   (cons ( x ,  t )  Γ ) .
 Require Blech.Map.
@@ -147,6 +155,8 @@ Definition store : Set := (Map.map normal).
 Inductive span : Set := 
  | P_with (σ:store) (N:normal).
 
+Definition linear : Set := (Map.map type).
+
 Inductive context : Set := 
  | E_var (X:cvar)
  | E_lam (X:cvar) (t:type) (E:context)
@@ -155,8 +165,6 @@ Inductive context : Set :=
  | E_step (E:context) (E':context)
  | E_fanout (E:context) (E':context)
  | E_let (X:cvar) (Y:cvar) (E:context) (E':context).
-
-Definition linear : Set := (Map.map type).
 
 Definition set : Set := (list span).
 Lemma eq_context: forall (x y : context), {x = y} + {x <> y}.
@@ -250,7 +258,7 @@ Inductive JS : store -> linear -> Prop :=    (* defn S *)
      JS σ' Δ' ->
      JS  (Map.merge  σ   σ' )   (Map.merge  Δ   Δ' ) 
  | JS_one : forall (X:cvar) (N:normal) (t:type),
-     Jv  nil   (toterm N )  t ->
+     Jv (d_with  nil   (toterm N ) ) t ->
      JS  (Map.one  X   N )   (Map.one  X   t ) .
 (** definitions *)
 

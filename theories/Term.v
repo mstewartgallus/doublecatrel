@@ -14,6 +14,7 @@ Implicit Type Γ: environment.
 Implicit Type v: term.
 Implicit Type t: type.
 Implicit Type N: normal.
+Implicit Type d: definition.
 Implicit Types x y: vvar.
 
 Function find x Γ :=
@@ -86,7 +87,7 @@ Proof using .
 Qed.
 
 Theorem typecheck_sound:
-  ∀ {Γ v t}, typecheck Γ v = Some t → Γ ⊢ v in t.
+  ∀ {Γ v t}, typecheck Γ v = Some t → (Γ ⊢ v) in t.
 Proof using .
   intros Γ v.
   functional induction (typecheck Γ v).
@@ -100,15 +101,20 @@ Proof using .
   auto.
 Qed.
 
+Definition envof '(d_with Γ _) := Γ.
+Definition termof '(d_with _ v) := v.
+
 Theorem typecheck_complete:
-  ∀ {Γ v t}, Γ ⊢ v in t → typecheck Γ v = Some t.
+  ∀ {d t}, d in t → typecheck (envof d) (termof d) = Some t.
 Proof using .
-  intros Γ ? ? p.
+  intros Γ ? p.
   induction p.
   all: cbn.
+  all: cbn in *.
   all: try (destruct (typecheck Γ v) as [[]|]).
   all: try (destruct (typecheck Γ v1)).
   all: try (destruct (typecheck Γ v2)).
+  all: auto.
   all: try inversion IHp.
   all: subst.
   all: try inversion IHp1.
@@ -157,11 +163,11 @@ Proof using.
   all: auto.
   - econstructor.
     all: eauto.
-  - set (p' := IHp _ _ H1).
+  - set (p' := IHp _ _ H2).
     inversion p'.
     subst.
     auto.
-  - set (p' := IHp _ _ H1).
+  - set (p' := IHp _ _ H2).
     inversion p'.
     subst.
     auto.
@@ -184,40 +190,37 @@ Theorem normalize:
    nil ⊢ v in t →
    ∃ N, v ⇓ N.
 Proof using.
-  remember nil as G.
-  intros ? ? p.
-  induction p.
+  intros v.
+  induction v.
+  all: intros ? p.
+  all: inversion p.
   all: subst.
-  - inversion H.
+  - inversion H2.
   - exists N_tt.
     constructor.
-  - destruct (IHp1 (eq_refl _)) as [v1' s1].
-    destruct (IHp2 (eq_refl _)) as [v2' s2].
+  - destruct (IHv _ H2) as [v' s].
+    set (vwf := big_preserve s _ _ H2).
+    destruct v'.
+    all: cbn in *.
+    all: inversion vwf.
+    subst.
+    exists v'1.
+    econstructor.
+    eauto.
+  - destruct (IHv _ H2) as [v' s].
+    set (vwf := big_preserve s _ _ H2).
+    destruct v'.
+    all: cbn in *.
+    all: inversion vwf.
+    subst.
+    exists v'2.
+    econstructor.
+    eauto.
+  - destruct (IHv1 _ H3) as [v1' s1].
+    destruct (IHv2 _ H4) as [v2' s2].
     exists (N_fanout v1' v2').
     constructor.
     all: auto.
-  - destruct (IHp (eq_refl _)) as [v' s].
-    set (vwf := big_preserve s _ _ p).
-    destruct v'.
-    all: cbn in *.
-    all: try discriminate.
-    all: inversion vwf.
-    all: subst.
-    all: cbn in *.
-    exists v'1.
-    econstructor.
-    all: eauto.
-  - destruct (IHp (eq_refl _)) as [v' s].
-    set (vwf := big_preserve s _ _ p).
-    destruct v'.
-    all: cbn in *.
-    all: try discriminate.
-    all: inversion vwf.
-    all: subst.
-    all: cbn in *.
-    exists v'2.
-    econstructor.
-    all: eauto.
 Qed.
 
 Lemma big_normal:
@@ -273,11 +276,11 @@ Proof using.
   all: try (econstructor; eauto).
   destruct eq_vvar.
   - subst.
-    inversion H1.
+    inversion H2.
     2: contradiction.
     subst.
     auto.
-  - inversion H1.
+  - inversion H2.
     1: contradiction.
     subst.
     constructor.

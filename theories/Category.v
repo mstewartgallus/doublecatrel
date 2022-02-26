@@ -51,7 +51,7 @@ Module Import Hor.
     all: subst.
     all: try econstructor.
     all: try eauto.
-    inversion H1.
+    inversion H2.
     all: repeat constructor.
     all: auto.
   Qed.

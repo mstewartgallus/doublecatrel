@@ -159,7 +159,7 @@ Fixpoint search σ E: list span :=
   end%list %map.
 
 Theorem typecheck_sound:
-  ∀ Δ {E Δ' t}, typecheck Δ E = Some (Δ', t) → Δ' ⊢ E ? t.
+  ∀ Δ {E Δ' t}, typecheck Δ E = Some (Δ', t) → JE Δ' E t.
 Proof using.
   intros Δ E.
   functional induction (typecheck Δ E).
@@ -607,10 +607,10 @@ Qed.
 
 Lemma subst_preserve:
   ∀ {Δ' E' t},
-    Δ' ⊢ E' ? t →
+    JE Δ' E' t →
     ∀ {X E Δ t'},
-      Map.merge (Map.one X t) Δ ⊢ E ? t' →
-      Map.merge Δ' Δ ⊢ subst_context E' X E ? t'.
+      JE (Map.merge (Map.one X t) Δ) E t' →
+      JE (Map.merge Δ' Δ) (subst_context E' X E) t'.
 Proof using.
   intros Δ' E' t p X.
   intros E.
@@ -681,7 +681,7 @@ Proof.
     auto.
 Qed.
 
-Definition oftype Δ t := { E | Δ ⊢ E ? t }.
+Definition oftype Δ t := { E | JE Δ E t }.
 
 Definition equiv {Δ t}: Relation_Definitions.relation (oftype Δ t) :=
   λ a b,

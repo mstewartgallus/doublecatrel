@@ -19,6 +19,9 @@ environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (list (vvar * ty
   | G , x : t   ::   :: add {{ coq (cons ([[x]], [[t]]) [[G]]) }}
   | ( G )       :: S :: paren {{ coq ([[G]]) }}
 
+definition, d :: 'd_' ::=
+  | G |- v      ::   :: with
+
 subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (list (vvar * term)) }}
   | nil                   :: M :: nil {{ coq nil }}
   | p , x := v            :: M :: add {{ coq (cons ([[x]], [[v]]) [[p]]) }}
@@ -75,7 +78,7 @@ defns
 judge_term :: 'J' ::=
 
 defn
-G |- v : t ::   :: v :: 'v_'
+d : t ::   :: v :: 'v_'
 by
 
 x: t \in G

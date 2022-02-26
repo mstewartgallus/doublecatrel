@@ -44,7 +44,7 @@
 \ottprodline{|}{\pi{}_2 \, \ottnt{v}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{v}  \ottsym{,}  \ottnt{v'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{(}  \ottnt{v}  \ottsym{)}} {\textsf{S}}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottsym{[}  \mathit{x}  \mathbin{:=}  \ottnt{v}  \ottsym{]}  \ottnt{v'}} {\textsf{S}}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottsym{[}  \mathit{x}  \mathbin{:=}  \ottnt{v}  \ottsym{]}  \ottnt{v'}} {\textsf{M}}{}{}{}\ottprodnewline
 \ottprodline{|}{ \llbracket  \ottnt{N}  \rrbracket } {\textsf{M}}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{[}  \mathbin{:=}  \rho  \ottsym{]}  \ottnt{v'}} {\textsf{M}}{}{}{}}
 
@@ -59,6 +59,10 @@
 \ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{(}  \Gamma  \ottsym{)}} {\textsf{S}}{}{}{}}
+
+\newcommand{\ottdefinition}{
+\ottrulehead{\ottnt{definition}  ,\ \ottnt{d}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\Gamma  \vdash{}  \ottnt{v}}{}{}{}{}}
 
 \newcommand{\ottsubst}{
 \ottrulehead{\ottnt{subst}  ,\ \rho}{::=}{}\ottprodnewline
@@ -139,7 +143,7 @@
 
 \newcommand{\ottjudgeXXterm}{
 \ottrulehead{\ottnt{judge\_term}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\Gamma  \vdash{}  \ottnt{v}  \colon{}  \ottnt{t}}{}{}{}{}}
+\ottfirstprodline{|}{\ottnt{d}  \colon{}  \ottnt{t}}{}{}{}{}}
 
 \newcommand{\ottbig}{
 \ottrulehead{\ottnt{big}}{::=}{}\ottprodnewline
@@ -184,6 +188,7 @@
 \ottprodline{|}{\ottnt{term}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{normal}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{environment}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{definition}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{subst}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{formula}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{context}}{}{}{}{}\ottprodnewline
@@ -198,6 +203,7 @@
 \ottterm\ottinterrule
 \ottnormal\ottinterrule
 \ottenvironment\ottinterrule
+\ottdefinition\ottinterrule
 \ottsubst\ottinterrule
 \ottformula\ottinterrule
 \ottcontext\ottinterrule
@@ -312,7 +318,7 @@
 {\ottdrulename{Jv\_snd}}{}%
 }}
 
-\newcommand{\ottdefnJv}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \vdash{}  \ottnt{v}  \colon{}  \ottnt{t}$}{}
+\newcommand{\ottdefnJv}[1]{\begin{ottdefnblock}[#1]{$\ottnt{d}  \colon{}  \ottnt{t}$}{}
 \ottusedrule{\ottdruleJvXXvar{}}
 \ottusedrule{\ottdruleJvXXtt{}}
 \ottusedrule{\ottdruleJvXXfanout{}}
