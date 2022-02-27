@@ -101,15 +101,10 @@ Section Typecheck.
     | E_let X Y E E' =>
         do (t1 * t2) ← typecheck Γ E ;
         do t3 ← typecheck ((Y, t2) :: (X, t1) :: Γ) E' ;
-        if count X E' is one
-        then
-          if count Y E' is one
-          then
-            Some t3
-          else
-            None
-        else
-          None
+        match count X E', count Y E' with
+        | one, one => Some t3
+        | _, _ => None
+        end
     end
       %list %map.
 End Typecheck.
@@ -177,11 +172,9 @@ Fixpoint search σ E: list span :=
       do (σ1 |- N) ← search σ E ;
       do (a, b) ← (if N is N_fanout a b then [(a, b)] else []) ;
       do (σ2 |- N') ← search ((X ↦ a) ∪ (Y ↦ b) ∪ σ) E' ;
-      if Map.find X (σ2 \ Y) is Some a'
-      then
-        if eq_normal a a'
-        then
-          if Map.find Y σ2 is Some b'
+      match Map.find X (σ2 \ Y), Map.find Y σ2 with
+      | Some a', Some b' =>
+          if eq_normal a a'
           then
             if eq_normal b b'
             then
@@ -190,10 +183,8 @@ Fixpoint search σ E: list span :=
               []
           else
             []
-        else
-          []
-      else
-        []
+      | _, _ => []
+      end
   end%list %map.
 
 Theorem count_complete_never:
@@ -495,10 +486,11 @@ Proof using.
     cbn.
     destruct (Map.find X (σ1 \ Y)) eqn:q.
     2: auto.
+    destruct (Map.find Y σ1) eqn:q'.
+    2: auto.
     destruct (eq_normal N1 n).
     2: auto.
     subst.
-    destruct (Map.find Y σ1) eqn:q'.
     destruct (eq_normal N2 n0).
     2: auto.
     subst.
