@@ -1,6 +1,7 @@
 Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
 
+Require Blech.Environment.
 Require Blech.Term.
 Require Blech.Context.
 Require Blech.Map.
@@ -19,7 +20,7 @@ Implicit Type E: context.
 Implicit Type t: type.
 Implicit Type v: term.
 Implicit Type N: normal.
-Implicit Types x y X Y: var.
+Implicit Types x y: var.
 Implicit Type σ: store.
 
 Module Import Hor.
@@ -47,9 +48,8 @@ Module Import Hor.
     all: subst.
     all: try econstructor.
     all: try eauto.
-    inversion H1.
-    all: repeat constructor.
-    all: auto.
+    apply Environment.shadow.
+    auto.
   Qed.
 
   Next Obligation.

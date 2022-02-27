@@ -510,6 +510,44 @@ Proof using.
   auto.
 Defined.
 
+Lemma map:
+  ∀ {E t Γ Δ},
+    (∀ x t, mem x t Γ → mem x t Δ) →
+    JE Γ E t →
+    JE Δ E t.
+Proof.
+  intro E.
+  induction E.
+  all: intros ? ? ? ? p.
+  all: inversion p.
+  all: subst.
+  all: try econstructor.
+  all: eauto.
+  - refine (IHE _ _ _ _ H5).
+    intros ? ? q.
+    inversion q.
+    all: subst.
+    all: constructor.
+    all: auto.
+  - refine (IHE2 _ _ _ _ H9).
+    intros ? ? q.
+    inversion q.
+    all: subst.
+    all: constructor.
+    all: auto.
+    inversion H10.
+    all: subst.
+    all: constructor.
+    all: auto.
+Qed.
+
+Definition shadow {E Γ x t0 t1 t2}:
+  JE ((x, t0) :: Γ)%list E t2 → JE ((x, t0) :: (x, t1) :: Γ)%list E t2 :=
+  map Environment.shadow.
+
+Definition unshadow {E Γ x t0 t1 t2}:
+  JE ((x, t0) :: (x, t1) :: Γ)%list E t2 → JE ((x, t0) :: Γ)%list E t2 :=
+  map Environment.unshadow.
 
 Lemma subst_assoc {x f g h}:
   subst_context (subst_context h x g) x f = subst_context h x (subst_context g x f).

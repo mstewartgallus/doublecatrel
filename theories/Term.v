@@ -389,3 +389,26 @@ Instance equiv_Equivalence Γ t: Equivalence (@equiv Γ t) := {
 Instance oftype_Setoid Γ t: Setoid (oftype Γ t) := {
     equiv := equiv ;
 }.
+
+Lemma map:
+  ∀ {v t Γ Δ},
+    (∀ x t, mem x t Γ → mem x t Δ) →
+    Γ ⊢ v in t →
+    Δ ⊢ v in t.
+Proof.
+  intro v.
+  induction v.
+  all: intros ? ? ? ? p.
+  all: inversion p.
+  all: subst.
+  all: try econstructor.
+  all: eauto.
+Qed.
+
+Definition shadow {v Γ x t0 t1 t2}:
+  ((x, t0) :: Γ)%list ⊢ v in t2 → ((x, t0) :: (x, t1) :: Γ)%list ⊢ v in t2 :=
+  map Environment.shadow.
+
+Definition unshadow {v Γ x t0 t1 t2}:
+  ((x, t0) :: (x, t1) :: Γ)%list ⊢ v in t2 → ((x, t0) :: Γ)%list ⊢ v in t2 :=
+  map Environment.unshadow.

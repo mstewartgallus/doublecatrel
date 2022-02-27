@@ -49,3 +49,34 @@ Proof using .
     1: contradiction.
     auto.
 Qed.
+
+Lemma unshadow {y t0 t1 Γ}:
+  ∀ x t,
+  mem x t ((y, t0) :: (y, t1) :: Γ)%list →
+  mem x t ((y, t0) :: Γ)%list.
+Proof using.
+  intros ? ? p.
+  inversion p.
+  all: subst.
+  - constructor.
+  - constructor.
+    all: auto.
+    inversion H5.
+    all: auto.
+    subst.
+    contradiction.
+Qed.
+
+Lemma shadow {y t0 t1 Γ}:
+  ∀ x t,
+  mem x t ((y, t0) :: Γ)%list →
+  mem x t ((y, t0) :: (y, t1) :: Γ)%list.
+Proof using.
+  intros ? ? p.
+  inversion p.
+  all: subst.
+  all: constructor.
+  all: auto.
+  constructor.
+  all: auto.
+Qed.
