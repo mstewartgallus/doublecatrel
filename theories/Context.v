@@ -14,19 +14,19 @@ Require Import FunInd.
 Import List.ListNotations.
 Import IfNotations.
 
-Implicit Type Δ: linear.
+Implicit Type Γ: environment.
 Implicit Type E: context.
 Implicit Type t: type.
 Implicit Type N: normal.
-Implicit Types X Y: cvar.
+Implicit Types X Y: var.
 Implicit Type σ: store.
 
 Import Map.MapNotations.
 
-Function find X Δ :=
-  if Δ is ((Y, t) :: T)%list
+Function find X Γ :=
+  if Γ is ((Y, t) :: T)%list
   then
-    if eq_cvar X Y
+    if eq_var X Y
     then
       Some t
     else
@@ -49,10 +49,10 @@ Infix "+" := add.
 
 Function count X E :=
   match E with
-  | E_var Y => if eq_cvar X Y then one else zero
+  | E_var Y => if eq_var X Y then one else zero
 
   | E_lam Y t E =>
-      if eq_cvar X Y then zero else count X E
+      if eq_var X Y then zero else count X E
 
   | E_app E E' => count X E + count X E'
 
@@ -63,11 +63,11 @@ Function count X E :=
   | E_fanout E E' => count X E + count X E'
 
   | E_let Y Y' E E' =>
-      if eq_cvar X Y
+      if eq_var X Y
       then
         count X E
       else
-        if eq_cvar X Y'
+        if eq_var X Y'
         then
           count X E
         else
@@ -77,20 +77,20 @@ Function count X E :=
 Section Typecheck.
   Import OptionNotations.
 
-  Function typecheck Δ E: option type :=
+  Function typecheck Γ E: option type :=
     match E with
-    | E_var X => find X Δ
+    | E_var X => find X Γ
 
     | E_lam X t1 E =>
-        do t2 ← typecheck ((X, t1) :: Δ) E ;
+        do t2 ← typecheck ((X, t1) :: Γ) E ;
         if count X E is one
         then
           Some (t1 * t2)
         else
           None
     | E_app E E' =>
-        do (t1 * t2) ← typecheck Δ E ;
-        do t1' ← typecheck Δ E' ;
+        do (t1 * t2) ← typecheck Γ E ;
+        do t1' ← typecheck Γ E' ;
         if eq_type t1 t1'
         then
           Some t2
@@ -99,18 +99,18 @@ Section Typecheck.
 
     | E_tt => Some t_unit
     | E_step E E' =>
-        do t_unit ← typecheck Δ E ;
-        do t ← typecheck Δ E' ;
+        do t_unit ← typecheck Γ E ;
+        do t ← typecheck Γ E' ;
         Some t
 
     | E_fanout E E' =>
-        do t1 ← typecheck Δ E ;
-        do t2 ← typecheck Δ E' ;
+        do t1 ← typecheck Γ E ;
+        do t2 ← typecheck Γ E' ;
         Some (t1 * t2)
 
     | E_let X Y E E' =>
-        do (t1 * t2) ← typecheck Δ E ;
-        do t3 ← typecheck ((Y, t2) :: (X, t1) :: Δ) E' ;
+        do (t1 * t2) ← typecheck Γ E ;
+        do t3 ← typecheck ((Y, t2) :: (X, t1) :: Γ) E' ;
         if count X E' is one
         then
           if count Y E' is one
@@ -128,7 +128,7 @@ Notation "'do' x ← e0 ; e1" :=
   (List.flat_map (λ x, e1) e0)
     (x pattern, at level 200, left associativity): list_scope.
 
-Fixpoint generate t :=
+Fixpoint generate t: list normal :=
   match t with
   | t_unit => [N_tt]
   | t * t' =>
@@ -212,7 +212,7 @@ Proof using.
   intros ? ? p.
   induction p.
   all: cbn.
-  all: try destruct eq_cvar.
+  all: try destruct eq_var.
   all: subst.
   all: try contradiction.
   all: auto.
@@ -222,7 +222,7 @@ Proof using.
   all: try rewrite IHp2.
   all: cbn.
   all: auto.
-  all: try destruct eq_cvar.
+  all: try destruct eq_var.
   all: subst.
   all: try contradiction.
   all: auto.
@@ -234,13 +234,13 @@ Proof using.
   intros ? ? p.
   induction p.
   all: cbn.
-  all: try destruct eq_cvar.
+  all: try destruct eq_var.
   all: subst.
   all: try contradiction.
   all: auto.
   all: try rewrite IHp.
   all: cbn.
-  all: try destruct eq_cvar.
+  all: try destruct eq_var.
   all: subst.
   all: try contradiction.
   all: try rewrite count_complete_never.
@@ -336,11 +336,11 @@ Proof.
 Qed.
 
 Lemma find_sound:
-  ∀ {X Δ t},
-    find X Δ = Some t → Emem X t Δ.
+  ∀ {X Γ t},
+    find X Γ = Some t → mem X t Γ.
 Proof.
-  intros X Δ.
-  functional induction (find X Δ).
+  intros X Γ.
+  functional induction (find X Γ).
   all: intros ? p.
   - inversion p.
     subst.
@@ -351,23 +351,23 @@ Proof.
 Qed.
 
 Lemma find_complete:
-  ∀ {X Δ t},
-    Emem X t Δ → find X Δ = Some t .
+  ∀ {X Γ t},
+    mem X t Γ → find X Γ = Some t .
 Proof.
-  intros X Δ t p.
+  intros X Γ t p.
   induction p.
   all: cbn.
-  all: destruct eq_cvar.
+  all: destruct eq_var.
   all: subst.
   all: try contradiction.
   all: auto.
 Qed.
 
 Theorem typecheck_sound:
-  ∀ Δ {E t}, typecheck Δ E = Some t → JE Δ E t.
+  ∀ Γ {E t}, typecheck Γ E = Some t → JE Γ E t.
 Proof using.
-  intros Δ E.
-  functional induction (typecheck Δ E).
+  intros Γ E.
+  functional induction (typecheck Γ E).
   all: cbn.
   all: intros ? p.
   all: inversion p.
@@ -385,9 +385,9 @@ Proof using.
 Qed.
 
 Theorem typecheck_complete:
-  ∀ {Δ E t}, JE Δ E t → typecheck Δ E = Some t.
+  ∀ {Γ E t}, JE Γ E t → typecheck Γ E = Some t.
 Proof using.
-  intros Δ E t p.
+  intros Γ E t p.
   induction p.
   all: cbn.
   all: auto.
@@ -572,13 +572,13 @@ Proof.
   induction f.
   all: cbn.
   all: auto.
-  - destruct eq_cvar eqn:q.
+  - destruct eq_var eqn:q.
     1: auto.
     cbn.
     rewrite q.
     auto.
   - rewrite IHf.
-    destruct eq_cvar eqn:q.
+    destruct eq_var eqn:q.
     all: auto.
   - rewrite IHf1.
     rewrite IHf2.
@@ -592,22 +592,22 @@ Proof.
   - rewrite IHf1.
     rewrite IHf2.
     auto.
-    destruct eq_cvar.
+    destruct eq_var.
     1: auto.
-    destruct eq_cvar.
+    destruct eq_var.
     1: auto.
     auto.
 Qed.
 
-Definition oftype Δ t := { E | JE Δ E t }.
+Definition oftype Γ t := { E | JE Γ E t }.
 
-Definition equiv {Δ t}: Relation_Definitions.relation (oftype Δ t) :=
+Definition equiv {Γ t}: Relation_Definitions.relation (oftype Γ t) :=
   λ a b,
     ∀ N,
       (* FIXME substitute in contexts *)
       sat Map.empty (proj1_sig a) N ↔ sat Map.empty (proj1_sig b) N.
 
-Instance equiv_Reflexive Δ t: Reflexive (@equiv Δ t).
+Instance equiv_Reflexive Γ t: Reflexive (@equiv Γ t).
 Proof using.
   unfold equiv.
   unfold Reflexive.
@@ -615,7 +615,7 @@ Proof using.
   reflexivity.
 Qed.
 
-Instance equiv_Symmetric Δ t: Symmetric (@equiv Δ t).
+Instance equiv_Symmetric Γ t: Symmetric (@equiv Γ t).
 Proof using.
   unfold equiv.
   unfold Symmetric.
@@ -624,7 +624,7 @@ Proof using.
   auto.
 Qed.
 
-Instance equiv_Transitive Δ t: Transitive (@equiv Δ t).
+Instance equiv_Transitive Γ t: Transitive (@equiv Γ t).
 Proof using.
   unfold equiv.
   unfold Transitive.
@@ -634,10 +634,10 @@ Proof using.
   reflexivity.
 Qed.
 
-Instance equiv_Equivalence Δ t: Equivalence (@equiv Δ t) := {
+Instance equiv_Equivalence Γ t: Equivalence (@equiv Γ t) := {
     Equivalence_Reflexive := _ ;
 }.
 
-Instance oftype_Setoid Δ t: Setoid (oftype Δ t) := {
+Instance oftype_Setoid Γ t: Setoid (oftype Γ t) := {
     equiv := equiv ;
 }.

@@ -14,13 +14,12 @@ Implicit Type Γ: environment.
 Implicit Type v: term.
 Implicit Type t: type.
 Implicit Type N: normal.
-Implicit Type d: definition.
-Implicit Types x y: vvar.
+Implicit Types x y: var.
 
 Function find x Γ :=
   if Γ is ((x', t) :: T)%list
   then
-    if eq_vvar x x'
+    if eq_var x x'
     then
       Some t
     else
@@ -78,16 +77,16 @@ Proof using .
   intro p.
   induction p.
   all: cbn.
-  - destruct eq_vvar.
+  - destruct eq_var.
     2: contradiction.
     reflexivity.
-  - destruct eq_vvar.
+  - destruct eq_var.
     1: contradiction.
     auto.
 Qed.
 
 Theorem typecheck_sound:
-  ∀ {Γ v t}, typecheck Γ v = Some t → (Γ ⊢ v) in t.
+  ∀ {Γ v t}, typecheck Γ v = Some t → Γ ⊢ v in t.
 Proof using .
   intros Γ v.
   functional induction (typecheck Γ v).
@@ -101,13 +100,10 @@ Proof using .
   auto.
 Qed.
 
-Definition envof '(d_with Γ _) := Γ.
-Definition termof '(d_with _ v) := v.
-
 Theorem typecheck_complete:
-  ∀ {d t}, d in t → typecheck (envof d) (termof d) = Some t.
+  ∀ {Γ v t}, Γ ⊢ v in t → typecheck Γ v = Some t.
 Proof using .
-  intros Γ ? p.
+  intros Γ ? ? p.
   induction p.
   all: cbn.
   all: cbn in *.
@@ -163,11 +159,11 @@ Proof using.
   all: auto.
   - econstructor.
     all: eauto.
-  - set (p' := IHp _ _ H2).
+  - set (p' := IHp _ _ H1).
     inversion p'.
     subst.
     auto.
-  - set (p' := IHp _ _ H2).
+  - set (p' := IHp _ _ H1).
     inversion p'.
     subst.
     auto.
@@ -195,11 +191,11 @@ Proof using.
   all: intros ? p.
   all: inversion p.
   all: subst.
-  - inversion H2.
+  - inversion H1.
   - exists N_tt.
     constructor.
-  - destruct (IHv _ H2) as [v' s].
-    set (vwf := big_preserve s _ _ H2).
+  - destruct (IHv _ H1) as [v' s].
+    set (vwf := big_preserve s _ _ H1).
     destruct v'.
     all: cbn in *.
     all: inversion vwf.
@@ -207,8 +203,8 @@ Proof using.
     exists v'1.
     econstructor.
     eauto.
-  - destruct (IHv _ H2) as [v' s].
-    set (vwf := big_preserve s _ _ H2).
+  - destruct (IHv _ H1) as [v' s].
+    set (vwf := big_preserve s _ _ H1).
     destruct v'.
     all: cbn in *.
     all: inversion vwf.
@@ -216,7 +212,7 @@ Proof using.
     exists v'2.
     econstructor.
     eauto.
-  - destruct (IHv1 _ H3) as [v1' s1].
+  - destruct (IHv1 _ H2) as [v1' s1].
     destruct (IHv2 _ H4) as [v2' s2].
     exists (N_fanout v1' v2').
     constructor.
@@ -241,7 +237,7 @@ Proof.
   induction v.
   all: cbn.
   all: auto.
-  - destruct (eq_vvar x0 x).
+  - destruct (eq_var x0 x).
     all: auto.
   - rewrite IHv.
     auto.
@@ -274,13 +270,13 @@ Proof using.
   all: inversion q.
   all: subst.
   all: try (econstructor; eauto).
-  destruct eq_vvar.
+  destruct eq_var.
   - subst.
-    inversion H2.
+    inversion H1.
     2: contradiction.
     subst.
     auto.
-  - inversion H2.
+  - inversion H1.
     1: contradiction.
     subst.
     constructor.
@@ -293,7 +289,7 @@ Proof.
   induction f.
   all: cbn.
   all: auto.
-  - destruct eq_vvar eqn:q.
+  - destruct eq_var eqn:q.
     1: auto.
     cbn.
     rewrite q.

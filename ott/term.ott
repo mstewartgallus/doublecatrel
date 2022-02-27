@@ -1,4 +1,5 @@
-metavar vvar, x, y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[vvar]]} }}
+metavar var, x, y, X, Y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[var]]} }}
+
 grammar
 term, v :: 'v_' ::= {{ coq-equality }}
   | x              ::   :: var
@@ -14,15 +15,12 @@ normal, N :: 'N_' ::= {{ coq-equality }}
   | N , N'  ::   :: fanout
   | ( N )   :: S :: paren {{ coq ([[N]]) }}
 
-environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (list (vvar * type)) }}
+environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (list (var * type)) }}
   | nil         ::   :: nil {{ coq nil }}
   | G , x : t   ::   :: add {{ coq (cons ([[x]], [[t]]) [[G]]) }}
   | ( G )       :: S :: paren {{ coq ([[G]]) }}
 
-definition, d :: 'd_' ::=
-  | G |- v      ::   :: with
-
-subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (list (vvar * term)) }}
+subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (list (var * term)) }}
   | nil                   :: M :: nil {{ coq nil }}
   | p , x := v            :: M :: add {{ coq (cons ([[x]], [[v]]) [[p]]) }}
   | ( p )                 :: S :: paren {{ coq ([[p]]) }}
@@ -73,7 +71,7 @@ defns
 judge_term :: 'J' ::=
 
 defn
-d : t ::   :: v :: 'v_'
+G |- v : t ::   :: v :: 'v_'
 by
 
 x: t \in G

@@ -9,11 +9,10 @@ Require Import Coq.Logic.PropExtensionality.
 
 Import IfNotations.
 
-Implicit Type Δ: linear.
 Implicit Type E: context.
 Implicit Type t: type.
 Implicit Type N: normal.
-Implicit Types X Y: cvar.
+Implicit Types X Y: var.
 Implicit Type σ: store.
 
 Import Map.MapNotations.

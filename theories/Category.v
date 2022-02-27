@@ -15,18 +15,16 @@ Import Map.MapNotations.
 Require Import FunInd.
 
 Implicit Type Γ: environment.
-Implicit Type Δ: linear.
 Implicit Type E: context.
 Implicit Type t: type.
 Implicit Type v: term.
 Implicit Type N: normal.
-Implicit Types x y: vvar.
-Implicit Types X Y: cvar.
+Implicit Types x y X Y: var.
 Implicit Type σ: store.
 
 Module Import Hor.
   #[local]
-  Definition X: vvar := 0.
+  Definition X: var := 0.
 
   Definition Hor t t' := Term.oftype (cons (X, t) nil) t'.
 
@@ -49,7 +47,7 @@ Module Import Hor.
     all: subst.
     all: try econstructor.
     all: try eauto.
-    inversion H2.
+    inversion H1.
     all: repeat constructor.
     all: auto.
   Qed.
@@ -228,9 +226,8 @@ Module Import Hor.
 End Hor.
 
 Module Import Vert.
-
   #[local]
-  Definition X: cvar := 0.
+  Definition X: var := 0.
 
   Definition Vert t t' := Context.oftype (cons (X, t) nil) t'.
 

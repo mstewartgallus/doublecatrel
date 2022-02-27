@@ -2,9 +2,7 @@ Require Import Blech.Spec.
 
 Infix "*" := t_prod.
 
-Infix "⊢" := d_with (at level 30).
-
-Notation "d 'in' t" := (Jv d t) (at level 90).
+Notation "G ⊢ v 'in' t" := (Jv G v t) (at level 90).
 
 Notation "v ⇓ N" := (big v N) (at level 90).
 
@@ -37,5 +35,5 @@ Module RelNotations.
           left associativity).
 
   Coercion E_app: context >-> Funclass.
-  Coercion E_var: cvar >-> context.
+  Coercion E_var: var >-> context.
 End RelNotations.
