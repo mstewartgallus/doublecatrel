@@ -1,10 +1,9 @@
 embed
 {{ coq-preamble
 Require Blech.Map.
-Require Import Metalib.Metatheory.
 }}
 
-metavar cvar, X, Y ::= {{ coq var }} {{ coq-equality apply Atom.eq_dec. }} {{ lex alphanum}} {{ tex \mathit{[[cvar]]} }}
+metavar cvar, X, Y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[cvar]]} }}
 grammar
 
 nat :: 'nat_' ::= {{ coq nat }}
@@ -54,8 +53,8 @@ terminals :: 'terminals_' ::=
   | let          ::   :: let  {{ tex \mathbin{\textbf{let} } }}
   | in           ::   :: letin  {{ tex \mathbin{\textbf{in} } }}
   | \in          ::   :: member  {{ tex \in{} }}
-  | once         ::   :: once  {{ tex \mathbin{\textbf{once} } }}
-  | never        ::   :: never  {{ tex \mathbin{\textbf{never} } }}
+  | once         ::   :: once  {{ tex \mathbin{\in{}!} }}
+  | never        ::   :: never  {{ tex \mathbin{\notin{} } }}
   | !            ::   :: big     {{ tex \mathrel{\Downarrow} }}
   | !=           ::   :: ne     {{ tex \mathrel{\ne} }}
   | ==           ::   :: equiv   {{ tex \mathrel{\sim} }}

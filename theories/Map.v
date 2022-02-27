@@ -3,12 +3,12 @@ Require Import Coq.Arith.PeanoNat.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Coq.Classes.SetoidClass.
 
-Require Import Metalib.Metatheory.
-
 Import IfNotations.
 
+Import Nat.
+
 Module Type MapInterface.
-  Definition K: Set := var.
+  Definition K: Set := nat.
   Axiom map: Set → Set.
 
   Implicit Type k: K.
@@ -50,8 +50,8 @@ Module Type MapInterface.
   End Prim.
 End MapInterface.
 
-Module FnMap: MapInterface with Definition K := var.
-  Definition K := var.
+Module FnMap: MapInterface with Definition K := nat.
+  Definition K := nat.
   Definition map (V: Set) := K → option V.
 
   Implicit Type k: K.

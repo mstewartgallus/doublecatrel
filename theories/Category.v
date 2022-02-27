@@ -9,8 +9,6 @@ Require Import Coq.Unicode.Utf8.
 Require Import Coq.Classes.SetoidClass.
 Require Import Coq.Program.Tactics.
 
-Require Import Metalib.Metatheory.
-
 Import IfNotations.
 Import Map.MapNotations.
 
@@ -232,7 +230,7 @@ End Hor.
 Module Import Vert.
 
   #[local]
-  Definition X: cvar := Atom.fresh nil.
+  Definition X: cvar := 0.
 
   Definition Vert t t' := Context.oftype (cons (X, t) nil) t'.
 
