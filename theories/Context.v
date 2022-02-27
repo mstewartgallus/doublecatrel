@@ -5,6 +5,7 @@ Require Blech.OptionNotations.
 
 Require Import Coq.Unicode.Utf8.
 Require Import Coq.Classes.SetoidClass.
+Require Import Coq.Arith.PeanoNat.
 Require Coq.Lists.List.
 Require Import Coq.Logic.PropExtensionality.
 
@@ -22,52 +23,99 @@ Implicit Type σ: store.
 
 Import Map.MapNotations.
 
+Function find X Δ :=
+  if Δ is ((Y, t) :: T)%list
+  then
+    if eq_cvar X Y
+    then
+      Some t
+    else
+      find X T
+  else
+    None.
+
+Variant occurs := zero | one | many.
+
+Definition add a b :=
+  match a, b with
+  | zero, zero => zero
+  | many, _ => many
+  | _, many => many
+  | one, one => many
+  | _, _ => one
+  end.
+
+Infix "+" := add.
+
+Function count X E :=
+  match E with
+  | E_var Y => if eq_cvar X Y then one else zero
+
+  | E_lam Y t E =>
+      if eq_cvar X Y then zero else count X E
+
+  | E_app E E' => count X E + count X E'
+
+  | E_tt => zero
+
+  | E_step E E' => count X E + count X E'
+
+  | E_fanout E E' => count X E + count X E'
+
+  | E_let Y Y' E E' =>
+      if eq_cvar X Y
+      then
+        count X E
+      else
+        if eq_cvar X Y'
+        then
+          count X E
+        else
+          count X E + count X E'
+  end.
+
 Section Typecheck.
   Import OptionNotations.
 
-  Function typecheck Δ E: option (linear * type) :=
+  Function typecheck Δ E: option type :=
     match E with
-    | E_var X =>
-        do t ← Map.find X Δ ;
-        Some (X ↦ t, t)
+    | E_var X => find X Δ
+
     | E_lam X t1 E =>
-        do (Δ', t2) ← typecheck (X ↦ t1 ∪ Δ) E ;
-        do t1' ← Map.find X Δ' ;
-        if eq_type t1 t1'
+        do t2 ← typecheck ((X, t1) :: Δ) E ;
+        if count X E is one
         then
-          Some (Δ' \ X, t1 * t2)
+          Some (t1 * t2)
         else
           None
     | E_app E E' =>
-        do (Δ', t1 * t2) ← typecheck Δ E ;
-        do (Δ, t1') ← typecheck Δ E' ;
+        do (t1 * t2) ← typecheck Δ E ;
+        do t1' ← typecheck Δ E' ;
         if eq_type t1 t1'
         then
-          Some (Δ' ∪ Δ, t2)
+          Some t2
         else
           None
 
-    | E_tt => Some (∅, t_unit)
+    | E_tt => Some t_unit
     | E_step E E' =>
-        do (Δ', t_unit) ← typecheck Δ E ;
-        do (Δ, t) ← typecheck Δ E' ;
-        Some (Δ' ∪ Δ, t)
+        do t_unit ← typecheck Δ E ;
+        do t ← typecheck Δ E' ;
+        Some t
 
     | E_fanout E E' =>
-        do (Δ', t1) ← typecheck Δ E ;
-        do (Δ, t2) ← typecheck Δ E' ;
-        Some (Δ' ∪ Δ, t1 * t2)
+        do t1 ← typecheck Δ E ;
+        do t2 ← typecheck Δ E' ;
+        Some (t1 * t2)
 
     | E_let X Y E E' =>
-        do (Δ', t1 * t2) ← typecheck Δ E ;
-        do (Δ, t3) ← typecheck (X ↦ t1 ∪ Y ↦ t2 ∪ Δ) E' ;
-        do t1' ← Map.find X (Δ \ Y) ;
-        do t2' ← Map.find Y Δ ;
-        if eq_type t1 t1'
+        do (t1 * t2) ← typecheck Δ E ;
+        do t3 ← typecheck ((Y, t2) :: (X, t1) :: Δ) E' ;
+        if count X E' is one
         then
-          if eq_type t2 t2'
+          if count Y E' is one
           then
-            Some (Δ' ∪ ((Δ \ Y) \ X), t3)
+            Some t3
           else
             None
         else
@@ -158,23 +206,208 @@ Fixpoint search σ E: list span :=
         []
   end%list %map.
 
+Theorem count_complete_never:
+  ∀ {X E}, never X E → count X E = zero.
+Proof using.
+  intros ? ? p.
+  induction p.
+  all: cbn.
+  all: try destruct eq_cvar.
+  all: subst.
+  all: try contradiction.
+  all: auto.
+  all: try rewrite IHp.
+  all: cbn.
+  all: try rewrite IHp1.
+  all: try rewrite IHp2.
+  all: cbn.
+  all: auto.
+  all: try destruct eq_cvar.
+  all: subst.
+  all: try contradiction.
+  all: auto.
+Qed.
+
+Theorem count_complete_one:
+  ∀ {X E}, once X E → count X E = one.
+Proof using.
+  intros ? ? p.
+  induction p.
+  all: cbn.
+  all: try destruct eq_cvar.
+  all: subst.
+  all: try contradiction.
+  all: auto.
+  all: try rewrite IHp.
+  all: cbn.
+  all: try destruct eq_cvar.
+  all: subst.
+  all: try contradiction.
+  all: try rewrite count_complete_never.
+  all: auto.
+Qed.
+
+Theorem count_sound:
+  ∀ {X E}, match count X E with
+           | one => once X E
+           | zero => never X E
+           | many => True
+           end.
+Proof using.
+  intros X E.
+  functional induction (count X E).
+  - constructor.
+  - constructor.
+    auto.
+  - constructor.
+  - destruct (count X E0).
+    all: auto.
+    + constructor.
+      all: auto.
+    + constructor.
+      all: auto.
+  - destruct (count X E0), (count X E').
+    all: cbn.
+    all: auto.
+    + constructor.
+      all: auto.
+    + apply once_app_r.
+      all: auto.
+    + apply once_app_l.
+      all: auto.
+  - constructor.
+  - destruct (count X E0), (count X E').
+    all: cbn.
+    all: auto.
+    + constructor.
+      all: auto.
+    + apply once_step_r.
+      all: auto.
+    + apply once_step_l.
+      all: auto.
+  - destruct (count X E0), (count X E').
+    all: cbn.
+    all: auto.
+    + constructor.
+      all: auto.
+    + apply once_fanout_r.
+      all: auto.
+    + apply once_fanout_l.
+      all: auto.
+  - destruct (count X E0).
+    all: auto.
+    + apply never_let_eq_1.
+      auto.
+    + apply once_let_l1.
+      auto.
+  - destruct (count X E0).
+    all: auto.
+    + apply never_let_eq_2.
+      auto.
+    + apply once_let_l2.
+      auto.
+  - destruct (count X E0), (count X E').
+    all: cbn.
+    all: auto.
+    + constructor.
+      all: auto.
+    + apply once_let_r.
+      all: auto.
+    + apply once_let_l.
+      all: auto.
+Qed.
+
+Corollary count_once:
+  ∀ {X E}, count X E = one → once X E.
+Proof.
+  intros ? ? p.
+  set (H := @count_sound X E).
+  rewrite p in H.
+  auto.
+Qed.
+
+Corollary count_never:
+  ∀ {X E}, count X E = zero → never X E.
+Proof.
+  intros ? ? p.
+  set (H := @count_sound X E).
+  rewrite p in H.
+  auto.
+Qed.
+
+Lemma find_sound:
+  ∀ {X Δ t},
+    find X Δ = Some t → Emem X t Δ.
+Proof.
+  intros X Δ.
+  functional induction (find X Δ).
+  all: intros ? p.
+  - inversion p.
+    subst.
+    constructor.
+  - constructor.
+    all: auto.
+  - discriminate.
+Qed.
+
+Lemma find_complete:
+  ∀ {X Δ t},
+    Emem X t Δ → find X Δ = Some t .
+Proof.
+  intros X Δ t p.
+  induction p.
+  all: cbn.
+  all: destruct eq_cvar.
+  all: subst.
+  all: try contradiction.
+  all: auto.
+Qed.
+
 Theorem typecheck_sound:
-  ∀ Δ {E Δ' t}, typecheck Δ E = Some (Δ', t) → JE (l_with Δ' E) t.
+  ∀ Δ {E t}, typecheck Δ E = Some t → JE Δ E t.
 Proof using.
   intros Δ E.
   functional induction (typecheck Δ E).
   all: cbn.
-  all: intros ? ? p.
+  all: intros ? p.
   all: inversion p.
   all: subst.
   all: try econstructor.
   all: eauto.
-  - apply IHo.
-    rewrite Map.add_minus.
+  - apply find_sound.
+    auto.
+  - apply count_once.
+    auto.
+  - apply count_once.
+    auto.
+  - apply count_once.
+    auto.
+Qed.
+
+Theorem typecheck_complete:
+  ∀ {Δ E t}, JE Δ E t → typecheck Δ E = Some t.
+Proof using.
+  intros Δ E t p.
+  induction p.
+  all: cbn.
+  all: auto.
+  - apply find_complete.
+    auto.
+  - rewrite IHp.
+    rewrite count_complete_one.
     all: auto.
-  - rewrite Map.add_minus.
-    all: auto.
-    1: rewrite Map.add_minus.
+  - rewrite IHp1, IHp2.
+    destruct eq_type.
+    2: contradiction.
+    auto.
+  - rewrite IHp1, IHp2.
+    auto.
+  - rewrite IHp1, IHp2.
+    auto.
+  - rewrite IHp1, IHp2.
+    rewrite count_complete_one.
+    2: auto.
+    rewrite count_complete_one.
     all: auto.
 Qed.
 
@@ -332,321 +565,6 @@ Proof using.
   auto.
 Defined.
 
-Variant occur := z | o | m.
-
-Definition add e0 e1 :=
-  match e0, e1 with
-  | z, m => m
-  | o, m => m
-  | m, m => m
-  | m, o => m
-  | m, z => m
-
-  | o, z => o
-  | o, o => m
-  | z, o => o
-
-  | z, z => z
-  end.
-
-Infix "+" := add.
-
-Function count X E :=
-  match E with
-  | E_var Y => if eq_cvar X Y then o else z
-
-  | E_lam Y t E =>
-      if eq_cvar X Y then z else count X E
-
-  | E_app E E' => count X E + count X E'
-
-  | E_tt => z
-
-  | E_step E E' => count X E + count X E'
-
-  | E_fanout E E' => count X E + count X E'
-
-  | E_let Y Y' E E' =>
-      if eq_cvar X Y
-      then
-        count X E
-      else
-        if eq_cvar X Y'
-        then
-          count X E
-        else
-          count X E + count X E'
-  end.
-
-(* Import Blech.OptionNotations. *)
-
-Inductive result := one (c: context) | zero | many.
-
-Function subst (S: context) (X: cvar) (E: context): result :=
-  match E with
-  | E_var Y => if eq_cvar X Y then one S else zero
-  | E_lam Y t E =>
-      if eq_cvar X Y
-      then
-        zero
-      else
-        match subst S X E with
-        | one E' => one (E_lam Y t E')
-        | p => p
-        end
-
-  | E_app E0 E1 =>
-      match subst S X E0, subst S X E1 with
-      | one E0', zero => one (E_app E0' E1)
-      | zero, one E1' => one (E_app E0 E1')
-
-      | zero, zero => zero
-      | _, _ => many
-      end
-
-  | E_tt => zero
-
-  | E_step E0 E1 =>
-      match subst S X E0, subst S X E1 with
-      | one E0', zero => one (E_step E0' E1)
-      | zero, one E1' => one (E_step E0 E1')
-
-      | zero, zero => zero
-      | _, _ => many
-      end
-
-  | E_fanout E0 E1 =>
-      match subst S X E0, subst S X E1 with
-      | one E0', zero => one (E_fanout E0' E1)
-      | zero, one E1' => one (E_fanout E0 E1')
-
-      | zero, zero => zero
-      | _, _ => many
-      end
-
-  | E_let Y Y' E0 E1 =>
-      if eq_cvar X Y
-      then
-        match subst S X E0 with
-        | one E0' => one (E_let Y Y' E0' E1)
-        | p => p
-        end
-      else
-        if eq_cvar X Y'
-        then
-          match subst S X E0 with
-          | one E0' => one (E_let Y Y' E0' E1)
-          | p => p
-          end
-        else
-          match subst S X E0, subst S X E1 with
-          | one E0', zero => one (E_let Y Y' E0' E1)
-          | zero, one E1' => one (E_let Y Y' E0 E1')
-
-          | zero, zero => zero
-          | _, _ => many
-          end
-
-  end.
-
-Lemma subst_id {E X E'}:
-  count X E' = z → subst_context E X E' = E'.
-Proof.
-  functional induction (count X E').
-  all: cbn.
-  all: intros p.
-  all: try destruct eq_cvar.
-  all: subst.
-  all: try discriminate.
-  all: try destruct eq_cvar.
-  all: subst.
-  all: try contradiction.
-  all: auto.
-  all: try rewrite IHo0.
-  all: try rewrite IHo1.
-  all: auto.
-  all: try destruct (count X E1), (count X E').
-  all: try discriminate.
-  all: cbn in p.
-  all: auto.
-  all: try destruct eq_cvar.
-  all: subst.
-  all: auto.
-  all: try destruct eq_cvar.
-  all: auto.
-Qed.
-
-Lemma subst_count {E X E'}:
-  count X E' = match subst E X E' with
-               | zero => z
-               | one _ => o
-               | many => m
-               end.
-Proof.
-  functional induction (subst E X E').
-  all: cbn.
-  all: try destruct eq_cvar.
-  all: auto.
-  all: try discriminate.
-  all: try contradiction.
-  all: try rewrite IHr.
-  all: try rewrite IHr0.
-  all: try rewrite e0.
-  all: try rewrite e1.
-  all: auto.
-  all: try destruct (subst E X E1), (subst E X E2).
-  all: cbn.
-  all: auto.
-  all: try discriminate.
-  all: try contradiction.
-Qed.
-
-Lemma linear {E X E'}:
-  subst E X E' =
-    match count X E' with
-    | z => zero
-    | o => one (subst_context E X E')
-    | m => many
-    end.
-Proof.
-  induction E'.
-  all: cbn.
-  all: try destruct eq_cvar.
-  all: try destruct eq_cvar.
-  all: subst.
-  all: try contradiction.
-  all: try discriminate.
-  all: auto.
-  - rewrite IHE'.
-    destruct (count X E').
-    all: auto.
-  - destruct (count X E'1), (count X E'2).
-    all: cbn.
-    all: try rewrite IHE'1.
-    all: try rewrite IHE'2.
-    all: auto.
-    + rewrite (@subst_id _ _ E'1) .
-      2: erewrite subst_count.
-      2: rewrite IHE'1.
-      2: auto.
-      auto.
-    + rewrite (@subst_id _ _ E'2) .
-      2: erewrite subst_count.
-      2: rewrite IHE'2.
-      2: auto.
-      auto.
-  - destruct (count X E'1), (count X E'2).
-    all: cbn.
-    all: try rewrite IHE'1.
-    all: try rewrite IHE'2.
-    all: auto.
-    + rewrite (@subst_id _ _ E'1) .
-      2: erewrite subst_count.
-      2: rewrite IHE'1.
-      2: auto.
-      auto.
-    + rewrite (@subst_id _ _ E'2) .
-      2: erewrite subst_count.
-      2: rewrite IHE'2.
-      2: auto.
-      auto.
-  - destruct (count X E'1), (count X E'2).
-    all: cbn.
-    all: try rewrite IHE'1.
-    all: try rewrite IHE'2.
-    all: auto.
-    + rewrite (@subst_id _ _ E'1) .
-      2: erewrite subst_count.
-      2: rewrite IHE'1.
-      2: auto.
-      auto.
-    + rewrite (@subst_id _ _ E'2) .
-      2: erewrite subst_count.
-      2: rewrite IHE'2.
-      2: auto.
-      auto.
-  - destruct (count X0 E'1), (count X0 E'2).
-    all: cbn.
-    all: try rewrite IHE'1.
-    all: try rewrite IHE'2.
-    all: auto.
-  - destruct (count Y E'1), (count Y E'2).
-    all: cbn.
-    all: try rewrite IHE'1.
-    all: try rewrite IHE'2.
-    all: auto.
-    all: try destruct eq_cvar.
-    all: subst.
-    all: try contradiction.
-    all: try destruct eq_cvar.
-    all: subst.
-    all: try contradiction.
-    all: auto.
-  - destruct (count X E'1), (count X E'2).
-    all: cbn.
-    all: try rewrite IHE'1.
-    all: try rewrite IHE'2.
-    all: auto.
-    all: try destruct eq_cvar.
-    all: subst.
-    all: try contradiction.
-    all: try destruct eq_cvar.
-    all: subst.
-    all: try contradiction.
-    + rewrite (@subst_id _ _ E'1).
-      2: erewrite subst_count.
-      2: rewrite IHE'1.
-      2: auto.
-      auto.
-    + rewrite (@subst_id _ _ E'2) .
-      2: erewrite subst_count.
-      2: rewrite IHE'2.
-      2: auto.
-      auto.
-Qed.
-
-Lemma subst_preserve:
-  ∀ {Δ' E' t},
-    JE (l_with Δ' E') t →
-    ∀ {X E Δ t'},
-      JE (l_with (Map.merge (Map.one X t) Δ) E) t' →
-      JE (l_with (Map.merge Δ' Δ) (subst_context E' X E)) t'.
-Proof using.
-  intros Δ' E' t p X.
-  intros E.
-  induction E.
-  all: cbn.
-  all: admit.
-Admitted.
-
-Lemma subst_var {X E}:
-  subst_context (E_var X) X E = E.
-Proof.
-  induction E.
-  all: cbn.
-  all: auto.
-  - destruct eq_cvar.
-    all: subst.
-    all: auto.
-  - rewrite IHE.
-    destruct eq_cvar.
-    all: subst.
-    all: auto.
-  - rewrite IHE1, IHE2.
-    auto.
-  - rewrite IHE1, IHE2.
-    auto.
-  - rewrite IHE1, IHE2.
-    auto.
-  - rewrite IHE1, IHE2.
-    destruct eq_cvar.
-    all: subst.
-    1: auto.
-    destruct eq_cvar.
-    all: subst.
-    1: auto.
-    auto.
-Qed.
 
 Lemma subst_assoc {X f g h}:
   subst_context (subst_context h X g) X f = subst_context h X (subst_context g X f).
@@ -681,7 +599,7 @@ Proof.
     auto.
 Qed.
 
-Definition oftype Δ t := { E | JE (l_with Δ E) t }.
+Definition oftype Δ t := { E | JE Δ E t }.
 
 Definition equiv {Δ t}: Relation_Definitions.relation (oftype Δ t) :=
   λ a b,

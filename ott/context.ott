@@ -7,6 +7,11 @@ Require Import Metalib.Metatheory.
 metavar cvar, X, Y ::= {{ coq var }} {{ coq-equality apply Atom.eq_dec. }} {{ lex alphanum}} {{ tex \mathit{[[cvar]]} }}
 grammar
 
+nat :: 'nat_' ::= {{ coq nat }}
+  | zero :: :: zero {{ coq 0 }}
+  | one  :: :: one {{ coq 1 }}
+  | nat + nat' :: :: add {{ coq ([[nat]] + [[nat']]) }}
+
 context, E :: 'E_' ::= {{ coq-equality }}
   | X                        ::   :: var
   | lam X : t . E            ::   :: lam (+ bind X in E +)
@@ -17,14 +22,9 @@ context, E :: 'E_' ::= {{ coq-equality }}
   | let X , Y = E in E'      ::   :: let (+ bind X union Y in E' +)
   | ( E )                    :: S :: paren {{ icho ([[E]]) }}
 
-linear, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (Map.map type) }}
-  | nil           :: M :: empty {{ coq (Map.empty) }}
-  | X : t         :: M :: one {{ coq (Map.one [[X]] [[t]]) }}
-  | D , D'        :: M :: add {{ coq (Map.merge [[D']] [[D]]) }}
-  | D ++ D'       :: M :: merge {{ coq (Map.merge [[D]] [[D']]) }}
-
-lindef, l :: 'l_' ::=
-  | D |- E      ::   :: with
+linear, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (list (cvar * type)) }}
+  | nil               ::   :: empty {{ coq nil }}
+  | D , X : t         ::   :: one {{ coq (cons ([[X]], [[t]]) [[D]]) }}
 
 store, S {{ tex \sigma }} {{ coq σ }} :: 'S_'  ::= {{ coq (Map.map normal) }}
   | nil                   :: M :: empty {{ coq (Map.empty) }}
@@ -54,54 +54,207 @@ terminals :: 'terminals_' ::=
   | let          ::   :: let  {{ tex \mathbin{\textbf{let} } }}
   | in           ::   :: letin  {{ tex \mathbin{\textbf{in} } }}
   | \in          ::   :: member  {{ tex \in{} }}
+  | once         ::   :: once  {{ tex \mathbin{\textbf{once} } }}
+  | never        ::   :: never  {{ tex \mathbin{\textbf{never} } }}
   | !            ::   :: big     {{ tex \mathrel{\Downarrow} }}
   | !=           ::   :: ne     {{ tex \mathrel{\ne} }}
   | ==           ::   :: equiv   {{ tex \mathrel{\sim} }}
 
 parsing
-  D_add left D_add
   S_add left S_add
 
 substitutions
   single E X :: subst
+
+grammar
+formula :: formula_ ::=  
+ | judgement                        ::   :: judgement
+ | x != y                           :: M :: neq {{ icho ([[x]] <> [[y]]) }}
+ | X != Y                           :: M :: neqc {{ icho ([[X]] <> [[Y]]) }}
+
+defns
+
+Efind :: '' ::=
+
+defn
+X : t \in D ::   :: Emem :: 'Emem_'
+by
+
+----------------- :: eq
+X: t \in D, X : t
+
+X != Y
+X: t \in D
+-------------------- :: ne
+X: t \in D, Y : t'
+
+defns
+
+nev :: '' ::=
+
+defn
+X never E :: :: never :: 'never_'
+by
+
+X != Y
+--------- :: var
+X never Y
+
+--------------------- :: lam_eq
+X never lam X : t. E
+
+X never E
+X != Y
+--------------------- :: lam
+X never lam Y : t. E
+
+X never E
+X never E'
+------------ :: app
+X never E E'
+
+--------- :: tt
+X never tt
+
+X never E
+X never E'
+------------- :: step
+X never E; E'
+
+X never E
+X never E'
+------------- :: fanout
+X never E, E'
+
+X never E
+X never E'
+X != Y
+X != Y'
+---------------------------- :: let
+X never let Y, Y' = E in E'
+
+X never E
+---------------------------- :: let_eq_1
+X never let X, Y = E in E'
+
+X never E
+---------------------------- :: let_eq_2
+X never let Y, X = E in E'
+
+defns
+
+onc :: '' ::=
+
+defn
+X once E :: :: once :: 'once_'
+by
+
+--------- :: var
+X once X
+
+X != Y
+X once E
+------------------- :: lam
+X once lam Y: t. E
+
+X once E
+X never E'
+------------- :: app_l
+X once E E'
+
+X never E
+X once E'
+------------- :: app_r
+X once E E'
+
+X once E
+X never E'
+------------- :: step_l
+X once E; E'
+
+X never E
+X once E'
+------------------- :: step_r
+X once E; E'
+
+X once E
+X never E'
+------------- :: fanout_l
+X once E, E'
+
+X never E
+X once E'
+------------------- :: fanout_r
+X once E, E'
+
+X once E
+X never E'
+X != Y
+X != Y'
+----------------------------- :: let_l
+X once let Y, Y' = E in E'
+
+X once E
+---------------------------- :: let_l1
+X once let X, Y = E in E'
+
+X once E
+----------------------------- :: let_l2
+X once let Y, X = E in E'
+
+X never E
+X once E'
+X != Y
+X != Y'
+----------------------------- :: let_r
+X once let Y, Y' = E in E'
+
+
+defn
+l : t ::   :: E :: 'E_'
+by
 
 defns
 
 judge_context :: 'J' ::=
 
 defn
-l : t ::   :: E :: 'E_'
+D |- E : t ::   :: E :: 'E_'
 by
 
+X : t \in D
 ------------ :: var
-X: t |- X: t
+D |- X: t
 
 D, X: t1 |- E: t2
--------------------------- :: lam
+X once E
+---------------------------- :: lam
 D |- lam X: t1 . E: t1 * t2
 
-D1 |- E1: t1 * t2
-D2 |- E2: t1
+D |- E1: t1 * t2
+D |- E2: t1
 ------------------ :: app
-D1 ++ D2 |- E1 E2: t2
+D |- E1 E2: t2
 
-------------------- :: tt
-nil |- tt: unit
+---------------- :: tt
+D |- tt: unit
 
-D1 |- E1: unit
-D2 |- E2: t
+D |- E1: unit
+D |- E2: t
 ------------------- :: step
-D1 ++ D2 |- E1; E2: t
+D |- E1; E2: t
 
-D1 |- E1: t1
-D2 |- E2: t2
+D |- E1: t1
+D |- E2: t2
 ------------------- :: fanout
-D1 ++ D2 |- E1, E2: t1 * t2
+D |- E1, E2: t1 * t2
 
-D1 |- E1 : t1 * t2
-D2, X: t1, Y: t2 |- E2: t3
-------------------- :: let
-D1 ++ D2 |- let X, Y = E1 in E2: t3
+X once E2
+Y once E2
+D |- E1 : t1 * t2
+D, X: t1, Y: t2 |- E2: t3
+------------------------------------- :: let
+D |- let X, Y = E1 in E2: t3
 
 defns
 
@@ -140,26 +293,6 @@ S |- E [ N, N' ]
 S' |- E' [N]
 --------------------- :: app
 S ++ S' |- (E E') [ N' ]
-
-defns
-
-judgeS :: 'J' ::=
-
-defn
-S : D ::   :: S :: 'S_'
-by
-
----------- :: nil
-nil: nil
-
-S: D
-S': D'
------------------- :: merge
-S ++ S': D ++ D'
-
-nil |- [N] : t
------------------- :: one
-X := N : X: t
 
 defns
 

@@ -52,11 +52,6 @@ by
   [ := nil ] v === v
   [ := p, x := v'] v === [:= p] ([ x := v'] v)
 
-grammar
-formula :: formula_ ::=  
- | judgement                        ::   :: judgement
- | x != y                           :: M :: neq {{ icho ([[x]] <> [[y]]) }}
-
 defns
 
 find :: '' ::=
