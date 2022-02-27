@@ -614,6 +614,13 @@ Definition unshadow {E Γ x t0 t1 t2}:
   JE ((x, t0) :: (x, t1) :: Γ)%list E t2 → JE ((x, t0) :: Γ)%list E t2 :=
   map Environment.unshadow.
 
+Definition weaken {E Γ t}:
+  JE nil E t → JE Γ E t :=
+  map Environment.weaken.
+
+Definition swap {E Γ t x y t0 t1} (p: x ≠ y):
+  ((x, t0) :: (y, t1) :: Γ)%list ⊢ E ? t → ((y, t1) :: (x, t0) :: Γ)%list ⊢ E ? t := map (Environment.swap p).
+
 Lemma subst_linear_never {E' x E}:
   never x E → never x (subst_context E' x E).
 Proof.
@@ -749,18 +756,120 @@ Proof.
 Qed.
 
 Lemma subst_preserve:
-  ∀ {Γ E' t x},
-    Γ ⊢ E' ? t →
-  ∀ {E t'},
+  ∀ {E' t x},
+  ∀ {E Γ t'},
+    nil ⊢ E' ? t →
     cons (x, t) Γ ⊢ E ? t' →
     Γ ⊢ subst_context E' x E ? t'.
 Proof using.
-  intros Γ E' t x p E.
+  intros E' t x E.
   induction E.
   all: cbn.
-  all: intros t' q.
-  all: admit.
-Admitted.
+  all: intros Γ t' p q.
+  - inversion q.
+    subst.
+    inversion H1.
+    all: subst.
+    all: destruct eq_var.
+    all: subst.
+    all: try contradiction.
+    + apply weaken.
+      auto.
+    + constructor.
+      auto.
+  - inversion q.
+    subst.
+    destruct eq_var.
+    + subst.
+      constructor.
+      eapply unshadow.
+      eauto.
+    + constructor.
+      apply IHE.
+      1: auto.
+      apply swap.
+      all: auto.
+  - inversion q.
+    subst.
+    econstructor.
+    all: eauto.
+  - inversion q.
+    subst.
+    constructor.
+  - inversion q.
+    subst.
+    econstructor.
+    all: eauto.
+  - inversion q.
+    subst.
+    econstructor.
+    all: eauto.
+  - inversion q.
+    subst.
+    destruct eq_var.
+    all: try destruct eq_var.
+    all: subst.
+    + econstructor.
+      all: eauto.
+      refine (map _ H6).
+      intros.
+      inversion H.
+      all: subst.
+      * constructor.
+      * constructor.
+        1: auto.
+        eapply Environment.unshadow.
+        eauto.
+    + econstructor.
+      all: eauto.
+      eset (H6' := swap _ H6).
+      Unshelve.
+      2: auto.
+      refine (map _ H6').
+      intros.
+      inversion H.
+      all: subst.
+      * constructor.
+        all: auto.
+        constructor.
+      * inversion H8.
+        all: subst.
+        -- constructor.
+        -- constructor.
+           1: auto.
+           inversion H10.
+           all: subst.
+           1: contradiction.
+           constructor.
+           all: auto.
+    + econstructor.
+      all: eauto.
+      eapply IHE2.
+      1: auto.
+      refine (map _ H6).
+      intros.
+      inversion H.
+      all: subst.
+      * constructor.
+        all: auto.
+        constructor.
+      * inversion H8.
+        all: subst.
+        -- constructor.
+           all: auto.
+           constructor.
+           all: auto.
+           constructor.
+        -- inversion H10.
+           all: subst.
+           1: constructor.
+           constructor.
+           all: auto.
+           constructor.
+           all: auto.
+           constructor.
+           all: auto.
+Qed.
 
 Lemma subst_assoc {x f g h}:
   subst_context (subst_context h x g) x f = subst_context h x (subst_context g x f).

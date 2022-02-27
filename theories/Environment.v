@@ -80,3 +80,28 @@ Proof using.
   constructor.
   all: auto.
 Qed.
+
+Lemma weaken {Γ}: ∀ x t, mem x t nil → mem x t Γ.
+Proof using.
+  intros ? ? p.
+  inversion p.
+Qed.
+
+Lemma swap {Γ y y' t0 t1}:
+  y ≠ y' →
+  ∀ x t, mem x t ((y, t0) :: (y', t1) :: Γ)%list → mem x t ((y', t1) :: (y, t0) :: Γ)%list.
+Proof using.
+  intros ? ? ? p.
+  inversion p.
+  all: subst.
+  - constructor.
+    1: auto.
+    constructor.
+  - inversion H6.
+    all: subst.
+    + constructor.
+    + constructor.
+      all: auto.
+      constructor.
+      all: auto.
+Qed.
