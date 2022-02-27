@@ -237,6 +237,7 @@ Module Import Vert.
   Next Obligation.
   Proof using.
     constructor.
+    all: constructor.
     constructor.
   Qed.
 

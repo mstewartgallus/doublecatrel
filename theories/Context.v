@@ -68,11 +68,7 @@ Section Typecheck.
 
     | E_lam x t1 E =>
         do t2 ← typecheck ((x, t1) :: Γ) E ;
-        if count x E is one
-        then
-          Some (t1 * t2)
-        else
-          None
+        Some (t1 * t2)
     | E_app E E' =>
         do (t1 * t2) ← typecheck Γ E ;
         do t1' ← typecheck Γ E' ;
@@ -96,13 +92,36 @@ Section Typecheck.
     | E_let x y E E' =>
         do (t1 * t2) ← typecheck Γ E ;
         do t3 ← typecheck ((y, t2) :: (x, t1) :: Γ) E' ;
-        match count x E', count y E' with
-        | one, one => Some t3
-        | _, _ => None
-        end
+        Some t3
     end
       %list %map.
 End Typecheck.
+
+Function lincheck E :=
+  match E with
+  | E_var _ => true
+
+  | E_lam x _ E =>
+      lincheck E &&
+        if count x E is one then true else false
+  | E_app E E' =>
+      lincheck E && lincheck E'
+
+  | E_tt => true
+
+  | E_step E E' =>
+      lincheck E && lincheck E'
+
+  | E_fanout E E' =>
+      lincheck E && lincheck E'
+
+  | E_let x y E E' =>
+      lincheck E &&
+        lincheck E' &&
+        (if count x E' is one then true else false) &&
+        (if count y E' is one then true else false)
+  end
+    %bool %list.
 
 Notation "'do' n ← e0 ; e1" :=
   (List.flat_map (λ n, e1) e0)
@@ -307,6 +326,62 @@ Proof using.
   auto.
 Qed.
 
+Theorem lincheck_sound:
+  ∀ {E}, lincheck E = true → JL E.
+Proof using.
+  intros E.
+  induction E.
+  all: cbn.
+  all: intros p.
+  all: try discriminate.
+  all: subst.
+  - constructor.
+  - destruct (lincheck E), (count x E) eqn:q.
+    all: try discriminate.
+    constructor.
+    all: auto.
+    apply count_once.
+    auto.
+  - destruct (lincheck E1), (lincheck E2).
+    all: try discriminate.
+    constructor.
+    all: auto.
+  - constructor.
+  - destruct (lincheck E1), (lincheck E2).
+    all: try discriminate.
+    constructor.
+    all: auto.
+  - destruct (lincheck E1), (lincheck E2).
+    all: try discriminate.
+    constructor.
+    all: auto.
+  - destruct (lincheck E1), (lincheck E2), (count x E2) eqn:qx, (count y E2) eqn:qy.
+    all: try discriminate.
+    constructor.
+    all: auto.
+    all: apply count_once.
+    all: auto.
+Qed.
+
+Theorem lincheck_complete:
+  ∀ {E}, JL E → lincheck E = true.
+Proof using.
+  intros ? p.
+  induction p.
+  all: cbn.
+  all: auto.
+  all: try rewrite IHp.
+  all: cbn.
+  all: try rewrite IHp1.
+  all: try rewrite IHp2.
+  all: cbn.
+  all: auto.
+  all: rewrite count_complete_one.
+  all: auto.
+  all: rewrite count_complete_one.
+  all: auto.
+Qed.
+
 Theorem typecheck_sound:
   ∀ Γ {E t}, typecheck Γ E = Some t → JE Γ E t.
 Proof using.
@@ -318,14 +393,8 @@ Proof using.
   all: subst.
   all: try econstructor.
   all: eauto.
-  - apply find_sound.
-    auto.
-  - apply count_once.
-    auto.
-  - apply count_once.
-    auto.
-  - apply count_once.
-    auto.
+  apply find_sound.
+  auto.
 Qed.
 
 Theorem typecheck_complete:
@@ -338,7 +407,6 @@ Proof using.
   - apply find_complete.
     auto.
   - rewrite IHp.
-    rewrite count_complete_one.
     all: auto.
   - rewrite IHp1, IHp2.
     destruct eq_type.
@@ -349,10 +417,7 @@ Proof using.
   - rewrite IHp1, IHp2.
     auto.
   - rewrite IHp1, IHp2.
-    rewrite count_complete_one.
-    2: auto.
-    rewrite count_complete_one.
-    all: auto.
+    auto.
 Qed.
 
 Lemma sound_pure:
@@ -529,13 +594,13 @@ Proof.
     all: subst.
     all: constructor.
     all: auto.
-  - refine (IHE2 _ _ _ _ H9).
+  - refine (IHE2 _ _ _ _ H7).
     intros ? ? q.
     inversion q.
     all: subst.
     all: constructor.
     all: auto.
-    inversion H10.
+    inversion H8.
     all: subst.
     all: constructor.
     all: auto.
@@ -694,33 +759,7 @@ Proof using.
   induction E.
   all: cbn.
   all: intros t' q.
-  - inversion q.
-    subst.
-    destruct eq_var.
-    + subst.
-      inversion H1.
-      2: contradiction.
-      subst.
-      auto.
-    + inversion H1.
-      1: subst; contradiction.
-      subst.
-      constructor.
-      auto.
-  - destruct eq_var.
-    + subst.
-      inversion q.
-      subst.
-      econstructor.
-      2: auto.
-      eapply unshadow.
-      eauto.
-    + inversion q.
-      subst.
-      econstructor.
-      admit.
-      admit.
- all: admit.
+  all: admit.
 Admitted.
 
 Lemma subst_assoc {x f g h}:
@@ -756,7 +795,7 @@ Proof.
     auto.
 Qed.
 
-Definition oftype Γ t := { E | JE Γ E t }.
+Definition oftype Γ t := { E | JE Γ E t ∧ JL E }.
 
 Definition equiv {Γ t}: Relation_Definitions.relation (oftype Γ t) :=
   λ a b,

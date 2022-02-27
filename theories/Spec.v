@@ -26,14 +26,14 @@ Inductive normal : Set :=
  | N_tt : normal
  | N_fanout (N:normal) (N':normal).
 
-Definition environment : Set := (list (var * type)).
-
 Inductive term : Set := 
  | v_var (x:var)
  | v_tt : term
  | v_fst (v:term)
  | v_snd (v:term)
  | v_fanout (v:term) (v':term).
+
+Definition environment : Set := (list (var * type)).
 
 Definition subst : Set := (list (var * term)).
 Lemma eq_normal: forall (x y : normal), {x = y} + {x <> y}.
@@ -140,6 +140,8 @@ Definition store : Set := (Map.map normal).
 Inductive span : Set := 
  | P_with (σ:store) (N:normal).
 
+Definition set : Set := (list span).
+
 Inductive context : Set := 
  | E_var (x:var)
  | E_lam (x:var) (t:type) (E:context)
@@ -148,8 +150,6 @@ Inductive context : Set :=
  | E_step (E:context) (E':context)
  | E_fanout (E:context) (E':context)
  | E_let (x:var) (y:var) (E:context) (E':context).
-
-Definition set : Set := (list span).
 Lemma eq_context: forall (x y : context), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -269,6 +269,40 @@ Inductive once : var -> context -> Prop :=    (* defn once *)
      once x (E_let y y' E E').
 (** definitions *)
 
+(* defns dummy *)
+Inductive dd : Prop :=    (* defn d *).
+(** definitions *)
+
+(* defns judge_linear *)
+Inductive JL : context -> Prop :=    (* defn L *)
+ | JL_var : forall (x:var),
+     JL (E_var x)
+ | JL_lam : forall (x:var) (t:type) (E:context),
+     once x E ->
+     JL E ->
+     JL (E_lam x t E)
+ | JL_app : forall (E E':context),
+     JL E ->
+     JL E' ->
+     JL (E_app E E')
+ | JL_tt : 
+     JL E_tt
+ | JL_step : forall (E E':context),
+     JL E ->
+     JL E' ->
+     JL (E_step E E')
+ | JL_fanout : forall (E E':context),
+     JL E ->
+     JL E' ->
+     JL (E_fanout E E')
+ | JL_let : forall (x y:var) (E E':context),
+     once x E' ->
+     once y E' ->
+     JL E ->
+     JL E' ->
+     JL (E_let x y E E').
+(** definitions *)
+
 (* defns judge_context *)
 Inductive JE : environment -> context -> type -> Prop :=    (* defn E *)
  | JE_var : forall (Γ:environment) (x:var) (t:type),
@@ -276,7 +310,6 @@ Inductive JE : environment -> context -> type -> Prop :=    (* defn E *)
      JE Γ (E_var x) t
  | JE_lam : forall (Γ:environment) (x:var) (t1:type) (E:context) (t2:type),
      JE  (cons ( x ,  t1 )  Γ )  E t2 ->
-     once x E ->
      JE Γ (E_lam x t1 E) (t_prod t1 t2)
  | JE_app : forall (Γ:environment) (E1 E2:context) (t2 t1:type),
      JE Γ E1 (t_prod t1 t2) ->
@@ -293,8 +326,6 @@ Inductive JE : environment -> context -> type -> Prop :=    (* defn E *)
      JE Γ E2 t2 ->
      JE Γ (E_fanout E1 E2) (t_prod t1 t2)
  | JE_let : forall (Γ:environment) (x y:var) (E1 E2:context) (t3 t1 t2:type),
-     once x E2 ->
-     once y E2 ->
      JE Γ E1 (t_prod t1 t2) ->
      JE  (cons ( y ,  t2 )   (cons ( x ,  t1 )  Γ )  )  E2 t3 ->
      JE Γ (E_let x y E1 E2) t3.

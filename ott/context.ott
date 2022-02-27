@@ -182,6 +182,55 @@ x once let y, y' = E in E'
 
 defns
 
+dummy :: 'd' ::=
+
+defn
+dumb ::   :: d :: 'd_'
+by
+
+defns
+
+judge_linear :: 'J' ::=
+
+defn
+lin E ::   :: L :: 'L_'
+by
+
+-------- :: var
+lin x
+
+x once E
+lin E
+----------------- :: lam
+lin lam x: t. E
+
+lin E
+lin E'
+-------- :: app
+lin E E' 
+
+------ :: tt
+lin tt
+
+lin E
+lin E'
+---------- :: step
+lin E ; E'
+
+lin E
+lin E'
+---------- :: fanout
+lin E , E'
+
+x once E'
+y once E'
+lin E
+lin E'
+----------------------- :: let
+lin let x , y = E in E'  
+
+defns
+
 judge_context :: 'J' ::=
 
 defn
@@ -193,7 +242,6 @@ x: t \in G
 G |- x: t
 
 G, x: t1 |- E: t2
-x once E
 ---------------------------- :: lam
 G |- lam x: t1 . E: t1 * t2
 
@@ -215,8 +263,6 @@ G |- E2: t2
 ------------------- :: fanout
 G |- E1, E2: t1 * t2
 
-x once E2
-y once E2
 G |- E1 : t1 * t2
 G, x: t1, y: t2 |- E2: t3
 ------------------------------------- :: let
