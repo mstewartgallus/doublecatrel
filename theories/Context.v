@@ -393,7 +393,7 @@ Proof using.
   induction E.
   all: intros.
   - cbn.
-    destruct (Map.find X σ) eqn:q.
+    destruct Map.find eqn:q.
     2: constructor.
     apply sound_pure.
     constructor.
@@ -405,10 +405,10 @@ Proof using.
     apply sound_mon.
     2: auto.
     clear IHl.
-    induction (IHE (X ↦ a ∪ σ)).
+    induction (IHE (x ↦ a ∪ σ)).
     1: constructor.
     cbn.
-    destruct (Map.find X σ0) eqn:q.
+    destruct Map.find eqn:q.
     2: auto.
     destruct (eq_normal a n).
     2: auto.
@@ -481,12 +481,12 @@ Proof using.
     1: constructor.
     cbn.
     rewrite List.app_nil_r.
-    induction (IHE2 (((X ↦ N1 ∪ Y ↦ N2) ∪ σ))).
+    induction (IHE2 (((x ↦ N1 ∪ y ↦ N2) ∪ σ))).
     1: constructor.
     cbn.
-    destruct (Map.find X (σ1 \ Y)) eqn:q.
+    destruct (Map.find x (σ1 \ y)) eqn:q.
     2: auto.
-    destruct (Map.find Y σ1) eqn:q'.
+    destruct (Map.find y σ1) eqn:q'.
     2: auto.
     destruct (eq_normal N1 n).
     2: auto.

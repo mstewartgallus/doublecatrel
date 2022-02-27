@@ -1,4 +1,4 @@
-metavar var, x, y, X, Y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[var]]} }}
+metavar var, x, y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[var]]} }}
 
 grammar
 term, v :: 'v_' ::= {{ coq-equality }}
@@ -105,10 +105,10 @@ by
 -------------------- :: tt
 tt ! tt
 
-v1 ! N1'
-v2 ! N2'
+v1 ! N1
+v2 ! N2
 -------------------- :: fanout
-v1, v2 ! N1', N2'
+v1, v2 ! N1, N2
 
 v ! N1, N2
 -------------------- :: fst

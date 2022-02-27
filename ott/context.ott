@@ -5,18 +5,18 @@ Require Blech.Map.
 grammar
 
 context, E :: 'E_' ::= {{ coq-equality }}
-  | X                        ::   :: var
-  | lam X : t . E            ::   :: lam (+ bind X in E +)
+  | x                        ::   :: var
+  | lam x : t . E            ::   :: lam (+ bind x in E +)
   | E E'                     ::   :: app
   | tt                       ::   :: tt
   | E ; E'                   ::   :: step
   | E , E'                   ::   :: fanout
-  | let X , Y = E in E'      ::   :: let (+ bind X union Y in E' +)
+  | let x , y = E in E'      ::   :: let (+ bind x union y in E' +)
   | ( E )                    :: S :: paren {{ icho ([[E]]) }}
 
 store, S {{ tex \sigma }} {{ coq σ }} :: 'S_'  ::= {{ coq (Map.map normal) }}
   | nil                   :: M :: empty {{ coq (Map.empty) }}
-  | X := N                :: M :: one {{ coq (Map.one [[X]] [[N]]) }}
+  | x := N                :: M :: one {{ coq (Map.one [[x]] [[N]]) }}
   | S , S'                :: M :: add {{ coq (Map.merge [[S']] [[S]]) }}
   | S ++ S'               :: M :: merge {{ coq (Map.merge [[S]] [[S']]) }}
 
@@ -42,8 +42,8 @@ terminals :: 'terminals_' ::=
   | let          ::   :: let  {{ tex \mathbin{\textbf{let} } }}
   | in           ::   :: letin  {{ tex \mathbin{\textbf{in} } }}
   | \in          ::   :: member  {{ tex \in{} }}
-  | once         ::   :: once  {{ tex \mathbin{\in{}!} }}
-  | never        ::   :: never  {{ tex \mathbin{\notin{} } }}
+  | once         ::   :: once  {{ tex \mathrel{\in{}!} }}
+  | never        ::   :: never  {{ tex \mathrel{\notin} }}
   | !            ::   :: big     {{ tex \mathrel{\Downarrow} }}
   | !=           ::   :: ne     {{ tex \mathrel{\ne} }}
   | ==           ::   :: equiv   {{ tex \mathrel{\sim} }}
@@ -52,7 +52,7 @@ parsing
   S_add left S_add
 
 substitutions
-  single E X :: subst
+  single E x :: subst
 
 grammar
 formula :: formula_ ::=  
@@ -64,121 +64,121 @@ defns
 nev :: '' ::=
 
 defn
-X never E :: :: never :: 'never_'
+x never E :: :: never :: 'never_'
 by
 
-X != Y
+x != y
 --------- :: var
-X never Y
+x never y
 
 --------------------- :: lam_eq
-X never lam X : t. E
+x never lam x : t. E
 
-X never E
-X != Y
+x never E
+x != y
 --------------------- :: lam
-X never lam Y : t. E
+x never lam y : t. E
 
-X never E
-X never E'
+x never E
+x never E'
 ------------ :: app
-X never E E'
+x never E E'
 
 --------- :: tt
-X never tt
+x never tt
 
-X never E
-X never E'
+x never E
+x never E'
 ------------- :: step
-X never E; E'
+x never E; E'
 
-X never E
-X never E'
+x never E
+x never E'
 ------------- :: fanout
-X never E, E'
+x never E, E'
 
-X never E
-X never E'
-X != Y
-X != Y'
+x never E
+x never E'
+x != y
+x != y'
 ---------------------------- :: let
-X never let Y, Y' = E in E'
+x never let y, y' = E in E'
 
-X never E
+x never E
 ---------------------------- :: let_eq_1
-X never let X, Y = E in E'
+x never let x, y = E in E'
 
-X never E
+x never E
 ---------------------------- :: let_eq_2
-X never let Y, X = E in E'
+x never let y, x = E in E'
 
 defns
 
 onc :: '' ::=
 
 defn
-X once E :: :: once :: 'once_'
+x once E :: :: once :: 'once_'
 by
 
 --------- :: var
-X once X
+x once x
 
-X != Y
-X once E
+x != y
+x once E
 ------------------- :: lam
-X once lam Y: t. E
+x once lam y: t. E
 
-X once E
-X never E'
+x once E
+x never E'
 ------------- :: app_l
-X once E E'
+x once E E'
 
-X never E
-X once E'
+x never E
+x once E'
 ------------- :: app_r
-X once E E'
+x once E E'
 
-X once E
-X never E'
+x once E
+x never E'
 ------------- :: step_l
-X once E; E'
+x once E; E'
 
-X never E
-X once E'
+x never E
+x once E'
 ------------------- :: step_r
-X once E; E'
+x once E; E'
 
-X once E
-X never E'
+x once E
+x never E'
 ------------- :: fanout_l
-X once E, E'
+x once E, E'
 
-X never E
-X once E'
+x never E
+x once E'
 ------------------- :: fanout_r
-X once E, E'
+x once E, E'
 
-X once E
-X never E'
-X != Y
-X != Y'
+x once E
+x never E'
+x != y
+x != y'
 ----------------------------- :: let_l
-X once let Y, Y' = E in E'
+x once let y, y' = E in E'
 
-X once E
+x once E
 ---------------------------- :: let_l1
-X once let X, Y = E in E'
+x once let x, y = E in E'
 
-X once E
+x once E
 ----------------------------- :: let_l2
-X once let Y, X = E in E'
+x once let y, x = E in E'
 
-X never E
-X once E'
-X != Y
-X != Y'
+x never E
+x once E'
+x != y
+x != y'
 ----------------------------- :: let_r
-X once let Y, Y' = E in E'
+x once let y, y' = E in E'
 
 defns
 
@@ -188,14 +188,14 @@ defn
 G |- E : t ::   :: E :: 'E_'
 by
 
-X : t \in G
+x: t \in G
 ------------ :: var
-G |- X: t
+G |- x: t
 
-G, X: t1 |- E: t2
-X once E
+G, x: t1 |- E: t2
+x once E
 ---------------------------- :: lam
-G |- lam X: t1 . E: t1 * t2
+G |- lam x: t1 . E: t1 * t2
 
 G |- E1: t1 * t2
 G |- E2: t1
@@ -215,12 +215,12 @@ G |- E2: t2
 ------------------- :: fanout
 G |- E1, E2: t1 * t2
 
-X once E2
-Y once E2
+x once E2
+y once E2
 G |- E1 : t1 * t2
-G, X: t1, Y: t2 |- E2: t3
+G, x: t1, y: t2 |- E2: t3
 ------------------------------------- :: let
-G |- let X, Y = E1 in E2: t3
+G |- let x, y = E1 in E2: t3
 
 defns
 
@@ -231,7 +231,7 @@ S |- E [ N ] ::   :: sat :: 'sat_' {{ tex [[S]] \mathrel{\vdash} [[E]][ [[N]] ] 
 by
 
 ---------------------- :: var
-X := N |- X [ N ]
+x := N |- x [ N ]
 
 ------------------ :: tt
 nil |- tt [tt]
@@ -247,13 +247,13 @@ S' |-  E' [N']
 S ++ S' |- (E, E') [N, N']
 
 S |- E [N0, N1]
-S', X := N0, Y := N1 |- E' [ N2 ]
+S', x := N0, y := N1 |- E' [ N2 ]
 ------------------------------------- :: let
-S ++ S' |- (let X, Y = E in E') [ N2 ]
+S ++ S' |- (let x, y = E in E') [ N2 ]
 
-S, X := N |- E [ N' ]
+S, x := N |- E [ N' ]
 ------------------------- :: lam
-S |- (lam X: t. E) [ N, N' ]
+S |- (lam x: t. E) [ N, N' ]
 
 S |- E [ N, N' ]
 S' |- E' [N]
