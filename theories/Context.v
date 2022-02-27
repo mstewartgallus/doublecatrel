@@ -19,7 +19,7 @@ Implicit Type Γ: environment.
 Implicit Type E: context.
 Implicit Type t: type.
 Implicit Type N: normal.
-Implicit Types X Y: var.
+Implicit Types x y: var.
 Implicit Type σ: store.
 
 Import Map.MapNotations.
@@ -35,45 +35,40 @@ Definition add a b :=
   | _, _ => one
   end.
 
-Infix "+" := add.
+Section count.
+  Infix "+" := add.
 
-Function count X E :=
-  match E with
-  | E_var Y => if eq_var X Y then one else zero
-
-  | E_lam Y t E =>
-      if eq_var X Y then zero else count X E
-
-  | E_app E E' => count X E + count X E'
-
-  | E_tt => zero
-
-  | E_step E E' => count X E + count X E'
-
-  | E_fanout E E' => count X E + count X E'
-
-  | E_let Y Y' E E' =>
-      if eq_var X Y
-      then
-        count X E
-      else
-        if eq_var X Y'
+  Function count x E :=
+    match E with
+    | E_var y => if eq_var x y then one else zero
+    | E_lam y t E => if eq_var x y then zero else count x E
+    | E_app E E' => count x E + count x E'
+    | E_tt => zero
+    | E_step E E' => count x E + count x E'
+    | E_fanout E E' => count x E + count x E'
+    | E_let y y' E E' =>
+        if eq_var x y
         then
-          count X E
+          count x E
         else
-          count X E + count X E'
-  end.
+          if eq_var x y'
+          then
+            count x E
+          else
+            count x E + count x E'
+    end.
+End count.
 
 Section Typecheck.
   Import OptionNotations.
 
   Function typecheck Γ E: option type :=
     match E with
-    | E_var X => find X Γ
+    | E_var x => find x Γ
 
-    | E_lam X t1 E =>
-        do t2 ← typecheck ((X, t1) :: Γ) E ;
-        if count X E is one
+    | E_lam x t1 E =>
+        do t2 ← typecheck ((x, t1) :: Γ) E ;
+        if count x E is one
         then
           Some (t1 * t2)
         else
@@ -98,10 +93,10 @@ Section Typecheck.
         do t2 ← typecheck Γ E' ;
         Some (t1 * t2)
 
-    | E_let X Y E E' =>
+    | E_let x y E E' =>
         do (t1 * t2) ← typecheck Γ E ;
-        do t3 ← typecheck ((Y, t2) :: (X, t1) :: Γ) E' ;
-        match count X E', count Y E' with
+        do t3 ← typecheck ((y, t2) :: (x, t1) :: Γ) E' ;
+        match count x E', count y E' with
         | one, one => Some t3
         | _, _ => None
         end
@@ -109,9 +104,9 @@ Section Typecheck.
       %list %map.
 End Typecheck.
 
-Notation "'do' x ← e0 ; e1" :=
-  (List.flat_map (λ x, e1) e0)
-    (x pattern, at level 200, left associativity): list_scope.
+Notation "'do' n ← e0 ; e1" :=
+  (List.flat_map (λ n, e1) e0)
+    (n pattern, at level 200, left associativity): list_scope.
 
 Fixpoint generate t: list normal :=
   match t with
@@ -124,16 +119,16 @@ Fixpoint generate t: list normal :=
 
 Fixpoint search σ E: list span :=
   match E with
-  | E_var X => if Map.find X σ is Some N then [X ↦ N |- N] else []
+  | E_var x => if Map.find x σ is Some N then [x ↦ N |- N] else []
 
-  | E_lam X t E =>
+  | E_lam x t E =>
       do N0 ← generate t ;
-      do (σ' |- N1) ← search (X ↦ N0 ∪ σ) E ;
-      if Map.find X σ' is Some N0'
+      do (σ' |- N1) ← search (x ↦ N0 ∪ σ) E ;
+      if Map.find x σ' is Some N0'
       then
         if eq_normal N0 N0'
         then
-          [σ' \ X |- N_fanout N0 N1]
+          [σ' \ x |- N_fanout N0 N1]
         else
           []
       else
@@ -168,17 +163,17 @@ Fixpoint search σ E: list span :=
       do (σ2 |- N') ← search σ E' ;
       [σ1 ∪ σ2 |- N_fanout N N']
 
-  | E_let X Y E E' =>
+  | E_let x y E E' =>
       do (σ1 |- N) ← search σ E ;
       do (a, b) ← (if N is N_fanout a b then [(a, b)] else []) ;
-      do (σ2 |- N') ← search ((X ↦ a) ∪ (Y ↦ b) ∪ σ) E' ;
-      match Map.find X (σ2 \ Y), Map.find Y σ2 with
+      do (σ2 |- N') ← search ((x ↦ a) ∪ (y ↦ b) ∪ σ) E' ;
+      match Map.find x (σ2 \ y), Map.find y σ2 with
       | Some a', Some b' =>
           if eq_normal a a'
           then
             if eq_normal b b'
             then
-              [σ1 ∪ ((σ2 \ Y) \ X) |- N']
+              [σ1 ∪ ((σ2 \ y) \ x) |- N']
             else
               []
           else
@@ -187,10 +182,9 @@ Fixpoint search σ E: list span :=
       end
   end%list %map.
 
-Theorem count_complete_never:
-  ∀ {X E}, never X E → count X E = zero.
+Theorem count_complete_never {x E}: never x E → count x E = zero.
 Proof using.
-  intros ? ? p.
+  intros p.
   induction p.
   all: cbn.
   all: try destruct eq_var.
@@ -216,38 +210,37 @@ Proof using.
   induction p.
   all: cbn.
   all: try destruct eq_var.
+  all: try destruct eq_var.
   all: subst.
   all: try contradiction.
   all: auto.
   all: try rewrite IHp.
   all: cbn.
-  all: try destruct eq_var.
-  all: subst.
   all: try contradiction.
   all: try rewrite count_complete_never.
   all: auto.
 Qed.
 
 Theorem count_sound:
-  ∀ {X E}, match count X E with
-           | one => once X E
-           | zero => never X E
+  ∀ {x E}, match count x E with
+           | one => once x E
+           | zero => never x E
            | many => True
            end.
 Proof using.
-  intros X E.
-  functional induction (count X E).
+  intros x E.
+  functional induction (count x E).
   - constructor.
   - constructor.
     auto.
   - constructor.
-  - destruct (count X E0).
+  - destruct (count x E0).
     all: auto.
     + constructor.
       all: auto.
     + constructor.
       all: auto.
-  - destruct (count X E0), (count X E').
+  - destruct (count x E0), (count x E').
     all: cbn.
     all: auto.
     + constructor.
@@ -257,7 +250,7 @@ Proof using.
     + apply once_app_l.
       all: auto.
   - constructor.
-  - destruct (count X E0), (count X E').
+  - destruct (count x E0), (count x E').
     all: cbn.
     all: auto.
     + constructor.
@@ -266,7 +259,7 @@ Proof using.
       all: auto.
     + apply once_step_l.
       all: auto.
-  - destruct (count X E0), (count X E').
+  - destruct (count x E0), (count x E').
     all: cbn.
     all: auto.
     + constructor.
@@ -275,19 +268,19 @@ Proof using.
       all: auto.
     + apply once_fanout_l.
       all: auto.
-  - destruct (count X E0).
+  - destruct (count x E0).
     all: auto.
     + apply never_let_eq_1.
-      auto.
+      all: auto.
     + apply once_let_l1.
-      auto.
-  - destruct (count X E0).
+      all: auto.
+  - destruct (count x E0).
     all: auto.
     + apply never_let_eq_2.
-      auto.
+      all: auto.
     + apply once_let_l2.
-      auto.
-  - destruct (count X E0), (count X E').
+      all: auto.
+  - destruct (count x E0), (count x E').
     all: cbn.
     all: auto.
     + constructor.
@@ -298,20 +291,18 @@ Proof using.
       all: auto.
 Qed.
 
-Corollary count_once:
-  ∀ {X E}, count X E = one → once X E.
-Proof.
-  intros ? ? p.
-  set (H := @count_sound X E).
+Corollary count_once {x E}: count x E = one → once x E.
+Proof using.
+  intros p.
+  set (H := @count_sound x E).
   rewrite p in H.
   auto.
 Qed.
 
-Corollary count_never:
-  ∀ {X E}, count X E = zero → never X E.
-Proof.
-  intros ? ? p.
-  set (H := @count_sound X E).
+Corollary count_never {x E}: count x E = zero → never x E.
+Proof using.
+  intros p.
+  set (H := @count_sound x E).
   rewrite p in H.
   auto.
 Qed.
@@ -520,8 +511,8 @@ Proof using.
 Defined.
 
 
-Lemma subst_assoc {X f g h}:
-  subst_context (subst_context h X g) X f = subst_context h X (subst_context g X f).
+Lemma subst_assoc {x f g h}:
+  subst_context (subst_context h x g) x f = subst_context h x (subst_context g x f).
 Proof.
   induction f.
   all: cbn.

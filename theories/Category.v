@@ -227,12 +227,12 @@ End Hor.
 
 Module Import Vert.
   #[local]
-  Definition X: var := 0.
+  Definition x: var := 0.
 
-  Definition Vert t t' := Context.oftype (cons (X, t) nil) t'.
+  Definition Vert t t' := Context.oftype (cons (x, t) nil) t'.
 
   #[program]
-  Definition id t: Vert t t := E_var X.
+  Definition id t: Vert t t := E_var x.
 
   Next Obligation.
   Proof using.
@@ -241,7 +241,7 @@ Module Import Vert.
   Qed.
 
   #[program]
-  Definition compose {A B C} (f: Vert B C) (g: Vert A B): Vert A C := subst_context g X f.
+  Definition compose {A B C} (f: Vert B C) (g: Vert A B): Vert A C := subst_context g x f.
 
   Next Obligation.
   Proof.
