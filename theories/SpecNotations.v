@@ -3,6 +3,7 @@ Require Import Blech.Spec.
 Infix "*" := t_prod.
 
 Notation "G ⊢ v 'in' t" := (Jv G v t) (at level 90).
+Notation "G ⊢ E ? t" := (JE G E t) (at level 90).
 
 Notation "v ⇓ N" := (big v N) (at level 90).
 

@@ -549,6 +549,180 @@ Definition unshadow {E Γ x t0 t1 t2}:
   JE ((x, t0) :: (x, t1) :: Γ)%list E t2 → JE ((x, t0) :: Γ)%list E t2 :=
   map Environment.unshadow.
 
+Lemma subst_linear_never {E' x E}:
+  never x E → never x (subst_context E' x E).
+Proof.
+  intros p.
+  induction E.
+  all: cbn.
+  all: inversion p.
+  all: subst.
+  - destruct eq_var.
+    all: auto.
+    subst.
+    contradiction.
+  - destruct eq_var.
+    + subst.
+      constructor.
+    + constructor.
+      all: auto.
+  - destruct eq_var.
+    all: subst.
+    + constructor.
+    + constructor.
+      all: auto.
+  - constructor.
+    all: auto.
+  - constructor.
+    all: auto.
+  - constructor.
+    all: auto.
+  - constructor.
+    all: auto.
+  - destruct eq_var.
+    all: try destruct eq_var.
+    all: subst.
+    + apply never_let_eq_1.
+      all: auto.
+    + apply never_let_eq_2.
+      all: auto.
+    + constructor.
+      all: auto.
+  - destruct eq_var.
+    all: try destruct eq_var.
+    all: subst.
+    + apply never_let_eq_1.
+      all: auto.
+    + apply never_let_eq_2.
+      all: auto.
+    + contradiction.
+  - destruct eq_var.
+    all: try destruct eq_var.
+    all: subst.
+    + apply never_let_eq_1.
+      all: auto.
+    + apply never_let_eq_2.
+      all: auto.
+    + contradiction.
+Qed.
+
+Lemma subst_linear {E' x E}:
+  once x E' →
+  once x E → once x (subst_context E' x E).
+Proof.
+  intro q.
+  induction E.
+  all: cbn.
+  all: intros p.
+  all: inversion p.
+  all: subst.
+  - destruct eq_var.
+    2: contradiction.
+    auto.
+  - destruct eq_var.
+    1: subst; contradiction.
+    constructor.
+    all: auto.
+  - apply once_app_l.
+    all: auto.
+    apply subst_linear_never.
+    auto.
+  - apply once_app_r.
+    all: auto.
+    apply subst_linear_never.
+    auto.
+  - apply once_step_l.
+    all: auto.
+    apply subst_linear_never.
+    auto.
+  - apply once_step_r.
+    all: auto.
+    apply subst_linear_never.
+    auto.
+  - apply once_fanout_l.
+    all: auto.
+    apply subst_linear_never.
+    auto.
+  - apply once_fanout_r.
+    all: auto.
+    apply subst_linear_never.
+    auto.
+  - destruct eq_var.
+    all: subst.
+    1: contradiction.
+    destruct eq_var.
+    all: subst.
+    1: contradiction.
+    apply once_let_l.
+    all: auto.
+    apply subst_linear_never.
+    auto.
+  - destruct eq_var.
+    all: subst.
+    2: contradiction.
+    apply once_let_l1.
+    all: auto.
+  - destruct eq_var.
+    all: subst.
+    + apply once_let_l1.
+      all: auto.
+    + destruct eq_var.
+      all: subst.
+      2: contradiction.
+      apply once_let_l2.
+      auto.
+  - destruct eq_var.
+    all: subst.
+    1: contradiction.
+    destruct eq_var.
+    all: subst.
+    1: contradiction.
+    apply once_let_r.
+    all: auto.
+    apply subst_linear_never.
+    auto.
+Qed.
+
+Lemma subst_preserve:
+  ∀ {Γ E' t x},
+    Γ ⊢ E' ? t →
+  ∀ {E t'},
+    cons (x, t) Γ ⊢ E ? t' →
+    Γ ⊢ subst_context E' x E ? t'.
+Proof using.
+  intros Γ E' t x p E.
+  induction E.
+  all: cbn.
+  all: intros t' q.
+  - inversion q.
+    subst.
+    destruct eq_var.
+    + subst.
+      inversion H1.
+      2: contradiction.
+      subst.
+      auto.
+    + inversion H1.
+      1: subst; contradiction.
+      subst.
+      constructor.
+      auto.
+  - destruct eq_var.
+    + subst.
+      inversion q.
+      subst.
+      econstructor.
+      2: auto.
+      eapply unshadow.
+      eauto.
+    + inversion q.
+      subst.
+      econstructor.
+      admit.
+      admit.
+ all: admit.
+Admitted.
+
 Lemma subst_assoc {x f g h}:
   subst_context (subst_context h x g) x f = subst_context h x (subst_context g x f).
 Proof.
