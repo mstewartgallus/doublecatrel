@@ -1,6 +1,7 @@
 Require Blech.Map.
 Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
+Require Import Blech.Environment.
 Require Blech.OptionNotations.
 
 Require Import Coq.Unicode.Utf8.
@@ -22,17 +23,6 @@ Implicit Types X Y: var.
 Implicit Type σ: store.
 
 Import Map.MapNotations.
-
-Function find X Γ :=
-  if Γ is ((Y, t) :: T)%list
-  then
-    if eq_var X Y
-    then
-      Some t
-    else
-      find X T
-  else
-    None.
 
 Variant occurs := zero | one | many.
 
@@ -333,34 +323,6 @@ Proof.
   set (H := @count_sound X E).
   rewrite p in H.
   auto.
-Qed.
-
-Lemma find_sound:
-  ∀ {X Γ t},
-    find X Γ = Some t → mem X t Γ.
-Proof.
-  intros X Γ.
-  functional induction (find X Γ).
-  all: intros ? p.
-  - inversion p.
-    subst.
-    constructor.
-  - constructor.
-    all: auto.
-  - discriminate.
-Qed.
-
-Lemma find_complete:
-  ∀ {X Γ t},
-    mem X t Γ → find X Γ = Some t .
-Proof.
-  intros X Γ t p.
-  induction p.
-  all: cbn.
-  all: destruct eq_var.
-  all: subst.
-  all: try contradiction.
-  all: auto.
 Qed.
 
 Theorem typecheck_sound:

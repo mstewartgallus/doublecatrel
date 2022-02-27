@@ -1,6 +1,7 @@
 Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
 Require Import Blech.OptionNotations.
+Require Import Blech.Environment.
 
 Require Import Coq.Unicode.Utf8.
 Require Import Coq.Classes.SetoidClass.
@@ -15,17 +16,6 @@ Implicit Type v: term.
 Implicit Type t: type.
 Implicit Type N: normal.
 Implicit Types x y: var.
-
-Function find x Γ :=
-  if Γ is ((x', t) :: T)%list
-  then
-    if eq_var x x'
-    then
-      Some t
-    else
-      find x T
-  else
-    None.
 
 Function typecheck Γ v :=
   match v with
@@ -58,32 +48,6 @@ Function eval v :=
       do v1' ← eval v1 ;
       Some (N_fanout v0' v1')
   end.
-
-Lemma find_sound:
-  ∀ {x Γ t}, find x Γ = Some t → mem x t Γ.
-Proof using .
-  intros x Γ.
-  functional induction (find x Γ).
-  all: intros ? p.
-  all: inversion p.
-  all: subst.
-  all: constructor.
-  all: auto.
-Qed.
-
-Lemma find_complete {x Γ t}:
-  mem x t Γ → find x Γ = Some t.
-Proof using .
-  intro p.
-  induction p.
-  all: cbn.
-  - destruct eq_var.
-    2: contradiction.
-    reflexivity.
-  - destruct eq_var.
-    1: contradiction.
-    auto.
-Qed.
 
 Theorem typecheck_sound:
   ∀ {Γ v t}, typecheck Γ v = Some t → Γ ⊢ v in t.
