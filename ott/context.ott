@@ -41,8 +41,8 @@ terminals :: 'terminals_' ::=
   | nil          ::   :: nil   {{ tex \bullet{} }}
   | let          ::   :: let  {{ tex \mathbin{\textbf{let} } }}
   | in           ::   :: letin  {{ tex \mathbin{\textbf{in} } }}
-  | \in          ::   :: member  {{ tex \in{} }}
-  | once         ::   :: once  {{ tex \mathrel{\in{}!} }}
+  | \in          ::   :: member  {{ tex \mathrel{\in} }}
+  | once         ::   :: once  {{ tex \mathrel{\in!} }}
   | never        ::   :: never  {{ tex \mathrel{\notin} }}
   | !            ::   :: big     {{ tex \mathrel{\Downarrow} }}
   | !=           ::   :: ne     {{ tex \mathrel{\ne} }}
