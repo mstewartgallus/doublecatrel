@@ -244,13 +244,149 @@ Module Import Vert.
   #[program]
   Definition compose {A B C} (f: Vert B C) (g: Vert A B): Vert A C := subst_context g x f.
 
+  (* FIXME figure out how to generalize this *)
+  #[local]
+  Lemma preserve {f}:
+    ∀ g {A B},
+    ((x, A) :: nil)%list ⊢ g ? B
+    → ∀ {C Γ}, ((x, B) :: Γ)%list ⊢ f ? C
+             → ((x, A) :: Γ)%list ⊢ subst_context g x f ? C.
+  Proof.
+    induction f.
+    all: cbn.
+    all: try destruct eq_var.
+    all: subst.
+    all: cbn.
+    all: try destruct eq_var.
+    all: subst.
+    all: cbn.
+    all: intros g A B p C Γ q.
+    all: inversion q.
+    all: subst.
+    + inversion H1.
+      2: contradiction.
+      subst.
+      replace ((x, A) :: Γ)%list with (cons (x, A) nil ++ Γ)%list.
+      2: auto.
+      apply (Context.map Environment.weaken).
+      auto.
+    + inversion H1.
+      all: subst.
+      1: contradiction.
+      constructor.
+      constructor.
+      all: auto.
+    + constructor.
+      apply Context.shadow.
+      eapply Context.unshadow.
+      eauto.
+    + constructor.
+      refine (Context.map _ (IHf g _ _ p _ _ _)).
+      2: {
+        eapply Context.swap.
+        2: apply H4.
+        auto.
+      }
+      intros.
+      apply Environment.swap.
+      all: auto.
+    + econstructor.
+      all: eauto.
+    + constructor.
+    + econstructor.
+      all: eauto.
+    + econstructor.
+      all: eauto.
+    + econstructor.
+      all: eauto.
+      refine (Context.map _ H6).
+      intros.
+      inversion H.
+      all: subst.
+      1: constructor.
+      constructor.
+      1: auto.
+      apply Environment.shadow.
+      eapply Environment.unshadow.
+      eauto.
+    + econstructor.
+      all: eauto.
+      refine (Context.map _ H6).
+      intros.
+      inversion H.
+      all: subst.
+      1: constructor.
+      constructor.
+      1: auto.
+      inversion H8.
+      all: subst.
+      1: constructor.
+      constructor.
+      all: auto.
+      constructor.
+      all: auto.
+      inversion H10.
+      all: subst.
+      all: auto.
+      contradiction.
+    + econstructor.
+      all: eauto.
+      refine (Context.map _ (IHf2 g _ _ p _ _ _)).
+      2: {
+        refine (Context.map _ H6).
+        intros.
+        inversion H.
+        all: subst.
+        -- constructor.
+           all: auto.
+           apply H.
+        -- inversion H8.
+           all: subst.
+           ++ constructor.
+              all: auto.
+           ++ inversion H10.
+              all: subst.
+              1: constructor.
+              constructor.
+              all: auto.
+      }
+      intros.
+      inversion H.
+      all: subst.
+      -- constructor.
+         all: auto.
+         constructor.
+         all: auto.
+         constructor.
+      -- inversion H8.
+         all: subst.
+         1: constructor.
+         constructor.
+         all: auto.
+         inversion H10.
+         all: subst.
+         1: constructor.
+         constructor.
+         all: auto.
+         constructor.
+         all: auto.
+         inversion H12.
+         all: subst.
+         all: auto.
+         contradiction.
+  Qed.
+
   Next Obligation.
   Proof.
     unfold Vert in *.
     unfold compose.
-    destruct f as [f ?], g as [g ?].
+    destruct f as [f [? ?]], g as [g [? ?]].
     cbn.
-    admit.
+    split.
+    - eapply preserve.
+      1: apply j1.
+      auto.
+    - admit.
   Admitted.
 
   Lemma compose_id_right {A B} (f: Vert A B): compose f (id _) == f.
@@ -262,7 +398,6 @@ Module Import Vert.
     cbn.
     admit.
   Admitted.
-
 
   Lemma compose_assoc {A B C D} (f: Vert C D) (g: Vert B C) (h: Vert A B):
     compose f (compose g h) == compose (compose f g) h.

@@ -614,9 +614,9 @@ Definition unshadow {E Γ x t0 t1 t2}:
   JE ((x, t0) :: (x, t1) :: Γ)%list E t2 → JE ((x, t0) :: Γ)%list E t2 :=
   map Environment.unshadow.
 
-Definition weaken {E Γ t}:
+Definition weaken_nil {E Γ t}:
   JE nil E t → JE Γ E t :=
-  map Environment.weaken.
+  map Environment.weaken_nil.
 
 Definition swap {E Γ t x y t0 t1} (p: x ≠ y):
   ((x, t0) :: (y, t1) :: Γ)%list ⊢ E ? t → ((y, t1) :: (x, t0) :: Γ)%list ⊢ E ? t := map (Environment.swap p).
@@ -773,7 +773,7 @@ Proof using.
     all: destruct eq_var.
     all: subst.
     all: try contradiction.
-    + apply weaken.
+    + apply weaken_nil.
       auto.
     + constructor.
       auto.

@@ -81,10 +81,21 @@ Proof using.
   all: auto.
 Qed.
 
-Lemma weaken {Γ}: ∀ x t, mem x t nil → mem x t Γ.
+Lemma weaken_nil {Γ}: ∀ x t, mem x t nil → mem x t Γ.
 Proof using.
   intros ? ? p.
   inversion p.
+Qed.
+
+Lemma weaken {Δ Γ}: ∀ x t, mem x t Δ → mem x t (Δ ++ Γ)%list.
+Proof using.
+  intros ? ? p.
+  induction p.
+  - cbn.
+    constructor.
+  - cbn.
+    constructor.
+    all: auto.
 Qed.
 
 Lemma swap {Γ y y' t0 t1}:
