@@ -327,7 +327,7 @@ Proof using.
 Qed.
 
 Theorem lincheck_sound:
-  ∀ {E}, lincheck E = true → JL E.
+  ∀ {E}, lincheck E = true → lin E.
 Proof using.
   intros E.
   induction E.
@@ -364,7 +364,7 @@ Proof using.
 Qed.
 
 Theorem lincheck_complete:
-  ∀ {E}, JL E → lincheck E = true.
+  ∀ {E}, lin E → lincheck E = true.
 Proof using.
   intros ? p.
   induction p.
@@ -383,7 +383,7 @@ Proof using.
 Qed.
 
 Theorem typecheck_sound:
-  ∀ Γ {E t}, typecheck Γ E = Some t → JE Γ E t.
+  ∀ Γ {E t}, typecheck Γ E = Some t → Γ ⊢ E ? t.
 Proof using.
   intros Γ E.
   functional induction (typecheck Γ E).
@@ -398,7 +398,7 @@ Proof using.
 Qed.
 
 Theorem typecheck_complete:
-  ∀ {Γ E t}, JE Γ E t → typecheck Γ E = Some t.
+  ∀ {Γ E t}, Γ ⊢ E ? t → typecheck Γ E = Some t.
 Proof using.
   intros Γ E t p.
   induction p.
@@ -904,7 +904,7 @@ Proof.
     auto.
 Qed.
 
-Definition oftype Γ t := { E | JE Γ E t ∧ JL E }.
+Definition oftype Γ t := { E | (Γ ⊢ E ? t) ∧ lin E }.
 
 Definition equiv {Γ t}: Relation_Definitions.relation (oftype Γ t) :=
   λ a b,

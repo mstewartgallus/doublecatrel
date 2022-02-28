@@ -274,33 +274,33 @@ Inductive dd : Prop :=    (* defn d *).
 (** definitions *)
 
 (* defns judge_linear *)
-Inductive JL : context -> Prop :=    (* defn L *)
- | JL_var : forall (x:var),
-     JL (E_var x)
- | JL_lam : forall (x:var) (t:type) (E:context),
+Inductive lin : context -> Prop :=    (* defn lin *)
+ | lin_var : forall (x:var),
+     lin (E_var x)
+ | lin_lam : forall (x:var) (t:type) (E:context),
      once x E ->
-     JL E ->
-     JL (E_lam x t E)
- | JL_app : forall (E E':context),
-     JL E ->
-     JL E' ->
-     JL (E_app E E')
- | JL_tt : 
-     JL E_tt
- | JL_step : forall (E E':context),
-     JL E ->
-     JL E' ->
-     JL (E_step E E')
- | JL_fanout : forall (E E':context),
-     JL E ->
-     JL E' ->
-     JL (E_fanout E E')
- | JL_let : forall (x y:var) (E E':context),
+     lin E ->
+     lin (E_lam x t E)
+ | lin_app : forall (E E':context),
+     lin E ->
+     lin E' ->
+     lin (E_app E E')
+ | lin_tt : 
+     lin E_tt
+ | lin_step : forall (E E':context),
+     lin E ->
+     lin E' ->
+     lin (E_step E E')
+ | lin_fanout : forall (E E':context),
+     lin E ->
+     lin E' ->
+     lin (E_fanout E E')
+ | lin_let : forall (x y:var) (E E':context),
      once x E' ->
      once y E' ->
-     JL E ->
-     JL E' ->
-     JL (E_let x y E E').
+     lin E ->
+     lin E' ->
+     lin (E_let x y E E').
 (** definitions *)
 
 (* defns judge_context *)

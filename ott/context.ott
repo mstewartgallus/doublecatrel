@@ -190,10 +190,10 @@ by
 
 defns
 
-judge_linear :: 'J' ::=
+judge_linear :: '' ::=
 
 defn
-lin E ::   :: L :: 'L_'
+lin E ::   :: lin :: 'lin_'
 by
 
 -------- :: var

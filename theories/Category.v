@@ -384,8 +384,7 @@ Module Import Vert.
     cbn.
     split.
     - eapply preserve.
-      1: apply j1.
-      auto.
+      all: eauto.
     - admit.
   Admitted.
 
