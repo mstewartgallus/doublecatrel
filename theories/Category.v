@@ -376,6 +376,79 @@ Module Import Vert.
          contradiction.
   Qed.
 
+  (* FIXME figure out how to generalize this *)
+  #[local]
+  Lemma linpreserve {f}:
+    ∀ g {A B},
+    ((x, A) :: nil)%list ⊢ g ? B
+    → ∀ {C Γ}, ((x, B) :: Γ)%list ⊢ f ? C
+               → lin f
+               → lin g
+               → lin (subst_context g x f).
+  Proof.
+    induction f.
+    all: cbn.
+    all: intros g ? ? ? ? ? p q ?.
+    all: try destruct eq_var.
+    all: subst.
+    all: try destruct eq_var.
+    all: subst.
+    all: auto.
+    all: inversion p.
+    all: subst.
+    all: inversion q.
+    all: subst.
+    + constructor.
+      2: eapply IHf.
+      all: eauto.
+      2: {
+        eapply Context.swap.
+        2: apply H6.
+        auto.
+      }
+      admit.
+    + constructor.
+      all: eauto.
+    + constructor.
+      all: eauto.
+    + constructor.
+      all: eauto.
+    + constructor.
+      all: auto.
+      eapply IHf1.
+      all: auto.
+      2: apply H7.
+      eauto.
+    + constructor.
+      all: auto.
+      eapply IHf1.
+      all: auto.
+      2: apply H7.
+      eauto.
+    + constructor.
+      all: eauto.
+      3: eapply IHf2.
+      all: eauto.
+      3: refine (Context.map _ H8).
+      3: {
+        intros.
+        inversion H1.
+        all: subst.
+        1: constructor.
+        all: eauto.
+        inversion H14.
+        all: subst.
+        1: constructor.
+        all:auto.
+        inversion H16.
+        all: subst.
+        1: constructor.
+        constructor.
+        all: auto.
+      }
+      all: admit.
+  Admitted.
+
   Next Obligation.
   Proof.
     unfold Vert in *.
@@ -385,8 +458,9 @@ Module Import Vert.
     split.
     - eapply preserve.
       all: eauto.
-    - admit.
-  Admitted.
+    - eapply linpreserve.
+      all: eauto.
+  Qed.
 
   Lemma compose_id_right {A B} (f: Vert A B): compose f (id _) == f.
   Proof.
