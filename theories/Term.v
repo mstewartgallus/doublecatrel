@@ -414,90 +414,35 @@ Definition unshadow {v Γ x t0 t1 t2}:
   ((x, t0) :: (x, t1) :: Γ)%list ⊢ v in t2 → ((x, t0) :: Γ)%list ⊢ v in t2 :=
   map Environment.unshadow.
 
-Section Cartesian.
-  Import CategoryNotations.
+Module Dec.
+  Inductive term {Γ: environment}: type → Set :=
+  | v_var {t} (x: var): mem x t Γ → term t
+  | v_tt: term t_unit
+  | v_fst {t t'} (v: term (t * t')): term t
+  | v_snd {t t'} (v: term (t * t')): term t'
+  | v_fanout {t t'} (v: term t) (v': term t'): term (t * t').
+  Arguments term: clear implicits.
 
-  Context {C: Category}.
-
-  Context {unit: C}.
-  Context {prod: C → C → C}.
-
-  Context {bang: ∀ c, C c unit}.
-  Context {fst: ∀ a b, C (prod a b) a}.
-  Context {snd: ∀ a b, C (prod a b) b}.
-  Context {fanout: ∀ a b c, C c a → C c b → C c (prod a b)}.
-
-  Fixpoint obj t: C :=
-    match t with
-    | t_unit => unit
-    | t_prod t t' => prod (obj t) (obj t')
-    end.
-
-  Fixpoint env Γ: C :=
-    if Γ is cons ((_, t)) T
-    then
-      prod (obj t) (env T)
-    else
-      unit.
-
-  Open Scope category.
-
-  Program Fixpoint find x t Γ (p: mem x t Γ): C (env Γ) (obj t) :=
-    if Γ is cons (y, t') T
-    then
-      if eq_var x y
-      then
-        fst (obj t') (env T)
-      else
-        compose (find x t T _) (snd (obj t') (env T))
-    else
-      match _: False with end.
-
-  Next Obligation.
-  Proof.
-    inversion p.
-    all: subst.
-    all: auto.
-    contradiction.
-  Qed.
-
-  Next Obligation.
-  Proof.
-    inversion p.
-    all: subst.
-    1: contradiction.
-    auto.
-  Qed.
-
-  Next Obligation.
-  Proof.
-    inversion p.
-    all: subst.
-    all: eapply H.
-    all: auto.
-  Qed.
-
-  (* FIXME decorate then compile? *)
-  Program Fixpoint mor {Γ} t v (p: Γ ⊢ v in t): C (env Γ) (obj t) :=
+  Program Fixpoint dec {Γ} t v (p: Γ ⊢ v in t): term Γ t :=
     match v with
-    | v_var x => find x t Γ _
-    | v_tt => bang _
-    | v_fst v =>
+    | Spec.v_var x => v_var x _
+    | Spec.v_tt => v_tt
+    | Spec.v_fst v =>
         if typecheck Γ v is Some (t * t')
         then
-          compose (fst _ _) (mor (t * t') v _)
+          v_fst (dec (t * t') v _)
         else
           match _: False with end
-    | v_snd v =>
+    | Spec.v_snd v =>
         if typecheck Γ v is Some (t * t')
         then
-          compose (snd _ _) (mor (t * t') v _)
+          v_snd (dec (t * t') v _)
         else
           match _: False with end
-    | v_fanout v v' =>
+    | Spec.v_fanout v v' =>
         if t is t * t'
         then
-          fanout _ _ _ (mor t v _) (mor t' v' _)
+          v_fanout (dec t v _) (dec t' v' _)
         else
           match _: False with end
     end.
@@ -505,6 +450,7 @@ Section Cartesian.
   Next Obligation.
   Proof.
     inversion p.
+    subst.
     auto.
   Qed.
 
@@ -599,6 +545,82 @@ Section Cartesian.
     set (H' := H t1 t2).
     contradiction.
   Qed.
+End Dec.
+
+Section Cartesian.
+  Import CategoryNotations.
+
+  Context {C: Category}.
+
+  Context {unit: C}.
+  Context {prod: C → C → C}.
+
+  Context {bang: ∀ c, C c unit}.
+  Context {fst: ∀ a b, C (prod a b) a}.
+  Context {snd: ∀ a b, C (prod a b) b}.
+  Context {fanout: ∀ a b c, C c a → C c b → C c (prod a b)}.
+
+  Fixpoint obj t: C :=
+    match t with
+    | t_unit => unit
+    | t_prod t t' => prod (obj t) (obj t')
+    end.
+
+  Fixpoint env Γ: C :=
+    if Γ is cons ((_, t)) T
+    then
+      prod (obj t) (env T)
+    else
+      unit.
+
+  Open Scope category.
+
+  Program Fixpoint find x t Γ (p: mem x t Γ): C (env Γ) (obj t) :=
+    match Γ with
+    | cons (y, t') T =>
+        match eq_var x y with
+        | left _ =>
+          fst (obj t) (env T)
+        | right _ =>
+            compose (find x t T _) (snd (obj t') (env T))
+        end
+    | nil => match _: False with end
+    end %list.
+
+  Next Obligation.
+  Proof.
+    inversion p.
+    all: subst.
+    all: auto.
+    contradiction.
+  Qed.
+
+  Next Obligation.
+  Proof.
+    inversion p.
+    all: subst.
+    1: contradiction.
+    auto.
+  Qed.
+
+  Next Obligation.
+  Proof.
+    inversion p.
+    all: subst.
+    all: eapply H.
+    all: auto.
+  Qed.
+
+  Import Dec.
+
+  Fixpoint mor' {Γ t} (v: Dec.term Γ t): C (env Γ) (obj t) :=
+    match v in term _ t' return C (env Γ) (obj t') with
+    | v_var x p => find x _ Γ p
+    | v_tt => bang _
+    | v_fst v => compose (fst _ _) (mor' v)
+    | v_snd v => compose (snd _ _) (mor' v)
+    | v_fanout v v' => fanout _ _ _ (mor' v) (mor' v')
+    end.
+
+  Definition mor {Γ t} v (p: Γ ⊢ v in t) := mor' (Dec.dec t v p).
 End Cartesian.
-
-
