@@ -2,6 +2,7 @@ Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
 Require Import Blech.OptionNotations.
 Require Import Blech.Environment.
+Require Import Blech.Category.
 
 Require Import Coq.Unicode.Utf8.
 Require Import Coq.Classes.SetoidClass.
@@ -412,3 +413,192 @@ Definition shadow {v Γ x t0 t1 t2}:
 Definition unshadow {v Γ x t0 t1 t2}:
   ((x, t0) :: (x, t1) :: Γ)%list ⊢ v in t2 → ((x, t0) :: Γ)%list ⊢ v in t2 :=
   map Environment.unshadow.
+
+Section Cartesian.
+  Import CategoryNotations.
+
+  Context {C: Category}.
+
+  Context {unit: C}.
+  Context {prod: C → C → C}.
+
+  Context {bang: ∀ c, C c unit}.
+  Context {fst: ∀ a b, C (prod a b) a}.
+  Context {snd: ∀ a b, C (prod a b) b}.
+  Context {fanout: ∀ a b c, C c a → C c b → C c (prod a b)}.
+
+  Fixpoint obj t: C :=
+    match t with
+    | t_unit => unit
+    | t_prod t t' => prod (obj t) (obj t')
+    end.
+
+  Fixpoint env Γ: C :=
+    if Γ is cons ((_, t)) T
+    then
+      prod (obj t) (env T)
+    else
+      unit.
+
+  Open Scope category.
+
+  Program Fixpoint find x t Γ (p: mem x t Γ): C (env Γ) (obj t) :=
+    if Γ is cons (y, t') T
+    then
+      if eq_var x y
+      then
+        fst (obj t') (env T)
+      else
+        compose (find x t T _) (snd (obj t') (env T))
+    else
+      match _: False with end.
+
+  Next Obligation.
+  Proof.
+    inversion p.
+    all: subst.
+    all: auto.
+    contradiction.
+  Qed.
+
+  Next Obligation.
+  Proof.
+    inversion p.
+    all: subst.
+    1: contradiction.
+    auto.
+  Qed.
+
+  Next Obligation.
+  Proof.
+    inversion p.
+    all: subst.
+    all: eapply H.
+    all: auto.
+  Qed.
+
+  (* FIXME decorate then compile? *)
+  Program Fixpoint mor {Γ} t v (p: Γ ⊢ v in t): C (env Γ) (obj t) :=
+    match v with
+    | v_var x => find x t Γ _
+    | v_tt => bang _
+    | v_fst v =>
+        if typecheck Γ v is Some (t * t')
+        then
+          compose (fst _ _) (mor (t * t') v _)
+        else
+          match _: False with end
+    | v_snd v =>
+        if typecheck Γ v is Some (t * t')
+        then
+          compose (snd _ _) (mor (t * t') v _)
+        else
+          match _: False with end
+    | v_fanout v v' =>
+        if t is t * t'
+        then
+          fanout _ _ _ (mor t v _) (mor t' v' _)
+        else
+          match _: False with end
+    end.
+
+  Next Obligation.
+  Proof.
+    inversion p.
+    auto.
+  Qed.
+
+  Next Obligation.
+  Proof.
+    inversion p.
+    auto.
+  Qed.
+
+  Next Obligation.
+  Proof.
+    inversion p.
+    subst.
+    set (H1' := typecheck_complete H1).
+    rewrite H1' in Heq_anonymous.
+    inversion Heq_anonymous.
+    subst.
+    auto.
+  Qed.
+
+  Next Obligation.
+  Proof.
+    inversion p.
+    subst.
+    set (H1' := typecheck_complete H1).
+    rewrite H1' in Heq_anonymous.
+    inversion Heq_anonymous.
+    subst.
+    auto.
+  Qed.
+
+  Next Obligation.
+  Proof.
+    inversion p.
+    subst.
+    set (H' := H t t2).
+    set (H2' := typecheck_complete H2).
+    rewrite H2' in H'.
+    contradiction.
+  Qed.
+
+  Next Obligation.
+  Proof.
+    inversion p.
+    subst.
+    set (H1' := typecheck_complete H1).
+    rewrite H1' in Heq_anonymous.
+    inversion Heq_anonymous.
+    subst.
+    auto.
+  Qed.
+
+  Next Obligation.
+  Proof.
+    inversion p.
+    subst.
+    set (H1' := typecheck_complete H1).
+    rewrite H1' in Heq_anonymous.
+    inversion Heq_anonymous.
+    subst.
+    auto.
+  Qed.
+
+  Next Obligation.
+  Proof.
+    inversion p.
+    subst.
+    set (H' := H t1 t).
+    set (H2' := typecheck_complete H2).
+    rewrite H2' in H'.
+    contradiction.
+  Qed.
+
+  Next Obligation.
+  Proof.
+    inversion p.
+    subst.
+    auto.
+  Qed.
+
+  Next Obligation.
+  Proof.
+    inversion p.
+    subst.
+    auto.
+  Qed.
+
+  Next Obligation.
+  Proof.
+    inversion p.
+    subst.
+    set (H' := H t1 t2).
+    contradiction.
+  Qed.
+End Cartesian.
+
+

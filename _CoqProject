@@ -7,7 +7,8 @@ theories/Map.v
 theories/Spec.v
 theories/SpecNotations.v
 theories/Environment.v
+theories/Category.v
 theories/Term.v
 theories/Context.v
 theories/Hoare.v
-theories/Category.v
+theories/Categories.v
