@@ -2,6 +2,7 @@ Require Blech.Map.
 Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
 Require Import Blech.Environment.
+Require Import Blech.Category.
 Require Blech.OptionNotations.
 
 Require Import Coq.Unicode.Utf8.
@@ -15,7 +16,7 @@ Require Import FunInd.
 Import List.ListNotations.
 Import IfNotations.
 
-Implicit Type Γ: environment.
+Implicit Type Δ: linear.
 Implicit Type E: context.
 Implicit Type t: type.
 Implicit Type N: normal.
@@ -24,104 +25,493 @@ Implicit Type σ: store.
 
 Import Map.MapNotations.
 
-Variant occurs := zero | one | many.
-
-Definition add a b :=
-  match a, b with
-  | zero, zero => zero
-  | many, _ => many
-  | _, many => many
-  | one, one => many
-  | _, _ => one
-  end.
-
-Section count.
-  Infix "+" := add.
-
-  Function count x E :=
-    match E with
-    | E_var y => if eq_var x y then one else zero
-    | E_lam y t E => if eq_var x y then zero else count x E
-    | E_app E E' => count x E + count x E'
-    | E_tt => zero
-    | E_step E E' => count x E + count x E'
-    | E_fanout E E' => count x E + count x E'
-    | E_let y y' E E' =>
-        if eq_var x y
-        then
-          count x E
-        else
-          if eq_var x y'
-          then
-            count x E
-          else
-            count x E + count x E'
-    end.
-End count.
-
 Section Typecheck.
   Import OptionNotations.
 
-  Function typecheck Γ E: option type :=
+  Function typecheck Δ E: option (linear * type) :=
     match E with
-    | E_var x => find x Γ
-
-    | E_lam x t1 E =>
-        do t2 ← typecheck ((x, t1) :: Γ) E ;
-        Some (t1 * t2)
-    | E_app E E' =>
-        do (t1 * t2) ← typecheck Γ E ;
-        do t1' ← typecheck Γ E' ;
+    | E_var X =>
+        do t ← Map.find X Δ ;
+        Some (X ↦ t, t)
+    | E_lam X t1 E =>
+        do (Δ', t2) ← typecheck (X ↦ t1 ∪ Δ) E ;
+        do t1' ← Map.find X Δ' ;
         if eq_type t1 t1'
         then
-          Some t2
+          Some (Δ' \ X, t1 * t2)
+        else
+          None
+    | E_app E E' =>
+        do (Δ', t1 * t2) ← typecheck Δ E ;
+        do (Δ, t1') ← typecheck Δ E' ;
+        if eq_type t1 t1'
+        then
+          Some (Δ' ∪ Δ, t2)
         else
           None
 
-    | E_tt => Some t_unit
+    | E_tt => Some (∅, t_unit)
     | E_step E E' =>
-        do t_unit ← typecheck Γ E ;
-        do t ← typecheck Γ E' ;
-        Some t
+        do (Δ', t_unit) ← typecheck Δ E ;
+        do (Δ, t) ← typecheck Δ E' ;
+        Some (Δ' ∪ Δ, t)
 
     | E_fanout E E' =>
-        do t1 ← typecheck Γ E ;
-        do t2 ← typecheck Γ E' ;
-        Some (t1 * t2)
+        do (Δ', t1) ← typecheck Δ E ;
+        do (Δ, t2) ← typecheck Δ E' ;
+        Some (Δ' ∪ Δ, t1 * t2)
 
-    | E_let x y E E' =>
-        do (t1 * t2) ← typecheck Γ E ;
-        do t3 ← typecheck ((y, t2) :: (x, t1) :: Γ) E' ;
-        Some t3
+    | E_let X Y E E' =>
+        do (Δ', t1 * t2) ← typecheck Δ E ;
+        do (Δ, t3) ← typecheck (X ↦ t1 ∪ (Y ↦ t2 ∪ Δ)) E' ;
+        do t1' ← Map.find X (Δ \ Y) ;
+        do t2' ← Map.find Y Δ ;
+        if eq_type t1 t1'
+        then
+          if eq_type t2 t2'
+          then
+            Some (Δ' ∪ ((Δ \ Y) \ X), t3)
+          else
+            None
+        else
+          None
     end
       %list %map.
+
+  Definition env Δ E :=
+    do (Δ', _) ← typecheck Δ E ;
+    Some Δ'.
 End Typecheck.
 
-Function lincheck E :=
-  match E with
-  | E_var _ => true
+Theorem typecheck_sound:
+  ∀ Δ {E Δ' t}, typecheck Δ E = Some (Δ', t) → Δ' ⊢ E ? t.
+Proof using.
+  intros Δ E.
+  functional induction (typecheck Δ E).
+  all: cbn.
+  all: intros ? ? p.
+  all: inversion p.
+  all: subst.
+  all: try econstructor.
+  all: eauto.
+  - apply IHo.
+    rewrite Map.add_minus.
+    all: auto.
+  - rewrite Map.add_minus.
+    all: auto.
+    1: rewrite Map.add_minus.
+    all: auto.
+Qed.
 
-  | E_lam x _ E =>
-      lincheck E &&
-        if count x E is one then true else false
-  | E_app E E' =>
-      lincheck E && lincheck E'
+Module Dec.
+  Inductive context: Map.map type → type → Set :=
+  | E_var x t: context (Map.one x t) t
+  | E_lam {Δ t'} x t (E: context (Map.one x t ∪ Δ) t'): context Δ (t * t')
+  | E_app {Δ Δ' t t'} (E: context Δ (t * t')) (E': context Δ' t): context (Δ ∪ Δ') t'
+  | E_tt: context Map.empty t_unit
+  | E_step {Δ Δ' t} (E: context Δ t_unit) (E': context Δ' t): context (Δ ∪ Δ') t
+  | E_fanout {Δ Δ' t t'} (E: context Δ t) (E': context Δ' t'): context (Δ ∪ Δ') (t * t')
+  | E_let {Δ Δ' t t' t2} x y (E: context Δ (t * t')) (E': context (Map.one y t' ∪ (Map.one x t ∪ Δ')) t2): context (Δ ∪ Δ') t2.
 
-  | E_tt => true
+  Program Fixpoint dec Δ Δ' t E (p: typecheck Δ E = Some (Δ', t)): context Δ' t :=
+    match E with
+    | Spec.E_var x => E_var x _
 
-  | E_step E E' =>
-      lincheck E && lincheck E'
+    | Spec.E_lam x t E =>
+        if typecheck (Map.one x t ∪ Δ) E is Some (Δ', t')
+        then
+            @E_lam (Δ' \ x) t' x t (dec (Map.one x t ∪ Δ) Δ' t' E _)
+        else
+          match _: False with end
+    | Spec.E_app E E' =>
+        match typecheck Δ E, typecheck Δ E' with
+        | Some (Δ1, t1 * t2), Some (Δ2, t1') =>
+            @E_app _ _ t1 t2 (dec Δ Δ1 (t1 * t2) E _) (dec Δ Δ2 t1' E' _)
+        | _, _ => match _: False with end
+        end
 
-  | E_fanout E E' =>
-      lincheck E && lincheck E'
+    | Spec.E_tt => E_tt
 
-  | E_let x y E E' =>
-      lincheck E &&
-        lincheck E' &&
-        (if count x E' is one then true else false) &&
-        (if count y E' is one then true else false)
-  end
-    %bool %list.
+    | Spec.E_step E E' =>
+        match typecheck Δ E, typecheck Δ E' with
+        | Some (Δ1, t_unit), Some (Δ2, t) =>
+            E_step (dec Δ Δ1 t_unit E _) (dec Δ Δ2 t E' _)
+        | _, _ => match _: False with end
+        end
+
+    | Spec.E_fanout E E' =>
+        match typecheck Δ E, typecheck Δ E' with
+        | Some (Δ1, t), Some (Δ2, t') =>
+            @E_fanout _ _ t t' (dec Δ Δ1 t E _) (dec Δ Δ2 t' E' _)
+        | _, _ => match _: False with end
+        end
+
+    | Spec.E_let x y E E' =>
+        if typecheck Δ E is Some (Δ1, t1 * t2)
+        then
+          if typecheck (Map.one x t1 ∪ (Map.one y t2 ∪ Δ)) E' is Some (Δ2, t3)
+          then
+            @E_let Δ1 ((Δ2 \ y) \ x) t1 t2 t3 x y
+                   (dec Δ Δ1 (t1 * t2) E _)
+                   (dec (Map.one x t1 ∪ (Map.one y t2 ∪ Δ)) Δ2 t3 E' _)
+          else
+            match _: False with end
+        else
+          match _: False with end
+    end %map.
+
+  Next Obligation.
+  Proof.
+    cbn in p.
+    destruct (Map.find x Δ).
+    all: inversion p.
+    auto.
+  Defined.
+
+  Next Obligation.
+  Proof.
+    cbn in p.
+    rewrite <- Heq_anonymous in p.
+    destruct (Map.find x Δ') eqn:q.
+    2: discriminate.
+    destruct eq_type.
+    2: discriminate.
+    subst.
+    inversion p.
+    subst.
+    rewrite Map.add_minus.
+    all: auto.
+  Defined.
+
+  Next Obligation.
+  Proof.
+    cbn in p.
+    rewrite <- Heq_anonymous in p.
+    destruct (Map.find x Δ') eqn:q.
+    2: discriminate.
+    destruct eq_type.
+    2: discriminate.
+    subst.
+    inversion p.
+    subst.
+    auto.
+  Defined.
+
+  Next Obligation.
+  Proof.
+    cbn in p.
+    rewrite <- Heq_anonymous in p.
+    destruct (Map.find x Δ') eqn:q.
+    2: discriminate.
+    destruct eq_type.
+    2: discriminate.
+    subst.
+    inversion p.
+    subst.
+    auto.
+  Defined.
+
+  Next Obligation.
+  Proof.
+    cbn in p.
+    destruct typecheck eqn:q.
+    2: discriminate.
+    destruct p0.
+    destruct Map.find eqn:r.
+    2: discriminate.
+    set (H' := H l t1).
+    contradiction.
+  Defined.
+
+  Next Obligation.
+  Proof.
+    cbn in p.
+    rewrite <- Heq_anonymous in p.
+    rewrite <- Heq_anonymous0 in p.
+    destruct eq_type.
+    2: discriminate.
+    inversion p.
+    auto.
+  Defined.
+
+  Next Obligation.
+  Proof.
+    cbn in p.
+    rewrite <- Heq_anonymous in p.
+    rewrite <- Heq_anonymous0 in p.
+    destruct eq_type.
+    2: discriminate.
+    inversion p.
+    auto.
+  Defined.
+
+  Next Obligation.
+  Proof.
+    cbn in p.
+    rewrite <- Heq_anonymous in p.
+    rewrite <- Heq_anonymous0 in p.
+    destruct eq_type.
+    2: discriminate.
+    inversion p.
+    auto.
+  Defined.
+
+  Next Obligation.
+  Proof.
+    cbn in p.
+    destruct typecheck eqn:q in p.
+    2: discriminate.
+    destruct p0.
+    destruct t0.
+    1: discriminate.
+    destruct typecheck eqn:q' in p.
+    2: discriminate.
+    destruct p0.
+    destruct eq_type.
+    2: discriminate.
+    inversion p.
+    subst.
+    set (H' := H l t0 t l0 t0).
+    rewrite q in H'.
+    rewrite q' in H'.
+    auto.
+  Defined.
+
+  Next Obligation.
+  Proof.
+    cbn in p.
+    rewrite <- Heq_anonymous in p.
+    rewrite <- Heq_anonymous0 in p.
+    inversion p.
+    subst.
+    auto.
+  Defined.
+
+  Next Obligation.
+  Proof.
+    cbn in p.
+    rewrite <- Heq_anonymous in p.
+    rewrite <- Heq_anonymous0 in p.
+    inversion p.
+    subst.
+    auto.
+  Defined.
+
+  Next Obligation.
+  Proof.
+    cbn in p.
+    destruct typecheck eqn:q in p.
+    2: discriminate.
+    destruct p0.
+    destruct t0.
+    2: discriminate.
+    destruct typecheck eqn:q' in p.
+    2: discriminate.
+    destruct p0.
+    inversion p.
+    subst.
+    set (H' := H l l0 t).
+    rewrite q in H'.
+    rewrite q' in H'.
+    apply H'.
+    all: split.
+    all: auto.
+  Defined.
+
+  Next Obligation.
+  Proof.
+    cbn in p.
+    rewrite <- Heq_anonymous in p.
+    rewrite <- Heq_anonymous0 in p.
+    inversion p.
+    subst.
+    auto.
+  Defined.
+
+  Next Obligation.
+  Proof.
+    cbn in p.
+    rewrite <- Heq_anonymous in p.
+    rewrite <- Heq_anonymous0 in p.
+    inversion p.
+    subst.
+    auto.
+  Defined.
+
+  Next Obligation.
+  Proof.
+    cbn in p.
+    destruct typecheck eqn:q in p.
+    2: discriminate.
+    destruct p0.
+    destruct typecheck eqn:q' in p.
+    2: discriminate.
+    destruct p0.
+    set (H' := H l t0 l0 t1).
+    rewrite q in H'.
+    rewrite q' in H'.
+    auto.
+  Defined.
+
+  Next Obligation.
+  Proof.
+    cbn in p.
+    rewrite <- Heq_anonymous0 in p.
+    rewrite <- Heq_anonymous in p.
+    apply Map.extensional.
+    intro k.
+    repeat rewrite Map.find_merge.
+    repeat rewrite Map.find_one.
+    repeat rewrite Map.find_minus.
+    rewrite Map.find_minus in p.
+    destruct Nat.eq_dec in p.
+    1: discriminate.
+    destruct Map.find eqn:q in p.
+    2: discriminate.
+    destruct Map.find eqn:q' in p.
+    2: discriminate.
+    destruct eq_type in p.
+    2: discriminate.
+    subst.
+    destruct eq_type in p.
+    2: discriminate.
+    subst.
+    inversion p.
+    subst.
+    destruct Nat.eq_dec.
+    2: destruct Nat.eq_dec.
+    all: subst.
+    all: auto.
+  Defined.
+
+  Next Obligation.
+  Proof.
+    cbn in p.
+    rewrite <- Heq_anonymous0 in p.
+    rewrite <- Heq_anonymous in p.
+    apply Map.extensional.
+    intro k.
+    repeat rewrite Map.find_merge.
+    repeat rewrite Map.find_one.
+    repeat rewrite Map.find_minus.
+    rewrite Map.find_minus in p.
+    destruct Nat.eq_dec in p.
+    1: discriminate.
+    destruct Map.find eqn:q in p.
+    2: discriminate.
+    destruct Map.find eqn:q' in p.
+    2: discriminate.
+    destruct eq_type in p.
+    2: discriminate.
+    subst.
+    destruct eq_type in p.
+    2: discriminate.
+    subst.
+    inversion p.
+    subst.
+    repeat rewrite Map.find_merge.
+    repeat rewrite Map.find_minus.
+    auto.
+  Defined.
+
+  Next Obligation.
+  Proof.
+    cbn in p.
+    rewrite <- Heq_anonymous0 in p.
+    rewrite <- Heq_anonymous in p.
+    rewrite Map.find_minus in p.
+    destruct Nat.eq_dec in p.
+    1: discriminate.
+    destruct Map.find eqn:q in p.
+    2: discriminate.
+    destruct Map.find eqn:q' in p.
+    2: discriminate.
+    destruct eq_type in p.
+    2: discriminate.
+    subst.
+    destruct eq_type in p.
+    2: discriminate.
+    subst.
+    inversion p.
+    subst.
+    auto.
+  Defined.
+
+  Next Obligation.
+  Proof.
+    cbn in p.
+    rewrite <- Heq_anonymous0 in p.
+    destruct typecheck eqn:q in p.
+    2: discriminate.
+    destruct p0.
+    rewrite Map.find_minus in p.
+    destruct Nat.eq_dec in p.
+    1: discriminate.
+    destruct Map.find eqn:q' in p.
+    2: discriminate.
+    destruct Map.find eqn:q'' in p.
+    2: discriminate.
+    destruct eq_type in p.
+    2: discriminate.
+    subst.
+    destruct eq_type in p.
+    2: discriminate.
+    subst.
+    set (H' := H l t0).
+    rewrite q in H'.
+    contradiction.
+  Defined.
+
+  Next Obligation.
+  Proof.
+    cbn in p.
+    destruct typecheck eqn:q in p.
+    2: discriminate.
+    destruct p0.
+    destruct t0.
+    1: discriminate.
+    destruct typecheck eqn:q' in p.
+    2: discriminate.
+    destruct p0.
+    rewrite Map.find_minus in p.
+    destruct Nat.eq_dec in p.
+    1: discriminate.
+    destruct Map.find eqn:q'' in p.
+    2: discriminate.
+    destruct Map.find eqn:q''' in p.
+    2: discriminate.
+    destruct eq_type in p.
+    2: discriminate.
+    subst.
+    destruct eq_type in p.
+    2: discriminate.
+    subst.
+    inversion p.
+    subst.
+    set (H' := H l t1 t2).
+    rewrite q in H'.
+    contradiction.
+  Defined.
+
+  Fixpoint undec {Δ t} (E: context Δ t) :=
+    match E with
+    | E_var x _ => Spec.E_var x
+    | E_lam x t E => Spec.E_lam x t (undec E)
+    | E_app E E' => Spec.E_app (undec E) (undec E')
+    | E_tt => Spec.E_tt
+    | E_step E E' => Spec.E_step (undec E) (undec E')
+    | E_fanout E E' => Spec.E_fanout (undec E) (undec E')
+    | E_let x y E E' => Spec.E_let x y (undec E) (undec E')
+    end.
+
+  Definition wf {Δ t} (E: context Δ t): Δ ⊢ undec E ? t.
+  Proof.
+    induction E.
+    all: cbn.
+    all: econstructor.
+    all: eauto.
+  Qed.
+End Dec.
 
 Notation "'do' n ← e0 ; e1" :=
   (List.flat_map (λ n, e1) e0)
@@ -200,225 +590,6 @@ Fixpoint search σ E: list span :=
       | _, _ => []
       end
   end%list %map.
-
-Theorem count_complete_never {x E}: never x E → count x E = zero.
-Proof using.
-  intros p.
-  induction p.
-  all: cbn.
-  all: try destruct eq_var.
-  all: subst.
-  all: try contradiction.
-  all: auto.
-  all: try rewrite IHp.
-  all: cbn.
-  all: try rewrite IHp1.
-  all: try rewrite IHp2.
-  all: cbn.
-  all: auto.
-  all: try destruct eq_var.
-  all: subst.
-  all: try contradiction.
-  all: auto.
-Qed.
-
-Theorem count_complete_one:
-  ∀ {X E}, once X E → count X E = one.
-Proof using.
-  intros ? ? p.
-  induction p.
-  all: cbn.
-  all: try destruct eq_var.
-  all: try destruct eq_var.
-  all: subst.
-  all: try contradiction.
-  all: auto.
-  all: try rewrite IHp.
-  all: cbn.
-  all: try contradiction.
-  all: try rewrite count_complete_never.
-  all: auto.
-Qed.
-
-Theorem count_sound:
-  ∀ {x E}, match count x E with
-           | one => once x E
-           | zero => never x E
-           | many => True
-           end.
-Proof using.
-  intros x E.
-  functional induction (count x E).
-  - constructor.
-  - constructor.
-    auto.
-  - constructor.
-  - destruct (count x E0).
-    all: auto.
-    + constructor.
-      all: auto.
-    + constructor.
-      all: auto.
-  - destruct (count x E0), (count x E').
-    all: cbn.
-    all: auto.
-    + constructor.
-      all: auto.
-    + apply once_app_r.
-      all: auto.
-    + apply once_app_l.
-      all: auto.
-  - constructor.
-  - destruct (count x E0), (count x E').
-    all: cbn.
-    all: auto.
-    + constructor.
-      all: auto.
-    + apply once_step_r.
-      all: auto.
-    + apply once_step_l.
-      all: auto.
-  - destruct (count x E0), (count x E').
-    all: cbn.
-    all: auto.
-    + constructor.
-      all: auto.
-    + apply once_fanout_r.
-      all: auto.
-    + apply once_fanout_l.
-      all: auto.
-  - destruct (count x E0).
-    all: auto.
-    + apply never_let_eq_1.
-      all: auto.
-    + apply once_let_l1.
-      all: auto.
-  - destruct (count x E0).
-    all: auto.
-    + apply never_let_eq_2.
-      all: auto.
-    + apply once_let_l2.
-      all: auto.
-  - destruct (count x E0), (count x E').
-    all: cbn.
-    all: auto.
-    + constructor.
-      all: auto.
-    + apply once_let_r.
-      all: auto.
-    + apply once_let_l.
-      all: auto.
-Qed.
-
-Corollary count_once {x E}: count x E = one → once x E.
-Proof using.
-  intros p.
-  set (H := @count_sound x E).
-  rewrite p in H.
-  auto.
-Qed.
-
-Corollary count_never {x E}: count x E = zero → never x E.
-Proof using.
-  intros p.
-  set (H := @count_sound x E).
-  rewrite p in H.
-  auto.
-Qed.
-
-Theorem lincheck_sound:
-  ∀ {E}, lincheck E = true → lin E.
-Proof using.
-  intros E.
-  induction E.
-  all: cbn.
-  all: intros p.
-  all: try discriminate.
-  all: subst.
-  - constructor.
-  - destruct (lincheck E), (count x E) eqn:q.
-    all: try discriminate.
-    constructor.
-    all: auto.
-    apply count_once.
-    auto.
-  - destruct (lincheck E1), (lincheck E2).
-    all: try discriminate.
-    constructor.
-    all: auto.
-  - constructor.
-  - destruct (lincheck E1), (lincheck E2).
-    all: try discriminate.
-    constructor.
-    all: auto.
-  - destruct (lincheck E1), (lincheck E2).
-    all: try discriminate.
-    constructor.
-    all: auto.
-  - destruct (lincheck E1), (lincheck E2), (count x E2) eqn:qx, (count y E2) eqn:qy.
-    all: try discriminate.
-    constructor.
-    all: auto.
-    all: apply count_once.
-    all: auto.
-Qed.
-
-Theorem lincheck_complete:
-  ∀ {E}, lin E → lincheck E = true.
-Proof using.
-  intros ? p.
-  induction p.
-  all: cbn.
-  all: auto.
-  all: try rewrite IHp.
-  all: cbn.
-  all: try rewrite IHp1.
-  all: try rewrite IHp2.
-  all: cbn.
-  all: auto.
-  all: rewrite count_complete_one.
-  all: auto.
-  all: rewrite count_complete_one.
-  all: auto.
-Qed.
-
-Theorem typecheck_sound:
-  ∀ Γ {E t}, typecheck Γ E = Some t → Γ ⊢ E ? t.
-Proof using.
-  intros Γ E.
-  functional induction (typecheck Γ E).
-  all: cbn.
-  all: intros ? p.
-  all: inversion p.
-  all: subst.
-  all: try econstructor.
-  all: eauto.
-  apply find_sound.
-  auto.
-Qed.
-
-Theorem typecheck_complete:
-  ∀ {Γ E t}, Γ ⊢ E ? t → typecheck Γ E = Some t.
-Proof using.
-  intros Γ E t p.
-  induction p.
-  all: cbn.
-  all: auto.
-  - apply find_complete.
-    auto.
-  - rewrite IHp.
-    all: auto.
-  - rewrite IHp1, IHp2.
-    destruct eq_type.
-    2: contradiction.
-    auto.
-  - rewrite IHp1, IHp2.
-    auto.
-  - rewrite IHp1, IHp2.
-    auto.
-  - rewrite IHp1, IHp2.
-    auto.
-Qed.
 
 Lemma sound_pure:
   ∀ {σ E N}, sat σ E N → sound E ([σ |- N]%list).
@@ -575,302 +746,6 @@ Proof using.
   auto.
 Defined.
 
-Lemma map:
-  ∀ {E t Γ Δ},
-    (∀ x t, mem x t Γ → mem x t Δ) →
-    JE Γ E t →
-    JE Δ E t.
-Proof.
-  intro E.
-  induction E.
-  all: intros ? ? ? ? p.
-  all: inversion p.
-  all: subst.
-  all: try econstructor.
-  all: eauto.
-  - refine (IHE _ _ _ _ H5).
-    intros ? ? q.
-    inversion q.
-    all: subst.
-    all: constructor.
-    all: auto.
-  - refine (IHE2 _ _ _ _ H7).
-    intros ? ? q.
-    inversion q.
-    all: subst.
-    all: constructor.
-    all: auto.
-    inversion H8.
-    all: subst.
-    all: constructor.
-    all: auto.
-Qed.
-
-Definition shadow {E Γ x t0 t1 t2}:
-  JE ((x, t0) :: Γ)%list E t2 → JE ((x, t0) :: (x, t1) :: Γ)%list E t2 :=
-  map Environment.shadow.
-
-Definition unshadow {E Γ x t0 t1 t2}:
-  JE ((x, t0) :: (x, t1) :: Γ)%list E t2 → JE ((x, t0) :: Γ)%list E t2 :=
-  map Environment.unshadow.
-
-Definition weaken_nil {E Γ t}:
-  JE nil E t → JE Γ E t :=
-  map Environment.weaken_nil.
-
-Definition swap {E Γ t x y t0 t1} (p: x ≠ y):
-  ((x, t0) :: (y, t1) :: Γ)%list ⊢ E ? t → ((y, t1) :: (x, t0) :: Γ)%list ⊢ E ? t := map (Environment.swap p).
-
-Lemma subst_linear_never {E' x E}:
-  never x E → never x (subst_context E' x E).
-Proof.
-  intros p.
-  induction E.
-  all: cbn.
-  all: inversion p.
-  all: subst.
-  - destruct eq_var.
-    all: auto.
-    subst.
-    contradiction.
-  - destruct eq_var.
-    + subst.
-      constructor.
-    + constructor.
-      all: auto.
-  - destruct eq_var.
-    all: subst.
-    + constructor.
-    + constructor.
-      all: auto.
-  - constructor.
-    all: auto.
-  - constructor.
-    all: auto.
-  - constructor.
-    all: auto.
-  - constructor.
-    all: auto.
-  - destruct eq_var.
-    all: try destruct eq_var.
-    all: subst.
-    + apply never_let_eq_1.
-      all: auto.
-    + apply never_let_eq_2.
-      all: auto.
-    + constructor.
-      all: auto.
-  - destruct eq_var.
-    all: try destruct eq_var.
-    all: subst.
-    + apply never_let_eq_1.
-      all: auto.
-    + apply never_let_eq_2.
-      all: auto.
-    + contradiction.
-  - destruct eq_var.
-    all: try destruct eq_var.
-    all: subst.
-    + apply never_let_eq_1.
-      all: auto.
-    + apply never_let_eq_2.
-      all: auto.
-    + contradiction.
-Qed.
-
-Lemma subst_linear {E' x E}:
-  once x E' →
-  once x E → once x (subst_context E' x E).
-Proof.
-  intro q.
-  induction E.
-  all: cbn.
-  all: intros p.
-  all: inversion p.
-  all: subst.
-  - destruct eq_var.
-    2: contradiction.
-    auto.
-  - destruct eq_var.
-    1: subst; contradiction.
-    constructor.
-    all: auto.
-  - apply once_app_l.
-    all: auto.
-    apply subst_linear_never.
-    auto.
-  - apply once_app_r.
-    all: auto.
-    apply subst_linear_never.
-    auto.
-  - apply once_step_l.
-    all: auto.
-    apply subst_linear_never.
-    auto.
-  - apply once_step_r.
-    all: auto.
-    apply subst_linear_never.
-    auto.
-  - apply once_fanout_l.
-    all: auto.
-    apply subst_linear_never.
-    auto.
-  - apply once_fanout_r.
-    all: auto.
-    apply subst_linear_never.
-    auto.
-  - destruct eq_var.
-    all: subst.
-    1: contradiction.
-    destruct eq_var.
-    all: subst.
-    1: contradiction.
-    apply once_let_l.
-    all: auto.
-    apply subst_linear_never.
-    auto.
-  - destruct eq_var.
-    all: subst.
-    2: contradiction.
-    apply once_let_l1.
-    all: auto.
-  - destruct eq_var.
-    all: subst.
-    + apply once_let_l1.
-      all: auto.
-    + destruct eq_var.
-      all: subst.
-      2: contradiction.
-      apply once_let_l2.
-      auto.
-  - destruct eq_var.
-    all: subst.
-    1: contradiction.
-    destruct eq_var.
-    all: subst.
-    1: contradiction.
-    apply once_let_r.
-    all: auto.
-    apply subst_linear_never.
-    auto.
-Qed.
-
-Lemma subst_preserve:
-  ∀ {E' t x},
-  ∀ {E Γ t'},
-    nil ⊢ E' ? t →
-    cons (x, t) Γ ⊢ E ? t' →
-    Γ ⊢ subst_context E' x E ? t'.
-Proof using.
-  intros E' t x E.
-  induction E.
-  all: cbn.
-  all: intros Γ t' p q.
-  - inversion q.
-    subst.
-    inversion H1.
-    all: subst.
-    all: destruct eq_var.
-    all: subst.
-    all: try contradiction.
-    + apply weaken_nil.
-      auto.
-    + constructor.
-      auto.
-  - inversion q.
-    subst.
-    destruct eq_var.
-    + subst.
-      constructor.
-      eapply unshadow.
-      eauto.
-    + constructor.
-      apply IHE.
-      1: auto.
-      apply swap.
-      all: auto.
-  - inversion q.
-    subst.
-    econstructor.
-    all: eauto.
-  - inversion q.
-    subst.
-    constructor.
-  - inversion q.
-    subst.
-    econstructor.
-    all: eauto.
-  - inversion q.
-    subst.
-    econstructor.
-    all: eauto.
-  - inversion q.
-    subst.
-    destruct eq_var.
-    all: try destruct eq_var.
-    all: subst.
-    + econstructor.
-      all: eauto.
-      refine (map _ H6).
-      intros.
-      inversion H.
-      all: subst.
-      * constructor.
-      * constructor.
-        1: auto.
-        eapply Environment.unshadow.
-        eauto.
-    + econstructor.
-      all: eauto.
-      eset (H6' := swap _ H6).
-      Unshelve.
-      2: auto.
-      refine (map _ H6').
-      intros.
-      inversion H.
-      all: subst.
-      * constructor.
-        all: auto.
-        constructor.
-      * inversion H8.
-        all: subst.
-        -- constructor.
-        -- constructor.
-           1: auto.
-           inversion H10.
-           all: subst.
-           1: contradiction.
-           constructor.
-           all: auto.
-    + econstructor.
-      all: eauto.
-      eapply IHE2.
-      1: auto.
-      refine (map _ H6).
-      intros.
-      inversion H.
-      all: subst.
-      * constructor.
-        all: auto.
-        constructor.
-      * inversion H8.
-        all: subst.
-        -- constructor.
-           all: auto.
-           constructor.
-           all: auto.
-           constructor.
-        -- inversion H10.
-           all: subst.
-           1: constructor.
-           constructor.
-           all: auto.
-           constructor.
-           all: auto.
-           constructor.
-           all: auto.
-Qed.
-
 Lemma subst_assoc {x f g h}:
   subst_context (subst_context h x g) x f = subst_context h x (subst_context g x f).
 Proof.
@@ -904,7 +779,7 @@ Proof.
     auto.
 Qed.
 
-Definition oftype Γ t := { E | (Γ ⊢ E ? t) ∧ lin E }.
+Definition oftype Δ t := { E | Δ ⊢ E ? t }.
 
 Definition equiv {Γ t}: Relation_Definitions.relation (oftype Γ t) :=
   λ a b,

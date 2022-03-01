@@ -140,8 +140,6 @@ Definition store : Set := (Map.map normal).
 Inductive span : Set := 
  | P_with (σ:store) (N:normal).
 
-Definition set : Set := (list span).
-
 Inductive context : Set := 
  | E_var (x:var)
  | E_lam (x:var) (t:type) (E:context)
@@ -150,6 +148,10 @@ Inductive context : Set :=
  | E_step (E:context) (E':context)
  | E_fanout (E:context) (E':context)
  | E_let (x:var) (y:var) (E:context) (E':context).
+
+Definition linear : Set := (Map.map type).
+
+Definition set : Set := (list span).
 Lemma eq_context: forall (x y : context), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -178,157 +180,31 @@ end.
 
 (** definitions *)
 
-(* defns nev *)
-Inductive never : var -> context -> Prop :=    (* defn never *)
- | never_var : forall (x y:var),
-      ( x  <>  y )  ->
-     never x (E_var y)
- | never_lam_eq : forall (x:var) (t:type) (E:context),
-     never x (E_lam x t E)
- | never_lam : forall (x y:var) (t:type) (E:context),
-     never x E ->
-      ( x  <>  y )  ->
-     never x (E_lam y t E)
- | never_app : forall (x:var) (E E':context),
-     never x E ->
-     never x E' ->
-     never x (E_app E E')
- | never_tt : forall (x:var),
-     never x E_tt
- | never_step : forall (x:var) (E E':context),
-     never x E ->
-     never x E' ->
-     never x (E_step E E')
- | never_fanout : forall (x:var) (E E':context),
-     never x E ->
-     never x E' ->
-     never x (E_fanout E E')
- | never_let : forall (x y y':var) (E E':context),
-     never x E ->
-     never x E' ->
-      ( x  <>  y )  ->
-      ( x  <>  y' )  ->
-     never x (E_let y y' E E')
- | never_let_eq_1 : forall (x y:var) (E E':context),
-     never x E ->
-     never x (E_let x y E E')
- | never_let_eq_2 : forall (x y:var) (E E':context),
-     never x E ->
-     never x (E_let y x E E').
-(** definitions *)
-
-(* defns onc *)
-Inductive once : var -> context -> Prop :=    (* defn once *)
- | once_var : forall (x:var),
-     once x (E_var x)
- | once_lam : forall (x y:var) (t:type) (E:context),
-      ( x  <>  y )  ->
-     once x E ->
-     once x (E_lam y t E)
- | once_app_l : forall (x:var) (E E':context),
-     once x E ->
-     never x E' ->
-     once x (E_app E E')
- | once_app_r : forall (x:var) (E E':context),
-     never x E ->
-     once x E' ->
-     once x (E_app E E')
- | once_step_l : forall (x:var) (E E':context),
-     once x E ->
-     never x E' ->
-     once x (E_step E E')
- | once_step_r : forall (x:var) (E E':context),
-     never x E ->
-     once x E' ->
-     once x (E_step E E')
- | once_fanout_l : forall (x:var) (E E':context),
-     once x E ->
-     never x E' ->
-     once x (E_fanout E E')
- | once_fanout_r : forall (x:var) (E E':context),
-     never x E ->
-     once x E' ->
-     once x (E_fanout E E')
- | once_let_l : forall (x y y':var) (E E':context),
-     once x E ->
-     never x E' ->
-      ( x  <>  y )  ->
-      ( x  <>  y' )  ->
-     once x (E_let y y' E E')
- | once_let_l1 : forall (x y:var) (E E':context),
-     once x E ->
-     once x (E_let x y E E')
- | once_let_l2 : forall (x y:var) (E E':context),
-     once x E ->
-     once x (E_let y x E E')
- | once_let_r : forall (x y y':var) (E E':context),
-     never x E ->
-     once x E' ->
-      ( x  <>  y )  ->
-      ( x  <>  y' )  ->
-     once x (E_let y y' E E').
-(** definitions *)
-
-(* defns dummy *)
-Inductive dd : Prop :=    (* defn d *).
-(** definitions *)
-
-(* defns judge_linear *)
-Inductive lin : context -> Prop :=    (* defn lin *)
- | lin_var : forall (x:var),
-     lin (E_var x)
- | lin_lam : forall (x:var) (t:type) (E:context),
-     once x E ->
-     lin E ->
-     lin (E_lam x t E)
- | lin_app : forall (E E':context),
-     lin E ->
-     lin E' ->
-     lin (E_app E E')
- | lin_tt : 
-     lin E_tt
- | lin_step : forall (E E':context),
-     lin E ->
-     lin E' ->
-     lin (E_step E E')
- | lin_fanout : forall (E E':context),
-     lin E ->
-     lin E' ->
-     lin (E_fanout E E')
- | lin_let : forall (x y:var) (E E':context),
-     once x E' ->
-     once y E' ->
-     lin E ->
-     lin E' ->
-     lin (E_let x y E E').
-(** definitions *)
-
 (* defns judge_context *)
-Inductive JE : environment -> context -> type -> Prop :=    (* defn E *)
- | JE_var : forall (Γ:environment) (x:var) (t:type),
-     mem x t Γ ->
-     JE Γ (E_var x) t
- | JE_lam : forall (Γ:environment) (x:var) (t1:type) (E:context) (t2:type),
-     JE  (cons ( x ,  t1 )  Γ )  E t2 ->
-     JE Γ (E_lam x t1 E) (t_prod t1 t2)
- | JE_app : forall (Γ:environment) (E1 E2:context) (t2 t1:type),
-     JE Γ E1 (t_prod t1 t2) ->
-     JE Γ E2 t1 ->
-     JE Γ (E_app E1 E2) t2
- | JE_tt : forall (Γ:environment),
-     JE Γ E_tt t_unit
- | JE_step : forall (Γ:environment) (E1 E2:context) (t:type),
-     JE Γ E1 t_unit ->
-     JE Γ E2 t ->
-     JE Γ (E_step E1 E2) t
- | JE_fanout : forall (Γ:environment) (E1 E2:context) (t1 t2:type),
-     JE Γ E1 t1 ->
-     JE Γ E2 t2 ->
-     JE Γ (E_fanout E1 E2) (t_prod t1 t2)
- | JE_let : forall (Γ:environment) (x y:var) (E1 E2:context) (t3 t1 t2:type),
-     JE Γ E1 (t_prod t1 t2) ->
-     JE  (cons ( y ,  t2 )   (cons ( x ,  t1 )  Γ )  )  E2 t3 ->
-     JE Γ (E_let x y E1 E2) t3.
+Inductive JE : linear -> context -> type -> Prop :=    (* defn E *)
+ | JE_var : forall (x:var) (t:type),
+     JE  (Map.one  x   t )  (E_var x) t
+ | JE_lam : forall (Δ:linear) (x:var) (t1:type) (E:context) (t2:type),
+     JE  (Map.merge   (Map.one  x   t1 )    Δ )  E t2 ->
+     JE Δ (E_lam x t1 E) (t_prod t1 t2)
+ | JE_app : forall (Δ Δ':linear) (E1 E2:context) (t2 t1:type),
+     JE Δ E1 (t_prod t1 t2) ->
+     JE Δ' E2 t1 ->
+     JE  (Map.merge  Δ   Δ' )  (E_app E1 E2) t2
+ | JE_tt : 
+     JE  Map.empty  E_tt t_unit
+ | JE_step : forall (Δ Δ':linear) (E1 E2:context) (t:type),
+     JE Δ E1 t_unit ->
+     JE Δ' E2 t ->
+     JE  (Map.merge  Δ   Δ' )  (E_step E1 E2) t
+ | JE_fanout : forall (Δ Δ':linear) (E1 E2:context) (t1 t2:type),
+     JE Δ E1 t1 ->
+     JE Δ' E2 t2 ->
+     JE  (Map.merge  Δ   Δ' )  (E_fanout E1 E2) (t_prod t1 t2)
+ | JE_let : forall (Δ Δ':linear) (x y:var) (E1 E2:context) (t3 t1 t2:type),
+     JE Δ E1 (t_prod t1 t2) ->
+     JE  (Map.merge   (Map.one  y   t2 )     (Map.merge   (Map.one  x   t1 )    Δ' )  )  E2 t3 ->
+     JE  (Map.merge  Δ   Δ' )  (E_let x y E1 E2) t3.
 (** definitions *)
 
 (* defns sat *)

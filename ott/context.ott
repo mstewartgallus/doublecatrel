@@ -14,6 +14,12 @@ context, E :: 'E_' ::= {{ coq-equality }}
   | let x , y = E in E'      ::   :: let (+ bind x union y in E' +)
   | ( E )                    :: S :: paren {{ icho ([[E]]) }}
 
+linear, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (Map.map type) }}
+  | nil         ::   :: nil {{ coq Map.empty }}
+  | x : t                 :: M :: one {{ coq (Map.one [[x]] [[t]]) }}
+  | D , D'                :: M :: add {{ coq (Map.merge [[D']] [[D]]) }}
+  | D ++ D'               :: M :: merge {{ coq (Map.merge [[D]] [[D']]) }}
+
 store, S {{ tex \sigma }} {{ coq σ }} :: 'S_'  ::= {{ coq (Map.map normal) }}
   | nil                   :: M :: empty {{ coq (Map.empty) }}
   | x := N                :: M :: one {{ coq (Map.one [[x]] [[N]]) }}
@@ -50,6 +56,7 @@ terminals :: 'terminals_' ::=
 
 parsing
   S_add left S_add
+  D_add left D_add
 
 substitutions
   single E x :: subst
@@ -61,212 +68,41 @@ formula :: formula_ ::=
 
 defns
 
-nev :: '' ::=
-
-defn
-x never E :: :: never :: 'never_'
-by
-
-x != y
---------- :: var
-x never y
-
---------------------- :: lam_eq
-x never lam x : t. E
-
-x never E
-x != y
---------------------- :: lam
-x never lam y : t. E
-
-x never E
-x never E'
------------- :: app
-x never E E'
-
---------- :: tt
-x never tt
-
-x never E
-x never E'
-------------- :: step
-x never E; E'
-
-x never E
-x never E'
-------------- :: fanout
-x never E, E'
-
-x never E
-x never E'
-x != y
-x != y'
----------------------------- :: let
-x never let y, y' = E in E'
-
-x never E
----------------------------- :: let_eq_1
-x never let x, y = E in E'
-
-x never E
----------------------------- :: let_eq_2
-x never let y, x = E in E'
-
-defns
-
-onc :: '' ::=
-
-defn
-x once E :: :: once :: 'once_'
-by
-
---------- :: var
-x once x
-
-x != y
-x once E
-------------------- :: lam
-x once lam y: t. E
-
-x once E
-x never E'
-------------- :: app_l
-x once E E'
-
-x never E
-x once E'
-------------- :: app_r
-x once E E'
-
-x once E
-x never E'
-------------- :: step_l
-x once E; E'
-
-x never E
-x once E'
-------------------- :: step_r
-x once E; E'
-
-x once E
-x never E'
-------------- :: fanout_l
-x once E, E'
-
-x never E
-x once E'
-------------------- :: fanout_r
-x once E, E'
-
-x once E
-x never E'
-x != y
-x != y'
------------------------------ :: let_l
-x once let y, y' = E in E'
-
-x once E
----------------------------- :: let_l1
-x once let x, y = E in E'
-
-x once E
------------------------------ :: let_l2
-x once let y, x = E in E'
-
-x never E
-x once E'
-x != y
-x != y'
------------------------------ :: let_r
-x once let y, y' = E in E'
-
-defns
-
-dummy :: 'd' ::=
-
-defn
-dumb ::   :: d :: 'd_'
-by
-
-defns
-
-judge_linear :: '' ::=
-
-defn
-lin E ::   :: lin :: 'lin_'
-by
-
--------- :: var
-lin x
-
-x once E
-lin E
------------------ :: lam
-lin lam x: t. E
-
-lin E
-lin E'
--------- :: app
-lin E E' 
-
------- :: tt
-lin tt
-
-lin E
-lin E'
----------- :: step
-lin E ; E'
-
-lin E
-lin E'
----------- :: fanout
-lin E , E'
-
-x once E'
-y once E'
-lin E
-lin E'
------------------------ :: let
-lin let x , y = E in E'  
-
-defns
-
 judge_context :: 'J' ::=
 
 defn
-G |- E : t ::   :: E :: 'E_'
+D |- E : t ::   :: E :: 'E_'
 by
 
-x: t \in G
 ------------ :: var
-G |- x: t
+x: t |- x: t
 
-G, x: t1 |- E: t2
+D, x: t1 |- E: t2
 ---------------------------- :: lam
-G |- lam x: t1 . E: t1 * t2
+D |- lam x: t1 . E: t1 * t2
 
-G |- E1: t1 * t2
-G |- E2: t1
------------------- :: app
-G |- E1 E2: t2
+D |- E1: t1 * t2
+D' |- E2: t1
+----------------- :: app
+D ++ D' |- E1 E2: t2
 
 ---------------- :: tt
-G |- tt: unit
+nil |- tt: unit
 
-G |- E1: unit
-G |- E2: t
+D |- E1: unit
+D' |- E2: t
 ------------------- :: step
-G |- E1; E2: t
+D ++ D' |- E1; E2: t
 
-G |- E1: t1
-G |- E2: t2
+D |- E1: t1
+D' |- E2: t2
 ------------------- :: fanout
-G |- E1, E2: t1 * t2
+D ++ D' |- E1, E2: t1 * t2
 
-G |- E1 : t1 * t2
-G, x: t1, y: t2 |- E2: t3
+D |- E1 : t1 * t2
+D', x: t1, y: t2 |- E2: t3
 ------------------------------------- :: let
-G |- let x, y = E1 in E2: t3
+D ++ D' |- let x, y = E1 in E2: t3
 
 defns
 
