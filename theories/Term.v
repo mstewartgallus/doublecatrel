@@ -416,7 +416,7 @@ Definition unshadow {v Γ x t0 t1 t2}:
 
 Module Dec.
   Inductive term {Γ: environment}: type → Set :=
-  | v_var {t} (x: var): mem x t Γ → term t
+  | v_var {t} (x: var): find x Γ = Some t → term t
   | v_tt: term t_unit
   | v_fst {t t'} (v: term (t * t')): term t
   | v_snd {t t'} (v: term (t * t')): term t'
@@ -428,9 +428,9 @@ Module Dec.
     | Spec.v_var x => v_var x _
     | Spec.v_tt => v_tt
     | Spec.v_fst v =>
-        if typecheck Γ v is Some (t * t')
+        if typecheck Γ v is Some (t0 * t1)
         then
-          v_fst (dec (t * t') v _)
+          v_fst (dec (t0 * t1) v _)
         else
           match _: False with end
     | Spec.v_snd v =>
@@ -450,17 +450,10 @@ Module Dec.
   Next Obligation.
   Proof.
     cbn in p.
-    apply find_sound.
-    auto.
-  Qed.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
     rewrite <- Heq_anonymous in p.
     inversion p.
     auto.
-  Qed.
+  Defined.
 
   Next Obligation.
   Proof.
@@ -474,7 +467,7 @@ Module Dec.
     subst.
     rewrite q in H'.
     contradiction.
-  Qed.
+  Defined.
 
   Next Obligation.
   Proof.
@@ -482,7 +475,7 @@ Module Dec.
     rewrite <- Heq_anonymous in p.
     inversion p.
     auto.
-  Qed.
+  Defined.
 
   Next Obligation.
   Proof.
@@ -496,7 +489,7 @@ Module Dec.
     subst.
     rewrite q in H'.
     contradiction.
-  Qed.
+  Defined.
 
   Next Obligation.
   Proof.
@@ -508,7 +501,7 @@ Module Dec.
     inversion p.
     subst.
     auto.
-  Qed.
+  Defined.
 
   Next Obligation.
   Proof.
@@ -520,7 +513,7 @@ Module Dec.
     inversion p.
     subst.
     auto.
-  Qed.
+  Defined.
 
   Next Obligation.
   Proof.
@@ -533,6 +526,30 @@ Module Dec.
     subst.
     set (H' := H t0 t1).
     contradiction.
+  Defined.
+
+  Fixpoint undec {Γ t} (v: term Γ t) :=
+    match v with
+    | v_var x _ => Spec.v_var x
+    | v_tt => Spec.v_tt
+    | v_fst v => Spec.v_fst (undec v)
+    | v_snd v => Spec.v_snd (undec v)
+    | v_fanout v v' => Spec.v_fanout (undec v) (undec v')
+    end.
+
+  Lemma wf {Γ t} (v: term Γ t): Γ ⊢ undec v in t.
+  Proof.
+    induction v.
+    all: cbn.
+    all: econstructor.
+    all: eauto.
+    apply find_sound.
+    auto.
+  Qed.
+
+  Lemma wf_undec_dec {Γ v t} (p: typecheck Γ v = Some t): Γ ⊢ undec (dec t v p) in t.
+  Proof.
+    apply wf.
   Qed.
 End Dec.
 
@@ -566,8 +583,8 @@ Section Cartesian.
 
   Import Dec.
 
-  Fixpoint mor' {Γ t} (v: Dec.term Γ t) {A} {struct v}: (∀ x t, mem x t Γ → C A (obj t)) → C A (obj t) :=
-    match v in term _ t' return (∀ x t, mem x t Γ → C A (obj t)) → C A (obj t') with
+  Fixpoint mor' {Γ t} (v: Dec.term Γ t) {A} {struct v}: (∀ x t, find x Γ = Some t → C A (obj t)) → C A (obj t) :=
+    match v in term _ t' return (∀ x t, find x Γ = Some t → C A (obj t)) → C A (obj t') with
     | @v_var _ t' x p => λ h, h x t' p
     | v_tt => λ _, bang _
     | v_fst v => λ h, compose (fst _ _) (mor' v h)
@@ -575,7 +592,7 @@ Section Cartesian.
     | v_fanout v v' => λ h, fanout _ _ _ (mor' v h) (mor' v' h)
     end.
 
-  Program Fixpoint find x t Γ (p: mem x t Γ): C (env Γ) (obj t) :=
+  Program Fixpoint find x t Γ (p: Environment.find x Γ = Some t): C (env Γ) (obj t) :=
     match Γ with
     | cons (y, t') T =>
         match eq_var x y with
@@ -589,27 +606,13 @@ Section Cartesian.
 
   Next Obligation.
   Proof.
+    cbn in p.
+    destruct eq_var in p.
+    2: contradiction.
     inversion p.
     all: subst.
     all: auto.
-    contradiction.
   Qed.
 
-  Next Obligation.
-  Proof.
-    inversion p.
-    all: subst.
-    1: contradiction.
-    auto.
-  Qed.
-
-  Next Obligation.
-  Proof.
-    inversion p.
-    all: subst.
-    all: eapply H.
-    all: auto.
-  Qed.
-
-  Definition mor {Γ t} v (p: Γ ⊢ v in t) := mor' (Dec.dec t v p) (λ x t, find _ _ _).
+  Definition mor {Γ t} v (p: typecheck Γ v = Some t) := mor' (Dec.dec t v p) (λ x t, find _ _ _).
 End Cartesian.
