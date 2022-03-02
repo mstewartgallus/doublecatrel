@@ -423,7 +423,7 @@ Module Dec.
   | v_fanout {t t'} (v: term t) (v': term t'): term (t * t').
   Arguments term: clear implicits.
 
-  Program Fixpoint dec {Γ} t v (p: Γ ⊢ v in t): term Γ t :=
+  Program Fixpoint dec {Γ} t v (p: typecheck Γ v = Some t): term Γ t :=
     match v with
     | Spec.v_var x => v_var x _
     | Spec.v_tt => v_tt
@@ -449,83 +449,62 @@ Module Dec.
 
   Next Obligation.
   Proof.
-    inversion p.
-    subst.
+    cbn in p.
+    apply find_sound.
     auto.
   Qed.
 
   Next Obligation.
   Proof.
+    cbn in p.
+    rewrite <- Heq_anonymous in p.
     inversion p.
     auto.
   Qed.
 
   Next Obligation.
   Proof.
+    cbn in p.
+    destruct typecheck eqn:q in p.
+    2: discriminate.
+    destruct t0.
+    all: try discriminate.
+    set (H' := H t0_1 t0_2).
     inversion p.
     subst.
-    set (H1' := typecheck_complete H1).
-    rewrite H1' in Heq_anonymous.
-    inversion Heq_anonymous.
-    subst.
-    auto.
-  Qed.
-
-  Next Obligation.
-  Proof.
-    inversion p.
-    subst.
-    set (H1' := typecheck_complete H1).
-    rewrite H1' in Heq_anonymous.
-    inversion Heq_anonymous.
-    subst.
-    auto.
-  Qed.
-
-  Next Obligation.
-  Proof.
-    inversion p.
-    subst.
-    set (H' := H t t2).
-    set (H2' := typecheck_complete H2).
-    rewrite H2' in H'.
+    rewrite q in H'.
     contradiction.
   Qed.
 
   Next Obligation.
   Proof.
+    cbn in p.
+    rewrite <- Heq_anonymous in p.
     inversion p.
-    subst.
-    set (H1' := typecheck_complete H1).
-    rewrite H1' in Heq_anonymous.
-    inversion Heq_anonymous.
-    subst.
     auto.
   Qed.
 
   Next Obligation.
   Proof.
+    cbn in p.
+    destruct typecheck eqn:q in p.
+    2: discriminate.
+    destruct t0.
+    all: try discriminate.
+    set (H' := H t0_1 t0_2).
     inversion p.
     subst.
-    set (H1' := typecheck_complete H1).
-    rewrite H1' in Heq_anonymous.
-    inversion Heq_anonymous.
-    subst.
-    auto.
-  Qed.
-
-  Next Obligation.
-  Proof.
-    inversion p.
-    subst.
-    set (H' := H t1 t).
-    set (H2' := typecheck_complete H2).
-    rewrite H2' in H'.
+    rewrite q in H'.
     contradiction.
   Qed.
 
   Next Obligation.
   Proof.
+    cbn in p.
+    destruct typecheck eqn:q in p.
+    2: discriminate.
+    destruct typecheck eqn:q' in p.
+    2: discriminate.
     inversion p.
     subst.
     auto.
@@ -533,6 +512,11 @@ Module Dec.
 
   Next Obligation.
   Proof.
+    cbn in p.
+    destruct typecheck eqn:q in p.
+    2: discriminate.
+    destruct typecheck eqn:q' in p.
+    2: discriminate.
     inversion p.
     subst.
     auto.
@@ -540,9 +524,14 @@ Module Dec.
 
   Next Obligation.
   Proof.
+    cbn in p.
+    destruct typecheck eqn:q in p.
+    2: discriminate.
+    destruct typecheck eqn:q' in p.
+    2: discriminate.
     inversion p.
     subst.
-    set (H' := H t1 t2).
+    set (H' := H t0 t1).
     contradiction.
   Qed.
 End Dec.
@@ -591,7 +580,7 @@ Section Cartesian.
     | cons (y, t') T =>
         match eq_var x y with
         | left _ =>
-          fst (obj t) (env T)
+            fst (obj t) (env T)
         | right _ =>
             compose (find x t T _) (snd (obj t') (env T))
         end
