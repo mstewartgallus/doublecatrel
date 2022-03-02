@@ -575,6 +575,17 @@ Section Cartesian.
 
   Open Scope category.
 
+  Import Dec.
+
+  Fixpoint mor' {Γ t} (v: Dec.term Γ t) {A} {struct v}: (∀ x t, mem x t Γ → C A (obj t)) → C A (obj t) :=
+    match v in term _ t' return (∀ x t, mem x t Γ → C A (obj t)) → C A (obj t') with
+    | @v_var _ t' x p => λ h, h x t' p
+    | v_tt => λ _, bang _
+    | v_fst v => λ h, compose (fst _ _) (mor' v h)
+    | v_snd v => λ h, compose (snd _ _) (mor' v h)
+    | v_fanout v v' => λ h, fanout _ _ _ (mor' v h) (mor' v' h)
+    end.
+
   Program Fixpoint find x t Γ (p: mem x t Γ): C (env Γ) (obj t) :=
     match Γ with
     | cons (y, t') T =>
@@ -611,16 +622,5 @@ Section Cartesian.
     all: auto.
   Qed.
 
-  Import Dec.
-
-  Fixpoint mor' {Γ t} (v: Dec.term Γ t): C (env Γ) (obj t) :=
-    match v in term _ t' return C (env Γ) (obj t') with
-    | v_var x p => find x _ Γ p
-    | v_tt => bang _
-    | v_fst v => compose (fst _ _) (mor' v)
-    | v_snd v => compose (snd _ _) (mor' v)
-    | v_fanout v v' => fanout _ _ _ (mor' v) (mor' v')
-    end.
-
-  Definition mor {Γ t} v (p: Γ ⊢ v in t) := mor' (Dec.dec t v p).
+  Definition mor {Γ t} v (p: Γ ⊢ v in t) := mor' (Dec.dec t v p) (λ x t, find _ _ _).
 End Cartesian.
