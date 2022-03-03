@@ -423,109 +423,91 @@ Module Dec.
   | v_fanout {t t'} (v: term t) (v': term t'): term (t * t').
   Arguments term: clear implicits.
 
-  Program Fixpoint dec {Γ} t v (p: typecheck Γ v = Some t): term Γ t :=
+  Import OptionNotations.
+
+  Definition find_dec x Γ: option {t | find x Γ = Some t}.
+  Proof.
+    destruct (find x Γ).
+    2: apply None.
+    apply Some.
+    exists t.
+    auto.
+  Defined.
+
+  Fixpoint dec' Γ v: option { t & term Γ t } :=
     match v with
-    | Spec.v_var x => v_var x _
-    | Spec.v_tt => v_tt
+    | Spec.v_var x =>
+        match find_dec x Γ with
+        | Some p =>
+            Some (existT (term Γ) (proj1_sig p) (@v_var _ (proj1_sig p) x (proj2_sig p)))
+        | _ => None
+        end
+    | Spec.v_tt => Some (existT  (term Γ) t_unit v_tt)
     | Spec.v_fst v =>
-        if typecheck Γ v is Some (t0 * t1)
-        then
-          v_fst (dec (t0 * t1) v _)
-        else
-          match _: False with end
+        do existT _ (t0 * t1) v' ← dec' Γ v ;
+        Some (existT _ t0 (v_fst v'))
     | Spec.v_snd v =>
-        if typecheck Γ v is Some (t * t')
-        then
-          v_snd (dec (t * t') v _)
-        else
-          match _: False with end
+        do existT _ (t0 * t1) v' ← dec' Γ v ;
+        Some (existT (term Γ) t1 (v_snd v'))
     | Spec.v_fanout v v' =>
-        if t is t * t'
-        then
-          v_fanout (dec t v _) (dec t' v' _)
-        else
-          match _: False with end
+        do existT _ t0 v0 ← dec' Γ v ;
+        do existT _ t1 v1 ← dec' Γ v' ;
+        Some (existT (term Γ) (t0 * t1) (v_fanout v0 v1))
     end.
 
-  Next Obligation.
+  Lemma dec_sound {Γ} v:
+    typecheck Γ v = (do d ← dec' Γ v ;
+                     Some (projT1 d)).
   Proof.
-    cbn in p.
-    rewrite <- Heq_anonymous in p.
-    inversion p.
-    auto.
+    induction v.
+    all: cbn.
+    all: auto.
+    - destruct (find_dec x Γ) eqn:q.
+      + cbn.
+        destruct s.
+        cbn.
+        auto.
+      + cbn.
+        unfold find_dec in q.
+        destruct (find x Γ).
+        * discriminate.
+        * auto.
+    - rewrite IHv.
+      destruct (dec' Γ v).
+      2: auto.
+      destruct s.
+      cbn.
+      destruct x.
+      all: auto.
+    - rewrite IHv.
+      destruct (dec' Γ v).
+      2: auto.
+      destruct s.
+      cbn.
+      destruct x.
+      all: auto.
+    - rewrite IHv1.
+      rewrite IHv2.
+      destruct (dec' Γ v1).
+      2: auto.
+      destruct s.
+      destruct (dec' Γ v2).
+      2: auto.
+      destruct s.
+      cbn.
+      auto.
   Defined.
 
-  Next Obligation.
+  Definition dec {Γ} t v (p: typecheck Γ v = Some t): term Γ t.
   Proof.
-    cbn in p.
-    destruct typecheck eqn:q in p.
+    rewrite dec_sound in p.
+    destruct (dec' Γ v).
     2: discriminate.
-    destruct t0.
-    all: try discriminate.
-    set (H' := H t0_1 t0_2).
+    destruct s.
+    cbn in p.
     inversion p.
     subst.
-    rewrite q in H'.
-    contradiction.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    rewrite <- Heq_anonymous in p.
-    inversion p.
-    auto.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    destruct typecheck eqn:q in p.
-    2: discriminate.
-    destruct t0.
-    all: try discriminate.
-    set (H' := H t0_1 t0_2).
-    inversion p.
-    subst.
-    rewrite q in H'.
-    contradiction.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    destruct typecheck eqn:q in p.
-    2: discriminate.
-    destruct typecheck eqn:q' in p.
-    2: discriminate.
-    inversion p.
-    subst.
-    auto.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    destruct typecheck eqn:q in p.
-    2: discriminate.
-    destruct typecheck eqn:q' in p.
-    2: discriminate.
-    inversion p.
-    subst.
-    auto.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    destruct typecheck eqn:q in p.
-    2: discriminate.
-    destruct typecheck eqn:q' in p.
-    2: discriminate.
-    inversion p.
-    subst.
-    set (H' := H t0 t1).
-    contradiction.
+    apply t0.
   Defined.
 
   Fixpoint undec {Γ t} (v: term Γ t) :=
@@ -550,6 +532,47 @@ Module Dec.
   Lemma wf_undec_dec {Γ v t} (p: typecheck Γ v = Some t): Γ ⊢ undec (dec t v p) in t.
   Proof.
     apply wf.
+  Qed.
+
+  Lemma undec_dec {Γ v}:
+    if dec' Γ v is Some (existT _ _ v')
+    then
+      undec v' = v
+    else
+      True.
+  Proof.
+    induction v.
+    all: cbn.
+    - destruct find_dec eqn:q.
+      2: auto.
+      cbn.
+      auto.
+    - auto.
+    - destruct (dec' Γ v).
+      2: auto.
+      destruct s.
+      destruct x.
+      1: auto.
+      cbn.
+      rewrite IHv.
+      auto.
+    - destruct (dec' Γ v).
+      2: auto.
+      destruct s.
+      destruct x.
+      1: auto.
+      cbn.
+      rewrite IHv.
+      auto.
+    - destruct (dec' Γ v1).
+      2: auto.
+      destruct s.
+      destruct (dec' Γ v2).
+      2: auto.
+      destruct s.
+      cbn.
+      rewrite IHv1, IHv2.
+      auto.
   Qed.
 End Dec.
 
