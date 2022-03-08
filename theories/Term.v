@@ -6,6 +6,7 @@ Require Import Blech.Category.
 
 Require Import Coq.Unicode.Utf8.
 Require Import Coq.Classes.SetoidClass.
+Require Coq.Bool.Bool.
 Require Coq.Lists.List.
 
 Import IfNotations.
@@ -17,6 +18,253 @@ Implicit Type v: term.
 Implicit Type t: type.
 Implicit Type N: normal.
 Implicit Types x y: var.
+
+Definition eq_environment Γ Γ': {Γ = Γ'} + {Γ ≠ Γ'}.
+Proof.
+  decide equality.
+  destruct a as [v t], p as [v' t'].
+  destruct (eq_var v v'), (eq_type t t').
+  all: subst.
+  - left.
+    auto.
+  - right.
+    intro p.
+    inversion p.
+    contradiction.
+  - right.
+    intro p.
+    inversion p.
+    contradiction.
+  - right.
+    intro p.
+    inversion p.
+    contradiction.
+Defined.
+
+
+Module ProofTree.
+  Inductive term: Set :=
+  | v_var Γ x t
+  | v_tt Γ
+  | v_fst Γ v t t' (p: term)
+  | v_snd Γ v t t' (p: term)
+  | v_fanout Γ v v' t t' (p p': term).
+
+  Definition envof (v: term): environment :=
+    match v with
+    | v_var Γ _ _ => Γ
+    | v_tt Γ => Γ
+    | v_fst Γ _ _ _ _ => Γ
+    | v_snd Γ _ _ _ _ => Γ
+    | v_fanout Γ _ _ _ _ _ _ => Γ
+    end.
+
+  Definition termof (v: term): Spec.term :=
+    match v with
+    | v_var _ x _ => Spec.v_var x
+    | v_tt _ => Spec.v_tt
+    | v_fst _ v _ _ _ => Spec.v_fst v
+    | v_snd _ v _ _ _ => Spec.v_snd v
+    | v_fanout _ v v' _ _ _ _ => Spec.v_fanout v v'
+    end.
+
+  Definition typeof (v: term): type :=
+    match v with
+    | v_var _ _ t => t
+    | v_tt _ => t_unit
+    | v_fst _ _ t _ _ => t
+    | v_snd _ _ _ t _ => t
+    | v_fanout _ _ _ t t' _ _ => t * t'
+    end.
+
+  Definition asserts (v: term): Prop := envof v ⊢ termof v in typeof v.
+
+  Definition test {P Q} (p: {P} + {Q}): bool := if p then true else false.
+
+  Function check (p: term): bool :=
+    match p with
+    | v_var Γ x t =>
+        if find x Γ is Some t' then test (eq_type t t') else false
+    | v_tt _ => true
+    | v_fst Γ v t t' p =>
+        test (eq_environment (envof p) Γ)
+        && test (eq_term (termof p) v)
+        && test (eq_type (typeof p) (t * t'))
+        && check p
+    | v_snd Γ v t t' p =>
+        test (eq_environment (envof p) Γ)
+        && test (eq_term (termof p) v)
+        && test (eq_type (typeof p) (t * t'))
+        && check p
+    | v_fanout Γ v v' t t' p1 p2 =>
+        test (eq_environment (envof p1) Γ)
+        && test (eq_term (termof p1) v)
+        && test (eq_type (typeof p1) t)
+        && test (eq_environment (envof p2) Γ)
+        && test (eq_term (termof p2) v')
+        && test (eq_type (typeof p2) t')
+        && check p1
+        && check p2
+    end %bool.
+
+  Definition check_sound (p: term): Bool.Is_true (check p) → asserts p.
+  Proof.
+    unfold asserts.
+    induction p.
+    all: cbn.
+    all: intro q.
+    - destruct (find x Γ) as [t'|] eqn:q'.
+      2: contradiction.
+      destruct (eq_type t t').
+      2: contradiction.
+      subst.
+      constructor.
+      apply find_sound.
+      auto.
+    - constructor.
+    - destruct
+        (eq_environment (envof p) Γ),
+        (eq_term (termof p) v),
+        (eq_type (typeof p) (t * t')),
+        (check p).
+      all: try contradiction.
+      cbn in q.
+      rewrite e, e0, e1 in IHp.
+      clear e e0 e1.
+      econstructor.
+      eauto.
+    - destruct
+        (eq_environment (envof p) Γ),
+        (eq_term (termof p) v),
+        (eq_type (typeof p) (t * t')),
+        (check p).
+      all: try contradiction.
+      cbn in q.
+      rewrite e, e0, e1 in IHp.
+      clear e e0 e1.
+      econstructor.
+      eauto.
+    - destruct
+        (eq_environment (envof p1) Γ),
+        (eq_term (termof p1) v),
+        (eq_type (typeof p1) t),
+        (check p1),
+        (eq_environment (envof p2) Γ),
+        (eq_term (termof p2) v'),
+        (eq_type (typeof p2) t'),
+        (check p2).
+      all: try contradiction.
+      cbn in q.
+      rewrite e, e0, e1 in IHp1.
+      clear e e0 e1.
+      rewrite e2, e3, e4 in IHp2.
+      clear e2 e3 e4.
+      constructor.
+      all: auto.
+  Qed.
+
+  Definition check_complete {Γ v t}:
+    Γ ⊢ v in t →
+             ∃ p,
+               Γ = envof p ∧
+               v = termof p ∧
+               t = typeof p ∧
+               Bool.Is_true (check p).
+  Proof.
+    intro q.
+    induction q.
+    all: cbn.
+    - assert (H' := find_complete H).
+      exists (v_var Γ x t).
+      cbn.
+      rewrite H'.
+      destruct eq_type.
+      2: contradiction.
+      cbv.
+      all: repeat split; auto.
+    - exists (v_tt Γ).
+      all: repeat split; auto.
+    - destruct IHq1 as [p1 [? [? []]]].
+      destruct IHq2 as [p2 [? [? []]]].
+      subst.
+      exists (v_fanout (envof p1) (termof p1) (termof p2) (typeof p1) (typeof p2) p1 p2).
+      cbn.
+      destruct (check p1).
+      2: contradiction.
+      destruct (check p2).
+      2: contradiction.
+      rewrite H3.
+      all: repeat split; auto.
+      destruct eq_environment.
+      2: contradiction.
+      destruct eq_term.
+      2: contradiction.
+      destruct eq_type.
+      2: contradiction.
+      destruct eq_type.
+      2: contradiction.
+      destruct eq_term.
+      2: contradiction.
+      cbn.
+      auto.
+    - destruct IHq as [p1 [? [? []]]].
+      subst.
+      exists (v_fst (envof p1) (termof p1) t1 t2 p1).
+      cbn.
+      rewrite <- H1.
+      destruct (check p1).
+      2: contradiction.
+      all: repeat split; auto.
+      destruct eq_environment.
+      2: contradiction.
+      destruct eq_term.
+      2: contradiction.
+      destruct eq_type.
+      2: contradiction.
+      auto.
+    - destruct IHq as [p1 [? [? []]]].
+      subst.
+      exists (v_snd (envof p1) (termof p1) t1 t2 p1).
+      cbn.
+      rewrite <- H1.
+      destruct (check p1).
+      2: contradiction.
+      all: repeat split; auto.
+      destruct eq_environment.
+      2: contradiction.
+      destruct eq_term.
+      2: contradiction.
+      destruct eq_type.
+      2: contradiction.
+      auto.
+  Qed.
+
+  Function infer Γ v: option term :=
+    match v with
+    | Spec.v_var x =>
+        do t ← find x Γ ;
+        Some (v_var Γ x t)
+    | Spec.v_tt => Some (v_tt Γ)
+    | Spec.v_fst v =>
+        do v' ← infer Γ v ;
+        if typeof v' is t * t'
+        then
+          Some (v_fst Γ v t t' v')
+        else
+          None
+    | Spec.v_snd v =>
+        do v' ← infer Γ v ;
+        if typeof v' is t * t'
+        then
+          Some (v_snd Γ v t t' v')
+        else
+          None
+    | Spec.v_fanout v0 v1 =>
+        do v0' ← infer Γ v0 ;
+        do v1' ← infer Γ v1 ;
+        Some (v_fanout Γ v0 v1 (typeof v0') (typeof v1') v0' v1')
+    end.
+End ProofTree.
 
 Function typecheck Γ v :=
   match v with
