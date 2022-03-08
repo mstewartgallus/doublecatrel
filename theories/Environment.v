@@ -166,8 +166,7 @@ Module ProofTree.
     | mem_ne _ _ Γ y t' _ => cons (y, t') Γ
     end.
 
-  #[local]
-  Definition test {P Q} (p: {P} + {Q}): bool := if p then true else false.
+  Notation "'test' p" := (match p with | left _ => true | right _ => false end) (at level 1).
 
   Function check (p: mem): bool :=
     match p with
@@ -185,13 +184,13 @@ Module ProofTree.
   Lemma check_sound (p: mem): Bool.Is_true (check p) → asserts p.
   Proof.
     unfold asserts.
-    induction p.
+    functional induction (check p).
     all: cbn.
+    all: try contradiction.
     all: intros q.
     - constructor.
-    - destruct eq_var, eq_var, eq_type, eq_environment, (check p).
-      all: try contradiction.
-      subst.
+    - destruct (check p0).
+      2: contradiction.
       constructor.
       all: auto.
   Qed.

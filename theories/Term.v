@@ -58,8 +58,7 @@ Module ProofTree.
 
   Definition asserts (v: Jv): Prop := envof v ⊢ termof v in typeof v.
 
-  #[local]
-  Definition test {P Q} (p: {P} + {Q}): bool := if p then true else false.
+  Notation "'test' p" := (match p with | left _ => true | right _ => false end) (at level 1).
 
   Function check (p: Jv): bool :=
     match p with
@@ -90,62 +89,38 @@ Module ProofTree.
         && check p2
     end %bool.
 
-  Definition check_sound (p: Jv): Bool.Is_true (check p) → asserts p.
+  Lemma check_sound (p: Jv): Bool.Is_true (check p) → asserts p.
   Proof.
     unfold asserts.
-    induction p.
+    functional induction (check p).
     all: cbn.
     all: intro q.
-    - destruct eq_environment, eq_var, eq_type.
-      all: try contradiction.
-      subst.
-      constructor.
+    all: try contradiction.
+    - constructor.
       apply Environment.ProofTree.check_sound.
-      cbn in q.
       auto.
     - constructor.
-    - destruct
-        (eq_environment (envof p1) Γ),
-        (eq_term (termof p1) v1),
-        (eq_type (typeof p1) t1),
-        (check p1),
-        (eq_environment (envof p2) Γ),
-        (eq_term (termof p2) v2),
-        (eq_type (typeof p2) t2),
-        (check p2).
-      all: try contradiction.
-      cbn in q.
-      rewrite e, e0, e1 in IHp1.
-      clear e e0 e1.
-      rewrite e2, e3, e4 in IHp2.
-      clear e2 e3 e4.
+    - rewrite _x1 in IHb.
+      destruct (check p0).
+      2: contradiction.
+      econstructor.
+      eauto.
+    - rewrite _x1 in IHb.
+      destruct (check p0).
+      2: contradiction.
+      econstructor.
+      eauto.
+    - destruct (check p1).
+      2: contradiction.
+      destruct (check p2).
+      2: contradiction.
       constructor.
-      all: auto.
-    - destruct
-        (eq_environment (envof p) Γ),
-        (eq_term (termof p) v),
-        (eq_type (typeof p) (t1 * t2)),
-        (check p).
-      all: try contradiction.
-      cbn in q.
-      rewrite e, e0, e1 in IHp.
-      clear e e0 e1.
-      econstructor.
-      eauto.
-    - destruct
-        (eq_environment (envof p) Γ),
-        (eq_term (termof p) v),
-        (eq_type (typeof p) (t1 * t2)),
-        (check p).
-      all: try contradiction.
-      cbn in q.
-      rewrite e, e0, e1 in IHp.
-      clear e e0 e1.
-      econstructor.
-      eauto.
+      1: auto.
+      rewrite <- _x2.
+      auto.
   Qed.
 
-  Definition check_complete {Γ v t}:
+  Lemma check_complete {Γ v t}:
     Γ ⊢ v in t →
              ∃ p,
                Γ = envof p ∧
