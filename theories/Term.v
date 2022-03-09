@@ -23,37 +23,37 @@ Module ProofTree.
   Import Environment.ProofTree.
 
   Inductive Jv: Set :=
-  | Jv_var Γ x t (p: mem)
+  | Jv_var Γ x t
   | Jv_tt Γ
-  | Jv_fanout Γ v1 v2 t1 t2: Jv → Jv → Jv
-  | Jv_fst Γ v t1 t2: Jv → Jv
-  | Jv_snd Γ v t1 t2: Jv → Jv.
+  | Jv_fanout: Jv → Jv → Jv
+  | Jv_fst: Jv → Jv
+  | Jv_snd: Jv → Jv.
 
-  Definition envof (v: Jv): environment :=
+  Function envof (v: Jv): environment :=
     match v with
-    | Jv_var Γ _ _ _ => Γ
+    | Jv_var Γ _ _ => Γ
     | Jv_tt Γ => Γ
-    | Jv_fst Γ _ _ _ _ => Γ
-    | Jv_snd Γ _ _ _ _ => Γ
-    | Jv_fanout Γ _ _ _ _ _ _ => Γ
+    | Jv_fanout p1 _ => envof p1
+    | Jv_fst p => envof p
+    | Jv_snd p => envof p
     end.
 
-  Definition termof (v: Jv): term :=
+  Function termof (v: Jv): term :=
     match v with
-    | Jv_var _ x _ _ => v_var x
+    | Jv_var _ x _ => v_var x
     | Jv_tt _ => v_tt
-    | Jv_fst _ v _ _ _ => v_fst v
-    | Jv_snd _ v _ _ _ => v_snd v
-    | Jv_fanout _ v v' _ _ _ _ => v_fanout v v'
+    | Jv_fst p => v_fst (termof p)
+    | Jv_snd p => v_snd (termof p)
+    | Jv_fanout p1 p2 => v_fanout (termof p1) (termof p2)
     end.
 
-  Definition typeof (v: Jv): type :=
+  Function typeof (v: Jv): type :=
     match v with
-    | Jv_var _ _ t _ => t
+    | Jv_var _ _ t => t
     | Jv_tt _ => t_unit
-    | Jv_fst _ _ t _ _ => t
-    | Jv_snd _ _ _ t _ => t
-    | Jv_fanout _ _ _ t t' _ _ => t * t'
+    | Jv_fst p => if typeof p is t * _ then t else t_unit
+    | Jv_snd p => if typeof p is _ * t then t else t_unit
+    | Jv_fanout p1 p2 => typeof p1 * typeof p2
     end.
 
   Definition asserts (v: Jv): Prop := envof v ⊢ termof v in typeof v.
@@ -62,29 +62,17 @@ Module ProofTree.
 
   Function check (p: Jv): bool :=
     match p with
-    | Jv_var Γ x t p =>
-        test (eq_environment (Environment.ProofTree.envof p) Γ)
-        && test (eq_var (Environment.ProofTree.varof p) x)
-        && test (eq_type (Environment.ProofTree.typeof p) t)
-        && Environment.ProofTree.check p
+    | Jv_var Γ x t =>
+        if find x Γ is Some t' then test (eq_type t t') else false
     | Jv_tt _ => true
-    | Jv_fst Γ v t t' p =>
-        test (eq_environment (envof p) Γ)
-        && test (eq_term (termof p) v)
-        && test (eq_type (typeof p) (t * t'))
+    | Jv_fst p =>
+        (if typeof p is _ * _ then true else false)
         && check p
-    | Jv_snd Γ v t t' p =>
-        test (eq_environment (envof p) Γ)
-        && test (eq_term (termof p) v)
-        && test (eq_type (typeof p) (t * t'))
+    | Jv_snd p =>
+        (if typeof p is _ * _ then true else false)
         && check p
-    | Jv_fanout Γ v v' t t' p1 p2 =>
-        test (eq_environment (envof p1) Γ)
-        && test (eq_term (termof p1) v)
-        && test (eq_type (typeof p1) t)
-        && test (eq_environment (envof p2) Γ)
-        && test (eq_term (termof p2) v')
-        && test (eq_type (typeof p2) t')
+    | Jv_fanout p1 p2 =>
+        test (eq_environment (envof p1) (envof p2))
         && check p1
         && check p2
     end %bool.
@@ -97,27 +85,28 @@ Module ProofTree.
     all: intro q.
     all: try contradiction.
     - constructor.
-      apply Environment.ProofTree.check_sound.
+      apply Environment.find_sound.
       auto.
     - constructor.
-    - rewrite _x1 in IHb.
+    - rewrite e0.
+      rewrite e0 in IHb.
       destruct (check p0).
       2: contradiction.
       econstructor.
       eauto.
-    - rewrite _x1 in IHb.
+    - rewrite e0.
+      rewrite e0 in IHb.
       destruct (check p0).
       2: contradiction.
       econstructor.
       eauto.
-    - destruct (check p1).
+    - rewrite <- _x in IHb0.
+      destruct (check p1).
       2: contradiction.
       destruct (check p2).
       2: contradiction.
       constructor.
-      1: auto.
-      rewrite <- _x2.
-      auto.
+      all: auto.
   Qed.
 
   Lemma check_complete {Γ v t}:
@@ -131,20 +120,21 @@ Module ProofTree.
     intro q.
     induction q.
     all: cbn.
-    - destruct (Environment.ProofTree.check_complete H) as [p' [? [? []]]].
-      exists (Jv_var Γ x t p').
+    - exists (Jv_var Γ x t).
       cbn.
-      subst.
       all: repeat split; auto.
-      destruct eq_environment, eq_var, eq_type.
-      all: cbv.
-      all: auto.
+      rewrite (find_complete H).
+      destruct eq_type.
+      2: contradiction.
+      cbv.
+      auto.
     - exists (Jv_tt Γ).
+      cbn.
       all: repeat split; auto.
     - destruct IHq1 as [p1 [? [? []]]].
       destruct IHq2 as [p2 [? [? []]]].
       subst.
-      exists (Jv_fanout (envof p1) (termof p1) (termof p2) (typeof p1) (typeof p2) p1 p2).
+      exists (Jv_fanout p1 p2).
       cbn.
       destruct (check p1).
       2: contradiction.
@@ -154,168 +144,119 @@ Module ProofTree.
       all: repeat split; auto.
       destruct eq_environment.
       2: contradiction.
-      destruct eq_term.
-      2: contradiction.
-      destruct eq_type.
-      2: contradiction.
-      destruct eq_type.
-      2: contradiction.
-      destruct eq_term.
-      2: contradiction.
       cbn.
       auto.
     - destruct IHq as [p1 [? [? []]]].
       subst.
-      exists (Jv_fst (envof p1) (termof p1) t1 t2 p1).
+      exists (Jv_fst p1).
       cbn.
       rewrite <- H1.
       destruct (check p1).
       2: contradiction.
       all: repeat split; auto.
-      destruct eq_environment.
-      2: contradiction.
-      destruct eq_term.
-      2: contradiction.
-      destruct eq_type.
-      2: contradiction.
-      auto.
     - destruct IHq as [p1 [? [? []]]].
       subst.
-      exists (Jv_snd (envof p1) (termof p1) t1 t2 p1).
+      exists (Jv_snd p1).
       cbn.
       rewrite <- H1.
       destruct (check p1).
       2: contradiction.
       all: repeat split; auto.
-      destruct eq_environment.
-      2: contradiction.
-      destruct eq_term.
-      2: contradiction.
-      destruct eq_type.
-      2: contradiction.
-      auto.
   Qed.
 
-  Function infer Γ v: option Jv :=
+  Function elaborate Γ v: option Jv :=
     match v with
     | v_var x =>
-        do p ← Environment.ProofTree.infer x Γ ;
-        Some (Jv_var Γ x (Environment.ProofTree.typeof p) p)
+        do t ← find x Γ ;
+        Some (Jv_var Γ x t)
     | v_tt => Some (Jv_tt Γ)
     | v_fst v =>
-        do v' ← infer Γ v ;
-        if typeof v' is t * t'
+        do p ← elaborate Γ v ;
+        if typeof p is _ * _
         then
-          Some (Jv_fst Γ v t t' v')
+          Some (Jv_fst p)
         else
           None
     | v_snd v =>
-        do v' ← infer Γ v ;
-        if typeof v' is t * t'
+        do p ← elaborate Γ v ;
+        if typeof p is _ * _
         then
-          Some (Jv_snd Γ v t t' v')
+          Some (Jv_snd p)
         else
           None
     | v_fanout v0 v1 =>
-        do v0' ← infer Γ v0 ;
-        do v1' ← infer Γ v1 ;
-        Some (Jv_fanout Γ v0 v1 (typeof v0') (typeof v1') v0' v1')
+        do v0' ← elaborate Γ v0 ;
+        do v1' ← elaborate Γ v1 ;
+        Some (Jv_fanout v0' v1')
     end.
 
-  Lemma termof_infer {Γ v p}: infer Γ v = Some p → termof p = v.
+  Lemma termof_elaborate {Γ v p}: elaborate Γ v = Some p → termof p = v.
   Proof.
     generalize dependent p.
-    functional induction (infer Γ v).
+    functional induction (elaborate Γ v).
     all: intros ? q.
     all: inversion q.
+    all: subst.
+    all: cbn.
+    all: auto.
+    - rewrite IHo.
+      all: auto.
+    - rewrite IHo.
+      all: auto.
+    - rewrite IHo, IHo0.
+      all: auto.
+  Qed.
+
+  Lemma envof_elaborate {Γ v p}: elaborate Γ v = Some p → envof p = Γ.
+  Proof.
+    generalize dependent p.
+    functional induction (elaborate Γ v).
+    all: intros ? q.
+    all: inversion q.
+    all: subst.
+    all: cbn.
     all: auto.
   Qed.
 
-  Lemma envof_infer {Γ v p}: infer Γ v = Some p → envof p = Γ.
+  Definition elaborate_sound {Γ v p}:
+    elaborate Γ v = Some p → Bool.Is_true (check p).
   Proof.
     generalize dependent p.
-    functional induction (infer Γ v).
-    all: intros ? q.
-    all: inversion q.
-    all: auto.
-  Qed.
-
-  Definition infer_sound {Γ v p}:
-    infer Γ v = Some p → Bool.Is_true (check p).
-  Proof.
-    generalize dependent p.
-    functional induction (infer Γ v).
+    functional induction (elaborate Γ v).
     all: cbn.
     all: intros ? q.
     all: inversion q.
     all: subst.
     - cbn.
-      assert (e0' := Environment.ProofTree.infer_sound e0).
-      destruct (Environment.ProofTree.check p).
-      2: contradiction.
+      rewrite e0.
       destruct eq_type.
       2: contradiction.
       cbn.
-      rewrite (Environment.ProofTree.envof_infer e0).
-      rewrite (Environment.ProofTree.varof_infer e0).
-      destruct eq_environment.
-      2: contradiction.
-      destruct eq_var.
-      2: contradiction.
+      auto.
+    - cbn.
+      auto.
+    - cbn.
+      rewrite e1.
       cbn.
-      auto.
-    - cbn.
-      auto.
-    - cbn.
       assert (IHo' := IHo _ e0).
-      rewrite (termof_infer e0).
-      rewrite (envof_infer e0).
-      rewrite e1.
-      destruct (check v').
-      2: contradiction.
-      destruct eq_type.
-      2: contradiction.
-      destruct eq_environment.
-      2: contradiction.
-      destruct eq_term.
-      2: contradiction.
       auto.
     - cbn.
-      assert (IHo' := IHo _ e0).
-      rewrite (termof_infer e0).
-      rewrite (envof_infer e0).
       rewrite e1.
-      destruct (check v').
-      2: contradiction.
-      destruct eq_type.
-      2: contradiction.
-      destruct eq_environment.
-      2: contradiction.
-      destruct eq_term.
-      2: contradiction.
+      cbn.
+      assert (IHo' := IHo _ e0).
       auto.
     - cbn.
       assert (IHo' := IHo _ e0).
       assert (IHo0' := IHo0 _ e1).
-      rewrite (termof_infer e0).
-      rewrite (envof_infer e0).
-      rewrite (termof_infer e1).
-      rewrite (envof_infer e1).
+      rewrite (envof_elaborate e0).
+      rewrite (envof_elaborate e1).
+      destruct eq_environment.
+      2: contradiction.
+      cbn.
       destruct (check v0').
       2: contradiction.
       destruct (check v1').
       2: contradiction.
-      destruct eq_type.
-      2: contradiction.
-      destruct eq_type.
-      2: contradiction.
-      destruct eq_environment.
-      2: contradiction.
-      destruct eq_term.
-      2: contradiction.
-      destruct eq_term.
-      2: contradiction.
-      cbn.
       auto.
   Qed.
 End ProofTree.
