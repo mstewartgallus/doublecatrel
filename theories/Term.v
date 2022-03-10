@@ -20,8 +20,6 @@ Implicit Type N: normal.
 Implicit Types x y: var.
 
 Module ProofTree.
-  Import Environment.ProofTree.
-
   Inductive Jv: Set :=
   | Jv_var Γ x t
   | Jv_tt Γ
@@ -47,12 +45,20 @@ Module ProofTree.
     | Jv_fanout p1 p2 => v_fanout (termof p1) (termof p2)
     end.
 
+  #[local]
+  Definition unknown1: type := t_unit.
+  Opaque unknown1.
+
+  #[local]
+  Definition unknown2: type := t_unit.
+  Opaque unknown2.
+
   Function typeof (v: Jv): type :=
     match v with
     | Jv_var _ _ t => t
     | Jv_tt _ => t_unit
-    | Jv_fst p => if typeof p is t * _ then t else t_unit
-    | Jv_snd p => if typeof p is _ * t then t else t_unit
+    | Jv_fst p => if typeof p is t * _ then t else unknown1
+    | Jv_snd p => if typeof p is _ * t then t else unknown2
     | Jv_fanout p1 p2 => typeof p1 * typeof p2
     end.
 
