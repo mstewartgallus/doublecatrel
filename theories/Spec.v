@@ -208,7 +208,7 @@ Inductive JE : linear -> context -> type -> Prop :=    (* defn E *)
 (** definitions *)
 
 (* defns sat *)
-Inductive sat : store -> context -> normal -> Prop :=    (* defn sat *)
+Inductive sat : store -> context -> normal -> Type :=    (* defn sat *)
  | sat_var : forall (x:var) (N:normal),
      sat  (Map.one  x   N )  (E_var x) N
  | sat_tt : 
@@ -235,7 +235,7 @@ Inductive sat : store -> context -> normal -> Prop :=    (* defn sat *)
 (** definitions *)
 
 (* defns sound *)
-Inductive sound : context -> set -> Prop :=    (* defn sound *)
+Inductive sound : context -> set -> Type :=    (* defn sound *)
  | sound_nil : forall (E:context),
      sound E  nil 
  | sound_cons : forall (E:context) (Ps:set) (σ:store) (N:normal),

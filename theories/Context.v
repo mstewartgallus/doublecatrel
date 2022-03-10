@@ -681,7 +681,6 @@ Proof using.
     2: auto.
     constructor.
     1: auto.
-    clear IHs0.
     constructor.
     all: auto.
   - cbn.
@@ -731,20 +730,68 @@ Proof using.
     all: cbn.
 Qed.
 
-Theorem search_sound_sat:
-  ∀ {σ E N}, List.In (σ |- N) (search σ E) → sat σ E N.
-Proof using.
-  intros σ E.
+(* FIXME type check *)
+Record span := {
+  s: Set ;
+  π1: s → store ;
+  π2: s → normal ;
+}.
+
+Definition satspan E: span :=
+  {|
+    s := { σN & sat (fst σN) E (snd σN) } ;
+    π1 s := fst (projT1 s) ;
+    π2 s := snd (projT1 s) ;
+  |}.
+
+Definition searchspan E: span :=
+  {|
+    s := { '(σ, N, n) | List.nth_error (search σ E) n = Some (σ |- N) } ;
+    π1 '(exist _ (σ, _, _) _) := σ ;
+    π2 '(exist _ (_, N, _) _) := N ;
+  |}.
+
+Definition sound E: s (searchspan E) → s (satspan E).
+Proof.
+  cbn.
+  intros [[[σ N] n] p].
+  exists (σ, N).
+  cbn.
+  generalize dependent n.
   induction (search_sound σ E).
-  all: cbn.
-  1: contradiction.
-  intros N' p.
-  destruct p.
-  2: auto.
-  inversion H0.
-  subst.
+  all: intros n p.
+  1: destruct n; discriminate.
+  destruct n.
+  - cbn in p.
+    inversion p.
+    subst.
+    auto.
+  - cbn in p.
+    destruct Ps.
+    1: destruct n; discriminate.
+    apply (IHs0 n).
+    auto.
+Defined.
+
+Definition π1_sound1 E: ∀ s, π1 (searchspan E) s = π1 (satspan E) (sound E s).
+Proof.
+  cbn.
+  intros [[[σ N] n] p].
+  cbn.
   auto.
 Defined.
+
+Definition π2_sound1 E: ∀ s, π2 (searchspan E) s = π2 (satspan E) (sound E s).
+Proof.
+  cbn.
+  intros [[[σ N] n] p].
+  cbn.
+  auto.
+Defined.
+
+Inductive notin {A} (a: A): list A → Prop :=
+| notin_empty: notin a nil
+| notin_cons a' T: a ≠ a' → notin a T → notin a (cons a' T).
 
 Lemma subst_assoc {x f g h}:
   subst_context (subst_context h x g) x f = subst_context h x (subst_context g x f).
@@ -780,44 +827,3 @@ Proof.
 Qed.
 
 Definition oftype Δ t := { E | Δ ⊢ E ? t }.
-
-Definition equiv {Γ t}: Relation_Definitions.relation (oftype Γ t) :=
-  λ a b,
-    ∀ N,
-      (* FIXME substitute in contexts *)
-      sat Map.empty (proj1_sig a) N ↔ sat Map.empty (proj1_sig b) N.
-
-Instance equiv_Reflexive Γ t: Reflexive (@equiv Γ t).
-Proof using.
-  unfold equiv.
-  unfold Reflexive.
-  intros.
-  reflexivity.
-Qed.
-
-Instance equiv_Symmetric Γ t: Symmetric (@equiv Γ t).
-Proof using.
-  unfold equiv.
-  unfold Symmetric.
-  intros.
-  symmetry.
-  auto.
-Qed.
-
-Instance equiv_Transitive Γ t: Transitive (@equiv Γ t).
-Proof using.
-  unfold equiv.
-  unfold Transitive.
-  intros.
-  rewrite H.
-  rewrite H0.
-  reflexivity.
-Qed.
-
-Instance equiv_Equivalence Γ t: Equivalence (@equiv Γ t) := {
-    Equivalence_Reflexive := _ ;
-}.
-
-Instance oftype_Setoid Γ t: Setoid (oftype Γ t) := {
-    equiv := equiv ;
-}.

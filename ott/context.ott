@@ -106,7 +106,7 @@ D ++ D' |- let x, y = E1 in E2: t3
 
 defns
 
-sat :: '' ::=
+sat :: '' ::= {{ coq-universe Type }}
 
 defn
 S |- E [ N ] ::   :: sat :: 'sat_' {{ tex [[S]] \mathrel{\vdash} [[E]][ [[N]] ] }}
@@ -144,7 +144,7 @@ S ++ S' |- (E E') [ N' ]
 
 defns
 
-sound :: '' ::=
+sound :: '' ::= {{ coq-universe Type }}
 
 defn
 E [ Ps ] ::   :: sound :: 'sound_'
