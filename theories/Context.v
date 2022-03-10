@@ -1,5 +1,5 @@
 Require Blech.Map.
-Require Blech.Sets.
+Require Blech.Multiset.
 Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
 Require Import Blech.Environment.
@@ -10,9 +10,9 @@ Require Import Coq.Unicode.Utf8.
 Require Import Coq.Classes.SetoidClass.
 Require Import Coq.Arith.PeanoNat.
 Require Coq.Lists.List.
-Require Import Coq.Logic.PropExtensionality.
 
 Require Import FunInd.
+Require Import Psatz.
 
 Import List.ListNotations.
 Import IfNotations.
@@ -26,7 +26,7 @@ Implicit Types x y: var.
 Implicit Type σ: store.
 
 Import Map.MapNotations.
-Import Sets.SetNotations.
+Import Multiset.MultisetNotations.
 
 Section Typecheck.
   Import OptionNotations.
@@ -35,14 +35,13 @@ Section Typecheck.
     match E with
     | E_var x =>
         do t ← find x Γ ;
-        Some (Sets.one x, t)
+        Some (Multiset.one x, t)
     | E_lam x t1 E =>
         do (Δ', t2) ← typecheck ((x, t1) :: Γ) E ;
-        if Sets.find x Δ'
-        then
-          Some (Δ' \ x, t1 * t2)
-        else
-          None
+        match Multiset.find x Δ' with
+        | S _ => Some (Δ' \ x, t1 * t2)
+        | _ => None
+        end
     | E_app E E' =>
         do (Δ', t1 * t2) ← typecheck Γ E ;
         do (Δ, t1') ← typecheck Γ E' ;
@@ -66,13 +65,12 @@ Section Typecheck.
     | E_let x y E E' =>
         do (Δ', t1 * t2) ← typecheck Γ E ;
         do (Δ, t3) ← typecheck ((y, t2) :: (x, t1) :: Γ) E' ;
-        if (Sets.find x (Δ \ y) && Sets.find y Δ) %bool
-        then
-          Some (Δ' ∪ ((Δ \ y) \ x), t3)
-        else
-          None
+        match Multiset.find x (Δ \ y), Multiset.find y Δ with
+        | S _, S _ => Some (Δ' ∪ ((Δ \ y) \ x), t3)
+        | _, _ => None
+        end
     end
-      %list %set.
+      %list %multiset.
 End Typecheck.
 
 Theorem typecheck_sound:
@@ -88,14 +86,12 @@ Proof using.
   all: eauto.
   - apply find_sound.
     auto.
-  - rewrite Sets.add_minus.
+  - rewrite Multiset.add_minus.
     all: auto.
-  - destruct Sets.find eqn:qx in e2.
-    2: discriminate.
-    destruct Sets.find eqn:qy in e2.
-    2: discriminate.
-    repeat rewrite Sets.add_minus.
+    lia.
+  - repeat rewrite Multiset.add_minus.
     all: auto.
+    all: lia.
 Qed.
 
 Notation "'do' n ← e0 ; e1" :=
@@ -414,8 +410,8 @@ Qed.
 Fixpoint useall Γ: linear :=
   if Γ is cons (x, _) T
   then
-    Sets.merge (Sets.one x) (useall T)
+    Multiset.merge (Multiset.one x) (useall T)
   else
-    Sets.empty.
+    Multiset.empty.
 
 Definition oftype Γ t := { E | JE Γ (useall Γ) E t }.

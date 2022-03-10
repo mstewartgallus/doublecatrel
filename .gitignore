@@ -4,3 +4,4 @@
 *.vo
 *.aux
 .CoqMakefile.d
+.lia.cache
