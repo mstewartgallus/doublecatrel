@@ -149,7 +149,7 @@ Inductive context : Set :=
  | E_fanout (E:context) (E':context)
  | E_let (x:var) (y:var) (E:context) (E':context).
 
-Definition linear : Set := (Map.map type).
+Definition linear : Set := (Map.map unit).
 
 Definition set : Set := (list span).
 Lemma eq_context: forall (x y : context), {x = y} + {x <> y}.
@@ -181,30 +181,31 @@ end.
 (** definitions *)
 
 (* defns judge_context *)
-Inductive JE : linear -> context -> type -> Prop :=    (* defn E *)
- | JE_var : forall (x:var) (t:type),
-     JE  (Map.one  x   t )  (E_var x) t
- | JE_lam : forall (Δ:linear) (x:var) (t1:type) (E:context) (t2:type),
-     JE  (Map.merge   (Map.one  x   t1 )    Δ )  E t2 ->
-     JE Δ (E_lam x t1 E) (t_prod t1 t2)
- | JE_app : forall (Δ Δ':linear) (E1 E2:context) (t2 t1:type),
-     JE Δ E1 (t_prod t1 t2) ->
-     JE Δ' E2 t1 ->
-     JE  (Map.merge  Δ   Δ' )  (E_app E1 E2) t2
- | JE_tt : 
-     JE  Map.empty  E_tt t_unit
- | JE_step : forall (Δ Δ':linear) (E1 E2:context) (t:type),
-     JE Δ E1 t_unit ->
-     JE Δ' E2 t ->
-     JE  (Map.merge  Δ   Δ' )  (E_step E1 E2) t
- | JE_fanout : forall (Δ Δ':linear) (E1 E2:context) (t1 t2:type),
-     JE Δ E1 t1 ->
-     JE Δ' E2 t2 ->
-     JE  (Map.merge  Δ   Δ' )  (E_fanout E1 E2) (t_prod t1 t2)
- | JE_let : forall (Δ Δ':linear) (x y:var) (E1 E2:context) (t3 t1 t2:type),
-     JE Δ E1 (t_prod t1 t2) ->
-     JE  (Map.merge   (Map.one  y   t2 )     (Map.merge   (Map.one  x   t1 )    Δ' )  )  E2 t3 ->
-     JE  (Map.merge  Δ   Δ' )  (E_let x y E1 E2) t3.
+Inductive JE : environment -> linear -> context -> type -> Prop :=    (* defn E *)
+ | JE_var : forall (Γ:environment) (x:var) (t:type),
+     mem x t Γ ->
+     JE Γ  (Map.one  x  tt)  (E_var x) t
+ | JE_lam : forall (Γ:environment) (Δ:linear) (x:var) (t1:type) (E:context) (t2:type),
+     JE  (cons ( x ,  t1 )  Γ )   (Map.merge   (Map.one  x  tt)    Δ )  E t2 ->
+     JE Γ Δ (E_lam x t1 E) (t_prod t1 t2)
+ | JE_app : forall (Γ:environment) (Δ Δ':linear) (E1 E2:context) (t2 t1:type),
+     JE Γ Δ E1 (t_prod t1 t2) ->
+     JE Γ Δ' E2 t1 ->
+     JE Γ  (Map.merge  Δ   Δ' )  (E_app E1 E2) t2
+ | JE_tt : forall (Γ:environment),
+     JE Γ  Map.empty  E_tt t_unit
+ | JE_step : forall (Γ:environment) (Δ Δ':linear) (E1 E2:context) (t:type),
+     JE Γ Δ E1 t_unit ->
+     JE Γ Δ' E2 t ->
+     JE Γ  (Map.merge  Δ   Δ' )  (E_step E1 E2) t
+ | JE_fanout : forall (Γ:environment) (Δ Δ':linear) (E1 E2:context) (t1 t2:type),
+     JE Γ Δ E1 t1 ->
+     JE Γ Δ' E2 t2 ->
+     JE Γ  (Map.merge  Δ   Δ' )  (E_fanout E1 E2) (t_prod t1 t2)
+ | JE_let : forall (Γ:environment) (Δ Δ':linear) (x y:var) (E1 E2:context) (t3 t1 t2:type),
+     JE Γ Δ E1 (t_prod t1 t2) ->
+     JE  (cons ( y ,  t2 )   (cons ( x ,  t1 )  Γ )  )   (Map.merge   (Map.one  y  tt)     (Map.merge   (Map.one  x  tt)    Δ' )  )  E2 t3 ->
+     JE Γ  (Map.merge  Δ   Δ' )  (E_let x y E1 E2) t3.
 (** definitions *)
 
 (* defns sat *)

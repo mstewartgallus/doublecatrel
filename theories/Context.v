@@ -16,6 +16,7 @@ Require Import FunInd.
 Import List.ListNotations.
 Import IfNotations.
 
+Implicit Type Γ: environment.
 Implicit Type Δ: linear.
 Implicit Type E: context.
 Implicit Type t: type.
@@ -28,22 +29,18 @@ Import Map.MapNotations.
 Section Typecheck.
   Import OptionNotations.
 
-  Function typecheck Δ E: option (linear * type) :=
+  Function typecheck Γ E: option (linear * type) :=
     match E with
-    | E_var X =>
-        do t ← Map.find X Δ ;
-        Some (X ↦ t, t)
-    | E_lam X t1 E =>
-        do (Δ', t2) ← typecheck (X ↦ t1 ∪ Δ) E ;
-        do t1' ← Map.find X Δ' ;
-        if eq_type t1 t1'
-        then
-          Some (Δ' \ X, t1 * t2)
-        else
-          None
+    | E_var x =>
+        do t ← find x Γ ;
+        Some (x ↦ tt, t)
+    | E_lam x t1 E =>
+        do (Δ', t2) ← typecheck ((x, t1) :: Γ) E ;
+        do _ ← Map.find x Δ' ;
+        Some (Δ' \ x, t1 * t2)
     | E_app E E' =>
-        do (Δ', t1 * t2) ← typecheck Δ E ;
-        do (Δ, t1') ← typecheck Δ E' ;
+        do (Δ', t1 * t2) ← typecheck Γ E ;
+        do (Δ, t1') ← typecheck Γ E' ;
         if eq_type t1 t1'
         then
           Some (Δ' ∪ Δ, t2)
@@ -52,466 +49,50 @@ Section Typecheck.
 
     | E_tt => Some (∅, t_unit)
     | E_step E E' =>
-        do (Δ', t_unit) ← typecheck Δ E ;
-        do (Δ, t) ← typecheck Δ E' ;
+        do (Δ', t_unit) ← typecheck Γ E ;
+        do (Δ, t) ← typecheck Γ E' ;
         Some (Δ' ∪ Δ, t)
 
     | E_fanout E E' =>
-        do (Δ', t1) ← typecheck Δ E ;
-        do (Δ, t2) ← typecheck Δ E' ;
+        do (Δ', t1) ← typecheck Γ E ;
+        do (Δ, t2) ← typecheck Γ E' ;
         Some (Δ' ∪ Δ, t1 * t2)
 
-    | E_let X Y E E' =>
-        do (Δ', t1 * t2) ← typecheck Δ E ;
-        do (Δ, t3) ← typecheck (X ↦ t1 ∪ (Y ↦ t2 ∪ Δ)) E' ;
-        do t1' ← Map.find X (Δ \ Y) ;
-        do t2' ← Map.find Y Δ ;
-        if eq_type t1 t1'
-        then
-          if eq_type t2 t2'
-          then
-            Some (Δ' ∪ ((Δ \ Y) \ X), t3)
-          else
-            None
-        else
-          None
+    | E_let x y E E' =>
+        do (Δ', t1 * t2) ← typecheck Γ E ;
+        do (Δ, t3) ← typecheck ((y, t2) :: (x, t1) :: Γ) E' ;
+        do _ ← Map.find x (Δ \ y) ;
+        do _ ← Map.find y Δ ;
+        Some (Δ' ∪ ((Δ \ y) \ x), t3)
     end
       %list %map.
-
-  Definition env Δ E :=
-    do (Δ', _) ← typecheck Δ E ;
-    Some Δ'.
 End Typecheck.
 
 Theorem typecheck_sound:
-  ∀ Δ {E Δ' t}, typecheck Δ E = Some (Δ', t) → Δ' ⊢ E ? t.
+  ∀ Γ {E Δ' t}, typecheck Γ E = Some (Δ', t) → JE Γ Δ' E t.
 Proof using.
-  intros Δ E.
-  functional induction (typecheck Δ E).
+  intros Γ E.
+  functional induction (typecheck Γ E).
   all: cbn.
   all: intros ? ? p.
   all: inversion p.
   all: subst.
   all: try econstructor.
   all: eauto.
-  - apply IHo.
-    rewrite Map.add_minus.
-    all: auto.
+  - apply find_sound.
+    auto.
   - rewrite Map.add_minus.
     all: auto.
-    1: rewrite Map.add_minus.
-    all: auto.
+    destruct _x.
+    auto.
+  - repeat rewrite Map.add_minus.
+    + apply IHo0.
+      auto.
+    + destruct _x0.
+      auto.
+    + destruct _x.
+      auto.
 Qed.
-
-Module Dec.
-  Inductive context: Map.map type → type → Set :=
-  | E_var x t: context (Map.one x t) t
-  | E_lam {Δ t'} x t (E: context (Map.one x t ∪ Δ) t'): context Δ (t * t')
-  | E_app {Δ Δ' t t'} (E: context Δ (t * t')) (E': context Δ' t): context (Δ ∪ Δ') t'
-  | E_tt: context Map.empty t_unit
-  | E_step {Δ Δ' t} (E: context Δ t_unit) (E': context Δ' t): context (Δ ∪ Δ') t
-  | E_fanout {Δ Δ' t t'} (E: context Δ t) (E': context Δ' t'): context (Δ ∪ Δ') (t * t')
-  | E_let {Δ Δ' t t' t2} x y (E: context Δ (t * t')) (E': context (Map.one y t' ∪ (Map.one x t ∪ Δ')) t2): context (Δ ∪ Δ') t2.
-
-  Program Fixpoint dec Δ Δ' t E (p: typecheck Δ E = Some (Δ', t)): context Δ' t :=
-    match E with
-    | Spec.E_var x => E_var x _
-
-    | Spec.E_lam x t E =>
-        if typecheck (Map.one x t ∪ Δ) E is Some (Δ', t')
-        then
-            @E_lam (Δ' \ x) t' x t (dec (Map.one x t ∪ Δ) Δ' t' E _)
-        else
-          match _: False with end
-    | Spec.E_app E E' =>
-        match typecheck Δ E, typecheck Δ E' with
-        | Some (Δ1, t1 * t2), Some (Δ2, t1') =>
-            @E_app _ _ t1 t2 (dec Δ Δ1 (t1 * t2) E _) (dec Δ Δ2 t1' E' _)
-        | _, _ => match _: False with end
-        end
-
-    | Spec.E_tt => E_tt
-
-    | Spec.E_step E E' =>
-        match typecheck Δ E, typecheck Δ E' with
-        | Some (Δ1, t_unit), Some (Δ2, t) =>
-            E_step (dec Δ Δ1 t_unit E _) (dec Δ Δ2 t E' _)
-        | _, _ => match _: False with end
-        end
-
-    | Spec.E_fanout E E' =>
-        match typecheck Δ E, typecheck Δ E' with
-        | Some (Δ1, t), Some (Δ2, t') =>
-            @E_fanout _ _ t t' (dec Δ Δ1 t E _) (dec Δ Δ2 t' E' _)
-        | _, _ => match _: False with end
-        end
-
-    | Spec.E_let x y E E' =>
-        if typecheck Δ E is Some (Δ1, t1 * t2)
-        then
-          if typecheck (Map.one x t1 ∪ (Map.one y t2 ∪ Δ)) E' is Some (Δ2, t3)
-          then
-            @E_let Δ1 ((Δ2 \ y) \ x) t1 t2 t3 x y
-                   (dec Δ Δ1 (t1 * t2) E _)
-                   (dec (Map.one x t1 ∪ (Map.one y t2 ∪ Δ)) Δ2 t3 E' _)
-          else
-            match _: False with end
-        else
-          match _: False with end
-    end %map.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    destruct (Map.find x Δ).
-    all: inversion p.
-    auto.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    rewrite <- Heq_anonymous in p.
-    destruct (Map.find x Δ') eqn:q.
-    2: discriminate.
-    destruct eq_type.
-    2: discriminate.
-    subst.
-    inversion p.
-    subst.
-    rewrite Map.add_minus.
-    all: auto.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    rewrite <- Heq_anonymous in p.
-    destruct (Map.find x Δ') eqn:q.
-    2: discriminate.
-    destruct eq_type.
-    2: discriminate.
-    subst.
-    inversion p.
-    subst.
-    auto.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    rewrite <- Heq_anonymous in p.
-    destruct (Map.find x Δ') eqn:q.
-    2: discriminate.
-    destruct eq_type.
-    2: discriminate.
-    subst.
-    inversion p.
-    subst.
-    auto.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    destruct typecheck eqn:q.
-    2: discriminate.
-    destruct p0.
-    destruct Map.find eqn:r.
-    2: discriminate.
-    set (H' := H l t1).
-    contradiction.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    rewrite <- Heq_anonymous in p.
-    rewrite <- Heq_anonymous0 in p.
-    destruct eq_type.
-    2: discriminate.
-    inversion p.
-    auto.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    rewrite <- Heq_anonymous in p.
-    rewrite <- Heq_anonymous0 in p.
-    destruct eq_type.
-    2: discriminate.
-    inversion p.
-    auto.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    rewrite <- Heq_anonymous in p.
-    rewrite <- Heq_anonymous0 in p.
-    destruct eq_type.
-    2: discriminate.
-    inversion p.
-    auto.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    destruct typecheck eqn:q in p.
-    2: discriminate.
-    destruct p0.
-    destruct t0.
-    1: discriminate.
-    destruct typecheck eqn:q' in p.
-    2: discriminate.
-    destruct p0.
-    destruct eq_type.
-    2: discriminate.
-    inversion p.
-    subst.
-    set (H' := H l t0 t l0 t0).
-    rewrite q in H'.
-    rewrite q' in H'.
-    auto.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    rewrite <- Heq_anonymous in p.
-    rewrite <- Heq_anonymous0 in p.
-    inversion p.
-    subst.
-    auto.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    rewrite <- Heq_anonymous in p.
-    rewrite <- Heq_anonymous0 in p.
-    inversion p.
-    subst.
-    auto.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    destruct typecheck eqn:q in p.
-    2: discriminate.
-    destruct p0.
-    destruct t0.
-    2: discriminate.
-    destruct typecheck eqn:q' in p.
-    2: discriminate.
-    destruct p0.
-    inversion p.
-    subst.
-    set (H' := H l l0 t).
-    rewrite q in H'.
-    rewrite q' in H'.
-    apply H'.
-    all: split.
-    all: auto.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    rewrite <- Heq_anonymous in p.
-    rewrite <- Heq_anonymous0 in p.
-    inversion p.
-    subst.
-    auto.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    rewrite <- Heq_anonymous in p.
-    rewrite <- Heq_anonymous0 in p.
-    inversion p.
-    subst.
-    auto.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    destruct typecheck eqn:q in p.
-    2: discriminate.
-    destruct p0.
-    destruct typecheck eqn:q' in p.
-    2: discriminate.
-    destruct p0.
-    set (H' := H l t0 l0 t1).
-    rewrite q in H'.
-    rewrite q' in H'.
-    auto.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    rewrite <- Heq_anonymous0 in p.
-    rewrite <- Heq_anonymous in p.
-    apply Map.extensional.
-    intro k.
-    repeat rewrite Map.find_merge.
-    repeat rewrite Map.find_one.
-    repeat rewrite Map.find_minus.
-    rewrite Map.find_minus in p.
-    destruct Nat.eq_dec in p.
-    1: discriminate.
-    destruct Map.find eqn:q in p.
-    2: discriminate.
-    destruct Map.find eqn:q' in p.
-    2: discriminate.
-    destruct eq_type in p.
-    2: discriminate.
-    subst.
-    destruct eq_type in p.
-    2: discriminate.
-    subst.
-    inversion p.
-    subst.
-    destruct Nat.eq_dec.
-    2: destruct Nat.eq_dec.
-    all: subst.
-    all: auto.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    rewrite <- Heq_anonymous0 in p.
-    rewrite <- Heq_anonymous in p.
-    apply Map.extensional.
-    intro k.
-    repeat rewrite Map.find_merge.
-    repeat rewrite Map.find_one.
-    repeat rewrite Map.find_minus.
-    rewrite Map.find_minus in p.
-    destruct Nat.eq_dec in p.
-    1: discriminate.
-    destruct Map.find eqn:q in p.
-    2: discriminate.
-    destruct Map.find eqn:q' in p.
-    2: discriminate.
-    destruct eq_type in p.
-    2: discriminate.
-    subst.
-    destruct eq_type in p.
-    2: discriminate.
-    subst.
-    inversion p.
-    subst.
-    repeat rewrite Map.find_merge.
-    repeat rewrite Map.find_minus.
-    auto.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    rewrite <- Heq_anonymous0 in p.
-    rewrite <- Heq_anonymous in p.
-    rewrite Map.find_minus in p.
-    destruct Nat.eq_dec in p.
-    1: discriminate.
-    destruct Map.find eqn:q in p.
-    2: discriminate.
-    destruct Map.find eqn:q' in p.
-    2: discriminate.
-    destruct eq_type in p.
-    2: discriminate.
-    subst.
-    destruct eq_type in p.
-    2: discriminate.
-    subst.
-    inversion p.
-    subst.
-    auto.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    rewrite <- Heq_anonymous0 in p.
-    destruct typecheck eqn:q in p.
-    2: discriminate.
-    destruct p0.
-    rewrite Map.find_minus in p.
-    destruct Nat.eq_dec in p.
-    1: discriminate.
-    destruct Map.find eqn:q' in p.
-    2: discriminate.
-    destruct Map.find eqn:q'' in p.
-    2: discriminate.
-    destruct eq_type in p.
-    2: discriminate.
-    subst.
-    destruct eq_type in p.
-    2: discriminate.
-    subst.
-    set (H' := H l t0).
-    rewrite q in H'.
-    contradiction.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    cbn in p.
-    destruct typecheck eqn:q in p.
-    2: discriminate.
-    destruct p0.
-    destruct t0.
-    1: discriminate.
-    destruct typecheck eqn:q' in p.
-    2: discriminate.
-    destruct p0.
-    rewrite Map.find_minus in p.
-    destruct Nat.eq_dec in p.
-    1: discriminate.
-    destruct Map.find eqn:q'' in p.
-    2: discriminate.
-    destruct Map.find eqn:q''' in p.
-    2: discriminate.
-    destruct eq_type in p.
-    2: discriminate.
-    subst.
-    destruct eq_type in p.
-    2: discriminate.
-    subst.
-    inversion p.
-    subst.
-    set (H' := H l t1 t2).
-    rewrite q in H'.
-    contradiction.
-  Defined.
-
-  Fixpoint undec {Δ t} (E: context Δ t) :=
-    match E with
-    | E_var x _ => Spec.E_var x
-    | E_lam x t E => Spec.E_lam x t (undec E)
-    | E_app E E' => Spec.E_app (undec E) (undec E')
-    | E_tt => Spec.E_tt
-    | E_step E E' => Spec.E_step (undec E) (undec E')
-    | E_fanout E E' => Spec.E_fanout (undec E) (undec E')
-    | E_let x y E E' => Spec.E_let x y (undec E) (undec E')
-    end.
-
-  Definition wf {Δ t} (E: context Δ t): Δ ⊢ undec E ? t.
-  Proof.
-    induction E.
-    all: cbn.
-    all: econstructor.
-    all: eauto.
-  Qed.
-End Dec.
 
 Notation "'do' n ← e0 ; e1" :=
   (List.flat_map (λ n, e1) e0)
@@ -826,4 +407,11 @@ Proof.
     auto.
 Qed.
 
-Definition oftype Δ t := { E | Δ ⊢ E ? t }.
+Fixpoint useall Γ: linear :=
+  if Γ is cons (x, _) T
+  then
+    Map.merge (Map.one x tt) (useall T)
+  else
+    Map.empty.
+
+Definition oftype Γ t := { E | JE Γ (useall Γ) E t }.

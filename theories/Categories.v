@@ -236,8 +236,8 @@ Module Import Vert.
 
   Next Obligation.
   Proof using.
+    rewrite Map.merge_empty_r.
     constructor.
-    all: constructor.
     constructor.
   Qed.
 
