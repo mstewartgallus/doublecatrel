@@ -1,6 +1,7 @@
 embed
 {{ coq-preamble
 Require Blech.Map.
+Require Blech.Sets.
 }}
 grammar
 
@@ -14,11 +15,11 @@ context, E :: 'E_' ::= {{ coq-equality }}
   | let x , y = E in E'      ::   :: let (+ bind x union y in E' +)
   | ( E )                    :: S :: paren {{ icho ([[E]]) }}
 
-linear, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (Map.map unit) }}
-  | nil                   ::   :: nil {{ coq Map.empty }}
-  | { x }                 :: M :: one {{ coq (Map.one [[x]] tt) }}
-  | D , D'                :: M :: add {{ coq (Map.merge [[D']] [[D]]) }}
-  | D ++ D'               :: M :: merge {{ coq (Map.merge [[D]] [[D']]) }}
+linear, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq Sets.set }}
+  | nil                   ::   :: nil {{ coq Sets.empty }}
+  | { x }                 :: M :: one {{ coq (Sets.one [[x]]) }}
+  | D , D'                :: M :: add {{ coq (Sets.merge [[D']] [[D]]) }}
+  | D ++ D'               :: M :: merge {{ coq (Sets.merge [[D]] [[D']]) }}
 
 store, S {{ tex \sigma }} {{ coq σ }} :: 'S_'  ::= {{ coq (Map.map normal) }}
   | nil                   :: M :: empty {{ coq (Map.empty) }}

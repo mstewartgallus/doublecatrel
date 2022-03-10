@@ -5,6 +5,7 @@ Require Blech.Environment.
 Require Blech.Term.
 Require Blech.Context.
 Require Blech.Map.
+Require Blech.Sets.
 
 Require Import Coq.Unicode.Utf8.
 Require Import Coq.Classes.SetoidClass.
@@ -12,10 +13,12 @@ Require Import Coq.Program.Tactics.
 
 Import IfNotations.
 Import Map.MapNotations.
+Import Sets.SetNotations.
 
 Require Import FunInd.
 
 Implicit Type Γ: environment.
+Implicit Type Δ: linear.
 Implicit Type E: context.
 Implicit Type t: type.
 Implicit Type v: term.
@@ -236,7 +239,7 @@ Module Import Vert.
 
   Next Obligation.
   Proof using.
-    rewrite Map.merge_empty_r.
+    rewrite Sets.merge_empty_r.
     constructor.
     constructor.
   Qed.
@@ -244,223 +247,15 @@ Module Import Vert.
   #[program]
   Definition compose {A B C} (f: Vert B C) (g: Vert A B): Vert A C := subst_context g x f.
 
-  (* FIXME figure out how to generalize this *)
-  #[local]
-  Lemma preserve {f}:
-    ∀ g {A B},
-    ((x, A) :: nil)%list ⊢ g ? B
-    → ∀ {C Γ}, ((x, B) :: Γ)%list ⊢ f ? C
-             → ((x, A) :: Γ)%list ⊢ subst_context g x f ? C.
-  Proof.
-    induction f.
-    all: cbn.
-    all: try destruct eq_var.
-    all: subst.
-    all: cbn.
-    all: try destruct eq_var.
-    all: subst.
-    all: cbn.
-    all: intros g A B p C Γ q.
-    all: inversion q.
-    all: subst.
-    + inversion H1.
-      2: contradiction.
-      subst.
-      replace ((x, A) :: Γ)%list with (cons (x, A) nil ++ Γ)%list.
-      2: auto.
-      apply (Context.map Environment.weaken).
-      auto.
-    + inversion H1.
-      all: subst.
-      1: contradiction.
-      constructor.
-      constructor.
-      all: auto.
-    + constructor.
-      apply Context.shadow.
-      eapply Context.unshadow.
-      eauto.
-    + constructor.
-      refine (Context.map _ (IHf g _ _ p _ _ _)).
-      2: {
-        eapply Context.swap.
-        2: apply H4.
-        auto.
-      }
-      intros.
-      apply Environment.swap.
-      all: auto.
-    + econstructor.
-      all: eauto.
-    + constructor.
-    + econstructor.
-      all: eauto.
-    + econstructor.
-      all: eauto.
-    + econstructor.
-      all: eauto.
-      refine (Context.map _ H6).
-      intros.
-      inversion H.
-      all: subst.
-      1: constructor.
-      constructor.
-      1: auto.
-      apply Environment.shadow.
-      eapply Environment.unshadow.
-      eauto.
-    + econstructor.
-      all: eauto.
-      refine (Context.map _ H6).
-      intros.
-      inversion H.
-      all: subst.
-      1: constructor.
-      constructor.
-      1: auto.
-      inversion H8.
-      all: subst.
-      1: constructor.
-      constructor.
-      all: auto.
-      constructor.
-      all: auto.
-      inversion H10.
-      all: subst.
-      all: auto.
-      contradiction.
-    + econstructor.
-      all: eauto.
-      refine (Context.map _ (IHf2 g _ _ p _ _ _)).
-      2: {
-        refine (Context.map _ H6).
-        intros.
-        inversion H.
-        all: subst.
-        -- constructor.
-           all: auto.
-           apply H.
-        -- inversion H8.
-           all: subst.
-           ++ constructor.
-              all: auto.
-           ++ inversion H10.
-              all: subst.
-              1: constructor.
-              constructor.
-              all: auto.
-      }
-      intros.
-      inversion H.
-      all: subst.
-      -- constructor.
-         all: auto.
-         constructor.
-         all: auto.
-         constructor.
-      -- inversion H8.
-         all: subst.
-         1: constructor.
-         constructor.
-         all: auto.
-         inversion H10.
-         all: subst.
-         1: constructor.
-         constructor.
-         all: auto.
-         constructor.
-         all: auto.
-         inversion H12.
-         all: subst.
-         all: auto.
-         contradiction.
-  Qed.
-
-  (* FIXME figure out how to generalize this *)
-  #[local]
-  Lemma linpreserve {f}:
-    ∀ g {A B},
-    ((x, A) :: nil)%list ⊢ g ? B
-    → ∀ {C Γ}, ((x, B) :: Γ)%list ⊢ f ? C
-               → lin f
-               → lin g
-               → lin (subst_context g x f).
-  Proof.
-    induction f.
-    all: cbn.
-    all: intros g ? ? ? ? ? p q ?.
-    all: try destruct eq_var.
-    all: subst.
-    all: try destruct eq_var.
-    all: subst.
-    all: auto.
-    all: inversion p.
-    all: subst.
-    all: inversion q.
-    all: subst.
-    + constructor.
-      2: eapply IHf.
-      all: eauto.
-      2: {
-        eapply Context.swap.
-        2: apply H6.
-        auto.
-      }
-      admit.
-    + constructor.
-      all: eauto.
-    + constructor.
-      all: eauto.
-    + constructor.
-      all: eauto.
-    + constructor.
-      all: auto.
-      eapply IHf1.
-      all: auto.
-      2: apply H7.
-      eauto.
-    + constructor.
-      all: auto.
-      eapply IHf1.
-      all: auto.
-      2: apply H7.
-      eauto.
-    + constructor.
-      all: eauto.
-      3: eapply IHf2.
-      all: eauto.
-      3: refine (Context.map _ H8).
-      3: {
-        intros.
-        inversion H1.
-        all: subst.
-        1: constructor.
-        all: eauto.
-        inversion H14.
-        all: subst.
-        1: constructor.
-        all:auto.
-        inversion H16.
-        all: subst.
-        1: constructor.
-        constructor.
-        all: auto.
-      }
-      all: admit.
-  Admitted.
-
   Next Obligation.
   Proof.
     unfold Vert in *.
     unfold compose.
-    destruct f as [f [? ?]], g as [g [? ?]].
+    destruct f as [f pf], g as [g pg].
     cbn.
-    split.
-    - eapply preserve.
-      all: eauto.
-    - eapply linpreserve.
-      all: eauto.
-  Qed.
+    cbn in pf, pg.
+    admit.
+  Admitted.
 
   Lemma compose_id_right {A B} (f: Vert A B): compose f (id _) == f.
   Proof.

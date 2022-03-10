@@ -1,4 +1,5 @@
 Require Blech.Map.
+Require Blech.Sets.
 Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
 Require Import Blech.Environment.
@@ -25,6 +26,7 @@ Implicit Types x y: var.
 Implicit Type σ: store.
 
 Import Map.MapNotations.
+Import Sets.SetNotations.
 
 Section Typecheck.
   Import OptionNotations.
@@ -33,11 +35,14 @@ Section Typecheck.
     match E with
     | E_var x =>
         do t ← find x Γ ;
-        Some (x ↦ tt, t)
+        Some (Sets.one x, t)
     | E_lam x t1 E =>
         do (Δ', t2) ← typecheck ((x, t1) :: Γ) E ;
-        do _ ← Map.find x Δ' ;
-        Some (Δ' \ x, t1 * t2)
+        if Sets.find x Δ'
+        then
+          Some (Δ' \ x, t1 * t2)
+        else
+          None
     | E_app E E' =>
         do (Δ', t1 * t2) ← typecheck Γ E ;
         do (Δ, t1') ← typecheck Γ E' ;
@@ -61,11 +66,13 @@ Section Typecheck.
     | E_let x y E E' =>
         do (Δ', t1 * t2) ← typecheck Γ E ;
         do (Δ, t3) ← typecheck ((y, t2) :: (x, t1) :: Γ) E' ;
-        do _ ← Map.find x (Δ \ y) ;
-        do _ ← Map.find y Δ ;
-        Some (Δ' ∪ ((Δ \ y) \ x), t3)
+        if (Sets.find x (Δ \ y) && Sets.find y Δ) %bool
+        then
+          Some (Δ' ∪ ((Δ \ y) \ x), t3)
+        else
+          None
     end
-      %list %map.
+      %list %set.
 End Typecheck.
 
 Theorem typecheck_sound:
@@ -81,17 +88,14 @@ Proof using.
   all: eauto.
   - apply find_sound.
     auto.
-  - rewrite Map.add_minus.
+  - rewrite Sets.add_minus.
     all: auto.
-    destruct _x.
-    auto.
-  - repeat rewrite Map.add_minus.
-    + apply IHo0.
-      auto.
-    + destruct _x0.
-      auto.
-    + destruct _x.
-      auto.
+  - destruct Sets.find eqn:qx in e2.
+    2: discriminate.
+    destruct Sets.find eqn:qy in e2.
+    2: discriminate.
+    repeat rewrite Sets.add_minus.
+    all: auto.
 Qed.
 
 Notation "'do' n ← e0 ; e1" :=
@@ -410,8 +414,8 @@ Qed.
 Fixpoint useall Γ: linear :=
   if Γ is cons (x, _) T
   then
-    Map.merge (Map.one x tt) (useall T)
+    Sets.merge (Sets.one x) (useall T)
   else
-    Map.empty.
+    Sets.empty.
 
 Definition oftype Γ t := { E | JE Γ (useall Γ) E t }.
