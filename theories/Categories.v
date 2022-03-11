@@ -5,7 +5,7 @@ Require Blech.Environment.
 Require Blech.Term.
 Require Blech.Context.
 Require Blech.Map.
-Require Blech.Sets.
+Require Blech.Multiset.
 
 Require Import Coq.Unicode.Utf8.
 Require Import Coq.Classes.SetoidClass.
@@ -13,7 +13,7 @@ Require Import Coq.Program.Tactics.
 
 Import IfNotations.
 Import Map.MapNotations.
-Import Sets.SetNotations.
+Import Multiset.MultisetNotations.
 
 Require Import FunInd.
 
@@ -234,12 +234,29 @@ Module Import Vert.
 
   Definition Vert t t' := Context.oftype (cons (x, t) nil) t'.
 
+  Instance Vert_Equivalence t t': Equivalence (λ (x y: Vert t t'), proj1_sig x == proj1_sig y).
+  Proof.
+    exists.
+    - intro.
+      reflexivity.
+    - intro.
+      symmetry.
+      auto.
+    - intros ? ? ? p.
+      rewrite p.
+      auto.
+  Qed.
+
+  Instance Vert_Setoid t t': Setoid (Vert t t') := {
+      equiv a b := proj1_sig a == proj1_sig b ;
+    }.
+
   #[program]
   Definition id t: Vert t t := E_var x.
 
   Next Obligation.
   Proof using.
-    rewrite Sets.merge_empty_r.
+    rewrite Multiset.merge_empty_r.
     constructor.
     constructor.
   Qed.
@@ -252,27 +269,35 @@ Module Import Vert.
     unfold Vert in *.
     unfold compose.
     destruct f as [f pf], g as [g pg].
-    cbn.
     cbn in pf, pg.
+    cbn.
+    generalize dependent g.
+    generalize dependent C.
+    generalize dependent B.
+    generalize dependent A.
+    rewrite Multiset.merge_empty_r.
     admit.
   Admitted.
+
+  Lemma compose_id_left {A B} (f: Vert A B): compose (id _) f == f.
+  Proof.
+    destruct f as [f ?].
+    cbn.
+    reflexivity.
+  Qed.
 
   Lemma compose_id_right {A B} (f: Vert A B): compose f (id _) == f.
   Proof.
     destruct f as [f ?].
-    unfold compose, id.
     cbn.
-    intros ?.
-    cbn.
-    admit.
-  Admitted.
+    rewrite Context.subst_var.
+    reflexivity.
+  Qed.
 
   Lemma compose_assoc {A B C D} (f: Vert C D) (g: Vert B C) (h: Vert A B):
     compose f (compose g h) == compose (compose f g) h.
   Proof.
     destruct f as [f ?], g as [g ?], h as [h ?].
-    cbn.
-    intros ?.
     cbn.
     rewrite Context.subst_assoc.
     reflexivity.

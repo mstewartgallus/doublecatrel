@@ -776,3 +776,81 @@ Fixpoint useall Γ: linear :=
     Multiset.empty.
 
 Definition oftype Γ t := { E | JE Γ (useall Γ) E t }.
+
+Record iso A B := {
+    to: A → B ;
+    from: B → A ;
+    to_from b: to (from b) = b;
+    from_to a: from (to a) = a;
+}.
+Arguments to {A B}.
+Arguments from {A B}.
+Arguments to_from {A B}.
+Arguments from_to {A B}.
+
+Inductive tr A: Prop := | tr_intro (a: A).
+
+Definition equiv E E' :=
+  ∀ σ N, tr (iso (sat σ E N) (sat σ E' N)).
+
+Instance equiv_Reflexive: Reflexive equiv.
+Proof.
+  unfold Reflexive.
+  intro.
+  exists.
+  exists (λ a, a) (λ a, a).
+  all: auto.
+Qed.
+
+Instance equiv_Symmetric: Symmetric equiv.
+Proof.
+  unfold Symmetric.
+  intros x y p σ N.
+  destruct (p σ N) as [p'].
+  exists.
+  exists (from p') (to p').
+  - apply from_to.
+  - apply to_from.
+Qed.
+
+Instance equiv_Transitive: Transitive equiv.
+Proof.
+  unfold Transitive.
+  intros ? ? ? p q σ N.
+  destruct (p σ N) as [p'].
+  destruct (q σ N) as [q'].
+  exists.
+  exists (λ a, to q' (to p' a)) (λ a, from p' (from q' a)).
+  - intros.
+    rewrite to_from.
+    rewrite to_from.
+    auto.
+  - intros.
+    rewrite from_to.
+    rewrite from_to.
+    auto.
+Qed.
+
+Instance equiv_Equivalence: Equivalence equiv := {
+    Equivalence_Reflexive := _ ;
+}.
+
+Instance context_Setoid: Setoid context := {
+    equiv := equiv ;
+}.
+
+Lemma subst_var {x E}:
+  subst_context (E_var x) x E = E.
+Proof.
+  induction E.
+  all: cbn.
+  all: auto.
+  all: try destruct eq_var.
+  all: subst.
+  all: auto.
+  all: try destruct eq_var.
+  all: try rewrite IHE.
+  all: try rewrite IHE1.
+  all: try rewrite IHE2.
+  all: auto.
+Qed.
