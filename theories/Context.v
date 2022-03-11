@@ -28,6 +28,205 @@ Implicit Type σ: store.
 Import Map.MapNotations.
 Import Multiset.MultisetNotations.
 
+Module ProofTree.
+  Inductive JE: Set :=
+  | JE_var Γ x
+  | JE_lam: JE → JE
+  | JE_app: JE → JE → JE
+  | JE_tt Γ
+  | JE_step: JE → JE → JE
+  | JE_fanout: JE → JE → JE
+  | JE_let: JE → JE → JE
+  .
+
+  #[local]
+  Definition unknown_env (_: JE): environment := nil.
+  #[local]
+  Definition unknown_linear (_: JE): linear := Multiset.empty.
+  #[local]
+  Definition unknown_type (_: JE): type := t_unit.
+  #[local]
+  Definition unknown_context (_: JE): context := E_tt.
+
+  Opaque unknown_env.
+  Opaque unknown_linear.
+  Opaque unknown_type.
+  Opaque unknown_context.
+
+  Function envof (E: JE): environment :=
+    match E with
+    | JE_var Γ _ => Γ
+    | JE_lam p =>
+        if envof p is cons _ T then T else unknown_env E
+    | JE_app p1 _ => envof p1
+    | JE_tt Γ => Γ
+    | JE_step p1 _ => envof p1
+    | JE_fanout p1 _ => envof p1
+    | JE_let p1 _ => envof p1
+    end.
+
+  Function linof (E: JE): linear :=
+    match E with
+    | JE_var _ x => Multiset.one x
+    | JE_lam p =>
+        if envof p is cons (x, _) T
+        then
+          linof p \ x
+        else
+          unknown_linear E
+    | JE_app p1 p2 => linof p1 ∪ linof p2
+    | JE_tt _ => ∅
+    | JE_step p1 p2 => linof p1 ∪ linof p2
+    | JE_fanout p1 p2 => linof p1 ∪ linof p2
+    | JE_let p1 p2 =>
+        if envof p2 is cons (x, _) (cons (y, _) _)
+        then
+          linof p1 ∪ ((linof p2 \ x) \ y)
+        else
+          unknown_linear E
+    end %multiset.
+
+  Function ctxof (E: JE): context :=
+    match E with
+    | JE_var _ x => E_var x
+    | JE_lam p =>
+        if envof p is cons (x, t) _
+        then
+          E_lam x t (ctxof p)
+        else
+          unknown_context E
+    | JE_app p1 p2 => E_app (ctxof p1) (ctxof p2)
+    | JE_tt _ => E_tt
+    | JE_step p1 p2 => E_step (ctxof p1) (ctxof p2)
+    | JE_fanout p1 p2 => E_fanout (ctxof p1) (ctxof p2)
+    | JE_let p1 p2 =>
+        if envof p2 is cons (y, _) (cons (x, _) _)
+        then
+          E_let x y (ctxof p1) (ctxof p2)
+        else
+          unknown_context E
+    end.
+
+  Function typeof (E: JE): type :=
+    match E with
+    | JE_var Γ x => if find x Γ is Some t then t else unknown_type E
+    | JE_lam p =>
+        if envof p is cons (x, t) _
+        then
+          t * typeof p
+        else
+          unknown_type E
+    | JE_app p1 p2 => if typeof p1 is _ * t then t else unknown_type E
+    | JE_tt _ => t_unit
+    | JE_step _ p2 => typeof p2
+    | JE_fanout p1 p2 => typeof p1 * typeof p2
+    | JE_let _ p2 => typeof p2
+    end.
+
+  Definition asserts (E: JE): Prop := Spec.JE (envof E) (linof E) (ctxof E) (typeof E).
+
+  Notation "'test' p" := (match p with | left _ => true | right _ => false end) (at level 1).
+
+  Function check (p: JE): bool :=
+    match p with
+    | JE_var Γ x =>
+        if find x Γ is Some _ then true else false
+    | JE_lam p =>
+        (if envof p is cons (x, t) _
+         then
+           if Multiset.find x (linof p) is S _ then true else false
+         else false)
+        && check p
+    | JE_app p1 p2 =>
+        test (eq_environment (envof p1) (envof p2))
+        && (if typeof p1 is t * _ then test (eq_type t (typeof p2)) else false)
+        && check p1
+        && check p2
+    | JE_tt _ => true
+    | JE_step p1 p2 =>
+        test (eq_environment (envof p1) (envof p2))
+        && (if typeof p1 is t_unit then true else false)
+        && check p1
+        && check p2
+    | JE_fanout p1 p2 =>
+        test (eq_environment (envof p1) (envof p2))
+        && check p1
+        && check p2
+    | JE_let p1 p2 =>
+        (match envof p2, typeof p1 with
+         | cons (y, t2) (cons (x, t1) T), t1' * t2' =>
+             test (eq_environment (envof p1) T)
+             && test (eq_type t1 t1')
+             && test (eq_type t2 t2')
+             && (if Multiset.find y (linof p2) is S _ then true else false)
+             && (if Multiset.find x (linof p2 \ y) is S _ then true else false)
+         | _, _ => false
+         end)
+        && check p1
+        && check p2
+    end %bool.
+
+  Lemma check_sound (p: JE): Bool.Is_true (check p) → asserts p.
+  Proof.
+    unfold asserts.
+    functional induction (check p).
+    all: cbn.
+    all: intro q.
+    all: try contradiction.
+    - rewrite e0.
+      constructor.
+      apply Environment.find_sound.
+      auto.
+    - destruct (check p0).
+      2: contradiction.
+      rewrite e0.
+      constructor.
+      rewrite Multiset.add_minus.
+      2: lia.
+      rewrite <- e0.
+      auto.
+    - rewrite e1.
+      rewrite e1 in IHb.
+      destruct (check p1).
+      2: contradiction.
+      destruct (check p2).
+      2: contradiction.
+      econstructor.
+      all: eauto.
+      rewrite _x.
+      auto.
+    - constructor.
+    - destruct (check p1).
+      2: contradiction.
+      destruct (check p2).
+      2: contradiction.
+      rewrite e1 in IHb.
+      rewrite <- _x in IHb0.
+      constructor.
+      all: auto.
+    - destruct (check p1).
+      2: contradiction.
+      destruct (check p2).
+      2: contradiction.
+      rewrite <- _x in IHb0.
+      constructor.
+      all: auto.
+    - destruct (check p1).
+      2: contradiction.
+      destruct (check p2).
+      2: contradiction.
+      rewrite e0.
+      rewrite e0 in IHb0.
+      rewrite e1 in IHb.
+      econstructor.
+      1: eauto.
+      repeat rewrite Multiset.add_minus.
+      all: auto.
+      + lia.
+      + lia.
+  Qed.
+End ProofTree.
+
 Section Typecheck.
   Import OptionNotations.
 
