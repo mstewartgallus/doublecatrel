@@ -225,6 +225,27 @@ Module ProofTree.
       + lia.
       + lia.
   Qed.
+
+  Lemma check_complete (p: JE): asserts p → Bool.Is_true (check p).
+  Proof.
+    unfold asserts.
+    induction p.
+    all: cbn.
+    all: intros q.
+    all: inversion q.
+    all: subst.
+    - destruct (find x Γ).
+      all: cbn.
+      1: auto.
+      inversion H2.
+      +  subst.
+    functional induction (check p).
+    all: cbn.
+    all: intro q.
+    all: try contradiction.
+    - rewrite e0.
+      constructor.
+      apply Environment.find_sound.
 End ProofTree.
 
 Section Typecheck.

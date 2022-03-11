@@ -21,7 +21,7 @@ Implicit Types x y: var.
 
 Module ProofTree.
   Inductive Jv: Set :=
-  | Jv_var Γ x t
+  | Jv_var Γ x
   | Jv_tt Γ
   | Jv_fanout: Jv → Jv → Jv
   | Jv_fst: Jv → Jv
@@ -29,7 +29,7 @@ Module ProofTree.
 
   Function envof (v: Jv): environment :=
     match v with
-    | Jv_var Γ _ _ => Γ
+    | Jv_var Γ _ => Γ
     | Jv_tt Γ => Γ
     | Jv_fanout p1 _ => envof p1
     | Jv_fst p => envof p
@@ -38,7 +38,7 @@ Module ProofTree.
 
   Function termof (v: Jv): term :=
     match v with
-    | Jv_var _ x _ => v_var x
+    | Jv_var _ x => v_var x
     | Jv_tt _ => v_tt
     | Jv_fst p => v_fst (termof p)
     | Jv_snd p => v_snd (termof p)
@@ -46,19 +46,15 @@ Module ProofTree.
     end.
 
   #[local]
-  Definition unknown1: type := t_unit.
-  Opaque unknown1.
-
-  #[local]
-  Definition unknown2: type := t_unit.
-  Opaque unknown2.
+  Definition unknown_type (_: Jv): type := t_unit.
+  Opaque unknown_type.
 
   Function typeof (v: Jv): type :=
     match v with
-    | Jv_var _ _ t => t
+    | Jv_var Γ x => if find x Γ is Some t then t else unknown_type v
     | Jv_tt _ => t_unit
-    | Jv_fst p => if typeof p is t * _ then t else unknown1
-    | Jv_snd p => if typeof p is _ * t then t else unknown2
+    | Jv_fst p => if typeof p is t * _ then t else unknown_type v
+    | Jv_snd p => if typeof p is _ * t then t else unknown_type v
     | Jv_fanout p1 p2 => typeof p1 * typeof p2
     end.
 
@@ -68,8 +64,8 @@ Module ProofTree.
 
   Function check (p: Jv): bool :=
     match p with
-    | Jv_var Γ x t =>
-        if find x Γ is Some t' then test (eq_type t t') else false
+    | Jv_var Γ x =>
+        if find x Γ is Some t then true else false
     | Jv_tt _ => true
     | Jv_fst p =>
         (if typeof p is _ * _ then true else false)
@@ -90,7 +86,8 @@ Module ProofTree.
     all: cbn.
     all: intro q.
     all: try contradiction.
-    - constructor.
+    - rewrite e0.
+      constructor.
       apply Environment.find_sound.
       auto.
     - constructor.
@@ -126,14 +123,10 @@ Module ProofTree.
     intro q.
     induction q.
     all: cbn.
-    - exists (Jv_var Γ x t).
+    - exists (Jv_var Γ x).
       cbn.
-      all: repeat split; auto.
       rewrite (find_complete H).
-      destruct eq_type.
-      2: contradiction.
-      cbv.
-      auto.
+      all: repeat split; auto.
     - exists (Jv_tt Γ).
       cbn.
       all: repeat split; auto.
@@ -173,8 +166,8 @@ Module ProofTree.
   Function elaborate Γ v: option Jv :=
     match v with
     | v_var x =>
-        do t ← find x Γ ;
-        Some (Jv_var Γ x t)
+        do _ ← find x Γ ;
+        Some (Jv_var Γ x)
     | v_tt => Some (Jv_tt Γ)
     | v_fst v =>
         do p ← elaborate Γ v ;
@@ -235,9 +228,7 @@ Module ProofTree.
     all: subst.
     - cbn.
       rewrite e0.
-      destruct eq_type.
-      2: contradiction.
-      cbn.
+      cbv.
       auto.
     - cbn.
       auto.
