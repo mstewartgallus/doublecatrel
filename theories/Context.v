@@ -226,26 +226,167 @@ Module ProofTree.
       + lia.
   Qed.
 
-  Lemma check_complete (p: JE): asserts p → Bool.Is_true (check p).
+  Lemma check_complete {Γ Δ E t}:
+    Spec.JE Γ Δ E t →
+   ∃ p,
+     Γ = envof p
+     ∧ Δ = linof p
+     ∧ E = ctxof p
+     ∧ t = typeof p
+     ∧ Bool.Is_true (check p).
   Proof.
-    unfold asserts.
-    induction p.
+    intro q.
+    induction q.
     all: cbn.
-    all: intros q.
-    all: inversion q.
     all: subst.
-    - destruct (find x Γ).
-      all: cbn.
-      1: auto.
-      inversion H2.
-      +  subst.
-    functional induction (check p).
-    all: cbn.
-    all: intro q.
-    all: try contradiction.
-    - rewrite e0.
-      constructor.
-      apply Environment.find_sound.
+    - exists (JE_var Γ x).
+      cbn.
+      rewrite (find_complete H).
+      all: repeat split; auto.
+    - destruct IHq as [p [? [? [? [? ?]]]]].
+      subst.
+      exists (JE_lam p).
+      cbn.
+      rewrite <- H.
+      cbn.
+      rewrite <- H0.
+      rewrite Multiset.find_merge.
+      rewrite Multiset.find_one.
+      destruct Nat.eq_dec.
+      2: contradiction.
+      cbn.
+      destruct (check p).
+      2: contradiction.
+      all: repeat split; auto.
+      apply Multiset.extensional.
+      intro k.
+      rewrite Multiset.find_minus.
+      rewrite Multiset.find_merge.
+      rewrite Multiset.find_one.
+      destruct Nat.eq_dec.
+      2: auto.
+      cbn.
+      auto.
+    - destruct IHq1 as [p1 [? [? [? [? ?]]]]].
+      destruct IHq2 as [p2 [? [? [? [? ?]]]]].
+      subst.
+      exists (JE_app p1 p2).
+      cbn.
+      rewrite H4.
+      rewrite <- H2.
+      destruct eq_environment.
+      2: contradiction.
+      destruct eq_type.
+      2: contradiction.
+      cbn.
+      destruct (check p1).
+      2: contradiction.
+      destruct (check p2).
+      2: contradiction.
+      cbn.
+      all: repeat split; auto.
+    - exists (JE_tt Γ).
+      cbn.
+      all: repeat split; auto.
+    - destruct IHq1 as [p1 [? [? [? [? ?]]]]].
+      destruct IHq2 as [p2 [? [? [? [? ?]]]]].
+      subst.
+      exists (JE_step p1 p2).
+      cbn.
+      rewrite H4.
+      rewrite <- H2.
+      cbn.
+      destruct eq_environment.
+      2: contradiction.
+      cbn.
+      destruct (check p1).
+      2: contradiction.
+      destruct (check p2).
+      2: contradiction.
+      cbn.
+      all: repeat split; auto.
+    - destruct IHq1 as [p1 [? [? [? [? ?]]]]].
+      destruct IHq2 as [p2 [? [? [? [? ?]]]]].
+      subst.
+      exists (JE_fanout p1 p2).
+      cbn.
+      rewrite H4.
+      destruct eq_environment.
+      2: contradiction.
+      cbn.
+      destruct (check p1).
+      2: contradiction.
+      destruct (check p2).
+      2: contradiction.
+      cbn.
+      all: repeat split; auto.
+    - destruct IHq1 as [p1 [? [? [? [? ?]]]]].
+      destruct IHq2 as [p2 [? [? [? [? ?]]]]].
+      subst.
+      exists (JE_let p1 p2).
+      cbn.
+      rewrite <- H4.
+      rewrite <- H2.
+      rewrite <- H5.
+      cbn.
+      destruct (check p1).
+      2: contradiction.
+      destruct (check p2).
+      2: contradiction.
+      cbn.
+      destruct eq_environment.
+      2: contradiction.
+      destruct eq_type.
+      2: contradiction.
+      cbn.
+      destruct eq_type.
+      2: contradiction.
+      cbn.
+      repeat rewrite Multiset.find_merge.
+      repeat rewrite Multiset.find_one.
+      repeat rewrite Multiset.find_minus.
+      repeat rewrite Multiset.find_merge.
+      repeat rewrite Multiset.find_one.
+      destruct (Nat.eq_dec y y).
+      2: contradiction.
+      destruct (Nat.eq_dec x x).
+      2: contradiction.
+      cbn.
+      destruct Nat.eq_dec.
+      + subst.
+        cbn.
+        all: repeat split; auto.
+        apply Multiset.extensional.
+        intro k.
+        repeat rewrite Multiset.find_merge.
+        repeat rewrite Multiset.find_one.
+        repeat rewrite Multiset.find_minus.
+        repeat rewrite Multiset.find_merge.
+        repeat rewrite Multiset.find_one.
+        destruct Nat.eq_dec.
+        all: auto.
+      + cbn.
+        all: repeat split; auto.
+        apply Multiset.extensional.
+        intro k.
+        repeat rewrite Multiset.find_merge.
+        repeat rewrite Multiset.find_one.
+        repeat rewrite Multiset.find_minus.
+        repeat rewrite Multiset.find_merge.
+        repeat rewrite Multiset.find_one.
+        destruct Nat.eq_dec.
+        all: cbn.
+        all: subst.
+        all: auto.
+        * destruct Nat.eq_dec.
+          1: subst; contradiction.
+          cbn.
+          auto.
+        * destruct Nat.eq_dec.
+          all: subst.
+          all: cbn.
+          all: auto.
+  Qed.
 End ProofTree.
 
 Section Typecheck.
