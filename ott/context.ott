@@ -17,7 +17,9 @@ context, E :: 'E_' ::= {{ coq-equality }}
 
 nat, n :: 'n_' ::= {{ coq nat }}
   | 0 ::  :: zero {{ coq 0 }}
-  | 1  ::  :: one {{ coq 1 }}
+  | S n ::  :: succ {{ coq (S [[n]]) }}
+  | 1 :: M :: one {{ coq 1 }}
+  | ( n ) :: S :: paren {{ icho ([[n]]) }}
 
 linear, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (list (var * type * nat)) }}
   | G ; ns               :: M :: zip {{ coq (zip21 [[G]] [[ns]]) }}
@@ -73,50 +75,49 @@ formula :: formula_ ::=
  | judgement                        ::   :: judgement
  | x != y                           :: M :: neq {{ icho ([[x]] <> [[y]]) }}
 
-defns
-
-lempty :: '' ::=
-
-defn
-empty ns ::   :: empty :: 'empty_'
+funs
+  length ::=
+fun
+  len G :: n :: len
 by
+  len nil === 0
+  len G , x : t === S (len G)
 
----------- :: nil
-empty nil
-
-empty ns
------------- :: cons
-empty ns, 0
+funs
+  empty ::=
+fun
+  mt n :: ns :: mt
+by
+  mt 0 === nil
+  mt (S n) === mt n, 0
 
 defns
 
 lfind :: '' ::=
 
 defn
-x \in xs ; ns ::   :: lmem :: 'lmem_'
+x : t \in G ; ns ::   :: lmem :: 'lmem_'
 by
 
-empty ns
----------------------------- :: eq
-x \in xs, x ; ns, 1
+----------------------------------- :: eq
+x : t \in G, x : t ; mt (len G), 1
 
 x != y
-x \in xs ; ns
--------------------------- :: ne
-x \in xs, y ; ns, 0
+x : t \in G ; ns
+---------------------------- :: ne
+x : t \in G, y : t' ; ns, 0
 
 defns
 
 judge_context :: 'J' ::=
 
 defn
-D |- E : t ::   :: E :: 'E_'
+G ; ns |- E : t ::   :: E :: 'E_'
 by
 
-x: t \in xs ; ts
-x \in xs ; ns
+x: t \in G ; ns
 ----------------------- :: var
-xs ; ts ; ns |- x: t
+G ; ns |- x: t
 
 G, x: t1 ; ns, 1 |- E: t2
 ------------------------------- :: lam
@@ -127,9 +128,8 @@ G ; ns' |- E2: t1
 --------------------------------- :: app
 G ; ns ++ ns' |- E1 E2: t2
 
-empty ns
-------------------- :: tt
-G ; ns |- tt: unit
+--------------------------- :: tt
+G ; mt (len G) |- tt: unit
 
 G ; ns |- E1: unit
 G ; ns' |- E2: t

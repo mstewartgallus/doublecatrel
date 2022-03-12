@@ -92,28 +92,22 @@ Proof.
   decide equality.
 Defined.
 
-Fixpoint mt n :=
-  if n is S n'
-  then
-    cons 0 (mt n')
-  else
-    nil.
-
-Lemma mt_empty {n}: empty (mt n).
+Lemma length_mt {n}: length (mt n) = n.
 Proof.
   induction n.
-  all: cbn.
-  all: constructor.
+  1: auto.
+  cbn.
+  rewrite IHn.
   auto.
 Qed.
 
-Lemma empty_mt {ns}: empty ns → ns = mt (length ns).
+Lemma length_len {l}: len l = length l.
 Proof.
-  intro p.
-  induction p.
-  all: cbn.
+  induction l.
   1: auto.
-  rewrite <- IHp.
+  cbn.
+  destruct a.
+  rewrite IHl.
   auto.
 Qed.
 
@@ -204,6 +198,74 @@ Fixpoint tons Δ: ns :=
     cons n (tons T)
   else
     nil.
+
+Lemma length_merge {ns ns'}:
+  length (merge ns ns') = min (length ns) (length ns').
+Proof.
+  generalize dependent ns'.
+  induction ns.
+  all: cbn.
+  1: auto.
+  intros ns'.
+  destruct ns'.
+  1: auto.
+  cbn.
+  rewrite IHns.
+  auto.
+Qed.
+
+Lemma length_merge_eq {ns ns'}:
+  length ns = length ns' →
+  length (merge ns ns') = length ns.
+Proof.
+  generalize dependent ns'.
+  induction ns.
+  all: cbn.
+  1: auto.
+  intros ns' p.
+  destruct ns'.
+  1: auto.
+  cbn.
+  cbn in p.
+  rewrite IHns.
+  auto.
+  inversion p.
+  auto.
+Qed.
+
+Lemma length_same {Γ ns E t}: JE Γ ns E t → length Γ = length ns.
+Proof.
+  intro p.
+  induction p.
+  all: cbn.
+  - induction H.
+    + cbn.
+      rewrite length_mt.
+      rewrite length_len.
+      auto.
+    + cbn.
+      rewrite IHlmem.
+      auto.
+  - inversion IHp.
+    auto.
+  - rewrite IHp1 in IHp2.
+    rewrite length_merge_eq.
+    all: auto.
+  - rewrite length_mt.
+    rewrite length_len.
+    auto.
+  - rewrite IHp1 in IHp2.
+    rewrite length_merge_eq.
+    all: auto.
+  - rewrite IHp1 in IHp2.
+    rewrite length_merge_eq.
+    all: auto.
+  - cbn in IHp2.
+    inversion IHp2.
+    rewrite IHp1 in H0.
+    rewrite length_merge_eq.
+    all: auto.
+Qed.
 
 Module ProofTree.
   Inductive JE: Set :=
@@ -349,7 +411,7 @@ Module ProofTree.
 
   Definition linof (E: JE): linear := zip (envof E) (nsof E).
 
-  Definition asserts (E: JE): Prop := Spec.JE (zip21 (envof E) (nsof E)) (ctxof E) (typeof E).
+  Definition asserts (E: JE): Prop := Spec.JE (envof E) (nsof E) (ctxof E) (typeof E).
 
   Notation "'test' p" := (match p with | left _ => true | right _ => false end) (at level 1).
 
@@ -400,26 +462,30 @@ Module ProofTree.
     all: intro q.
     all: try contradiction.
     - rewrite e0.
+      assert (e0' := find_sound e0).
+      destruct (find_one e0).
+      rewrite e.
       rewrite <- zip_toxs_tots.
+      clear e0.
       constructor.
       + rewrite zip_toxs_tots.
-        apply find_sound.
-        auto.
-      + rewrite zip_toxs_tots.
-        induction Γ.
-        1: discriminate.
-        cbn.
-        destruct a.
-        cbn.
-        cbn in e0.
-        destruct eq_var, Nat.eq_dec.
-        all: subst.
-        all: try contradiction.
-        * constructor.
-          apply mt_empty.
-        * destruct (find_one e0).
-          rewrite e.
-          rewrite e in IHΓ.
+        generalize dependent x0.
+        induction e0'.
+        all: cbn.
+        all: intros.
+        * destruct Nat.eq_dec.
+          2: contradiction.
+          inversion e.
+          subst.
+          rewrite <- length_len.
+          constructor.
+        * cbn in e.
+          destruct Nat.eq_dec.
+          1: subst; contradiction.
+          destruct (find_one (find_complete e0')).
+          rewrite e0 in e.
+          inversion e.
+          subst.
           constructor.
           all: auto.
     - destruct (check p0).
@@ -438,14 +504,8 @@ Module ProofTree.
       2: contradiction.
       econstructor.
       all: eauto.
-    - constructor.
-      induction _x.
-      1: constructor.
-      cbn.
-      destruct a.
-      cbn.
+    - rewrite <- length_len.
       constructor.
-      auto.
     - destruct (check p1).
       2: contradiction.
       destruct (check p2).
@@ -516,7 +576,7 @@ Section Typecheck.
 End Typecheck.
 
 Theorem typecheck_sound:
-  ∀ Γ {E ns t}, typecheck Γ E = Some (ns, t) → JE (zip21 Γ ns) E t.
+  ∀ Γ {E ns t}, typecheck Γ E = Some (ns, t) → JE Γ ns E t.
 Proof using.
   intros Γ E.
   functional induction (typecheck Γ E).
@@ -526,42 +586,31 @@ Proof using.
   all: subst.
   all: try econstructor.
   all: eauto.
-  - rewrite <- zip_toxs_tots.
+  - generalize dependent ns0.
+    induction Γ.
+    1: discriminate.
+    cbn.
+    all: intros ? ? ?.
+    destruct a.
+    cbn.
+    cbn in *.
+    destruct eq_var, Nat.eq_dec.
+    all: subst.
+    all: try contradiction.
+    + inversion e1.
+      subst.
+      inversion e0.
+      subst.
+      rewrite <- length_len.
+      constructor.
+    + destruct (find_one e0).
+      rewrite e in e1.
+      inversion e1.
+      subst.
+      constructor.
+      all:auto.
+  - rewrite <- length_len.
     constructor.
-    + rewrite zip_toxs_tots.
-      apply find_sound.
-      auto.
-    + generalize dependent ns0.
-      induction Γ.
-      1: discriminate.
-      intros ns0.
-      destruct a.
-      cbn in *.
-      intros p q.
-      destruct Nat.eq_dec, eq_var.
-      all: subst.
-      all: try contradiction.
-      * inversion q.
-        subst.
-        constructor.
-        apply mt_empty.
-      * destruct (find_one e0).
-        rewrite e in q.
-        inversion q.
-        subst.
-        constructor.
-        all: auto.
-  - apply mt_empty.
-Qed.
-
-Lemma length_mt {n}:
-  length (mt n) = n.
-Proof.
-  induction n.
-  1: auto.
-  cbn.
-  rewrite IHn.
-  auto.
 Qed.
 
 Lemma length_one {x Γ}:
@@ -591,39 +640,6 @@ Proof.
     auto.
 Qed.
 
-Lemma length_merge {ns ns'}:
-  length (merge ns ns') = min (length ns) (length ns').
-Proof.
-  generalize dependent ns'.
-  induction ns.
-  all: cbn.
-  1: auto.
-  intros ns'.
-  destruct ns'.
-  1: auto.
-  cbn.
-  rewrite IHns.
-  auto.
-Qed.
-
-Lemma length_merge_eq {ns ns'}:
-  length ns = length ns' →
-  length (merge ns ns') = length ns.
-Proof.
-  generalize dependent ns'.
-  induction ns.
-  all: cbn.
-  1: auto.
-  intros ns' p.
-  destruct ns'.
-  1: auto.
-  cbn.
-  cbn in p.
-  rewrite IHns.
-  auto.
-  inversion p.
-  auto.
-Qed.
 
 Theorem length_typecheck:
   ∀ {Γ E t ns},
@@ -667,6 +683,56 @@ Proof using.
     rewrite <- IHo' in H0.
     rewrite length_merge_eq.
     all: auto.
+Qed.
+
+Lemma mem_lmem {x t Γ ns}:
+  lmem x t Γ ns → mem x t Γ.
+Proof.
+  intros p.
+  induction p.
+  all: constructor.
+  all: auto.
+Qed.
+
+Theorem typecheck_complete:
+  ∀ Γ {E ns t}, JE Γ ns E t → typecheck Γ E = Some (ns, t).
+Proof using.
+  intros ? ? ? ? p.
+  induction p.
+  all: cbn.
+  all: try rewrite IHp.
+  all: try rewrite IHp1.
+  all: try rewrite IHp2.
+  all: auto.
+  - rewrite (find_complete (mem_lmem H)).
+    destruct (find_one (find_complete (mem_lmem H))).
+    rewrite e.
+    generalize dependent x0.
+    induction H.
+    all: cbn.
+    all: intros.
+    + cbn in e.
+      destruct Nat.eq_dec.
+      2: contradiction.
+      inversion e.
+      subst.
+      rewrite length_len.
+      auto.
+    + cbn in e.
+      destruct Nat.eq_dec.
+      1: subst; contradiction.
+      destruct (find_one (find_complete (mem_lmem H0))).
+      rewrite e0 in e.
+      inversion e.
+      subst.
+      assert (IHlmem' := IHlmem _ e0).
+      inversion IHlmem'.
+      auto.
+  - destruct eq_type.
+    2: contradiction.
+    auto.
+  - rewrite length_len.
+    auto.
 Qed.
 
 Notation "'do' n ← e0 ; e1" :=

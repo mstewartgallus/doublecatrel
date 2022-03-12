@@ -75,9 +75,9 @@ Definition subst : Set := (list (var * term)).
 
 Definition environment : Set := (list (var * type)).
 
-Definition xs : Set := (list var).
-
 Definition ts : Set := (list type).
+
+Definition xs : Set := (list var).
 
 (** substitutions *)
 Fixpoint subst_term (v5:term) (x5:var) (v_6:term) {struct v_6} : term :=
@@ -175,8 +175,6 @@ Definition nat : Set := nat.
 Inductive span : Set := 
  | P_with (σ:store) (N:normal).
 
-Definition ns : Set := (list var).
-
 Inductive context : Set := 
  | E_var (x:var)
  | E_lam (x:var) (t:type) (E:context)
@@ -186,9 +184,11 @@ Inductive context : Set :=
  | E_fanout (E:context) (E':context)
  | E_let (x:var) (y:var) (E:context) (E':context).
 
-Definition linear : Set := (list (var * type * nat)).
+Definition ns : Set := (list var).
 
 Definition set : Set := (list span).
+
+Definition linear : Set := (list (var * type * nat)).
 Lemma eq_context: forall (x y : context), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -217,54 +217,60 @@ end.
 
 (** definitions *)
 
-(* defns lempty *)
-Inductive empty : ns -> Prop :=    (* defn empty *)
- | empty_nil : 
-     empty  nil 
- | empty_cons : forall (ns5:ns),
-     empty ns5 ->
-     empty  (cons   0    ns5 ) .
+(** funs length *)
+Fixpoint len (x1:environment) : nat:=
+  match x1 with
+  |  nil  =>  0 
+  |  (cons ( x ,  t )  Γ )  =>  (S   (  (len Γ )  )  ) 
+end.
+
+(** definitions *)
+
+(** funs empty *)
+Fixpoint mt (x1:nat) : ns:=
+  match x1 with
+  |  0  =>  nil 
+  |  (  (S  n )  )  =>  (cons   0     (mt n )  ) 
+end.
+
 (** definitions *)
 
 (* defns lfind *)
-Inductive lmem : var -> xs -> ns -> Prop :=    (* defn lmem *)
- | lmem_eq : forall (x:var) (xs5:xs) (ns5:ns),
-     empty ns5 ->
-     lmem x  (cons  x   xs5 )   (cons   1    ns5 ) 
- | lmem_ne : forall (x:var) (xs5:xs) (y:var) (ns5:ns),
+Inductive lmem : var -> type -> environment -> ns -> Prop :=    (* defn lmem *)
+ | lmem_eq : forall (x:var) (t:type) (Γ:environment),
+     lmem x t  (cons ( x ,  t )  Γ )   (cons   1     (mt  (  (len Γ )  )  )  ) 
+ | lmem_ne : forall (x:var) (t:type) (Γ:environment) (y:var) (t':type) (ns5:ns),
       ( x  <>  y )  ->
-     lmem x xs5 ns5 ->
-     lmem x  (cons  y   xs5 )   (cons   0    ns5 ) .
+     lmem x t Γ ns5 ->
+     lmem x t  (cons ( y ,  t' )  Γ )   (cons   0    ns5 ) .
 (** definitions *)
 
 (* defns judge_context *)
-Inductive JE : linear -> context -> type -> Prop :=    (* defn E *)
- | JE_var : forall (xs5:xs) (ts5:ts) (ns5:ns) (x:var) (t:type),
-     mem x t  (zip  xs5   ts5 )  ->
-     lmem x xs5 ns5 ->
-     JE  (zip21   (zip  xs5   ts5 )    ns5 )  (E_var x) t
+Inductive JE : environment -> ns -> context -> type -> Prop :=    (* defn E *)
+ | JE_var : forall (Γ:environment) (ns5:ns) (x:var) (t:type),
+     lmem x t Γ ns5 ->
+     JE Γ ns5 (E_var x) t
  | JE_lam : forall (Γ:environment) (ns5:ns) (x:var) (t1:type) (E:context) (t2:type),
-     JE  (zip21   (cons ( x ,  t1 )  Γ )     (cons   1    ns5 )  )  E t2 ->
-     JE  (zip21  Γ   ns5 )  (E_lam x t1 E) (t_prod t1 t2)
+     JE  (cons ( x ,  t1 )  Γ )   (cons   1    ns5 )  E t2 ->
+     JE Γ ns5 (E_lam x t1 E) (t_prod t1 t2)
  | JE_app : forall (Γ:environment) (ns5 ns':ns) (E1 E2:context) (t2 t1:type),
-     JE  (zip21  Γ   ns5 )  E1 (t_prod t1 t2) ->
-     JE  (zip21  Γ   ns' )  E2 t1 ->
-     JE  (zip21  Γ    (merge  ns5   ns' )  )  (E_app E1 E2) t2
- | JE_tt : forall (Γ:environment) (ns5:ns),
-     empty ns5 ->
-     JE  (zip21  Γ   ns5 )  E_tt t_unit
+     JE Γ ns5 E1 (t_prod t1 t2) ->
+     JE Γ ns' E2 t1 ->
+     JE Γ  (merge  ns5   ns' )  (E_app E1 E2) t2
+ | JE_tt : forall (Γ:environment),
+     JE Γ  (mt  (  (len Γ )  )  )  E_tt t_unit
  | JE_step : forall (Γ:environment) (ns5 ns':ns) (E1 E2:context) (t:type),
-     JE  (zip21  Γ   ns5 )  E1 t_unit ->
-     JE  (zip21  Γ   ns' )  E2 t ->
-     JE  (zip21  Γ    (merge  ns5   ns' )  )  (E_step E1 E2) t
+     JE Γ ns5 E1 t_unit ->
+     JE Γ ns' E2 t ->
+     JE Γ  (merge  ns5   ns' )  (E_step E1 E2) t
  | JE_fanout : forall (Γ:environment) (ns5 ns':ns) (E1 E2:context) (t1 t2:type),
-     JE  (zip21  Γ   ns5 )  E1 t1 ->
-     JE  (zip21  Γ   ns' )  E2 t2 ->
-     JE  (zip21  Γ    (merge  ns5   ns' )  )  (E_fanout E1 E2) (t_prod t1 t2)
+     JE Γ ns5 E1 t1 ->
+     JE Γ ns' E2 t2 ->
+     JE Γ  (merge  ns5   ns' )  (E_fanout E1 E2) (t_prod t1 t2)
  | JE_let : forall (Γ:environment) (ns5 ns':ns) (x y:var) (E1 E2:context) (t3 t1 t2:type),
-     JE  (zip21  Γ   ns5 )  E1 (t_prod t1 t2) ->
-     JE  (zip21   (cons ( y ,  t2 )   (cons ( x ,  t1 )  Γ )  )     (cons   1     (cons   1    ns' )  )  )  E2 t3 ->
-     JE  (zip21  Γ    (merge  ns5   ns' )  )  (E_let x y E1 E2) t3.
+     JE Γ ns5 E1 (t_prod t1 t2) ->
+     JE  (cons ( y ,  t2 )   (cons ( x ,  t1 )  Γ )  )   (cons   1     (cons   1    ns' )  )  E2 t3 ->
+     JE Γ  (merge  ns5   ns' )  (E_let x y E1 E2) t3.
 (** definitions *)
 
 (* defns sat *)
