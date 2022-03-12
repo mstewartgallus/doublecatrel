@@ -53,11 +53,22 @@
 \ottprodline{|}{\ottnt{N}  \ottsym{,}  \ottnt{N'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{(}  \ottnt{N}  \ottsym{)}} {\textsf{S}}{}{}{}}
 
+\newcommand{\ottxs}{
+\ottrulehead{\ottnt{xs}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{xs}  \ottsym{,}  \mathit{x}}{}{}{}{}}
+
+\newcommand{\ottts}{
+\ottrulehead{\ottnt{ts}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{ts}  \ottsym{,}  \ottnt{t}}{}{}{}{}}
+
 \newcommand{\ottenvironment}{
 \ottrulehead{\ottnt{environment}  ,\ \Gamma}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottsym{(}  \Gamma  \ottsym{)}} {\textsf{S}}{}{}{}}
+\ottprodline{|}{\ottsym{(}  \Gamma  \ottsym{)}} {\textsf{S}}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{xs}  \ottsym{;}  \ottnt{ts}} {\textsf{M}}{}{}{}}
 
 \newcommand{\ottsubst}{
 \ottrulehead{\ottnt{subst}  ,\ \rho}{::=}{}\ottprodnewline
@@ -76,12 +87,20 @@
 \ottprodline{|}{\mathbin{\textbf{let} } \, \mathit{x}  \ottsym{,}  \mathit{y}  \ottsym{=}  \ottnt{E} \, \mathbin{\textbf{in} } \, \ottnt{E'}}{}{\textsf{bind}\; \mathit{x} \cup  \mathit{y}\; \textsf{in}\; \ottnt{E'}}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{(}  \ottnt{E}  \ottsym{)}} {\textsf{S}}{}{}{}}
 
+\newcommand{\ottnat}{
+\ottrulehead{\ottnt{nat}  ,\ \ottnt{n}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\ottsym{0}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottsym{1}}{}{}{}{}}
+
 \newcommand{\ottlinear}{
 \ottrulehead{\ottnt{linear}  ,\ \Delta}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\Gamma  \ottsym{;}  \ottnt{ns}} {\textsf{M}}{}{}{}}
+
+\newcommand{\ottns}{
+\ottrulehead{\ottnt{ns}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottsym{\{}  \mathit{x}  \ottsym{\}}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\Delta  \ottsym{,}  \Delta'} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\Delta  \cup{}  \Delta'} {\textsf{M}}{}{}{}}
+\ottprodline{|}{\ottnt{ns}  \ottsym{,}  \ottnt{n}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{ns}  \cup{}  \ottnt{ns'}} {\textsf{M}}{}{}{}}
 
 \newcommand{\ottstore}{
 \ottrulehead{\ottnt{store}  ,\ \sigma}{::=}{}\ottprodnewline
@@ -126,6 +145,10 @@
 \ottfirstprodline{|}{\ottnt{judgement}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\mathit{x}  \mathrel{\ne}  \mathit{y}} {\textsf{M}}{}{}{}}
 
+\newcommand{\ottdummy}{
+\ottrulehead{\ottnt{dummy}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\ottkw{dummyfoo}}{}{}{}{}}
+
 \newcommand{\otttoterm}{
 \ottrulehead{\ottnt{toterm}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{ \llbracket  \ottnt{N}  \rrbracket }{}{}{}{}}
@@ -150,9 +173,17 @@
 \ottrulehead{\ottnt{judge}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\rho  \colon{}  \Gamma}{}{}{}{}}
 
+\newcommand{\ottlempty}{
+\ottrulehead{\ottnt{lempty}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\ottkw{empty} \, \ottnt{ns}}{}{}{}{}}
+
+\newcommand{\ottlfind}{
+\ottrulehead{\ottnt{lfind}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\mathit{x}  \mathrel{\in}  \ottnt{xs}  \ottsym{;}  \ottnt{ns}}{}{}{}{}}
+
 \newcommand{\ottjudgeXXcontext}{
 \ottrulehead{\ottnt{judge\_context}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\Gamma  \ottsym{;}  \Delta  \vdash{}  \ottnt{E}  \colon{}  \ottnt{t}}{}{}{}{}}
+\ottfirstprodline{|}{\Delta  \vdash{}  \ottnt{E}  \colon{}  \ottnt{t}}{}{}{}{}}
 
 \newcommand{\ottsat}{
 \ottrulehead{\ottnt{sat}}{::=}{}\ottprodnewline
@@ -164,10 +195,13 @@
 
 \newcommand{\ottjudgement}{
 \ottrulehead{\ottnt{judgement}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\ottnt{find}}{}{}{}{}\ottprodnewline
+\ottfirstprodline{|}{\ottnt{dummy}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{find}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{judge\_term}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{big}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{judge}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{lempty}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{lfind}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{judge\_context}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{sat}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{sound}}{}{}{}{}}
@@ -178,10 +212,14 @@
 \ottprodline{|}{\ottnt{type}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{term}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{normal}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{xs}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{ts}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{environment}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{subst}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{context}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{nat}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{linear}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{ns}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{store}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{span}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{set}}{}{}{}{}\ottprodnewline
@@ -192,21 +230,28 @@
 \otttype\ottinterrule
 \ottterm\ottinterrule
 \ottnormal\ottinterrule
+\ottxs\ottinterrule
+\ottts\ottinterrule
 \ottenvironment\ottinterrule
 \ottsubst\ottinterrule
 \ottcontext\ottinterrule
+\ottnat\ottinterrule
 \ottlinear\ottinterrule
+\ottns\ottinterrule
 \ottstore\ottinterrule
 \ottspan\ottinterrule
 \ottset\ottinterrule
 \ottterminals\ottinterrule
 \ottformula\ottinterrule
+\ottdummy\ottinterrule
 \otttoterm\ottinterrule
 \ottmsubst\ottinterrule
 \ottfind\ottinterrule
 \ottjudgeXXterm\ottinterrule
 \ottbig\ottinterrule
 \ottjudge\ottinterrule
+\ottlempty\ottinterrule
+\ottlfind\ottinterrule
 \ottjudgeXXcontext\ottinterrule
 \ottsat\ottinterrule
 \ottsound\ottinterrule
@@ -215,6 +260,16 @@
 }}
 
 % defnss
+% defns dummy
+%% defn dum
+
+\newcommand{\ottdefndum}[1]{\begin{ottdefnblock}[#1]{$\ottkw{dummyfoo}$}{}
+\end{ottdefnblock}}
+
+
+\newcommand{\ottdefnsdummy}{
+\ottdefndum{}}
+
 % fundefns toterm
 % fundefn toterm
 
@@ -388,67 +443,121 @@
 \newcommand{\ottdefnsjudge}{
 \ottdefnJp{}}
 
+% defns lempty
+%% defn empty
+\newcommand{\ottdruleemptyXXnil}[1]{\ottdrule[#1]{%
+}{
+\ottkw{empty} \, \bullet{}}{%
+{\ottdrulename{empty\_nil}}{}%
+}}
+
+
+\newcommand{\ottdruleemptyXXcons}[1]{\ottdrule[#1]{%
+\ottpremise{\ottkw{empty} \, \ottnt{ns}}%
+}{
+\ottkw{empty} \, \ottnt{ns}  \ottsym{,}  \ottsym{0}}{%
+{\ottdrulename{empty\_cons}}{}%
+}}
+
+\newcommand{\ottdefnempty}[1]{\begin{ottdefnblock}[#1]{$\ottkw{empty} \, \ottnt{ns}$}{}
+\ottusedrule{\ottdruleemptyXXnil{}}
+\ottusedrule{\ottdruleemptyXXcons{}}
+\end{ottdefnblock}}
+
+
+\newcommand{\ottdefnslempty}{
+\ottdefnempty{}}
+
+% defns lfind
+%% defn lmem
+\newcommand{\ottdrulelmemXXeq}[1]{\ottdrule[#1]{%
+\ottpremise{\ottkw{empty} \, \ottnt{ns}}%
+}{
+\mathit{x}  \mathrel{\in}  \ottnt{xs}  \ottsym{,}  \mathit{x}  \ottsym{;}  \ottnt{ns}  \ottsym{,}  \ottsym{1}}{%
+{\ottdrulename{lmem\_eq}}{}%
+}}
+
+
+\newcommand{\ottdrulelmemXXne}[1]{\ottdrule[#1]{%
+\ottpremise{\mathit{x}  \mathrel{\ne}  \mathit{y}}%
+\ottpremise{\mathit{x}  \mathrel{\in}  \ottnt{xs}  \ottsym{;}  \ottnt{ns}}%
+}{
+\mathit{x}  \mathrel{\in}  \ottnt{xs}  \ottsym{,}  \mathit{y}  \ottsym{;}  \ottnt{ns}  \ottsym{,}  \ottsym{0}}{%
+{\ottdrulename{lmem\_ne}}{}%
+}}
+
+\newcommand{\ottdefnlmem}[1]{\begin{ottdefnblock}[#1]{$\mathit{x}  \mathrel{\in}  \ottnt{xs}  \ottsym{;}  \ottnt{ns}$}{}
+\ottusedrule{\ottdrulelmemXXeq{}}
+\ottusedrule{\ottdrulelmemXXne{}}
+\end{ottdefnblock}}
+
+
+\newcommand{\ottdefnslfind}{
+\ottdefnlmem{}}
+
 % defns judge_context
 %% defn E
 \newcommand{\ottdruleJEXXvar}[1]{\ottdrule[#1]{%
-\ottpremise{\mathit{x}  \colon{}  \ottnt{t}  \mathrel{\in}  \Gamma}%
+\ottpremise{\mathit{x}  \colon{}  \ottnt{t}  \mathrel{\in}  \ottnt{xs}  \ottsym{;}  \ottnt{ts}}%
+\ottpremise{\mathit{x}  \mathrel{\in}  \ottnt{xs}  \ottsym{;}  \ottnt{ns}}%
 }{
-\Gamma  \ottsym{;}  \ottsym{\{}  \mathit{x}  \ottsym{\}}  \vdash{}  \mathit{x}  \colon{}  \ottnt{t}}{%
+\ottnt{xs}  \ottsym{;}  \ottnt{ts}  \ottsym{;}  \ottnt{ns}  \vdash{}  \mathit{x}  \colon{}  \ottnt{t}}{%
 {\ottdrulename{JE\_var}}{}%
 }}
 
 
 \newcommand{\ottdruleJEXXlam}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \ottsym{;}  \Delta  \ottsym{,}  \ottsym{\{}  \mathit{x}  \ottsym{\}}  \vdash{}  \ottnt{E}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \ottsym{;}  \ottnt{ns}  \ottsym{,}  \ottsym{1}  \vdash{}  \ottnt{E}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}%
 }{
-\Gamma  \ottsym{;}  \Delta  \vdash{}  \lambda{} \, \mathit{x}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \ottsym{.}  \ottnt{E}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}{%
+\Gamma  \ottsym{;}  \ottnt{ns}  \vdash{}  \lambda{} \, \mathit{x}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \ottsym{.}  \ottnt{E}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{JE\_lam}}{}%
 }}
 
 
 \newcommand{\ottdruleJEXXapp}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \ottsym{;}  \Delta  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}%
-\ottpremise{\Gamma  \ottsym{;}  \Delta'  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}}%
+\ottpremise{\Gamma  \ottsym{;}  \ottnt{ns}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\Gamma  \ottsym{;}  \ottnt{ns'}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}}%
 }{
-\Gamma  \ottsym{;}  \Delta  \cup{}  \Delta'  \vdash{}  \ottnt{E_{{\mathrm{1}}}} \, \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}{%
+\Gamma  \ottsym{;}  \ottnt{ns}  \cup{}  \ottnt{ns'}  \vdash{}  \ottnt{E_{{\mathrm{1}}}} \, \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{JE\_app}}{}%
 }}
 
 
 \newcommand{\ottdruleJEXXtt}[1]{\ottdrule[#1]{%
+\ottpremise{\ottkw{empty} \, \ottnt{ns}}%
 }{
-\Gamma  \ottsym{;}  \bullet{}  \vdash{}  \mathop{ \textbf ! }  \colon{}  \textbf{I}}{%
+\Gamma  \ottsym{;}  \ottnt{ns}  \vdash{}  \mathop{ \textbf ! }  \colon{}  \textbf{I}}{%
 {\ottdrulename{JE\_tt}}{}%
 }}
 
 
 \newcommand{\ottdruleJEXXstep}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \ottsym{;}  \Delta  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \colon{}  \textbf{I}}%
-\ottpremise{\Gamma  \ottsym{;}  \Delta'  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t}}%
+\ottpremise{\Gamma  \ottsym{;}  \ottnt{ns}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \colon{}  \textbf{I}}%
+\ottpremise{\Gamma  \ottsym{;}  \ottnt{ns'}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t}}%
 }{
-\Gamma  \ottsym{;}  \Delta  \cup{}  \Delta'  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{;}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t}}{%
+\Gamma  \ottsym{;}  \ottnt{ns}  \cup{}  \ottnt{ns'}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{;}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t}}{%
 {\ottdrulename{JE\_step}}{}%
 }}
 
 
 \newcommand{\ottdruleJEXXfanout}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \ottsym{;}  \Delta  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}}%
-\ottpremise{\Gamma  \ottsym{;}  \Delta'  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\Gamma  \ottsym{;}  \ottnt{ns}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}}%
+\ottpremise{\Gamma  \ottsym{;}  \ottnt{ns'}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}%
 }{
-\Gamma  \ottsym{;}  \Delta  \cup{}  \Delta'  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}{%
+\Gamma  \ottsym{;}  \ottnt{ns}  \cup{}  \ottnt{ns'}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{JE\_fanout}}{}%
 }}
 
 
 \newcommand{\ottdruleJEXXlet}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \ottsym{;}  \Delta  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}%
-\ottpremise{\Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \ottsym{,}  \mathit{y}  \colon{}  \ottnt{t_{{\mathrm{2}}}}  \ottsym{;}  \Delta'  \ottsym{,}  \ottsym{\{}  \mathit{x}  \ottsym{\}}  \ottsym{,}  \ottsym{\{}  \mathit{y}  \ottsym{\}}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{3}}}}}%
+\ottpremise{\Gamma  \ottsym{;}  \ottnt{ns}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \ottsym{,}  \mathit{y}  \colon{}  \ottnt{t_{{\mathrm{2}}}}  \ottsym{;}  \ottnt{ns'}  \ottsym{,}  \ottsym{1}  \ottsym{,}  \ottsym{1}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{3}}}}}%
 }{
-\Gamma  \ottsym{;}  \Delta  \cup{}  \Delta'  \vdash{}  \mathbin{\textbf{let} } \, \mathit{x}  \ottsym{,}  \mathit{y}  \ottsym{=}  \ottnt{E_{{\mathrm{1}}}} \, \mathbin{\textbf{in} } \, \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{3}}}}}{%
+\Gamma  \ottsym{;}  \ottnt{ns}  \cup{}  \ottnt{ns'}  \vdash{}  \mathbin{\textbf{let} } \, \mathit{x}  \ottsym{,}  \mathit{y}  \ottsym{=}  \ottnt{E_{{\mathrm{1}}}} \, \mathbin{\textbf{in} } \, \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{3}}}}}{%
 {\ottdrulename{JE\_let}}{}%
 }}
 
-\newcommand{\ottdefnJE}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \ottsym{;}  \Delta  \vdash{}  \ottnt{E}  \colon{}  \ottnt{t}$}{}
+\newcommand{\ottdefnJE}[1]{\begin{ottdefnblock}[#1]{$\Delta  \vdash{}  \ottnt{E}  \colon{}  \ottnt{t}$}{}
 \ottusedrule{\ottdruleJEXXvar{}}
 \ottusedrule{\ottdruleJEXXlam{}}
 \ottusedrule{\ottdruleJEXXapp{}}
@@ -562,12 +671,15 @@
 \ottdefnsound{}}
 
 \newcommand{\ottdefnss}{
+\ottdefnsdummy
 \ottfundefnstoterm
 \ottfundefnsmsubst
 \ottdefnsfind
 \ottdefnsjudgeXXterm
 \ottdefnsbig
 \ottdefnsjudge
+\ottdefnslempty
+\ottdefnslfind
 \ottdefnsjudgeXXcontext
 \ottdefnssat
 \ottdefnssound

@@ -15,6 +15,30 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_type : ott_coq_equality.
+Fixpoint zip {A B} (l: list A) (r: list B): list (A * B) :=
+ match l, r with
+ | cons a l', cons b r' => cons (a, b) (zip l' r')
+ | _, _ => nil
+ end.
+
+Fixpoint zip21 {A B C} (l: list (A * B)) (r: list C): list (A * B * C) :=
+ match l, r with
+ | cons (a, b) l', cons c r' => cons (a, b, c) (zip21 l' r')
+ | _, _ => nil
+ end.
+
+Fixpoint zip3 {A B C} (l: list A) (m: list B) (r: list C): list (A * B * C) :=
+ match l, m, r with
+ | cons a l', cons b m', cons c r' => cons (a, b, c) (zip3 l' m' r')
+ | _, _, _ => nil
+ end.
+
+Fixpoint merge (l r: list nat): list nat :=
+  match l, r with
+  | cons m l', cons n r' => cons (m + n) (merge l' r')
+  | _, _ => nil
+  end.
+
 Definition var : Set := nat.
 Lemma eq_var: forall (x y : var), {x = y} + {x <> y}.
 Proof.
@@ -32,10 +56,6 @@ Inductive term : Set :=
  | v_fst (v:term)
  | v_snd (v:term)
  | v_fanout (v:term) (v':term).
-
-Definition environment : Set := (list (var * type)).
-
-Definition subst : Set := (list (var * term)).
 Lemma eq_normal: forall (x y : normal), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -46,6 +66,18 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_term : ott_coq_equality.
+(** definitions *)
+
+(* defns dummy *)
+Inductive dum : Prop :=    (* defn dum *).
+
+Definition subst : Set := (list (var * term)).
+
+Definition environment : Set := (list (var * type)).
+
+Definition xs : Set := (list var).
+
+Definition ts : Set := (list type).
 
 (** substitutions *)
 Fixpoint subst_term (v5:term) (x5:var) (v_6:term) {struct v_6} : term :=
@@ -138,8 +170,12 @@ Require Blech.Multiset.
 
 Definition store : Set := (Map.map normal).
 
+Definition nat : Set := nat.
+
 Inductive span : Set := 
  | P_with (σ:store) (N:normal).
+
+Definition ns : Set := (list var).
 
 Inductive context : Set := 
  | E_var (x:var)
@@ -150,7 +186,7 @@ Inductive context : Set :=
  | E_fanout (E:context) (E':context)
  | E_let (x:var) (y:var) (E:context) (E':context).
 
-Definition linear : Set := Multiset.multiset.
+Definition linear : Set := (list (var * type * nat)).
 
 Definition set : Set := (list span).
 Lemma eq_context: forall (x y : context), {x = y} + {x <> y}.
@@ -181,32 +217,54 @@ end.
 
 (** definitions *)
 
+(* defns lempty *)
+Inductive empty : ns -> Prop :=    (* defn empty *)
+ | empty_nil : 
+     empty  nil 
+ | empty_cons : forall (ns5:ns),
+     empty ns5 ->
+     empty  (cons   0    ns5 ) .
+(** definitions *)
+
+(* defns lfind *)
+Inductive lmem : var -> xs -> ns -> Prop :=    (* defn lmem *)
+ | lmem_eq : forall (x:var) (xs5:xs) (ns5:ns),
+     empty ns5 ->
+     lmem x  (cons  x   xs5 )   (cons   1    ns5 ) 
+ | lmem_ne : forall (x:var) (xs5:xs) (y:var) (ns5:ns),
+      ( x  <>  y )  ->
+     lmem x xs5 ns5 ->
+     lmem x  (cons  y   xs5 )   (cons   0    ns5 ) .
+(** definitions *)
+
 (* defns judge_context *)
-Inductive JE : environment -> linear -> context -> type -> Prop :=    (* defn E *)
- | JE_var : forall (Γ:environment) (x:var) (t:type),
-     mem x t Γ ->
-     JE Γ  (Multiset.one  x )  (E_var x) t
- | JE_lam : forall (Γ:environment) (Δ:linear) (x:var) (t1:type) (E:context) (t2:type),
-     JE  (cons ( x ,  t1 )  Γ )   (Multiset.merge   (Multiset.one  x )    Δ )  E t2 ->
-     JE Γ Δ (E_lam x t1 E) (t_prod t1 t2)
- | JE_app : forall (Γ:environment) (Δ Δ':linear) (E1 E2:context) (t2 t1:type),
-     JE Γ Δ E1 (t_prod t1 t2) ->
-     JE Γ Δ' E2 t1 ->
-     JE Γ  (Multiset.merge  Δ   Δ' )  (E_app E1 E2) t2
- | JE_tt : forall (Γ:environment),
-     JE Γ  Multiset.empty  E_tt t_unit
- | JE_step : forall (Γ:environment) (Δ Δ':linear) (E1 E2:context) (t:type),
-     JE Γ Δ E1 t_unit ->
-     JE Γ Δ' E2 t ->
-     JE Γ  (Multiset.merge  Δ   Δ' )  (E_step E1 E2) t
- | JE_fanout : forall (Γ:environment) (Δ Δ':linear) (E1 E2:context) (t1 t2:type),
-     JE Γ Δ E1 t1 ->
-     JE Γ Δ' E2 t2 ->
-     JE Γ  (Multiset.merge  Δ   Δ' )  (E_fanout E1 E2) (t_prod t1 t2)
- | JE_let : forall (Γ:environment) (Δ Δ':linear) (x y:var) (E1 E2:context) (t3 t1 t2:type),
-     JE Γ Δ E1 (t_prod t1 t2) ->
-     JE  (cons ( y ,  t2 )   (cons ( x ,  t1 )  Γ )  )   (Multiset.merge   (Multiset.one  y )     (Multiset.merge   (Multiset.one  x )    Δ' )  )  E2 t3 ->
-     JE Γ  (Multiset.merge  Δ   Δ' )  (E_let x y E1 E2) t3.
+Inductive JE : linear -> context -> type -> Prop :=    (* defn E *)
+ | JE_var : forall (xs5:xs) (ts5:ts) (ns5:ns) (x:var) (t:type),
+     mem x t  (zip  xs5   ts5 )  ->
+     lmem x xs5 ns5 ->
+     JE  (zip21   (zip  xs5   ts5 )    ns5 )  (E_var x) t
+ | JE_lam : forall (Γ:environment) (ns5:ns) (x:var) (t1:type) (E:context) (t2:type),
+     JE  (zip21   (cons ( x ,  t1 )  Γ )     (cons   1    ns5 )  )  E t2 ->
+     JE  (zip21  Γ   ns5 )  (E_lam x t1 E) (t_prod t1 t2)
+ | JE_app : forall (Γ:environment) (ns5 ns':ns) (E1 E2:context) (t2 t1:type),
+     JE  (zip21  Γ   ns5 )  E1 (t_prod t1 t2) ->
+     JE  (zip21  Γ   ns' )  E2 t1 ->
+     JE  (zip21  Γ    (merge  ns5   ns' )  )  (E_app E1 E2) t2
+ | JE_tt : forall (Γ:environment) (ns5:ns),
+     empty ns5 ->
+     JE  (zip21  Γ   ns5 )  E_tt t_unit
+ | JE_step : forall (Γ:environment) (ns5 ns':ns) (E1 E2:context) (t:type),
+     JE  (zip21  Γ   ns5 )  E1 t_unit ->
+     JE  (zip21  Γ   ns' )  E2 t ->
+     JE  (zip21  Γ    (merge  ns5   ns' )  )  (E_step E1 E2) t
+ | JE_fanout : forall (Γ:environment) (ns5 ns':ns) (E1 E2:context) (t1 t2:type),
+     JE  (zip21  Γ   ns5 )  E1 t1 ->
+     JE  (zip21  Γ   ns' )  E2 t2 ->
+     JE  (zip21  Γ    (merge  ns5   ns' )  )  (E_fanout E1 E2) (t_prod t1 t2)
+ | JE_let : forall (Γ:environment) (ns5 ns':ns) (x y:var) (E1 E2:context) (t3 t1 t2:type),
+     JE  (zip21  Γ   ns5 )  E1 (t_prod t1 t2) ->
+     JE  (zip21   (cons ( y ,  t2 )   (cons ( x ,  t1 )  Γ )  )     (cons   1     (cons   1    ns' )  )  )  E2 t3 ->
+     JE  (zip21  Γ    (merge  ns5   ns' )  )  (E_let x y E1 E2) t3.
 (** definitions *)
 
 (* defns sat *)

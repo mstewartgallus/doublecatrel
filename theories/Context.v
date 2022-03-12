@@ -28,6 +28,147 @@ Implicit Type σ: store.
 Import Map.MapNotations.
 Import Multiset.MultisetNotations.
 
+Fixpoint dec x (p: linear) {struct p}: option linear :=
+  match p with
+  | cons (y, t, n) T =>
+      if eq_var x y
+      then
+        if n is S n'
+        then
+          Some (cons (x, t, n') T)
+        else
+          None
+      else
+        if dec x T is Some T'
+        then
+          Some (cons (y, t, n) T')
+        else
+          None
+  | _ => None
+  end.
+
+Fixpoint inc x (p: linear) {struct p}: linear :=
+  match p with
+  | cons (y, t, n) T =>
+      if eq_var x y
+      then
+        cons (x, t, S n) T
+      else
+        cons (y, t, n) (inc x T)
+  | _ => nil
+  end.
+
+Definition eq_linear Δ Δ': {Δ = Δ'} + {Δ ≠ Δ'}.
+Proof.
+  decide equality.
+  destruct p as [[x t] n].
+  destruct a as [[y t'] n'].
+  destruct (eq_var x y), (eq_type t t'), (Nat.eq_dec n n').
+  all: subst.
+  1: left.
+  1: reflexivity.
+  all: right.
+  all: intro p.
+  all: inversion p.
+  all:  subst.
+  all: contradiction.
+Defined.
+
+Definition eq_ts (l r: ts): {l = r} + {l ≠ r}.
+Proof.
+  assert (teq := eq_type).
+  decide equality.
+Defined.
+
+Definition eq_xs (l r: xs): {l = r} + {l ≠ r}.
+Proof.
+  assert (xeq := eq_var).
+  decide equality.
+Defined.
+
+Definition eq_ns (l r: ns): {l = r} + {l ≠ r}.
+Proof.
+  assert (neq := Nat.eq_dec).
+  decide equality.
+Defined.
+
+Fixpoint mt n :=
+  if n is S n'
+  then
+    cons 0 (mt n')
+  else
+    nil.
+
+Lemma mt_empty {n}: empty (mt n).
+Proof.
+  induction n.
+  all: cbn.
+  all: constructor.
+  auto.
+Qed.
+
+Lemma empty_mt {ns}: empty ns → ns = mt (length ns).
+Proof.
+  intro p.
+  induction p.
+  all: cbn.
+  1: auto.
+  rewrite <- IHp.
+  auto.
+Qed.
+
+Fixpoint one x Γ :=
+  if Γ is cons (y, t) T
+  then
+    if Nat.eq_dec x y
+    then
+      cons 1 (mt (length T))
+    else
+      cons 0 (one x T)
+  else
+    nil.
+
+Fixpoint toxs Γ: xs :=
+  if Γ is cons (x, _) T
+  then
+    cons x (toxs T)
+  else
+    nil.
+
+Fixpoint tots Γ: ts :=
+  if Γ is cons (_, t) T
+  then
+    cons t (tots T)
+  else
+    nil.
+
+Lemma zip_toxs_tots {Γ: environment}: zip (toxs Γ) (tots Γ) = Γ.
+Proof.
+  induction Γ.
+  1: auto.
+  cbn.
+  destruct a.
+  cbn.
+  rewrite IHΓ.
+  auto.
+Qed.
+
+Lemma zip3_toxs_tots {Γ: environment} {ns: ns}: zip21 Γ ns = zip3 (toxs Γ) (tots Γ) ns.
+Proof.
+  generalize dependent ns.
+  induction Γ.
+  all: auto.
+  intro ns.
+  cbn.
+  destruct a.
+  destruct ns.
+  1: auto.
+  cbn in *.
+  rewrite IHΓ.
+  cbn.
+  auto.
+Qed.
+
 Module ProofTree.
   Inductive JE: Set :=
   | JE_var Γ x
@@ -40,24 +181,16 @@ Module ProofTree.
   .
 
   #[local]
-  Definition unknown_env (_: JE): environment := nil.
-  #[local]
-  Definition unknown_linear (_: JE): linear := Multiset.empty.
+  Definition unknown_list {A} (_: JE): list A := nil.
   #[local]
   Definition unknown_type (_: JE): type := t_unit.
   #[local]
   Definition unknown_context (_: JE): context := E_tt.
-
-  Opaque unknown_env.
-  Opaque unknown_linear.
-  Opaque unknown_type.
-  Opaque unknown_context.
-
   Function envof (E: JE): environment :=
     match E with
     | JE_var Γ _ => Γ
     | JE_lam p =>
-        if envof p is cons _ T then T else unknown_env E
+        if envof p is cons _ T then T else unknown_list E
     | JE_app p1 _ => envof p1
     | JE_tt Γ => Γ
     | JE_step p1 _ => envof p1
@@ -65,36 +198,104 @@ Module ProofTree.
     | JE_let p1 _ => envof p1
     end.
 
-  Function linof (E: JE): linear :=
+  Function xsof (E: JE): xs :=
     match E with
-    | JE_var _ x => Multiset.one x
+    | JE_var Γ _ => toxs Γ
     | JE_lam p =>
-        if envof p is cons (x, _) T
-        then
-          linof p \ x
-        else
-          unknown_linear E
-    | JE_app p1 p2 => linof p1 ∪ linof p2
-    | JE_tt _ => ∅
-    | JE_step p1 p2 => linof p1 ∪ linof p2
-    | JE_fanout p1 p2 => linof p1 ∪ linof p2
+        if xsof p is cons _ T then T else unknown_list E
+    | JE_app p1 _ => xsof p1
+    | JE_tt Γ => toxs Γ
+    | JE_step p1 _ => xsof p1
+    | JE_fanout p1 _ => xsof p1
+    | JE_let p1 _ => xsof p1
+    end.
+
+  Lemma toxs_envof {E: JE}: toxs (envof E) = xsof E.
+  Proof.
+    induction E.
+    all: cbn.
+    all: auto.
+    destruct (envof E), (xsof E).
+    all: try discriminate.
+    all: auto.
+    + cbn in IHE.
+      destruct p.
+      discriminate.
+    + cbn in IHE.
+      destruct p.
+      inversion IHE.
+      subst.
+      auto.
+  Qed.
+
+  Function tsof (E: JE): ts :=
+    match E with
+    | JE_var Γ _ => tots Γ
+    | JE_lam p =>
+        if tsof p is cons _ T then T else unknown_list E
+    | JE_app p1 _ => tsof p1
+    | JE_tt Γ => tots Γ
+    | JE_step p1 _ => tsof p1
+    | JE_fanout p1 _ => tsof p1
+    | JE_let p1 _ => tsof p1
+    end.
+
+  Lemma tots_envof {E: JE}: tots (envof E) = tsof E.
+  Proof.
+    induction E.
+    all: cbn.
+    all: auto.
+    destruct (envof E), (tsof E).
+    all: try discriminate.
+    all: auto.
+    + cbn in IHE.
+      destruct p.
+      discriminate.
+    + cbn in IHE.
+      destruct p.
+      inversion IHE.
+      subst.
+      auto.
+  Qed.
+
+  Opaque unknown_list.
+  Opaque unknown_type.
+  Opaque unknown_context.
+  Fixpoint toenv Δ: environment :=
+    if Δ is cons (x, t, _) T
+    then
+      cons (x, t) (toenv T)
+    else
+      nil.
+
+  Fixpoint tons Δ: ns :=
+    if Δ is cons (_, _, n) T
+    then
+      cons n (tons T)
+    else
+      nil.
+
+  Function nsof (E: JE): ns :=
+    match E with
+    | JE_var Γ x => one x Γ
+    | JE_lam p =>
+        if nsof p is cons _ T then T else unknown_list E
+    | JE_app p1 p2 => merge (nsof p1) (nsof p2)
+    | JE_tt Γ => mt (length Γ)
+    | JE_step p1 p2 => merge (nsof p1) (nsof p2)
+    | JE_fanout p1 p2 => merge (nsof p1) (nsof p2)
     | JE_let p1 p2 =>
-        if envof p2 is cons (x, _) (cons (y, _) _)
-        then
-          linof p1 ∪ ((linof p2 \ x) \ y)
-        else
-          unknown_linear E
-    end %multiset.
+        merge (nsof p1) (if nsof p2 is cons 1 (cons 1 T) then T else unknown_list E)
+    end.
 
   Function ctxof (E: JE): context :=
     match E with
     | JE_var _ x => E_var x
     | JE_lam p =>
-        if envof p is cons (x, t) _
-        then
-          E_lam x t (ctxof p)
-        else
-          unknown_context E
+        match envof p with
+        | cons (x, t) _ => E_lam x t (ctxof p)
+        | _ => unknown_context E
+        end
     | JE_app p1 p2 => E_app (ctxof p1) (ctxof p2)
     | JE_tt _ => E_tt
     | JE_step p1 p2 => E_step (ctxof p1) (ctxof p2)
@@ -111,7 +312,7 @@ Module ProofTree.
     match E with
     | JE_var Γ x => if find x Γ is Some t then t else unknown_type E
     | JE_lam p =>
-        if envof p is cons (x, t) _
+        if envof p is cons (_, t) _
         then
           t * typeof p
         else
@@ -123,7 +324,9 @@ Module ProofTree.
     | JE_let _ p2 => typeof p2
     end.
 
-  Definition asserts (E: JE): Prop := Spec.JE (envof E) (linof E) (ctxof E) (typeof E).
+  Definition linof (E: JE): linear := zip (envof E) (nsof E).
+
+  Definition asserts (E: JE): Prop := Spec.JE (zip21 (envof E) (nsof E)) (ctxof E) (typeof E).
 
   Notation "'test' p" := (match p with | left _ => true | right _ => false end) (at level 1).
 
@@ -132,10 +335,10 @@ Module ProofTree.
     | JE_var Γ x =>
         if find x Γ is Some _ then true else false
     | JE_lam p =>
-        (if envof p is cons (x, t) _
-         then
-           if Multiset.find x (linof p) is S _ then true else false
-         else false)
+        match envof p, nsof p with
+         | cons (x, t) _, cons 1 _ => true
+         | _, _ => false
+        end
         && check p
     | JE_app p1 p2 =>
         test (eq_environment (envof p1) (envof p2))
@@ -153,14 +356,14 @@ Module ProofTree.
         && check p1
         && check p2
     | JE_let p1 p2 =>
-        (match envof p2, typeof p1 with
-         | cons (y, t2) (cons (x, t1) T), t1' * t2' =>
-             test (eq_environment (envof p1) T)
+        (match envof p2, nsof p2, typeof p1 with
+         | cons (y, t2) (cons (x, t1) g2),
+           cons 1 (cons 1 _),
+           t1' * t2' =>
+             test (eq_environment (envof p1) g2)
              && test (eq_type t1 t1')
              && test (eq_type t2 t2')
-             && (if Multiset.find y (linof p2) is S _ then true else false)
-             && (if Multiset.find x (linof p2 \ y) is S _ then true else false)
-         | _, _ => false
+         | _, _, _ => false
          end)
         && check p1
         && check p2
@@ -174,28 +377,50 @@ Module ProofTree.
     all: intro q.
     all: try contradiction.
     - rewrite e0.
+      rewrite <- zip_toxs_tots.
       constructor.
-      apply Environment.find_sound.
-      auto.
+      + rewrite zip_toxs_tots.
+        apply find_sound.
+        auto.
+      + rewrite zip_toxs_tots.
+        induction Γ.
+        1: discriminate.
+        cbn.
+        destruct a.
+        cbn.
+        cbn in e0.
+        destruct eq_var, Nat.eq_dec.
+        all: subst.
+        all: try contradiction.
+        * constructor.
+          apply mt_empty.
+        * constructor.
+          1: auto.
+          auto.
     - destruct (check p0).
       2: contradiction.
-      rewrite e0.
+      rewrite e0, e1.
+      rewrite e0, e1 in IHb.
+      cbn in IHb.
       constructor.
-      rewrite Multiset.add_minus.
-      2: lia.
-      rewrite <- e0.
       auto.
     - rewrite e1.
       rewrite e1 in IHb.
+      rewrite <- _x in IHb0.
       destruct (check p1).
       2: contradiction.
       destruct (check p2).
       2: contradiction.
       econstructor.
       all: eauto.
-      rewrite _x.
-      auto.
     - constructor.
+      induction _x.
+      1: constructor.
+      cbn.
+      destruct a.
+      cbn.
+      constructor.
+      auto.
     - destruct (check p1).
       2: contradiction.
       destruct (check p2).
@@ -216,226 +441,56 @@ Module ProofTree.
       destruct (check p2).
       2: contradiction.
       rewrite e0.
+      rewrite e1.
+      rewrite e2 in IHb.
       rewrite e0 in IHb0.
-      rewrite e1 in IHb.
+      rewrite e1 in IHb0.
       econstructor.
-      1: eauto.
-      repeat rewrite Multiset.add_minus.
-      all: auto.
-      + lia.
-      + lia.
-  Qed.
-
-  Lemma check_complete {Γ Δ E t}:
-    Spec.JE Γ Δ E t →
-   ∃ p,
-     Γ = envof p
-     ∧ Δ = linof p
-     ∧ E = ctxof p
-     ∧ t = typeof p
-     ∧ Bool.Is_true (check p).
-  Proof.
-    intro q.
-    induction q.
-    all: cbn.
-    all: subst.
-    - exists (JE_var Γ x).
-      cbn.
-      rewrite (find_complete H).
-      all: repeat split; auto.
-    - destruct IHq as [p [? [? [? [? ?]]]]].
-      subst.
-      exists (JE_lam p).
-      cbn.
-      rewrite <- H.
-      cbn.
-      rewrite <- H0.
-      rewrite Multiset.find_merge.
-      rewrite Multiset.find_one.
-      destruct Nat.eq_dec.
-      2: contradiction.
-      cbn.
-      destruct (check p).
-      2: contradiction.
-      all: repeat split; auto.
-      apply Multiset.extensional.
-      intro k.
-      rewrite Multiset.find_minus.
-      rewrite Multiset.find_merge.
-      rewrite Multiset.find_one.
-      destruct Nat.eq_dec.
-      2: auto.
-      cbn.
-      auto.
-    - destruct IHq1 as [p1 [? [? [? [? ?]]]]].
-      destruct IHq2 as [p2 [? [? [? [? ?]]]]].
-      subst.
-      exists (JE_app p1 p2).
-      cbn.
-      rewrite H4.
-      rewrite <- H2.
-      destruct eq_environment.
-      2: contradiction.
-      destruct eq_type.
-      2: contradiction.
-      cbn.
-      destruct (check p1).
-      2: contradiction.
-      destruct (check p2).
-      2: contradiction.
-      cbn.
-      all: repeat split; auto.
-    - exists (JE_tt Γ).
-      cbn.
-      all: repeat split; auto.
-    - destruct IHq1 as [p1 [? [? [? [? ?]]]]].
-      destruct IHq2 as [p2 [? [? [? [? ?]]]]].
-      subst.
-      exists (JE_step p1 p2).
-      cbn.
-      rewrite H4.
-      rewrite <- H2.
-      cbn.
-      destruct eq_environment.
-      2: contradiction.
-      cbn.
-      destruct (check p1).
-      2: contradiction.
-      destruct (check p2).
-      2: contradiction.
-      cbn.
-      all: repeat split; auto.
-    - destruct IHq1 as [p1 [? [? [? [? ?]]]]].
-      destruct IHq2 as [p2 [? [? [? [? ?]]]]].
-      subst.
-      exists (JE_fanout p1 p2).
-      cbn.
-      rewrite H4.
-      destruct eq_environment.
-      2: contradiction.
-      cbn.
-      destruct (check p1).
-      2: contradiction.
-      destruct (check p2).
-      2: contradiction.
-      cbn.
-      all: repeat split; auto.
-    - destruct IHq1 as [p1 [? [? [? [? ?]]]]].
-      destruct IHq2 as [p2 [? [? [? [? ?]]]]].
-      subst.
-      exists (JE_let p1 p2).
-      cbn.
-      rewrite <- H4.
-      rewrite <- H2.
-      rewrite <- H5.
-      cbn.
-      destruct (check p1).
-      2: contradiction.
-      destruct (check p2).
-      2: contradiction.
-      cbn.
-      destruct eq_environment.
-      2: contradiction.
-      destruct eq_type.
-      2: contradiction.
-      cbn.
-      destruct eq_type.
-      2: contradiction.
-      cbn.
-      repeat rewrite Multiset.find_merge.
-      repeat rewrite Multiset.find_one.
-      repeat rewrite Multiset.find_minus.
-      repeat rewrite Multiset.find_merge.
-      repeat rewrite Multiset.find_one.
-      destruct (Nat.eq_dec y y).
-      2: contradiction.
-      destruct (Nat.eq_dec x x).
-      2: contradiction.
-      cbn.
-      destruct Nat.eq_dec.
-      + subst.
-        cbn.
-        all: repeat split; auto.
-        apply Multiset.extensional.
-        intro k.
-        repeat rewrite Multiset.find_merge.
-        repeat rewrite Multiset.find_one.
-        repeat rewrite Multiset.find_minus.
-        repeat rewrite Multiset.find_merge.
-        repeat rewrite Multiset.find_one.
-        destruct Nat.eq_dec.
-        all: auto.
-      + cbn.
-        all: repeat split; auto.
-        apply Multiset.extensional.
-        intro k.
-        repeat rewrite Multiset.find_merge.
-        repeat rewrite Multiset.find_one.
-        repeat rewrite Multiset.find_minus.
-        repeat rewrite Multiset.find_merge.
-        repeat rewrite Multiset.find_one.
-        destruct Nat.eq_dec.
-        all: cbn.
-        all: subst.
-        all: auto.
-        * destruct Nat.eq_dec.
-          1: subst; contradiction.
-          cbn.
-          auto.
-        * destruct Nat.eq_dec.
-          all: subst.
-          all: cbn.
-          all: auto.
+      all: eauto.
   Qed.
 End ProofTree.
 
 Section Typecheck.
   Import OptionNotations.
 
-  Function typecheck Γ E: option (linear * type) :=
+  Function typecheck Γ E: option (ns * type) :=
     match E with
     | E_var x =>
         do t ← find x Γ ;
-        Some (Multiset.one x, t)
+        Some (one x Γ, t)
     | E_lam x t1 E =>
-        do (Δ', t2) ← typecheck ((x, t1) :: Γ) E ;
-        match Multiset.find x Δ' with
-        | S _ => Some (Δ' \ x, t1 * t2)
-        | _ => None
-        end
+        do (cons 1 Δ, t2) ← typecheck ((x, t1) :: Γ) E ;
+        Some (Δ, t1 * t2)
     | E_app E E' =>
         do (Δ', t1 * t2) ← typecheck Γ E ;
         do (Δ, t1') ← typecheck Γ E' ;
         if eq_type t1 t1'
         then
-          Some (Δ' ∪ Δ, t2)
+          Some (merge Δ' Δ, t2)
         else
           None
 
-    | E_tt => Some (∅, t_unit)
+    | E_tt => Some (mt (length Γ), t_unit)
     | E_step E E' =>
         do (Δ', t_unit) ← typecheck Γ E ;
         do (Δ, t) ← typecheck Γ E' ;
-        Some (Δ' ∪ Δ, t)
+        Some (merge Δ' Δ, t)
 
     | E_fanout E E' =>
         do (Δ', t1) ← typecheck Γ E ;
         do (Δ, t2) ← typecheck Γ E' ;
-        Some (Δ' ∪ Δ, t1 * t2)
+        Some (merge Δ' Δ, t1 * t2)
 
     | E_let x y E E' =>
-        do (Δ', t1 * t2) ← typecheck Γ E ;
-        do (Δ, t3) ← typecheck ((y, t2) :: (x, t1) :: Γ) E' ;
-        match Multiset.find x (Δ \ y), Multiset.find y Δ with
-        | S _, S _ => Some (Δ' ∪ ((Δ \ y) \ x), t3)
-        | _, _ => None
-        end
+        do (Δ1, t1 * t2) ← typecheck Γ E ;
+        do (cons 1 (cons 1 Δ2), t3) ← typecheck ((y, t2) :: (x, t1) :: Γ) E' ;
+        Some (merge Δ1 Δ2, t3)
     end
       %list %multiset.
 End Typecheck.
 
 Theorem typecheck_sound:
-  ∀ Γ {E Δ' t}, typecheck Γ E = Some (Δ', t) → JE Γ Δ' E t.
+  ∀ Γ {E ns t}, typecheck Γ E = Some (ns, t) → JE (zip21 Γ ns) E t.
 Proof using.
   intros Γ E.
   functional induction (typecheck Γ E).
@@ -445,14 +500,24 @@ Proof using.
   all: subst.
   all: try econstructor.
   all: eauto.
-  - apply find_sound.
-    auto.
-  - rewrite Multiset.add_minus.
-    all: auto.
-    lia.
-  - repeat rewrite Multiset.add_minus.
-    all: auto.
-    all: lia.
+  - rewrite <- zip_toxs_tots.
+    constructor.
+    + rewrite zip_toxs_tots.
+      apply find_sound.
+      auto.
+    + rewrite zip_toxs_tots.
+      induction Γ.
+      1: discriminate.
+      destruct a.
+      cbn in *.
+      destruct Nat.eq_dec, eq_var.
+      all: subst.
+      all: try contradiction.
+      * constructor.
+        apply mt_empty.
+      * constructor.
+        all: auto.
+  - apply mt_empty.
 Qed.
 
 Notation "'do' n ← e0 ; e1" :=
@@ -731,10 +796,6 @@ Proof.
   auto.
 Defined.
 
-Inductive notin {A} (a: A): list A → Prop :=
-| notin_empty: notin a nil
-| notin_cons a' T: a ≠ a' → notin a T → notin a (cons a' T).
-
 Lemma subst_assoc {x f g h}:
   subst_context (subst_context h x g) x f = subst_context h x (subst_context g x f).
 Proof.
@@ -768,14 +829,9 @@ Proof.
     auto.
 Qed.
 
-Fixpoint useall Γ: linear :=
-  if Γ is cons (x, _) T
-  then
-    Multiset.merge (Multiset.one x) (useall T)
-  else
-    Multiset.empty.
+Definition useonce Γ: linear := List.map (λ '(x, t), (x, t, 1)) Γ.
 
-Definition oftype Γ t := { E | JE Γ (useall Γ) E t }.
+Definition oftype Γ t := { E | JE (useonce Γ) E t }.
 
 Record iso A B := {
     to: A → B ;

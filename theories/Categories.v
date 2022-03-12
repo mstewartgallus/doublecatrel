@@ -266,16 +266,6 @@ Module Import Vert.
 
   Next Obligation.
   Proof.
-    unfold Vert in *.
-    unfold compose.
-    destruct f as [f pf], g as [g pg].
-    cbn in pf, pg.
-    cbn.
-    generalize dependent g.
-    generalize dependent C.
-    generalize dependent B.
-    generalize dependent A.
-    rewrite Multiset.merge_empty_r.
     admit.
   Admitted.
 

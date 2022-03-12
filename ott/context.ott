@@ -15,11 +15,18 @@ context, E :: 'E_' ::= {{ coq-equality }}
   | let x , y = E in E'      ::   :: let (+ bind x union y in E' +)
   | ( E )                    :: S :: paren {{ icho ([[E]]) }}
 
-linear, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq Multiset.multiset }}
-  | nil                   ::   :: nil {{ coq Multiset.empty }}
-  | { x }                 :: M :: one {{ coq (Multiset.one [[x]]) }}
-  | D , D'                :: M :: add {{ coq (Multiset.merge [[D']] [[D]]) }}
-  | D ++ D'               :: M :: merge {{ coq (Multiset.merge [[D]] [[D']]) }}
+nat, n :: 'n_' ::= {{ coq nat }}
+  | 0 ::  :: zero {{ coq 0 }}
+  | 1  ::  :: one {{ coq 1 }}
+
+linear, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (list (var * type * nat)) }}
+  | G ; ns               :: M :: zip {{ coq (zip21 [[G]] [[ns]]) }}
+
+
+ns :: 'ns_' ::= {{ coq (list var) }}
+  | nil                  ::   :: nil {{ coq nil }}
+  | ns , n               ::   :: cons {{ coq (cons [[n]] [[ns]]) }}
+  | ns ++ ns'            :: M :: merge {{ coq (merge [[ns]] [[ns']]) }}
 
 store, S {{ tex \sigma }} {{ coq σ }} :: 'S_'  ::= {{ coq (Map.map normal) }}
   | nil                   :: M :: empty {{ coq (Map.empty) }}
@@ -57,7 +64,6 @@ terminals :: 'terminals_' ::=
 
 parsing
   S_add left S_add
-  D_add left D_add
 
 substitutions
   single E x :: subst
@@ -69,42 +75,76 @@ formula :: formula_ ::=
 
 defns
 
+lempty :: '' ::=
+
+defn
+empty ns ::   :: empty :: 'empty_'
+by
+
+---------- :: nil
+empty nil
+
+empty ns
+------------ :: cons
+empty ns, 0
+
+defns
+
+lfind :: '' ::=
+
+defn
+x \in xs ; ns ::   :: lmem :: 'lmem_'
+by
+
+empty ns
+---------------------------- :: eq
+x \in xs, x ; ns, 1
+
+x != y
+x \in xs ; ns
+-------------------------- :: ne
+x \in xs, y ; ns, 0
+
+defns
+
 judge_context :: 'J' ::=
 
 defn
-G ; D |- E : t ::   :: E :: 'E_'
+D |- E : t ::   :: E :: 'E_'
 by
 
-x: t \in G
------------------- :: var
-G ; { x } |- x: t
+x: t \in xs ; ts
+x \in xs ; ns
+----------------------- :: var
+xs ; ts ; ns |- x: t
 
-G, x: t1 ; D, {x} |- E: t2
+G, x: t1 ; ns, 1 |- E: t2
 ------------------------------- :: lam
-G; D |- lam x: t1 . E: t1 * t2
+G ; ns |- lam x: t1 . E: t1 * t2
 
-G; D  |- E1: t1 * t2
-G; D' |- E2: t1
----------------------- :: app
-G; D ++ D' |- E1 E2: t2
+G ; ns |- E1: t1 * t2
+G ; ns' |- E2: t1
+--------------------------------- :: app
+G ; ns ++ ns' |- E1 E2: t2
 
+empty ns
 ------------------- :: tt
-G; nil |- tt: unit
+G ; ns |- tt: unit
 
-G; D |- E1: unit
-G; D' |- E2: t
+G ; ns |- E1: unit
+G ; ns' |- E2: t
 ------------------------- :: step
-G; D ++ D' |- E1; E2: t
+G ; ns ++ ns' |- E1; E2: t
 
-G; D |- E1: t1
-G; D' |- E2: t2
+G ; ns |- E1: t1
+G ; ns' |- E2: t2
 ----------------------------- :: fanout
-G; D ++ D' |- E1, E2: t1 * t2
+G ; ns ++ ns' |- E1, E2: t1 * t2
 
-G; D |- E1 : t1 * t2
-G, x: t1, y: t2; D', {x}, {y} |- E2: t3
+G ; ns |- E1 : t1 * t2
+G, x: t1, y: t2 ; ns', 1, 1 |- E2: t3
 ---------------------------------------- :: let
-G; D ++ D' |- let x, y = E1 in E2: t3
+G ; ns ++ ns' |- let x, y = E1 in E2: t3
 
 defns
 
