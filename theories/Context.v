@@ -117,16 +117,38 @@ Proof.
   auto.
 Qed.
 
-Fixpoint one x Γ :=
+Fixpoint one x Γ: option ns :=
   if Γ is cons (y, t) T
   then
     if Nat.eq_dec x y
     then
-      cons 1 (mt (length T))
+      Some (cons 1 (mt (length T)))
     else
-      cons 0 (one x T)
+      if one x T is Some T'
+      then
+        Some (cons 0 T')
+      else
+        None
   else
-    nil.
+    None.
+
+Lemma find_one {x Γ t}: find x Γ = Some t → { ns & one x Γ = Some ns }.
+Proof.
+  induction Γ.
+  1: discriminate.
+  intros p.
+  cbn in *.
+  destruct a.
+  destruct eq_var, Nat.eq_dec.
+  all: subst.
+  all: try contradiction.
+  - exists (cons 1 (mt (length Γ))).
+    auto.
+  - destruct (IHΓ p).
+    rewrite e.
+    exists (cons 0 x0).
+    auto.
+Defined.
 
 Fixpoint toxs Γ: xs :=
   if Γ is cons (x, _) T
@@ -168,6 +190,20 @@ Proof.
   cbn.
   auto.
 Qed.
+
+Fixpoint toenv Δ: environment :=
+  if Δ is cons (x, t, _) T
+  then
+    cons (x, t) (toenv T)
+  else
+    nil.
+
+Fixpoint tons Δ: ns :=
+  if Δ is cons (_, _, n) T
+  then
+    cons n (tons T)
+  else
+    nil.
 
 Module ProofTree.
   Inductive JE: Set :=
@@ -261,23 +297,10 @@ Module ProofTree.
   Opaque unknown_list.
   Opaque unknown_type.
   Opaque unknown_context.
-  Fixpoint toenv Δ: environment :=
-    if Δ is cons (x, t, _) T
-    then
-      cons (x, t) (toenv T)
-    else
-      nil.
-
-  Fixpoint tons Δ: ns :=
-    if Δ is cons (_, _, n) T
-    then
-      cons n (tons T)
-    else
-      nil.
 
   Function nsof (E: JE): ns :=
     match E with
-    | JE_var Γ x => one x Γ
+    | JE_var Γ x => if one x Γ is Some ns then ns else nil
     | JE_lam p =>
         if nsof p is cons _ T then T else unknown_list E
     | JE_app p1 p2 => merge (nsof p1) (nsof p2)
@@ -394,9 +417,11 @@ Module ProofTree.
         all: try contradiction.
         * constructor.
           apply mt_empty.
-        * constructor.
-          1: auto.
-          auto.
+        * destruct (find_one e0).
+          rewrite e.
+          rewrite e in IHΓ.
+          constructor.
+          all: auto.
     - destruct (check p0).
       2: contradiction.
       rewrite e0, e1.
@@ -457,7 +482,8 @@ Section Typecheck.
     match E with
     | E_var x =>
         do t ← find x Γ ;
-        Some (one x Γ, t)
+        do ns ← one x Γ ;
+        Some (ns, t)
     | E_lam x t1 E =>
         do (cons 1 Δ, t2) ← typecheck ((x, t1) :: Γ) E ;
         Some (Δ, t1 * t2)
@@ -505,19 +531,142 @@ Proof using.
     + rewrite zip_toxs_tots.
       apply find_sound.
       auto.
-    + rewrite zip_toxs_tots.
+    + generalize dependent ns0.
       induction Γ.
       1: discriminate.
+      intros ns0.
       destruct a.
       cbn in *.
+      intros p q.
       destruct Nat.eq_dec, eq_var.
       all: subst.
       all: try contradiction.
-      * constructor.
+      * inversion q.
+        subst.
+        constructor.
         apply mt_empty.
-      * constructor.
+      * destruct (find_one e0).
+        rewrite e in q.
+        inversion q.
+        subst.
+        constructor.
         all: auto.
   - apply mt_empty.
+Qed.
+
+Lemma length_mt {n}:
+  length (mt n) = n.
+Proof.
+  induction n.
+  1: auto.
+  cbn.
+  rewrite IHn.
+  auto.
+Qed.
+
+Lemma length_one {x Γ}:
+  ∀ {ns},
+  one x Γ = Some ns →
+  length ns = length Γ.
+Proof.
+  induction Γ.
+  1: discriminate.
+  cbn in *.
+  intros ns p.
+  destruct a.
+  cbn in *.
+  destruct Nat.eq_dec.
+  + subst.
+    inversion p.
+    subst.
+    cbn.
+    rewrite length_mt.
+    auto.
+  + destruct (one x Γ).
+    2: discriminate.
+    inversion p.
+    subst.
+    rewrite <- (IHΓ n0).
+    2: auto.
+    auto.
+Qed.
+
+Lemma length_merge {ns ns'}:
+  length (merge ns ns') = min (length ns) (length ns').
+Proof.
+  generalize dependent ns'.
+  induction ns.
+  all: cbn.
+  1: auto.
+  intros ns'.
+  destruct ns'.
+  1: auto.
+  cbn.
+  rewrite IHns.
+  auto.
+Qed.
+
+Lemma length_merge_eq {ns ns'}:
+  length ns = length ns' →
+  length (merge ns ns') = length ns.
+Proof.
+  generalize dependent ns'.
+  induction ns.
+  all: cbn.
+  1: auto.
+  intros ns' p.
+  destruct ns'.
+  1: auto.
+  cbn.
+  cbn in p.
+  rewrite IHns.
+  auto.
+  inversion p.
+  auto.
+Qed.
+
+Theorem length_typecheck:
+  ∀ {Γ E t ns},
+    typecheck Γ E = Some (ns, t) →
+    length ns = length Γ.
+Proof using.
+  intros Γ E.
+  functional induction (typecheck Γ E).
+  all: cbn.
+  all: intros ? ? p.
+  all: inversion p.
+  all: subst.
+  - eapply length_one.
+    eauto.
+  - cbn in IHo.
+    assert (IHo' := IHo _ _ e0).
+    cbn in IHo'.
+    inversion IHo'.
+    auto.
+  - assert (IHo' := IHo _ _ e0).
+    assert (IHo0' := IHo0 _ _ e1).
+    rewrite <- IHo' in IHo0'.
+    rewrite length_merge_eq.
+    all: auto.
+  - rewrite length_mt.
+    auto.
+  - assert (IHo' := IHo _ _ e0).
+    assert (IHo0' := IHo0 _ _ e1).
+    rewrite <- IHo' in IHo0'.
+    rewrite length_merge_eq.
+    all: auto.
+  - assert (IHo' := IHo _ _ e0).
+    assert (IHo0' := IHo0 _ _ e1).
+    rewrite <- IHo' in IHo0'.
+    rewrite length_merge_eq.
+    all: auto.
+  - assert (IHo' := IHo _ _ e0).
+    assert (IHo0' := IHo0 _ _ e1).
+    cbn in IHo0'.
+    inversion IHo0'.
+    rewrite <- IHo' in H0.
+    rewrite length_merge_eq.
+    all: auto.
 Qed.
 
 Notation "'do' n ← e0 ; e1" :=
