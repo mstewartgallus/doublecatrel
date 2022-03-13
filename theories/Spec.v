@@ -15,10 +15,17 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_type : ott_coq_equality.
+#[local]
+Definition unknown (l r: list nat): list nat.
+Proof.
+  apply nil.
+Qed.
+
 Fixpoint merge (l r: list nat): list nat :=
   match l, r with
   | cons m l', cons n r' => cons (m + n) (merge l' r')
-  | _, _ => nil
+  | nil, nil => nil
+  | _, _ => unknown l r
   end.
 
 Definition var : Set := nat.

@@ -86,21 +86,6 @@ Proof.
     auto.
 Defined.
 
-Lemma length_merge {ns ns'}:
-  length (merge ns ns') = min (length ns) (length ns').
-Proof.
-  generalize dependent ns'.
-  induction ns.
-  all: cbn.
-  1: auto.
-  intros ns'.
-  destruct ns'.
-  1: auto.
-  cbn.
-  rewrite IHns.
-  auto.
-Qed.
-
 Lemma length_merge_eq {ns ns'}:
   length ns = length ns' →
   length (merge ns ns') = length ns.
@@ -108,16 +93,16 @@ Proof.
   generalize dependent ns'.
   induction ns.
   all: cbn.
-  1: auto.
-  intros ns' p.
-  destruct ns'.
-  1: auto.
-  cbn.
-  cbn in p.
-  rewrite IHns.
-  auto.
-  inversion p.
-  auto.
+  - intros ns' p.
+    destruct ns'.
+    all: cbn in *.
+    all: auto.
+    discriminate.
+  - intros ns' p.
+    destruct ns'.
+    all: cbn.
+    all: auto.
+    discriminate.
 Qed.
 
 Lemma length_same {Γ ns E t}: JE Γ ns E t → length Γ = length ns.
@@ -166,15 +151,22 @@ Module ProofTree.
   .
 
   #[local]
-  Definition unknown_list {A} (_: JE): list A := nil.
-  #[local]
-  Definition unknown_type (_: JE): type := t_unit.
-  #[local]
-  Definition unknown_context (_: JE): context := E_tt.
+   Definition unknown_list {A} (_: JE): list A.
+  Proof.
+    apply nil.
+  Qed.
 
-  Opaque unknown_list.
-  Opaque unknown_type.
-  Opaque unknown_context.
+  #[local]
+   Definition unknown_type (_: JE): type.
+  Proof.
+    apply t_unit.
+  Qed.
+
+  #[local]
+   Definition unknown_context (_: JE): context.
+  Proof.
+    apply E_tt.
+  Qed.
 
   Function envof (E: JE): environment :=
     match E with

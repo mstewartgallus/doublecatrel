@@ -1,9 +1,16 @@
 embed
 {{ coq-preamble
+#[local]
+Definition unknown (l r: list nat): list nat.
+Proof.
+  apply nil.
+Qed.
+
 Fixpoint merge (l r: list nat): list nat :=
   match l, r with
   | cons m l', cons n r' => cons (m + n) (merge l' r')
-  | _, _ => nil
+  | nil, nil => nil
+  | _, _ => unknown l r
   end.
 }}
 metavar var, x, y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[var]]} }}
