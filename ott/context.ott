@@ -1,7 +1,6 @@
 embed
 {{ coq-preamble
 Require Blech.Map.
-Require Blech.Multiset.
 }}
 grammar
 
@@ -17,11 +16,11 @@ context, E :: 'E_' ::= {{ coq-equality }}
 
 nat, n :: 'n_' ::= {{ coq nat }}
   | 0 ::  :: zero {{ coq 0 }}
-  | S n ::  :: succ {{ coq (S [[n]]) }}
+  | S n ::  :: succ {{ coq (S [[n]]) }} {{ tex [[n]] + 1 }}
   | 1 :: M :: one {{ coq 1 }}
   | ( n ) :: S :: paren {{ icho ([[n]]) }}
 
-linear, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (list nat) }}
+usage, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (list nat) }}
   | nil                  ::   :: nil {{ coq nil }}
   | D , n                ::   :: cons {{ coq (cons [[n]] [[D]]) }}
   | D ++ D'             :: M :: merge {{ coq (merge [[D]] [[D']]) }}
@@ -82,10 +81,10 @@ by
 funs
   empty ::=
 fun
-  mt n :: D :: mt
+  mt n :: D :: mt {{ tex \emptyset_{[[n]]} }}
 by
   mt 0 === nil
-  mt (S n) === mt n, 0
+  mt S n === mt n, 0
 
 defns
 
@@ -96,7 +95,7 @@ x : t \in G ; D ::   :: lmem :: 'lmem_'
 by
 
 ----------------------------------- :: eq
-x : t \in G, x : t ; mt (len G), 1
+x : t \in G, x : t ; mt len G, 1
 
 x != y
 x : t \in G ; D

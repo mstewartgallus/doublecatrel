@@ -1,11 +1,5 @@
 embed
 {{ coq-preamble
-Fixpoint zip {A B} (l: list A) (r: list B): list (A * B) :=
- match l, r with
- | cons a l', cons b r' => cons (a, b) (zip l' r')
- | _, _ => nil
- end.
-
 Fixpoint merge (l r: list nat): list nat :=
   match l, r with
   | cons m l', cons n r' => cons (m + n) (merge l' r')
@@ -29,30 +23,12 @@ normal, N :: 'N_' ::= {{ coq-equality }}
   | N , N'  ::   :: fanout
   | ( N )   :: S :: paren {{ coq ([[N]]) }}
 
-defns
-
-dummy :: '' ::=
-
-defn
-dummyfoo ::   :: dum :: 'dum_'
-by
-
-
 grammar
-
-xs :: 'xs_' ::= {{ coq (list var) }}
-  | nil                  ::   :: nil {{ coq nil }}
-  | xs , x               ::   :: cons {{ coq (cons [[x]] [[xs]]) }}
-
-ts :: 'ts_' ::= {{ coq (list type) }}
-  | nil                  ::   :: nil {{ coq nil }}
-  | ts , t               ::   :: cons {{ coq (cons [[t]] [[ts]]) }}
 
 environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (list (var * type)) }}
   | nil         ::   :: nil {{ coq nil }}
   | G , x : t   ::   :: add {{ coq (cons ([[x]], [[t]]) [[G]]) }}
   | ( G )       :: S :: paren {{ coq ([[G]]) }}
-  | xs ; ts     :: M :: zip {{ coq (zip [[xs]] [[ts]]) }}
 
 subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (list (var * term)) }}
   | nil                   :: M :: nil {{ coq nil }}
