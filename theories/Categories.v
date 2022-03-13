@@ -18,7 +18,7 @@ Import Multiset.MultisetNotations.
 Require Import FunInd.
 
 Implicit Type Γ: environment.
-Implicit Type Δ: linear.
+Implicit Type Δ: usage.
 Implicit Type E: context.
 Implicit Type t: type.
 Implicit Type v: term.
@@ -256,7 +256,6 @@ Module Import Vert.
 
   Next Obligation.
   Proof using.
-    rewrite Multiset.merge_empty_r.
     constructor.
     constructor.
   Qed.

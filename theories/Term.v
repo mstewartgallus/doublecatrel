@@ -461,6 +461,64 @@ Proof using.
   reflexivity.
 Qed.
 
+Definition undef x Γ: environment.
+Proof.
+  apply nil.
+Qed.
+
+Fixpoint rm x Γ: environment :=
+  if Γ is cons (y, t) T
+  then
+    if eq_var x y
+    then
+      T
+    else
+      cons (y, t) (rm x T)
+  else
+    undef x Γ.
+
+Lemma subst_preserve_rm:
+  ∀ {Γ v' t x},
+    rm x Γ ⊢ v' in t →
+  ∀ {v t'},
+    find x Γ = Some t →
+    Γ ⊢ v in t' →
+    rm x Γ ⊢ subst_term v' x v in t'.
+Proof using.
+  intros Γ v' t x p v.
+  induction v.
+  all: cbn.
+  all: intros t' ? q.
+  all: inversion q.
+  all: subst.
+  all: try (econstructor; eauto).
+  clear q.
+  assert (H2' := find_complete H2).
+  clear H2.
+  destruct eq_var.
+  - subst.
+    rewrite H in H2'.
+    inversion H2'.
+    subst.
+    auto.
+  - clear p H.
+    constructor.
+    apply find_sound.
+    induction Γ.
+    1: discriminate.
+    destruct a.
+    cbn in *.
+    destruct eq_var, eq_var.
+    all: subst.
+    all: try contradiction.
+    all: cbn in *.
+    all: try destruct eq_var.
+    all: subst.
+    all: try contradiction.
+    all: cbn in *.
+    all: auto.
+Qed.
+
 Lemma subst_preserve:
   ∀ {Γ v' t x},
     Γ ⊢ v' in t →
