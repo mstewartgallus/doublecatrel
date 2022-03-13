@@ -18,7 +18,7 @@ Import List.ListNotations.
 Import IfNotations.
 
 Implicit Type Γ: environment.
-Implicit Type Δ: linear.
+Implicit Type Δ: usage.
 Implicit Type E: context.
 Implicit Type t: type.
 Implicit Type N: normal.
@@ -28,21 +28,9 @@ Implicit Type σ: store.
 Import Map.MapNotations.
 Import Multiset.MultisetNotations.
 
-Definition eq_linear Δ Δ': {Δ = Δ'} + {Δ ≠ Δ'}.
+Definition eq_usage Δ Δ': {Δ = Δ'} + {Δ ≠ Δ'}.
 Proof.
   set (s := Nat.eq_dec).
-  decide equality.
-Defined.
-
-Definition eq_ts (l r: ts): {l = r} + {l ≠ r}.
-Proof.
-  assert (teq := eq_type).
-  decide equality.
-Defined.
-
-Definition eq_xs (l r: xs): {l = r} + {l ≠ r}.
-Proof.
-  assert (xeq := eq_var).
   decide equality.
 Defined.
 
@@ -65,7 +53,7 @@ Proof.
   auto.
 Qed.
 
-Fixpoint one x Γ: option linear :=
+Fixpoint one x Γ: option usage :=
   if Γ is cons (y, t) T
   then
     if Nat.eq_dec x y
@@ -97,31 +85,6 @@ Proof.
     exists (cons 0 x0).
     auto.
 Defined.
-
-Fixpoint toxs Γ: xs :=
-  if Γ is cons (x, _) T
-  then
-    cons x (toxs T)
-  else
-    nil.
-
-Fixpoint tots Γ: ts :=
-  if Γ is cons (_, t) T
-  then
-    cons t (tots T)
-  else
-    nil.
-
-Lemma zip_toxs_tots {Γ: environment}: zip (toxs Γ) (tots Γ) = Γ.
-Proof.
-  induction Γ.
-  1: auto.
-  cbn.
-  destruct a.
-  cbn.
-  rewrite IHΓ.
-  auto.
-Qed.
 
 Lemma length_merge {ns ns'}:
   length (merge ns ns') = min (length ns) (length ns').
@@ -208,6 +171,11 @@ Module ProofTree.
   Definition unknown_type (_: JE): type := t_unit.
   #[local]
   Definition unknown_context (_: JE): context := E_tt.
+
+  Opaque unknown_list.
+  Opaque unknown_type.
+  Opaque unknown_context.
+
   Function envof (E: JE): environment :=
     match E with
     | JE_var Γ _ => Γ
@@ -220,71 +188,7 @@ Module ProofTree.
     | JE_let p1 _ => envof p1
     end.
 
-  Function xsof (E: JE): xs :=
-    match E with
-    | JE_var Γ _ => toxs Γ
-    | JE_lam p =>
-        if xsof p is cons _ T then T else unknown_list E
-    | JE_app p1 _ => xsof p1
-    | JE_tt Γ => toxs Γ
-    | JE_step p1 _ => xsof p1
-    | JE_fanout p1 _ => xsof p1
-    | JE_let p1 _ => xsof p1
-    end.
-
-  Lemma toxs_envof {E: JE}: toxs (envof E) = xsof E.
-  Proof.
-    induction E.
-    all: cbn.
-    all: auto.
-    destruct (envof E), (xsof E).
-    all: try discriminate.
-    all: auto.
-    + cbn in IHE.
-      destruct p.
-      discriminate.
-    + cbn in IHE.
-      destruct p.
-      inversion IHE.
-      subst.
-      auto.
-  Qed.
-
-  Function tsof (E: JE): ts :=
-    match E with
-    | JE_var Γ _ => tots Γ
-    | JE_lam p =>
-        if tsof p is cons _ T then T else unknown_list E
-    | JE_app p1 _ => tsof p1
-    | JE_tt Γ => tots Γ
-    | JE_step p1 _ => tsof p1
-    | JE_fanout p1 _ => tsof p1
-    | JE_let p1 _ => tsof p1
-    end.
-
-  Lemma tots_envof {E: JE}: tots (envof E) = tsof E.
-  Proof.
-    induction E.
-    all: cbn.
-    all: auto.
-    destruct (envof E), (tsof E).
-    all: try discriminate.
-    all: auto.
-    + cbn in IHE.
-      destruct p.
-      discriminate.
-    + cbn in IHE.
-      destruct p.
-      inversion IHE.
-      subst.
-      auto.
-  Qed.
-
-  Opaque unknown_list.
-  Opaque unknown_type.
-  Opaque unknown_context.
-
-  Function nsof (E: JE): linear :=
+  Function nsof (E: JE): usage :=
     match E with
     | JE_var Γ x => if one x Γ is Some ns then ns else nil
     | JE_lam p =>
@@ -387,25 +291,22 @@ Module ProofTree.
       assert (e0' := find_sound e0).
       destruct (find_one e0).
       rewrite e.
-      rewrite <- zip_toxs_tots.
-      clear e0.
       constructor.
-      + rewrite zip_toxs_tots.
-        generalize dependent x0.
+      + generalize dependent x0.
         induction e0'.
-        all: cbn.
+        all: cbn in *.
         all: intros.
-        * destruct Nat.eq_dec.
-          2: contradiction.
+        * destruct Nat.eq_dec, eq_var.
+          all: try contradiction.
           inversion e.
           subst.
           rewrite <- length_len.
           constructor.
-        * cbn in e.
-          destruct Nat.eq_dec.
-          1: subst; contradiction.
+        * destruct Nat.eq_dec, eq_var.
+          all: subst.
+          all: try contradiction.
           destruct (find_one (find_complete e0')).
-          rewrite e0 in e.
+          rewrite e1 in e.
           inversion e.
           subst.
           constructor.
@@ -460,7 +361,7 @@ End ProofTree.
 Section Typecheck.
   Import OptionNotations.
 
-  Function typecheck Γ E: option (linear * type) :=
+  Function typecheck Γ E: option (usage * type) :=
     match E with
     | E_var x =>
         do t ← find x Γ ;
@@ -557,7 +458,8 @@ Proof.
     2: discriminate.
     inversion p.
     subst.
-    rewrite <- (IHΓ l).
+    cbn.
+    rewrite <- (IHΓ u).
     2: auto.
     auto.
 Qed.
@@ -966,7 +868,7 @@ Proof.
     auto.
 Qed.
 
-Definition useonce Γ: linear := List.map (λ '(x, t), 1) Γ.
+Definition useonce Γ: usage := List.map (λ '(x, t), 1) Γ.
 
 Definition oftype Γ t := { E | JE Γ (useonce Γ) E t }.
 
