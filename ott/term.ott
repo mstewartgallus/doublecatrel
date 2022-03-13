@@ -6,18 +6,6 @@ Fixpoint zip {A B} (l: list A) (r: list B): list (A * B) :=
  | _, _ => nil
  end.
 
-Fixpoint zip21 {A B C} (l: list (A * B)) (r: list C): list (A * B * C) :=
- match l, r with
- | cons (a, b) l', cons c r' => cons (a, b, c) (zip21 l' r')
- | _, _ => nil
- end.
-
-Fixpoint zip3 {A B C} (l: list A) (m: list B) (r: list C): list (A * B * C) :=
- match l, m, r with
- | cons a l', cons b m', cons c r' => cons (a, b, c) (zip3 l' m' r')
- | _, _, _ => nil
- end.
-
 Fixpoint merge (l r: list nat): list nat :=
   match l, r with
   | cons m l', cons n r' => cons (m + n) (merge l' r')

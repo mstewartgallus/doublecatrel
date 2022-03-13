@@ -21,14 +21,10 @@ nat, n :: 'n_' ::= {{ coq nat }}
   | 1 :: M :: one {{ coq 1 }}
   | ( n ) :: S :: paren {{ icho ([[n]]) }}
 
-linear, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (list (var * type * nat)) }}
-  | G ; ns               :: M :: zip {{ coq (zip21 [[G]] [[ns]]) }}
-
-
-ns :: 'ns_' ::= {{ coq (list var) }}
+linear, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (list nat) }}
   | nil                  ::   :: nil {{ coq nil }}
-  | ns , n               ::   :: cons {{ coq (cons [[n]] [[ns]]) }}
-  | ns ++ ns'            :: M :: merge {{ coq (merge [[ns]] [[ns']]) }}
+  | D , n                ::   :: cons {{ coq (cons [[n]] [[D]]) }}
+  | D ++ D'             :: M :: merge {{ coq (merge [[D]] [[D']]) }}
 
 store, S {{ tex \sigma }} {{ coq σ }} :: 'S_'  ::= {{ coq (Map.map normal) }}
   | nil                   :: M :: empty {{ coq (Map.empty) }}
@@ -86,7 +82,7 @@ by
 funs
   empty ::=
 fun
-  mt n :: ns :: mt
+  mt n :: D :: mt
 by
   mt 0 === nil
   mt (S n) === mt n, 0
@@ -96,55 +92,55 @@ defns
 lfind :: '' ::=
 
 defn
-x : t \in G ; ns ::   :: lmem :: 'lmem_'
+x : t \in G ; D ::   :: lmem :: 'lmem_'
 by
 
 ----------------------------------- :: eq
 x : t \in G, x : t ; mt (len G), 1
 
 x != y
-x : t \in G ; ns
+x : t \in G ; D
 ---------------------------- :: ne
-x : t \in G, y : t' ; ns, 0
+x : t \in G, y : t' ; D, 0
 
 defns
 
 judge_context :: 'J' ::=
 
 defn
-G ; ns |- E : t ::   :: E :: 'E_'
+G ; D |- E : t ::   :: E :: 'E_'
 by
 
-x: t \in G ; ns
+x: t \in G ; D
 ----------------------- :: var
-G ; ns |- x: t
+G ; D |- x: t
 
-G, x: t1 ; ns, 1 |- E: t2
+G, x: t1 ; D, 1 |- E: t2
 ------------------------------- :: lam
-G ; ns |- lam x: t1 . E: t1 * t2
+G ; D |- lam x: t1 . E: t1 * t2
 
-G ; ns |- E1: t1 * t2
-G ; ns' |- E2: t1
+G ; D |- E1: t1 * t2
+G ; D' |- E2: t1
 --------------------------------- :: app
-G ; ns ++ ns' |- E1 E2: t2
+G ; D ++ D' |- E1 E2: t2
 
 --------------------------- :: tt
 G ; mt (len G) |- tt: unit
 
-G ; ns |- E1: unit
-G ; ns' |- E2: t
+G ; D |- E1: unit
+G ; D' |- E2: t
 ------------------------- :: step
-G ; ns ++ ns' |- E1; E2: t
+G ; D ++ D' |- E1; E2: t
 
-G ; ns |- E1: t1
-G ; ns' |- E2: t2
+G ; D |- E1: t1
+G ; D' |- E2: t2
 ----------------------------- :: fanout
-G ; ns ++ ns' |- E1, E2: t1 * t2
+G ; D ++ D' |- E1, E2: t1 * t2
 
-G ; ns |- E1 : t1 * t2
-G, x: t1, y: t2 ; ns', 1, 1 |- E2: t3
+G ; D |- E1 : t1 * t2
+G, x: t1, y: t2 ; D', 1, 1 |- E2: t3
 ---------------------------------------- :: let
-G ; ns ++ ns' |- let x, y = E1 in E2: t3
+G ; D ++ D' |- let x, y = E1 in E2: t3
 
 defns
 

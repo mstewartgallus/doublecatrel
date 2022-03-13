@@ -28,50 +28,10 @@ Implicit Type σ: store.
 Import Map.MapNotations.
 Import Multiset.MultisetNotations.
 
-Fixpoint dec x (p: linear) {struct p}: option linear :=
-  match p with
-  | cons (y, t, n) T =>
-      if eq_var x y
-      then
-        if n is S n'
-        then
-          Some (cons (x, t, n') T)
-        else
-          None
-      else
-        if dec x T is Some T'
-        then
-          Some (cons (y, t, n) T')
-        else
-          None
-  | _ => None
-  end.
-
-Fixpoint inc x (p: linear) {struct p}: linear :=
-  match p with
-  | cons (y, t, n) T =>
-      if eq_var x y
-      then
-        cons (x, t, S n) T
-      else
-        cons (y, t, n) (inc x T)
-  | _ => nil
-  end.
-
 Definition eq_linear Δ Δ': {Δ = Δ'} + {Δ ≠ Δ'}.
 Proof.
+  set (s := Nat.eq_dec).
   decide equality.
-  destruct p as [[x t] n].
-  destruct a as [[y t'] n'].
-  destruct (eq_var x y), (eq_type t t'), (Nat.eq_dec n n').
-  all: subst.
-  1: left.
-  1: reflexivity.
-  all: right.
-  all: intro p.
-  all: inversion p.
-  all:  subst.
-  all: contradiction.
 Defined.
 
 Definition eq_ts (l r: ts): {l = r} + {l ≠ r}.
@@ -83,12 +43,6 @@ Defined.
 Definition eq_xs (l r: xs): {l = r} + {l ≠ r}.
 Proof.
   assert (xeq := eq_var).
-  decide equality.
-Defined.
-
-Definition eq_ns (l r: ns): {l = r} + {l ≠ r}.
-Proof.
-  assert (neq := Nat.eq_dec).
   decide equality.
 Defined.
 
@@ -111,7 +65,7 @@ Proof.
   auto.
 Qed.
 
-Fixpoint one x Γ: option ns :=
+Fixpoint one x Γ: option linear :=
   if Γ is cons (y, t) T
   then
     if Nat.eq_dec x y
@@ -168,36 +122,6 @@ Proof.
   rewrite IHΓ.
   auto.
 Qed.
-
-Lemma zip3_toxs_tots {Γ: environment} {ns: ns}: zip21 Γ ns = zip3 (toxs Γ) (tots Γ) ns.
-Proof.
-  generalize dependent ns.
-  induction Γ.
-  all: auto.
-  intro ns.
-  cbn.
-  destruct a.
-  destruct ns.
-  1: auto.
-  cbn in *.
-  rewrite IHΓ.
-  cbn.
-  auto.
-Qed.
-
-Fixpoint toenv Δ: environment :=
-  if Δ is cons (x, t, _) T
-  then
-    cons (x, t) (toenv T)
-  else
-    nil.
-
-Fixpoint tons Δ: ns :=
-  if Δ is cons (_, _, n) T
-  then
-    cons n (tons T)
-  else
-    nil.
 
 Lemma length_merge {ns ns'}:
   length (merge ns ns') = min (length ns) (length ns').
@@ -360,7 +284,7 @@ Module ProofTree.
   Opaque unknown_type.
   Opaque unknown_context.
 
-  Function nsof (E: JE): ns :=
+  Function nsof (E: JE): linear :=
     match E with
     | JE_var Γ x => if one x Γ is Some ns then ns else nil
     | JE_lam p =>
@@ -408,8 +332,6 @@ Module ProofTree.
     | JE_fanout p1 p2 => typeof p1 * typeof p2
     | JE_let _ p2 => typeof p2
     end.
-
-  Definition linof (E: JE): linear := zip (envof E) (nsof E).
 
   Definition asserts (E: JE): Prop := Spec.JE (envof E) (nsof E) (ctxof E) (typeof E).
 
@@ -538,12 +460,12 @@ End ProofTree.
 Section Typecheck.
   Import OptionNotations.
 
-  Function typecheck Γ E: option (ns * type) :=
+  Function typecheck Γ E: option (linear * type) :=
     match E with
     | E_var x =>
         do t ← find x Γ ;
-        do ns ← one x Γ ;
-        Some (ns, t)
+        do Δ ← one x Γ ;
+        Some (Δ, t)
     | E_lam x t1 E =>
         do (cons 1 Δ, t2) ← typecheck ((x, t1) :: Γ) E ;
         Some (Δ, t1 * t2)
@@ -576,7 +498,7 @@ Section Typecheck.
 End Typecheck.
 
 Theorem typecheck_sound:
-  ∀ Γ {E ns t}, typecheck Γ E = Some (ns, t) → JE Γ ns E t.
+  ∀ Γ {E Δ t}, typecheck Γ E = Some (Δ, t) → JE Γ Δ E t.
 Proof using.
   intros Γ E.
   functional induction (typecheck Γ E).
@@ -586,7 +508,7 @@ Proof using.
   all: subst.
   all: try econstructor.
   all: eauto.
-  - generalize dependent ns0.
+  - generalize dependent Δ0.
     induction Γ.
     1: discriminate.
     cbn.
@@ -614,14 +536,14 @@ Proof using.
 Qed.
 
 Lemma length_one {x Γ}:
-  ∀ {ns},
-  one x Γ = Some ns →
-  length ns = length Γ.
+  ∀ {Δ},
+  one x Γ = Some Δ →
+  length Δ = length Γ.
 Proof.
   induction Γ.
   1: discriminate.
   cbn in *.
-  intros ns p.
+  intros Δ p.
   destruct a.
   cbn in *.
   destruct Nat.eq_dec.
@@ -635,16 +557,16 @@ Proof.
     2: discriminate.
     inversion p.
     subst.
-    rewrite <- (IHΓ n0).
+    rewrite <- (IHΓ l).
     2: auto.
     auto.
 Qed.
 
 
 Theorem length_typecheck:
-  ∀ {Γ E t ns},
-    typecheck Γ E = Some (ns, t) →
-    length ns = length Γ.
+  ∀ {Γ E t Δ},
+    typecheck Γ E = Some (Δ, t) →
+    length Δ = length Γ.
 Proof using.
   intros Γ E.
   functional induction (typecheck Γ E).
@@ -685,8 +607,8 @@ Proof using.
     all: auto.
 Qed.
 
-Lemma mem_lmem {x t Γ ns}:
-  lmem x t Γ ns → mem x t Γ.
+Lemma mem_lmem {x t Γ Δ}:
+  lmem x t Γ Δ → mem x t Γ.
 Proof.
   intros p.
   induction p.
@@ -695,7 +617,7 @@ Proof.
 Qed.
 
 Theorem typecheck_complete:
-  ∀ Γ {E ns t}, JE Γ ns E t → typecheck Γ E = Some (ns, t).
+  ∀ Γ {E Δ t}, JE Γ Δ E t → typecheck Γ E = Some (Δ, t).
 Proof using.
   intros ? ? ? ? p.
   induction p.
@@ -1044,9 +966,9 @@ Proof.
     auto.
 Qed.
 
-Definition useonce Γ: linear := List.map (λ '(x, t), (x, t, 1)) Γ.
+Definition useonce Γ: linear := List.map (λ '(x, t), 1) Γ.
 
-Definition oftype Γ t := { E | JE (useonce Γ) E t }.
+Definition oftype Γ t := { E | JE Γ (useonce Γ) E t }.
 
 Record iso A B := {
     to: A → B ;
