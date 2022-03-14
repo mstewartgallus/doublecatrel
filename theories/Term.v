@@ -1,5 +1,6 @@
 Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
+Require Import Blech.Opaque.
 Require Import Blech.OptionNotations.
 Require Import Blech.Environment.
 Require Import Blech.Category.
@@ -46,8 +47,8 @@ Module ProofTree.
     end.
 
   #[local]
-  Definition unknown_type (_: Jv): type := t_unit.
-  Opaque unknown_type.
+  Definition unknown_type := opaque (λ _: Jv, t_unit).
+
 
   Function typeof (v: Jv): type :=
     match v with

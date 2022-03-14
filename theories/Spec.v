@@ -15,11 +15,10 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_type : ott_coq_equality.
+Require Import Blech.Opaque.
+
 #[local]
-Definition unknown (l r: list nat): list nat.
-Proof.
-  apply nil.
-Qed.
+Definition unknown: list nat -> list nat -> list nat := opaque (fun (_ _: list nat) => nil).
 
 Fixpoint merge (l r: list nat): list nat :=
   match l, r with

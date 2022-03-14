@@ -3,6 +3,7 @@
 -arg all
 
 theories/OptionNotations.v
+theories/Opaque.v
 theories/Map.v
 theories/Multiset.v
 theories/Spec.v

@@ -1,5 +1,6 @@
 Require Blech.Map.
 Require Blech.Multiset.
+Require Import Blech.Opaque.
 Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
 Require Import Blech.Environment.
@@ -151,22 +152,13 @@ Module ProofTree.
   .
 
   #[local]
-   Definition unknown_list {A} (_: JE): list A.
-  Proof.
-    apply nil.
-  Qed.
+   Definition unknown_list {A}: JE → list A := opaque (λ _: JE, nil).
 
   #[local]
-   Definition unknown_type (_: JE): type.
-  Proof.
-    apply t_unit.
-  Qed.
+   Definition unknown_type: JE → type := opaque (λ _: JE, t_unit).
 
   #[local]
-   Definition unknown_context (_: JE): context.
-  Proof.
-    apply E_tt.
-  Qed.
+   Definition unknown_context: JE → context := opaque (λ _: JE, E_tt).
 
   Function envof (E: JE): environment :=
     match E with
