@@ -1,5 +1,6 @@
 Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
+Require Import Blech.Opaque.
 Require Blech.OptionNotations.
 
 Require Import Coq.Unicode.Utf8.
@@ -15,6 +16,28 @@ Implicit Type Γ: environment.
 Implicit Type t: type.
 Implicit Types x y: var.
 
+Definition eq_environment Γ Γ': {Γ = Γ'} + {Γ ≠ Γ'}.
+Proof.
+  decide equality.
+  destruct a as [v t], p as [v' t'].
+  destruct (eq_var v v'), (eq_type t t').
+  all: subst.
+  - left.
+    auto.
+  - right.
+    intro p.
+    inversion p.
+    contradiction.
+  - right.
+    intro p.
+    inversion p.
+    contradiction.
+  - right.
+    intro p.
+    inversion p.
+    contradiction.
+Defined.
+
 Function find x Γ :=
   if Γ is ((y, t) :: T)%list
   then
@@ -25,6 +48,17 @@ Function find x Γ :=
       find x T
   else
     None.
+
+Fixpoint minus x Γ: environment :=
+  if Γ is cons (y, t) T
+  then
+    if eq_var x y
+    then
+      T
+    else
+      cons (y, t) (minus x T)
+  else
+    nil.
 
 Lemma find_sound:
   ∀ {x Γ t}, find x Γ = Some t → mem x t Γ.
@@ -50,6 +84,24 @@ Proof using .
   - destruct eq_var.
     1: contradiction.
     auto.
+Qed.
+
+Lemma find_minus {x y Γ}:
+  x ≠ y →
+  find x (minus y Γ) = find x Γ.
+Proof.
+  intros p.
+  induction Γ.
+  1: auto.
+  destruct a as [x' t].
+  cbn.
+  destruct eq_var, eq_var.
+  all: cbn.
+  all: subst.
+  all: try contradiction.
+  all: try destruct eq_var.
+  all: try contradiction.
+  all: auto.
 Qed.
 
 Lemma unshadow {y t0 t1 Γ}:
@@ -118,183 +170,3 @@ Proof using.
       constructor.
       all: auto.
 Qed.
-
-Definition eq_environment Γ Γ': {Γ = Γ'} + {Γ ≠ Γ'}.
-Proof.
-  decide equality.
-  destruct a as [v t], p as [v' t'].
-  destruct (eq_var v v'), (eq_type t t').
-  all: subst.
-  - left.
-    auto.
-  - right.
-    intro p.
-    inversion p.
-    contradiction.
-  - right.
-    intro p.
-    inversion p.
-    contradiction.
-  - right.
-    intro p.
-    inversion p.
-    contradiction.
-Defined.
-
-Module ProofTree.
-  Import OptionNotations.
-
-  Inductive mem: Set :=
-  | mem_eq x t Γ
-  | mem_ne x t Γ y t': mem → mem.
-
-  Definition varof p :=
-    match p with
-    | mem_eq x _ _ => x
-    | mem_ne x _ _ _ _ _ => x
-    end.
-
-  Definition typeof p :=
-    match p with
-    | mem_eq _ t _ => t
-    | mem_ne _ t _ _ _ _ => t
-    end.
-
-  Definition envof p :=
-    match p with
-    | mem_eq x t Γ => cons (x, t) Γ
-    | mem_ne _ _ Γ y t' _ => cons (y, t') Γ
-    end.
-
-  Notation "'test' p" := (match p with | left _ => true | right _ => false end) (at level 1).
-
-  Function check (p: mem): bool :=
-    match p with
-    | mem_eq x t Γ => true
-    | mem_ne x t Γ y t' p =>
-        negb (test (eq_var x y))
-        && test (eq_var x (varof p))
-        && test (eq_type t (typeof p))
-        && test (eq_environment Γ (envof p))
-        && check p
-    end %bool.
-
-  Definition asserts (p: mem): Prop := Spec.mem (varof p) (typeof p) (envof p).
-
-  Lemma check_sound (p: mem): Bool.Is_true (check p) → asserts p.
-  Proof.
-    unfold asserts.
-    functional induction (check p).
-    all: cbn.
-    all: try contradiction.
-    all: intros q.
-    - constructor.
-    - destruct (check p0).
-      2: contradiction.
-      constructor.
-      all: auto.
-  Qed.
-
-  Lemma check_complete {x t Γ}:
-    Spec.mem x t Γ →
-    ∃ p,
-      x = varof p
-      ∧ t = typeof p
-      ∧ Γ = envof p
-      ∧ Bool.Is_true (check p).
-  Proof.
-    intro q.
-    induction q.
-    all: cbn.
-    - exists (mem_eq x t Γ).
-      cbn.
-      all: repeat split; auto.
-    - destruct IHq as [p' [? [? []]]].
-      exists (mem_ne x t Γ y t' p').
-      cbn.
-      subst.
-      all: repeat split; auto.
-      destruct (check p').
-      2: contradiction.
-      destruct eq_var.
-      1: subst; contradiction.
-      destruct eq_var, eq_type, eq_environment.
-      all: cbv.
-      all: auto.
-  Qed.
-
-  Function infer x Γ: option mem :=
-    if Γ is cons (y, t') T
-    then
-      if eq_var x y
-      then
-        Some (mem_eq x t' T)
-      else
-        do p ← infer x T ;
-        Some (mem_ne (varof p) (typeof p) (envof p) y t' p)
-    else
-      None.
-
-  Lemma varof_infer {x Γ p}: infer x Γ = Some p → varof p = x.
-  Proof.
-    generalize dependent p.
-    functional induction (infer x Γ).
-    all: intros ? q.
-    all: inversion q.
-    all: auto.
-    - assert (IHo' := IHo _ e1).
-      cbn.
-      auto.
-  Qed.
-
-  Lemma envof_infer {x Γ p}: infer x Γ = Some p → envof p = Γ.
-  Proof.
-    generalize dependent p.
-    functional induction (infer x Γ).
-    all: intros ? q.
-    all: inversion q.
-    all: auto.
-    - assert (IHo' := IHo _ e1).
-      cbn.
-      subst.
-      auto.
-  Qed.
-
-  Lemma infer_sound {x Γ p}:
-    infer x Γ = Some p → Bool.Is_true (check p).
-  Proof.
-    generalize dependent p.
-    induction Γ.
-    1: discriminate.
-    cbn.
-    destruct a as [y t'].
-    intro.
-    destruct eq_var.
-    - subst.
-      intro q.
-      inversion q.
-      subst.
-      cbn.
-      auto.
-    - destruct (infer x Γ) eqn:q.
-      2: discriminate.
-      rewrite (varof_infer q).
-      intro q'.
-      inversion q'.
-      cbn.
-      rewrite (varof_infer q).
-      assert (IHΓ' := IHΓ _ eq_refl).
-      destruct (check m).
-      2: contradiction.
-      destruct eq_environment.
-      2: contradiction.
-      destruct eq_type.
-      2: contradiction.
-      cbn.
-      destruct eq_var.
-      1: subst;contradiction.
-      destruct eq_var.
-      2: contradiction.
-      auto.
-  Qed.
-End ProofTree.
