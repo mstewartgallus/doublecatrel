@@ -1,5 +1,4 @@
 Require Blech.Map.
-Require Blech.Multiset.
 Require Import Blech.Opaque.
 Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
@@ -27,7 +26,6 @@ Implicit Types x y: var.
 Implicit Type σ: store.
 
 Import Map.MapNotations.
-Import Multiset.MultisetNotations.
 
 Definition eq_usage Δ Δ': {Δ = Δ'} + {Δ ≠ Δ'}.
 Proof.
@@ -379,7 +377,7 @@ Section Typecheck.
         do (cons 1 (cons 1 Δ2), t3) ← typecheck ((y, t2) :: (x, t1) :: Γ) E' ;
         Some (merge Δ1 Δ2, t3)
     end
-      %list %multiset.
+      %list.
 End Typecheck.
 
 Theorem typecheck_sound:
@@ -953,25 +951,18 @@ Proof.
   discriminate.
 Qed.
 
-Fixpoint rm x Γ :=
-  if Γ is cons (y, t) T
-  then
-    if eq_var x y
-    then
-      T
-    else
-      cons (y, t) (rm x T)
-  else
-    nil.
-
-Fixpoint rm' x Γ Δ :=
+Fixpoint rm x Γ Δ :=
   match Γ, Δ with
   | cons (y, t) T, cons n T' =>
       if eq_var x y
       then
-        T'
+        if Nat.eq_dec n 1
+        then
+          T'
+        else
+          nil
       else
-        cons n (rm' x T T')
+        cons n (rm x T T')
   | _, _ => nil
   end.
 
@@ -1001,7 +992,6 @@ Function lmem_find x Γ Δ: option type :=
           None
       else
         None
-  | nil, nil => None
   | _, _ => None
   end.
 
