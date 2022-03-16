@@ -67,6 +67,13 @@ by
   [ := p, x := v'] v === [:= p] ([ x := v'] v)
 
 defns
+dummy :: '' ::=
+
+defn
+jdummy ::   :: jdummy :: 'jdummy_'
+by
+
+defns
 
 find :: '' ::=
 

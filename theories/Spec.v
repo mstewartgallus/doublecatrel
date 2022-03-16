@@ -91,6 +91,10 @@ end.
 
 (** definitions *)
 
+(* defns dummy *)
+Inductive jdummy : Prop :=    (* defn jdummy *).
+(** definitions *)
+
 (* defns find *)
 Inductive mem : var -> type -> environment -> Prop :=    (* defn mem *)
  | mem_eq : forall (x:var) (t:type) (Γ:environment),
@@ -149,10 +153,10 @@ Require Blech.Map.
 
 Definition store : Set := (Map.map normal).
 
+Definition nat : Set := nat.
+
 Inductive span : Set := 
  | P_with (σ:store) (N:normal).
-
-Definition nat : Set := nat.
 
 Inductive context : Set := 
  | E_var (x:var)
@@ -163,9 +167,11 @@ Inductive context : Set :=
  | E_fanout (E:context) (E':context)
  | E_let (x:var) (y:var) (E:context) (E':context).
 
+Definition usage : Set := (list nat).
+
 Definition set : Set := (list span).
 
-Definition usage : Set := (list nat).
+Definition vars : Set := (list var).
 Lemma eq_context: forall (x y : context), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -195,10 +201,10 @@ end.
 (** definitions *)
 
 (** funs length *)
-Fixpoint len (x1:environment) : nat:=
+Fixpoint len (x1:vars) : nat:=
   match x1 with
   |  nil  =>  0 
-  |  (cons ( x ,  t )  Γ )  =>  (S   (  (len Γ )  )  ) 
+  |  (cons  x   xs )  =>  (S   (  (len xs )  )  ) 
 end.
 
 (** definitions *)
@@ -212,20 +218,30 @@ end.
 
 (** definitions *)
 
+(** funs xsofG *)
+Fixpoint xsof (x1:environment) : vars:=
+  match x1 with
+  |  nil  =>  nil 
+  |  (  (cons ( x ,  t )  Γ )  )  =>  (cons  x    (xsof Γ )  ) 
+end.
+
+(** definitions *)
+
 (* defns lfind *)
-Inductive lmem : var -> type -> environment -> usage -> Prop :=    (* defn lmem *)
- | lmem_eq : forall (x:var) (t:type) (Γ:environment),
-     lmem x t  (cons ( x ,  t )  Γ )   (cons   1     (mt  (len Γ )  )  ) 
- | lmem_ne : forall (x:var) (t:type) (Γ:environment) (y:var) (t':type) (Δ:usage),
+Inductive lmem : var -> vars -> usage -> Prop :=    (* defn lmem *)
+ | lmem_eq : forall (xs:vars) (x:var),
+     lmem x  (cons  x   xs )   (cons   1     (mt  (len xs )  )  ) 
+ | lmem_ne : forall (xs:vars) (x y:var) (Δ:usage),
       ( x  <>  y )  ->
-     lmem x t Γ Δ ->
-     lmem x t  (cons ( y ,  t' )  Γ )   (cons   0    Δ ) .
+     lmem x xs Δ ->
+     lmem x  (cons  y   xs )   (cons   0    Δ ) .
 (** definitions *)
 
 (* defns judge_context *)
 Inductive JE : environment -> usage -> context -> type -> Prop :=    (* defn E *)
  | JE_var : forall (Γ:environment) (Δ:usage) (x:var) (t:type),
-     lmem x t Γ Δ ->
+     mem x t Γ ->
+     lmem x  (xsof Γ )  Δ ->
      JE Γ Δ (E_var x) t
  | JE_lam : forall (Γ:environment) (Δ:usage) (x:var) (t1:type) (E:context) (t2:type),
      JE  (cons ( x ,  t1 )  Γ )   (cons   1    Δ )  E t2 ->
@@ -235,7 +251,7 @@ Inductive JE : environment -> usage -> context -> type -> Prop :=    (* defn E *
      JE Γ Δ' E2 t1 ->
      JE Γ  (merge  Δ   Δ' )  (E_app E1 E2) t2
  | JE_tt : forall (Γ:environment),
-     JE Γ  (mt  (  (len Γ )  )  )  E_tt t_unit
+     JE Γ  (mt  (  (len  (  (xsof Γ )  )  )  )  )  E_tt t_unit
  | JE_step : forall (Γ:environment) (Δ Δ':usage) (E1 E2:context) (t:type),
      JE Γ Δ E1 t_unit ->
      JE Γ Δ' E2 t ->

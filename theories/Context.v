@@ -23,6 +23,7 @@ Implicit Type E: context.
 Implicit Type t: type.
 Implicit Type N: normal.
 Implicit Types x y: var.
+Implicit Type xs: vars.
 Implicit Type σ: store.
 
 Import Map.MapNotations.
@@ -47,7 +48,6 @@ Proof.
   induction l.
   1: auto.
   cbn.
-  destruct a.
   rewrite IHl.
   auto.
 Qed.
@@ -104,18 +104,39 @@ Proof.
     discriminate.
 Qed.
 
+Lemma length_xsof {Γ}: length (xsof Γ) = length Γ.
+Proof.
+  induction Γ.
+  1: auto.
+  destruct a.
+  cbn.
+  rewrite IHΓ.
+  auto.
+Qed.
+
 Lemma length_same {Γ ns E t}: JE Γ ns E t → length Γ = length ns.
 Proof.
   intro p.
   induction p.
   all: cbn.
-  - induction H.
-    + cbn.
+  - generalize dependent Δ.
+    induction H.
+    all: cbn.
+    all: intros Δ p.
+    + inversion p.
+      2: subst; contradiction.
+      subst.
+      cbn.
       rewrite length_mt.
       rewrite length_len.
+      rewrite length_len in p.
+      rewrite length_xsof.
       auto.
-    + cbn.
-      rewrite IHlmem.
+    + inversion p.
+      1: subst; contradiction.
+      subst.
+      cbn in *.
+      rewrite (IHmem _ H6).
       auto.
   - inversion IHp.
     auto.
@@ -124,6 +145,7 @@ Proof.
     all: auto.
   - rewrite length_mt.
     rewrite length_len.
+    rewrite length_xsof.
     auto.
   - rewrite IHp1 in IHp2.
     rewrite length_merge_eq.
@@ -274,25 +296,32 @@ Module ProofTree.
       destruct (find_one e0).
       rewrite e.
       constructor.
-      + generalize dependent x0.
-        induction e0'.
-        all: cbn in *.
-        all: intros.
-        * destruct Nat.eq_dec, eq_var.
-          all: try contradiction.
-          inversion e.
-          subst.
-          rewrite <- length_len.
-          constructor.
-        * destruct Nat.eq_dec, eq_var.
-          all: subst.
-          all: try contradiction.
-          destruct (find_one (find_complete e0')).
-          rewrite e1 in e.
-          inversion e.
-          subst.
-          constructor.
-          all: auto.
+      1: auto.
+      generalize dependent x0.
+      induction e0'.
+      all: cbn in *.
+      all: intros.
+      * destruct Nat.eq_dec, eq_var.
+        all: try contradiction.
+        inversion e.
+        subst.
+        cbn.
+        replace (mt (length Γ)) with (mt (len (xsof Γ))).
+        2: {
+          rewrite length_len.
+          rewrite length_xsof.
+          auto.
+        }
+        constructor.
+      * destruct Nat.eq_dec, eq_var.
+        all: subst.
+        all: try contradiction.
+        destruct (find_one (find_complete e0')).
+        rewrite e1 in e.
+        inversion e.
+        subst.
+        constructor.
+        all: auto.
     - destruct (check p0).
       2: contradiction.
       rewrite e0, e1.
@@ -309,8 +338,11 @@ Module ProofTree.
       2: contradiction.
       econstructor.
       all: eauto.
-    - rewrite <- length_len.
-      constructor.
+    - replace (mt (length _x)) with (mt (len (xsof _x))).
+      1: constructor.
+      rewrite length_len.
+      rewrite length_xsof.
+      auto.
     - destruct (check p1).
       2: contradiction.
       destruct (check p2).
@@ -406,15 +438,44 @@ Proof using.
       subst.
       inversion e0.
       subst.
-      rewrite <- length_len.
+      constructor.
+    + apply find_sound.
+      cbn.
+      destruct eq_var.
+      1: subst; contradiction.
+      auto.
+  - clear p.
+    generalize dependent Δ0.
+    induction Γ.
+    all: cbn.
+    1: discriminate.
+    intros Δ0 p.
+    destruct a.
+    cbn in e0.
+    destruct eq_var, Nat.eq_dec.
+    all: subst.
+    all: try contradiction.
+    + inversion p.
+      subst.
+      replace (mt (length Γ)) with (mt (len (xsof Γ))).
+      2: {
+        rewrite length_len.
+        rewrite length_xsof.
+        auto.
+      }
       constructor.
     + destruct (find_one e0).
-      rewrite e in e1.
-      inversion e1.
+      rewrite e in p.
+      inversion p.
       subst.
       constructor.
-      all:auto.
-  - rewrite <- length_len.
+      all: auto.
+  - replace (length Γ) with (length (xsof Γ)).
+    2: {
+      rewrite length_xsof.
+      auto.
+    }
+    rewrite <- length_len.
     constructor.
 Qed.
 
@@ -491,15 +552,6 @@ Proof using.
     all: auto.
 Qed.
 
-Lemma mem_lmem {x t Γ Δ}:
-  lmem x t Γ Δ → mem x t Γ.
-Proof.
-  intros p.
-  induction p.
-  all: constructor.
-  all: auto.
-Qed.
-
 Theorem typecheck_complete:
   ∀ Γ {E Δ t}, JE Γ Δ E t → typecheck Γ E = Some (Δ, t).
 Proof using.
@@ -510,10 +562,11 @@ Proof using.
   all: try rewrite IHp1.
   all: try rewrite IHp2.
   all: auto.
-  - rewrite (find_complete (mem_lmem H)).
-    destruct (find_one (find_complete (mem_lmem H))).
+  - rewrite (find_complete H).
+    destruct (find_one (find_complete H)).
     rewrite e.
     generalize dependent x0.
+    generalize dependent Δ.
     induction H.
     all: cbn.
     all: intros.
@@ -522,22 +575,34 @@ Proof using.
       2: contradiction.
       inversion e.
       subst.
-      rewrite length_len.
+      replace (length Γ) with (len (xsof Γ)).
+      2: {
+        rewrite length_xsof.
+        auto.
+      }
+      cbn in *.
+      inversion H0.
+      all: subst.
+      2: contradiction.
       auto.
     + cbn in e.
       destruct Nat.eq_dec.
       1: subst; contradiction.
-      destruct (find_one (find_complete (mem_lmem H0))).
+      destruct (find_one (find_complete H0)).
       rewrite e0 in e.
       inversion e.
       subst.
-      assert (IHlmem' := IHlmem _ e0).
-      inversion IHlmem'.
+      inversion H1.
+      all: subst.
+      1: contradiction.
+      assert (IHmem' := IHmem _ H7 _ e0).
+      inversion IHmem'.
       auto.
   - destruct eq_type.
     2: contradiction.
     auto.
   - rewrite length_len.
+    rewrite length_xsof.
     auto.
 Qed.
 
@@ -951,9 +1016,120 @@ Proof.
   discriminate.
 Qed.
 
-Fixpoint rm x Γ Δ :=
-  match Γ, Δ with
-  | cons (y, t) T, cons n T' =>
+Function is_mt Δ :=
+  if Δ is cons n Δ'
+  then
+    if n is O
+    then is_mt Δ'
+    else false
+  else
+    true.
+
+Function lmem_find x xs Δ :=
+  match xs, Δ with
+  | cons y xs', cons 1 Δ' =>
+      if eq_var x y
+      then
+        if is_mt Δ'
+        then
+          if Nat.eq_dec (length Δ') (length xs')
+          then
+            true
+          else
+            false
+        else
+          false
+      else
+        false
+  | cons y xs', cons 0 Δ' =>
+      if eq_var x y
+      then
+        false
+      else
+        lmem_find x xs' Δ'
+  | _, _ => false
+  end.
+
+Lemma is_mt_sound:
+  ∀ {Δ}, Bool.Is_true (is_mt Δ) → Δ = mt (length Δ).
+Proof using .
+  intros Δ.
+  functional induction (is_mt Δ).
+  all: cbn.
+  all: intro p.
+  - rewrite IHb.
+    all: auto.
+    rewrite length_mt.
+    auto.
+  - contradiction.
+  - destruct Δ.
+    1: auto.
+    contradiction.
+Qed.
+
+Lemma is_mt_complete:
+  ∀ {n}, is_mt (mt n) = true.
+Proof using .
+  intros n.
+  induction n.
+  all: cbn.
+  all: auto.
+Qed.
+
+Lemma lmem_find_sound:
+  ∀ {x xs Δ}, Bool.Is_true (lmem_find x xs Δ) → lmem x xs Δ.
+Proof using .
+  intros x xs Δ.
+  functional induction (lmem_find x xs Δ).
+  all: cbn.
+  all: intros p.
+  all: try contradiction.
+  - assert (q := @is_mt_sound Δ').
+    destruct is_mt.
+    2: discriminate.
+    rewrite q.
+    2: auto.
+    rewrite _x0.
+    rewrite <- length_len.
+    constructor.
+  - constructor.
+    all: auto.
+Qed.
+
+Lemma lmem_find_complete {x xs Δ}:
+  lmem x xs Δ → lmem_find x xs Δ = true.
+Proof using .
+  intro p.
+  induction p.
+  all: cbn.
+  - destruct eq_var.
+    2: contradiction.
+    rewrite is_mt_complete.
+    rewrite length_mt.
+    rewrite length_len.
+    destruct Nat.eq_dec.
+    2: contradiction.
+    cbv.
+    auto.
+  - destruct eq_var.
+    1: subst; contradiction.
+    auto.
+Qed.
+
+Function minus_xs x xs :=
+  match xs with
+  | cons y T' =>
+      if eq_var x y
+      then
+        T'
+      else
+        cons y (minus_xs x T')
+  | _ => nil
+  end.
+
+Function rm x xs Δ :=
+  match xs, Δ with
+  | cons y T, cons n T' =>
       if eq_var x y
       then
         if Nat.eq_dec n 1
@@ -966,92 +1142,41 @@ Fixpoint rm x Γ Δ :=
   | _, _ => nil
   end.
 
-Function is_mt Γ Δ :=
-  match Γ, Δ with
-  | cons _ Γ', cons n Δ' =>
-      if n is 0 then is_mt Γ' Δ' else false
-  | nil, nil => true
-  | _, _ => false
-  end.
-
-Function lmem_find x Γ Δ: option type :=
-  match Γ, Δ with
-  | cons (y, t) Γ', cons 0 Δ' =>
-      if eq_var x y
-      then
-        None
-      else
-        lmem_find x Γ' Δ'
-  | cons (y, t) Γ', cons 1 Δ' =>
-      if eq_var x y
-      then
-        if is_mt Γ' Δ'
-        then
-          Some t
-        else
-          None
-      else
-        None
-  | _, _ => None
-  end.
-
-Lemma is_mt_sound {Γ Δ}:
-  is_mt Γ Δ = true → Δ = mt (len Γ).
-Proof.
-  functional induction (is_mt Γ Δ).
-  all: try discriminate.
-  all: cbn.
-  - intro p.
-    rewrite IHb.
-    all: auto.
-    destruct _x.
-    cbn.
-    auto.
-  - auto.
-Qed.
-
-Lemma is_mt_mt {Γ}:
-  is_mt Γ (mt (len Γ)) = true.
+Lemma xsof_minus {x Γ}:
+  xsof (minus x Γ) = minus_xs x (xsof Γ).
 Proof.
   induction Γ.
   all: cbn.
   1: auto.
-  destruct a.
+  destruct a as [y t].
   cbn.
+  destruct eq_var.
+  all: subst.
+  1: auto.
+  cbn.
+  rewrite IHΓ.
   auto.
 Qed.
 
-Lemma lmem_find_sound:
-  ∀ {x Γ Δ t},
-  lmem_find x Γ Δ = Some t →
-  lmem x t Γ Δ.
-Proof.
-  intros x Γ Δ.
-  functional induction (lmem_find x Γ Δ).
-  all: cbn.
-  all: intros ? p.
-  all: try discriminate.
-  - constructor.
-    all: auto.
-  - inversion p.
-    subst.
-    rewrite (is_mt_sound e2).
-    constructor.
-Qed.
 
-Lemma lmem_find_complete:
-  ∀ {x Γ Δ t},
-  lmem x t Γ Δ →
-  lmem_find x Γ Δ = Some t.
+Lemma is_mt_rm {x xs Δ}:
+  Bool.Is_true (is_mt Δ) → is_mt (rm x xs Δ) = true.
 Proof.
-  intros x Γ Δ t p.
-  induction p.
+  generalize dependent xs.
+  functional induction (is_mt Δ).
   all: cbn.
-  all: try destruct eq_var.
-  all: subst.
-  all: auto.
-  - rewrite is_mt_mt.
+  all: try contradiction.
+  all: intros xs q.
+  - destruct xs.
+    all: cbn.
+    1: auto.
+    destruct eq_var.
+    1: auto.
+    cbn.
     auto.
-  - contradiction.
-  - contradiction.
+  - destruct Δ.
+    2: contradiction.
+    destruct xs.
+    all: cbn.
+    all: auto.
 Qed.

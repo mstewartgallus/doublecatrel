@@ -38,6 +38,11 @@ set, Ps {{ tex P^* }} :: 'X_' ::= {{ coq (list span) }}
   | nil          ::   :: nil {{ coq nil }}
   | Ps , P       ::   :: cons {{ coq (cons [[P]] [[Ps]]) }}
 
+vars, xs {{ tex x^* }} :: 'xs_' ::= {{ coq (list var) }}
+  | nil          ::   :: nil {{ coq nil }}
+  | xs , x       ::   :: cons {{ coq (cons [[x]] [[xs]]) }}
+  | ( xs )       :: S :: paren {{ coq ([[xs]]) }}
+
 terminals :: 'terminals_' ::=
   | :            ::   :: in     {{ tex \colon{} }}
   | |-           ::   :: turnstile   {{ tex \vdash{} }}
@@ -69,14 +74,15 @@ grammar
 formula :: formula_ ::=  
  | judgement                        ::   :: judgement
  | x != y                           :: M :: neq {{ icho ([[x]] <> [[y]]) }}
+ | x = y                            :: M :: eq {{ icho ([[x]] = [[y]]) }}
 
 funs
   length ::=
 fun
-  len G :: n :: len
+  len xs :: n :: len
 by
   len nil === 0
-  len G , x : t === S (len G)
+  len xs , x === S (len xs)
 
 funs
   empty ::=
@@ -86,21 +92,29 @@ by
   mt 0 === nil
   mt S n === mt n, 0
 
+funs
+  xsofG ::=
+fun
+  xsof G :: xs :: xsof
+by
+  xsof nil === nil
+  xsof (G , x : t) === xsof G , x
+
 defns
 
 lfind :: '' ::=
 
 defn
-x : t \in G ; D ::   :: lmem :: 'lmem_'
+x \in xs ; D ::   :: lmem :: 'lmem_'
 by
 
 ----------------------------------- :: eq
-x : t \in G, x : t ; mt len G, 1
+x \in xs, x ; mt len xs, 1
 
 x != y
-x : t \in G ; D
+x \in xs ; D
 ---------------------------- :: ne
-x : t \in G, y : t' ; D, 0
+x \in xs, y ; D, 0
 
 defns
 
@@ -110,7 +124,8 @@ defn
 G ; D |- E : t ::   :: E :: 'E_'
 by
 
-x: t \in G ; D
+x: t \in G
+x \in xsof G ; D
 ----------------------- :: var
 G ; D |- x: t
 
@@ -124,7 +139,7 @@ G ; D' |- E2: t1
 G ; D ++ D' |- E1 E2: t2
 
 --------------------------- :: tt
-G ; mt (len G) |- tt: unit
+G ; mt (len (xsof G)) |- tt: unit
 
 G ; D |- E1: unit
 G ; D' |- E2: t

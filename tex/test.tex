@@ -107,6 +107,12 @@
 \ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{P^*  \ottsym{,}  \ottnt{P}}{}{}{}{}}
 
+\newcommand{\ottvars}{
+\ottrulehead{\ottnt{vars}  ,\ x^*}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{x^*  \ottsym{,}  \mathit{x}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottkw{xsof} \, \Gamma} {\textsf{M}}{}{}{}}
+
 \newcommand{\ottterminals}{
 \ottrulehead{\ottnt{terminals}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{ \colon{} }{}{}{}{}\ottprodnewline
@@ -132,7 +138,8 @@
 \newcommand{\ottformula}{
 \ottrulehead{\ottnt{formula}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottnt{judgement}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\mathit{x}  \mathrel{\ne}  \mathit{y}} {\textsf{M}}{}{}{}}
+\ottprodline{|}{\mathit{x}  \mathrel{\ne}  \mathit{y}} {\textsf{M}}{}{}{}\ottprodnewline
+\ottprodline{|}{\mathit{x}  \ottsym{=}  \mathit{y}} {\textsf{M}}{}{}{}}
 
 \newcommand{\otttoterm}{
 \ottrulehead{\ottnt{toterm}}{::=}{}\ottprodnewline
@@ -166,9 +173,13 @@
 \ottrulehead{\ottnt{empty}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{ \emptyset_{ \ottnt{n} } }{}{}{}{}}
 
+\newcommand{\ottxsofG}{
+\ottrulehead{\ottnt{xsofG}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\ottkw{xsof} \, \Gamma  \ottsym{===}  x^*}{}{}{}{}}
+
 \newcommand{\ottlfind}{
 \ottrulehead{\ottnt{lfind}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\mathit{x}  \colon{}  \ottnt{t}  \mathrel{\in}  \Gamma  \ottsym{;}  \Delta}{}{}{}{}}
+\ottfirstprodline{|}{\mathit{x}  \mathrel{\in}  x^*  \ottsym{;}  \Delta}{}{}{}{}}
 
 \newcommand{\ottjudgeXXcontext}{
 \ottrulehead{\ottnt{judge\_context}}{::=}{}\ottprodnewline
@@ -207,6 +218,7 @@
 \ottprodline{|}{\ottnt{store}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{span}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{set}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{vars}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{terminals}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{formula}}{}{}{}{}}
 
@@ -222,6 +234,7 @@
 \ottstore\ottinterrule
 \ottspan\ottinterrule
 \ottset\ottinterrule
+\ottvars\ottinterrule
 \ottterminals\ottinterrule
 \ottformula\ottinterrule
 \otttoterm\ottinterrule
@@ -232,6 +245,7 @@
 \ottjudge\ottinterrule
 \ottlength\ottinterrule
 \ottempty\ottinterrule
+\ottxsofG\ottinterrule
 \ottlfind\ottinterrule
 \ottjudgeXXcontext\ottinterrule
 \ottsat\ottinterrule
@@ -438,24 +452,36 @@
 \newcommand{\ottfundefnsempty}{
 \ottfundefnmt{}}
 
+% fundefns xsofG
+% fundefn xsof
+
+\newcommand{\ottfundefnxsof}[1]{\begin{ottfundefnblock}[#1]{$\ottkw{xsof} \, \Gamma$}{}
+\ottfunclause{\ottkw{xsof} \, \bullet{}}{\bullet{}}%
+\ottfunclause{\ottkw{xsof} \, \ottsym{(}  \Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t}  \ottsym{)}}{\ottkw{xsof} \, \Gamma  \ottsym{,}  \mathit{x}}%
+\end{ottfundefnblock}}
+
+
+\newcommand{\ottfundefnsxsofG}{
+\ottfundefnxsof{}}
+
 % defns lfind
 %% defn lmem
 \newcommand{\ottdrulelmemXXeq}[1]{\ottdrule[#1]{%
 }{
-\mathit{x}  \colon{}  \ottnt{t}  \mathrel{\in}  \Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t}  \ottsym{;}   \emptyset_{ \ottkw{len} \, \Gamma }   \ottsym{,}  \ottsym{1}}{%
+\mathit{x}  \mathrel{\in}  x^*  \ottsym{,}  \mathit{x}  \ottsym{;}   \emptyset_{ \ottkw{len} \, \Gamma }   \ottsym{,}  \ottsym{1}}{%
 {\ottdrulename{lmem\_eq}}{}%
 }}
 
 
 \newcommand{\ottdrulelmemXXne}[1]{\ottdrule[#1]{%
 \ottpremise{\mathit{x}  \mathrel{\ne}  \mathit{y}}%
-\ottpremise{\mathit{x}  \colon{}  \ottnt{t}  \mathrel{\in}  \Gamma  \ottsym{;}  \Delta}%
+\ottpremise{\mathit{x}  \mathrel{\in}  x^*  \ottsym{;}  \Delta}%
 }{
-\mathit{x}  \colon{}  \ottnt{t}  \mathrel{\in}  \Gamma  \ottsym{,}  \mathit{y}  \colon{}  \ottnt{t'}  \ottsym{;}  \Delta  \ottsym{,}  \ottsym{0}}{%
+\mathit{x}  \mathrel{\in}  x^*  \ottsym{,}  \mathit{y}  \ottsym{;}  \Delta  \ottsym{,}  \ottsym{0}}{%
 {\ottdrulename{lmem\_ne}}{}%
 }}
 
-\newcommand{\ottdefnlmem}[1]{\begin{ottdefnblock}[#1]{$\mathit{x}  \colon{}  \ottnt{t}  \mathrel{\in}  \Gamma  \ottsym{;}  \Delta$}{}
+\newcommand{\ottdefnlmem}[1]{\begin{ottdefnblock}[#1]{$\mathit{x}  \mathrel{\in}  x^*  \ottsym{;}  \Delta$}{}
 \ottusedrule{\ottdrulelmemXXeq{}}
 \ottusedrule{\ottdrulelmemXXne{}}
 \end{ottdefnblock}}
@@ -467,7 +493,8 @@
 % defns judge_context
 %% defn E
 \newcommand{\ottdruleJEXXvar}[1]{\ottdrule[#1]{%
-\ottpremise{\mathit{x}  \colon{}  \ottnt{t}  \mathrel{\in}  \Gamma  \ottsym{;}  \Delta}%
+\ottpremise{\mathit{x}  \colon{}  \ottnt{t}  \mathrel{\in}  \Gamma}%
+\ottpremise{\mathit{x}  \mathrel{\in}  \ottkw{xsof} \, \Gamma  \ottsym{;}  \Delta}%
 }{
 \Gamma  \ottsym{;}  \Delta  \vdash{}  \mathit{x}  \colon{}  \ottnt{t}}{%
 {\ottdrulename{JE\_var}}{}%
@@ -646,6 +673,7 @@
 \ottdefnsjudge
 \ottfundefnslength
 \ottfundefnsempty
+\ottfundefnsxsofG
 \ottdefnslfind
 \ottdefnsjudgeXXcontext
 \ottdefnssat
