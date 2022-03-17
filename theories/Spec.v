@@ -38,14 +38,14 @@ Inductive normal : Set :=
  | N_tt : normal
  | N_fanout (N:normal) (N':normal).
 
-Definition environment : Set := (list (var * type)).
-
 Inductive term : Set := 
  | v_var (x:var)
  | v_tt : term
  | v_fst (v:term)
  | v_snd (v:term)
  | v_fanout (v:term) (v':term).
+
+Definition environment : Set := (list (var * type)).
 
 Definition subst : Set := (list (var * term)).
 Lemma eq_normal: forall (x y : normal), {x = y} + {x <> y}.
@@ -153,10 +153,16 @@ Require Blech.Map.
 
 Definition store : Set := (Map.map normal).
 
-Definition nat : Set := nat.
+Inductive use : Set := 
+ | u_used : use
+ | u_unused : use.
 
 Inductive span : Set := 
  | P_with (σ:store) (N:normal).
+
+Definition vars : Set := (list var).
+
+Definition usage : Set := (list use).
 
 Inductive context : Set := 
  | E_var (x:var)
@@ -167,11 +173,14 @@ Inductive context : Set :=
  | E_fanout (E:context) (E':context)
  | E_let (x:var) (y:var) (E:context) (E':context).
 
-Definition usage : Set := (list nat).
-
 Definition set : Set := (list span).
 
-Definition vars : Set := (list var).
+Definition nat : Set := nat.
+Lemma eq_use: forall (x y : use), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_use : ott_coq_equality.
 Lemma eq_context: forall (x y : context), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -200,20 +209,11 @@ end.
 
 (** definitions *)
 
-(** funs length *)
-Fixpoint len (x1:vars) : nat:=
-  match x1 with
-  |  nil  =>  0 
-  |  (cons  x   xs )  =>  (S   (  (len xs )  )  ) 
-end.
-
-(** definitions *)
-
 (** funs empty *)
 Fixpoint mt (x1:nat) : usage:=
   match x1 with
   |  0  =>  nil 
-  |  (S  n )  =>  (cons   0     (mt n )  ) 
+  |  (S  n )  =>  (cons  u_unused    (mt n )  ) 
 end.
 
 (** definitions *)
@@ -228,42 +228,44 @@ end.
 (** definitions *)
 
 (* defns lfind *)
-Inductive lmem : var -> vars -> usage -> Prop :=    (* defn lmem *)
- | lmem_eq : forall (xs:vars) (x:var),
-     lmem x  (cons  x   xs )   (cons   1     (mt  (len xs )  )  ) 
- | lmem_ne : forall (xs:vars) (x y:var) (Δ:usage),
+Inductive lmem : var -> vars -> usage -> usage -> Prop :=    (* defn lmem *)
+ | lmem_eq : forall (xs:vars) (x:var) (Δ:usage),
+     length xs = length Δ  ->
+     lmem x  (cons  x   xs )   (cons  u_unused   Δ )   (cons  u_used   Δ ) 
+ | lmem_ne : forall (xs:vars) (x y:var) (Δ:usage) (u:use) (Δ':usage),
       ( x  <>  y )  ->
-     lmem x xs Δ ->
-     lmem x  (cons  y   xs )   (cons   0    Δ ) .
+     lmem x xs Δ Δ' ->
+     lmem x  (cons  y   xs )   (cons  u   Δ )   (cons  u   Δ' ) .
 (** definitions *)
 
 (* defns judge_context *)
-Inductive JE : environment -> usage -> context -> type -> Prop :=    (* defn E *)
- | JE_var : forall (Γ:environment) (Δ:usage) (x:var) (t:type),
+Inductive JE : environment -> usage -> usage -> context -> type -> Prop :=    (* defn E *)
+ | JE_var : forall (Γ:environment) (Δ Δ':usage) (x:var) (t:type),
      mem x t Γ ->
-     lmem x  (xsof Γ )  Δ ->
-     JE Γ Δ (E_var x) t
- | JE_lam : forall (Γ:environment) (Δ:usage) (x:var) (t1:type) (E:context) (t2:type),
-     JE  (cons ( x ,  t1 )  Γ )   (cons   1    Δ )  E t2 ->
-     JE Γ Δ (E_lam x t1 E) (t_prod t1 t2)
- | JE_app : forall (Γ:environment) (Δ Δ':usage) (E1 E2:context) (t2 t1:type),
-     JE Γ Δ E1 (t_prod t1 t2) ->
-     JE Γ Δ' E2 t1 ->
-     JE Γ  (merge  Δ   Δ' )  (E_app E1 E2) t2
- | JE_tt : forall (Γ:environment),
-     JE Γ  (mt  (  (len  (  (xsof Γ )  )  )  )  )  E_tt t_unit
- | JE_step : forall (Γ:environment) (Δ Δ':usage) (E1 E2:context) (t:type),
-     JE Γ Δ E1 t_unit ->
-     JE Γ Δ' E2 t ->
-     JE Γ  (merge  Δ   Δ' )  (E_step E1 E2) t
- | JE_fanout : forall (Γ:environment) (Δ Δ':usage) (E1 E2:context) (t1 t2:type),
-     JE Γ Δ E1 t1 ->
-     JE Γ Δ' E2 t2 ->
-     JE Γ  (merge  Δ   Δ' )  (E_fanout E1 E2) (t_prod t1 t2)
- | JE_let : forall (Γ:environment) (Δ Δ':usage) (x y:var) (E1 E2:context) (t3 t1 t2:type),
-     JE Γ Δ E1 (t_prod t1 t2) ->
-     JE  (cons ( y ,  t2 )   (cons ( x ,  t1 )  Γ )  )   (cons   1     (cons   1    Δ' )  )  E2 t3 ->
-     JE Γ  (merge  Δ   Δ' )  (E_let x y E1 E2) t3.
+     lmem x  (xsof Γ )  Δ Δ' ->
+     JE Γ Δ Δ' (E_var x) t
+ | JE_lam : forall (Γ:environment) (Δ Δ':usage) (x:var) (t1:type) (E:context) (t2:type),
+     JE  (cons ( x ,  t1 )  Γ )   (cons  u_unused   Δ )   (cons  u_used   Δ' )  E t2 ->
+     JE Γ Δ Δ' (E_lam x t1 E) (t_prod t1 t2)
+ | JE_app : forall (Γ:environment) (Δ1 Δ3:usage) (E1 E2:context) (t2:type) (Δ2:usage) (t1:type),
+     JE Γ Δ1 Δ2 E1 (t_prod t1 t2) ->
+     JE Γ Δ2 Δ3 E2 t1 ->
+     JE Γ Δ1 Δ3 (E_app E1 E2) t2
+ | JE_tt : forall (Γ:environment) (Δ:usage),
+     length Γ = length Δ  ->
+     JE Γ Δ Δ E_tt t_unit
+ | JE_step : forall (Γ:environment) (Δ1 Δ3:usage) (E1 E2:context) (t:type) (Δ2:usage),
+     JE Γ Δ1 Δ2 E1 t_unit ->
+     JE Γ Δ2 Δ3 E2 t ->
+     JE Γ Δ1 Δ3 (E_step E1 E2) t
+ | JE_fanout : forall (Γ:environment) (Δ1 Δ3:usage) (E1 E2:context) (t1 t2:type) (Δ2:usage),
+     JE Γ Δ1 Δ2 E1 t1 ->
+     JE Γ Δ2 Δ3 E2 t2 ->
+     JE Γ Δ1 Δ3 (E_fanout E1 E2) (t_prod t1 t2)
+ | JE_let : forall (Γ:environment) (Δ1 Δ3:usage) (x y:var) (E1 E2:context) (t3:type) (Δ2:usage) (t1 t2:type),
+     JE Γ Δ1 Δ2 E1 (t_prod t1 t2) ->
+     JE  (cons ( y ,  t2 )   (cons ( x ,  t1 )  Γ )  )   (cons  u_unused    (cons  u_unused   Δ2 )  )   (cons  u_used    (cons  u_used   Δ3 )  )  E2 t3 ->
+     JE Γ Δ1 Δ3 (E_let x y E1 E2) t3.
 (** definitions *)
 
 (* defns sat *)

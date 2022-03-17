@@ -14,16 +14,22 @@ context, E :: 'E_' ::= {{ coq-equality }}
   | let x , y = E in E'      ::   :: let (+ bind x union y in E' +)
   | ( E )                    :: S :: paren {{ icho ([[E]]) }}
 
-nat, n :: 'n_' ::= {{ coq nat }}
-  | 0 ::  :: zero {{ coq 0 }}
-  | S n ::  :: succ {{ coq (S [[n]]) }} {{ tex [[n]] + 1 }}
-  | 1 :: M :: one {{ coq 1 }}
-  | ( n ) :: S :: paren {{ icho ([[n]]) }}
+use, u :: 'u_' ::= {{ coq-equality }}
+  | 1 ::  :: used
+  | 0 ::  :: unused
 
-usage, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (list nat) }}
+usage, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (list use) }}
   | nil                  ::   :: nil {{ coq nil }}
-  | D , n                ::   :: cons {{ coq (cons [[n]] [[D]]) }}
-  | D ++ D'             :: M :: merge {{ coq (merge [[D]] [[D']]) }}
+  | D , u                ::   :: cons {{ coq (cons [[u]] [[D]]) }}
+
+nat, n :: 'n_' ::= {{ coq nat }}
+  | 0          ::  :: zero {{ coq 0 }}
+  | S n        ::  :: succ {{ coq (S [[n]]) }} {{ tex [[n]] + 1 }}
+  | 1          :: M :: one {{ coq 1 }}
+  | len xs     :: M :: lenxs {{ coq (length [[xs]]) }}
+  | len D      :: M :: lenD {{ coq (length [[D]]) }}
+  | ( n )      :: S :: paren {{ icho ([[n]]) }}
+
 
 store, S {{ tex \sigma }} {{ coq σ }} :: 'S_'  ::= {{ coq (Map.map normal) }}
   | nil                   :: M :: empty {{ coq (Map.empty) }}
@@ -47,7 +53,7 @@ terminals :: 'terminals_' ::=
   | :            ::   :: in     {{ tex \colon{} }}
   | |-           ::   :: turnstile   {{ tex \vdash{} }}
   | :=           ::   :: update  {{ tex \mathbin{:=} }}
-  | ++           ::   :: merge   {{ tex \cup{} }}
+  | ->           ::   :: to  {{ tex \rightarrow }}
   | unit         ::   :: unit  {{ tex \textbf{I} }}
   | *            ::   :: prod  {{ tex \otimes{} }}
   | tt           ::   :: tt   {{ tex \mathop{ \textbf ! } }}
@@ -77,14 +83,6 @@ formula :: formula_ ::=
  | x = y                            :: M :: eq {{ icho ([[x]] = [[y]]) }}
 
 funs
-  length ::=
-fun
-  len xs :: n :: len
-by
-  len nil === 0
-  len xs , x === S (len xs)
-
-funs
   empty ::=
 fun
   mt n :: D :: mt {{ tex \emptyset_{[[n]]} }}
@@ -105,56 +103,58 @@ defns
 lfind :: '' ::=
 
 defn
-x \in xs ; D ::   :: lmem :: 'lmem_'
+x \in xs ; D -> D' ::   :: lmem :: 'lmem_'
 by
 
------------------------------------ :: eq
-x \in xs, x ; mt len xs, 1
+{{ length [[xs]] = length [[D]] }}
+---------------------------- :: eq
+x \in xs, x ; D, 0 -> D, 1
 
 x != y
-x \in xs ; D
+x \in xs ; D -> D'
 ---------------------------- :: ne
-x \in xs, y ; D, 0
+x \in xs, y ; D, u -> D', u
 
 defns
 
 judge_context :: 'J' ::=
 
 defn
-G ; D |- E : t ::   :: E :: 'E_'
+G ; D -> D' |- E : t ::   :: E :: 'E_'
 by
 
 x: t \in G
-x \in xsof G ; D
+x \in xsof G ; D -> D'
 ----------------------- :: var
-G ; D |- x: t
+G ; D -> D' |- x: t
 
-G, x: t1 ; D, 1 |- E: t2
+G, x: t1 ; D, 0 -> D', 1 |- E: t2
 ------------------------------- :: lam
-G ; D |- lam x: t1 . E: t1 * t2
+G ; D -> D' |- lam x: t1 . E: t1 * t2
 
-G ; D |- E1: t1 * t2
-G ; D' |- E2: t1
+G ; D1 -> D2 |- E1: t1 * t2
+G ; D2 -> D3 |- E2: t1
 --------------------------------- :: app
-G ; D ++ D' |- E1 E2: t2
+G ; D1 -> D3 |- E1 E2: t2
 
---------------------------- :: tt
-G ; mt (len (xsof G)) |- tt: unit
+{{ length [[G]] = length [[D]] }}
+----------------------- :: tt
+G ; D -> D |- tt: unit
 
-G ; D |- E1: unit
-G ; D' |- E2: t
+G ; D1 -> D2 |- E1: unit
+G ; D2 -> D3 |- E2: t
 ------------------------- :: step
-G ; D ++ D' |- E1; E2: t
+G ; D1 -> D3 |- E1; E2: t
 
-G ; D |- E1: t1
-G ; D' |- E2: t2
------------------------------ :: fanout
-G ; D ++ D' |- E1, E2: t1 * t2
+G ; D1 -> D2 |- E1: t1
+G ; D2 -> D3 |- E2: t2
+------------------------------- :: fanout
+G ; D1 -> D3 |- E1, E2: t1 * t2
 
-G ; D |- E1 : t1 * t2
-G, x: t1, y: t2 ; D', 1, 1 |- E2: t3
----------------------------------------- :: let
-G ; D ++ D' |- let x, y = E1 in E2: t3
+G ; D1 -> D2 |- E1 : t1 * t2
+G, x: t1, y: t2 ; D2, 0, 0 -> D3, 1, 1 |- E2: t3
+------------------------------------------------- :: let
+G ; D1 -> D3 |- let x, y = E1 in E2: t3
 
 defns
 

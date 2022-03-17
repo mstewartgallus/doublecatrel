@@ -30,7 +30,7 @@ Import Map.MapNotations.
 
 Definition eq_usage Δ Δ': {Δ = Δ'} + {Δ ≠ Δ'}.
 Proof.
-  set (s := Nat.eq_dec).
+  set (s := eq_use).
   decide equality.
 Defined.
 
@@ -43,25 +43,16 @@ Proof.
   auto.
 Qed.
 
-Lemma length_len {l}: len l = length l.
-Proof.
-  induction l.
-  1: auto.
-  cbn.
-  rewrite IHl.
-  auto.
-Qed.
-
 Fixpoint one x Γ: option usage :=
   if Γ is cons (y, t) T
   then
-    if Nat.eq_dec x y
+    if eq_var x y
     then
-      Some (cons 1 (mt (length T)))
+      Some (cons u_used (mt (length T)))
     else
       if one x T is Some T'
       then
-        Some (cons 0 T')
+        Some (cons u_unused T')
       else
         None
   else
@@ -74,14 +65,13 @@ Proof.
   intros p.
   cbn in *.
   destruct a.
-  destruct eq_var, Nat.eq_dec.
+  destruct eq_var.
   all: subst.
-  all: try contradiction.
-  - exists (cons 1 (mt (length Γ))).
+  - exists (cons u_used (mt (length Γ))).
     auto.
   - destruct (IHΓ p).
     rewrite e.
-    exists (cons 0 x0).
+    exists (cons u_unused x0).
     auto.
 Defined.
 
@@ -114,495 +104,179 @@ Proof.
   auto.
 Qed.
 
-Lemma length_same {Γ ns E t}: JE Γ ns E t → length Γ = length ns.
+Lemma length_same_lmem_l {x xs Δ Δ'}: lmem x xs Δ Δ' → length xs = length Δ.
 Proof.
   intro p.
   induction p.
   all: cbn.
-  - generalize dependent Δ.
-    induction H.
-    all: cbn.
-    all: intros Δ p.
-    + inversion p.
-      2: subst; contradiction.
-      subst.
-      cbn.
-      rewrite length_mt.
-      rewrite length_len.
-      rewrite length_len in p.
-      rewrite length_xsof.
-      auto.
-    + inversion p.
-      1: subst; contradiction.
-      subst.
-      cbn in *.
-      rewrite (IHmem _ H6).
-      auto.
-  - inversion IHp.
-    auto.
-  - rewrite IHp1 in IHp2.
-    rewrite length_merge_eq.
-    all: auto.
-  - rewrite length_mt.
-    rewrite length_len.
-    rewrite length_xsof.
-    auto.
-  - rewrite IHp1 in IHp2.
-    rewrite length_merge_eq.
-    all: auto.
-  - rewrite IHp1 in IHp2.
-    rewrite length_merge_eq.
-    all: auto.
-  - cbn in IHp2.
-    inversion IHp2.
-    rewrite IHp1 in H0.
-    rewrite length_merge_eq.
-    all: auto.
+  all: auto.
 Qed.
 
-Module ProofTree.
-  Inductive JE: Set :=
-  | JE_var Γ x
-  | JE_lam: JE → JE
-  | JE_app: JE → JE → JE
-  | JE_tt Γ
-  | JE_step: JE → JE → JE
-  | JE_fanout: JE → JE → JE
-  | JE_let: JE → JE → JE
-  .
+Lemma length_same_lmem_r {x xs Δ Δ'}: lmem x xs Δ Δ' → length xs = length Δ'.
+Proof.
+  intro p.
+  induction p.
+  all: cbn.
+  all: auto.
+Qed.
 
-  #[local]
-   Definition unknown_list {A}: JE → list A := opaque (λ _: JE, nil).
+Lemma length_same_l {Γ Δ Δ' E t}: JE Γ Δ Δ' E t → length Γ = length Δ.
+Proof.
+  intro p.
+  induction p.
+  all: cbn.
+  all: auto.
+  - assert (H0' := length_same_lmem_l H0).
+    symmetry in H0'.
+    symmetry.
+    rewrite H0'.
+    rewrite length_xsof.
+    auto.
+Qed.
 
-  #[local]
-   Definition unknown_type: JE → type := opaque (λ _: JE, t_unit).
-
-  #[local]
-   Definition unknown_context: JE → context := opaque (λ _: JE, E_tt).
-
-  Function envof (E: JE): environment :=
-    match E with
-    | JE_var Γ _ => Γ
-    | JE_lam p =>
-        if envof p is cons _ T then T else unknown_list E
-    | JE_app p1 _ => envof p1
-    | JE_tt Γ => Γ
-    | JE_step p1 _ => envof p1
-    | JE_fanout p1 _ => envof p1
-    | JE_let p1 _ => envof p1
-    end.
-
-  Function nsof (E: JE): usage :=
-    match E with
-    | JE_var Γ x => if one x Γ is Some ns then ns else nil
-    | JE_lam p =>
-        if nsof p is cons _ T then T else unknown_list E
-    | JE_app p1 p2 => merge (nsof p1) (nsof p2)
-    | JE_tt Γ => mt (length Γ)
-    | JE_step p1 p2 => merge (nsof p1) (nsof p2)
-    | JE_fanout p1 p2 => merge (nsof p1) (nsof p2)
-    | JE_let p1 p2 =>
-        merge (nsof p1) (if nsof p2 is cons 1 (cons 1 T) then T else unknown_list E)
-    end.
-
-  Function ctxof (E: JE): context :=
-    match E with
-    | JE_var _ x => E_var x
-    | JE_lam p =>
-        match envof p with
-        | cons (x, t) _ => E_lam x t (ctxof p)
-        | _ => unknown_context E
-        end
-    | JE_app p1 p2 => E_app (ctxof p1) (ctxof p2)
-    | JE_tt _ => E_tt
-    | JE_step p1 p2 => E_step (ctxof p1) (ctxof p2)
-    | JE_fanout p1 p2 => E_fanout (ctxof p1) (ctxof p2)
-    | JE_let p1 p2 =>
-        if envof p2 is cons (y, _) (cons (x, _) _)
-        then
-          E_let x y (ctxof p1) (ctxof p2)
-        else
-          unknown_context E
-    end.
-
-  Function typeof (E: JE): type :=
-    match E with
-    | JE_var Γ x => if find x Γ is Some t then t else unknown_type E
-    | JE_lam p =>
-        if envof p is cons (_, t) _
-        then
-          t * typeof p
-        else
-          unknown_type E
-    | JE_app p1 p2 => if typeof p1 is _ * t then t else unknown_type E
-    | JE_tt _ => t_unit
-    | JE_step _ p2 => typeof p2
-    | JE_fanout p1 p2 => typeof p1 * typeof p2
-    | JE_let _ p2 => typeof p2
-    end.
-
-  Definition asserts (E: JE): Prop := Spec.JE (envof E) (nsof E) (ctxof E) (typeof E).
-
-  Notation "'test' p" := (match p with | left _ => true | right _ => false end) (at level 1).
-
-  Function check (p: JE): bool :=
-    match p with
-    | JE_var Γ x =>
-        if find x Γ is Some _ then true else false
-    | JE_lam p =>
-        match envof p, nsof p with
-         | cons (x, t) _, cons 1 _ => true
-         | _, _ => false
-        end
-        && check p
-    | JE_app p1 p2 =>
-        test (eq_environment (envof p1) (envof p2))
-        && (if typeof p1 is t * _ then test (eq_type t (typeof p2)) else false)
-        && check p1
-        && check p2
-    | JE_tt _ => true
-    | JE_step p1 p2 =>
-        test (eq_environment (envof p1) (envof p2))
-        && (if typeof p1 is t_unit then true else false)
-        && check p1
-        && check p2
-    | JE_fanout p1 p2 =>
-        test (eq_environment (envof p1) (envof p2))
-        && check p1
-        && check p2
-    | JE_let p1 p2 =>
-        (match envof p2, nsof p2, typeof p1 with
-         | cons (y, t2) (cons (x, t1) g2),
-           cons 1 (cons 1 _),
-           t1' * t2' =>
-             test (eq_environment (envof p1) g2)
-             && test (eq_type t1 t1')
-             && test (eq_type t2 t2')
-         | _, _, _ => false
-         end)
-        && check p1
-        && check p2
-    end %bool.
-
-  Lemma check_sound (p: JE): Bool.Is_true (check p) → asserts p.
-  Proof.
-    unfold asserts.
-    functional induction (check p).
-    all: cbn.
-    all: intro q.
-    all: try contradiction.
-    - rewrite e0.
-      assert (e0' := find_sound e0).
-      destruct (find_one e0).
-      rewrite e.
-      constructor.
-      1: auto.
-      generalize dependent x0.
-      induction e0'.
-      all: cbn in *.
-      all: intros.
-      * destruct Nat.eq_dec, eq_var.
-        all: try contradiction.
-        inversion e.
-        subst.
-        cbn.
-        replace (mt (length Γ)) with (mt (len (xsof Γ))).
-        2: {
-          rewrite length_len.
-          rewrite length_xsof.
-          auto.
-        }
-        constructor.
-      * destruct Nat.eq_dec, eq_var.
-        all: subst.
-        all: try contradiction.
-        destruct (find_one (find_complete e0')).
-        rewrite e1 in e.
-        inversion e.
-        subst.
-        constructor.
-        all: auto.
-    - destruct (check p0).
-      2: contradiction.
-      rewrite e0, e1.
-      rewrite e0, e1 in IHb.
-      cbn in IHb.
-      constructor.
-      auto.
-    - rewrite e1.
-      rewrite e1 in IHb.
-      rewrite <- _x in IHb0.
-      destruct (check p1).
-      2: contradiction.
-      destruct (check p2).
-      2: contradiction.
-      econstructor.
-      all: eauto.
-    - replace (mt (length _x)) with (mt (len (xsof _x))).
-      1: constructor.
-      rewrite length_len.
-      rewrite length_xsof.
-      auto.
-    - destruct (check p1).
-      2: contradiction.
-      destruct (check p2).
-      2: contradiction.
-      rewrite e1 in IHb.
-      rewrite <- _x in IHb0.
-      constructor.
-      all: auto.
-    - destruct (check p1).
-      2: contradiction.
-      destruct (check p2).
-      2: contradiction.
-      rewrite <- _x in IHb0.
-      constructor.
-      all: auto.
-    - destruct (check p1).
-      2: contradiction.
-      destruct (check p2).
-      2: contradiction.
-      rewrite e0.
-      rewrite e1.
-      rewrite e2 in IHb.
-      rewrite e0 in IHb0.
-      rewrite e1 in IHb0.
-      econstructor.
-      all: eauto.
-  Qed.
-End ProofTree.
+Lemma length_same_r {Γ Δ Δ' E t}: JE Γ Δ Δ' E t → length Γ = length Δ'.
+Proof.
+  intro p.
+  induction p.
+  all: cbn.
+  all: auto.
+  - assert (H0' := length_same_lmem_r H0).
+    symmetry in H0'.
+    symmetry.
+    rewrite H0'.
+    rewrite length_xsof.
+    auto.
+  - cbn in IHp2.
+    inversion IHp2.
+    auto.
+Qed.
 
 Section Typecheck.
   Import OptionNotations.
 
-  Function typecheck Γ E: option (usage * type) :=
+  Function lookup x Γ Δ :=
+    match Γ, Δ with
+    | cons (y, t) Γ', cons u Δ' =>
+        if eq_var x y
+        then
+          if u is u_unused
+          then
+            if Nat.eq_dec (length Γ') (length Δ')
+            then
+              Some (cons u_used Δ', t)
+            else
+              None
+          else
+            None
+        else
+          do (Δ'', t)  ← lookup x Γ' Δ' ;
+          Some (cons u Δ'', t)
+    | _, _ => None
+    end.
+
+  Function typecheck Γ Δ E: option (usage * type) :=
     match E with
-    | E_var x =>
-        do t ← find x Γ ;
-        do Δ ← one x Γ ;
-        Some (Δ, t)
+    | E_var x => lookup x Γ Δ
     | E_lam x t1 E =>
-        do (cons 1 Δ, t2) ← typecheck ((x, t1) :: Γ) E ;
-        Some (Δ, t1 * t2)
+        do (u_used :: Δ', t2) ← typecheck ((x, t1) :: Γ) (u_unused :: Δ) E ;
+        Some (Δ', t1 * t2)
     | E_app E E' =>
-        do (Δ', t1 * t2) ← typecheck Γ E ;
-        do (Δ, t1') ← typecheck Γ E' ;
+        do (Δ1, t1 * t2) ← typecheck Γ Δ E ;
+        do (Δ2, t1') ← typecheck Γ Δ1 E' ;
         if eq_type t1 t1'
         then
-          Some (merge Δ' Δ, t2)
+          Some (Δ2, t2)
         else
           None
 
-    | E_tt => Some (mt (length Γ), t_unit)
+    | E_tt =>
+        if Nat.eq_dec (length Γ) (length Δ)
+        then
+          Some (Δ, t_unit)
+        else
+          None
     | E_step E E' =>
-        do (Δ', t_unit) ← typecheck Γ E ;
-        do (Δ, t) ← typecheck Γ E' ;
-        Some (merge Δ' Δ, t)
+        do (Δ1, t_unit) ← typecheck Γ Δ E ;
+        do (Δ2, t) ← typecheck Γ Δ1 E' ;
+        Some (Δ2, t)
 
     | E_fanout E E' =>
-        do (Δ', t1) ← typecheck Γ E ;
-        do (Δ, t2) ← typecheck Γ E' ;
-        Some (merge Δ' Δ, t1 * t2)
+        do (Δ1, t1) ← typecheck Γ Δ E ;
+        do (Δ2, t2) ← typecheck Γ Δ1 E' ;
+        Some (Δ2, t1 * t2)
 
     | E_let x y E E' =>
-        do (Δ1, t1 * t2) ← typecheck Γ E ;
-        do (cons 1 (cons 1 Δ2), t3) ← typecheck ((y, t2) :: (x, t1) :: Γ) E' ;
-        Some (merge Δ1 Δ2, t3)
+        do (Δ1, t1 * t2) ← typecheck Γ Δ E ;
+        do (u_used :: u_used :: Δ2, t3) ← typecheck ((y, t2) :: (x, t1) :: Γ) (u_unused :: u_unused :: Δ1) E' ;
+        Some (Δ2, t3)
     end
       %list.
 End Typecheck.
 
 Theorem typecheck_sound:
-  ∀ Γ {E Δ t}, typecheck Γ E = Some (Δ, t) → JE Γ Δ E t.
+  ∀ Γ {E Δ Δ' t}, typecheck Γ Δ E = Some (Δ', t) → JE Γ Δ Δ' E t.
 Proof using.
-  intros Γ E.
-  functional induction (typecheck Γ E).
+  intros Γ E Δ.
+  functional induction (typecheck Γ Δ E).
   all: cbn.
   all: intros ? ? p.
   all: inversion p.
   all: subst.
-  all: try econstructor.
-  all: eauto.
-  - generalize dependent Δ0.
-    induction Γ.
-    1: discriminate.
-    cbn.
-    all: intros ? ? ?.
-    destruct a.
-    cbn.
-    cbn in *.
-    destruct eq_var, Nat.eq_dec.
-    all: subst.
-    all: try contradiction.
-    + inversion e1.
-      subst.
-      inversion e0.
-      subst.
-      constructor.
-    + apply find_sound.
-      cbn.
-      destruct eq_var.
-      1: subst; contradiction.
-      auto.
-  - clear p.
-    generalize dependent Δ0.
-    induction Γ.
+  all: clear p.
+  all: econstructor; eauto.
+  - generalize dependent Δ'.
+    functional induction (lookup x Γ Δ).
     all: cbn.
-    1: discriminate.
-    intros Δ0 p.
-    destruct a.
-    cbn in e0.
-    destruct eq_var, Nat.eq_dec.
+    all: intros ? p.
+    all: inversion p.
     all: subst.
-    all: try contradiction.
-    + inversion p.
-      subst.
-      replace (mt (length Γ)) with (mt (len (xsof Γ))).
-      2: {
-        rewrite length_len.
-        rewrite length_xsof.
-        auto.
-      }
-      constructor.
-    + destruct (find_one e0).
-      rewrite e in p.
-      inversion p.
-      subst.
-      constructor.
-      all: auto.
-  - replace (length Γ) with (length (xsof Γ)).
-    2: {
-      rewrite length_xsof.
-      auto.
-    }
-    rewrite <- length_len.
-    constructor.
-Qed.
-
-Lemma length_one {x Γ}:
-  ∀ {Δ},
-  one x Γ = Some Δ →
-  length Δ = length Γ.
-Proof.
-  induction Γ.
-  1: discriminate.
-  cbn in *.
-  intros Δ p.
-  destruct a.
-  cbn in *.
-  destruct Nat.eq_dec.
-  + subst.
-    inversion p.
-    subst.
-    cbn.
-    rewrite length_mt.
+    all: constructor.
+    all: eauto.
+  - generalize dependent Δ'.
+    functional induction (lookup x Γ Δ).
+    all: cbn.
+    all: intros ? p.
+    all: inversion p.
+    all: subst.
+    all: constructor.
+    all: eauto.
+    rewrite length_xsof.
     auto.
-  + destruct (one x Γ).
-    2: discriminate.
-    inversion p.
-    subst.
-    cbn.
-    rewrite <- (IHΓ u).
-    2: auto.
-    auto.
-Qed.
-
-
-Theorem length_typecheck:
-  ∀ {Γ E t Δ},
-    typecheck Γ E = Some (Δ, t) →
-    length Δ = length Γ.
-Proof using.
-  intros Γ E.
-  functional induction (typecheck Γ E).
-  all: cbn.
-  all: intros ? ? p.
-  all: inversion p.
-  all: subst.
-  - eapply length_one.
-    eauto.
-  - cbn in IHo.
-    assert (IHo' := IHo _ _ e0).
-    cbn in IHo'.
-    inversion IHo'.
-    auto.
-  - assert (IHo' := IHo _ _ e0).
-    assert (IHo0' := IHo0 _ _ e1).
-    rewrite <- IHo' in IHo0'.
-    rewrite length_merge_eq.
-    all: auto.
-  - rewrite length_mt.
-    auto.
-  - assert (IHo' := IHo _ _ e0).
-    assert (IHo0' := IHo0 _ _ e1).
-    rewrite <- IHo' in IHo0'.
-    rewrite length_merge_eq.
-    all: auto.
-  - assert (IHo' := IHo _ _ e0).
-    assert (IHo0' := IHo0 _ _ e1).
-    rewrite <- IHo' in IHo0'.
-    rewrite length_merge_eq.
-    all: auto.
-  - assert (IHo' := IHo _ _ e0).
-    assert (IHo0' := IHo0 _ _ e1).
-    cbn in IHo0'.
-    inversion IHo0'.
-    rewrite <- IHo' in H0.
-    rewrite length_merge_eq.
-    all: auto.
 Qed.
 
 Theorem typecheck_complete:
-  ∀ Γ {E Δ t}, JE Γ Δ E t → typecheck Γ E = Some (Δ, t).
+  ∀ Γ {E Δ Δ' t}, JE Γ Δ Δ' E t → typecheck Γ Δ E = Some (Δ', t).
 Proof using.
-  intros ? ? ? ? p.
+  intros ? ? ? ? ? p.
   induction p.
   all: cbn.
   all: try rewrite IHp.
   all: try rewrite IHp1.
   all: try rewrite IHp2.
   all: auto.
-  - rewrite (find_complete H).
-    destruct (find_one (find_complete H)).
-    rewrite e.
-    generalize dependent x0.
+  - generalize dependent Δ'.
     generalize dependent Δ.
     induction H.
     all: cbn.
-    all: intros.
-    + cbn in e.
+    all: intros ? ? q.
+    all: inversion q.
+    all: subst.
+    all: cbn.
+    all: try contradiction.
+    all: destruct eq_var.
+    all: try contradiction.
+    + rewrite <- H1.
+      rewrite length_xsof.
       destruct Nat.eq_dec.
-      2: contradiction.
-      inversion e.
-      subst.
-      replace (length Γ) with (len (xsof Γ)).
-      2: {
-        rewrite length_xsof.
-        auto.
-      }
-      cbn in *.
-      inversion H0.
-      all: subst.
       2: contradiction.
       auto.
-    + cbn in e.
-      destruct Nat.eq_dec.
-      1: subst; contradiction.
-      destruct (find_one (find_complete H0)).
-      rewrite e0 in e.
-      inversion e.
-      subst.
-      inversion H1.
-      all: subst.
-      1: contradiction.
-      assert (IHmem' := IHmem _ H7 _ e0).
-      inversion IHmem'.
+    + rewrite (IHmem _ _ H7).
       auto.
   - destruct eq_type.
     2: contradiction.
     auto.
-  - rewrite length_len.
-    rewrite length_xsof.
+  - destruct Nat.eq_dec.
+    2: contradiction.
     auto.
 Qed.
 
@@ -915,9 +589,9 @@ Proof.
     auto.
 Qed.
 
-Definition useonce Γ: usage := List.map (λ '(x, t), 1) Γ.
+Definition useonce Γ u: usage := List.map (λ '(x, t), u) Γ.
 
-Definition oftype Γ t := { E | JE Γ (useonce Γ) E t }.
+Definition oftype Γ t := { E | JE Γ (useonce Γ u_unused) (useonce Γ u_used) E t }.
 
 Record iso A B := {
     to: A → B ;
@@ -997,17 +671,6 @@ Proof.
   all: auto.
 Qed.
 
-Lemma merge_empty_r {Δ}:
-  merge Δ (mt (length Δ)) = Δ.
-Proof.
-  induction Δ.
-  all: cbn.
-  1: auto.
-  rewrite Nat.add_0_r.
-  rewrite IHΔ.
-  auto.
-Qed.
-
 Lemma length_0 {A} {l: list A}: length l = 0 → l = nil.
 Proof.
   destruct l.
@@ -1017,38 +680,13 @@ Proof.
 Qed.
 
 Function is_mt Δ :=
-  if Δ is cons n Δ'
+  if Δ is cons u Δ'
   then
-    if n is O
+    if u is u_unused
     then is_mt Δ'
     else false
   else
     true.
-
-Function lmem_find x xs Δ :=
-  match xs, Δ with
-  | cons y xs', cons 1 Δ' =>
-      if eq_var x y
-      then
-        if is_mt Δ'
-        then
-          if Nat.eq_dec (length Δ') (length xs')
-          then
-            true
-          else
-            false
-        else
-          false
-      else
-        false
-  | cons y xs', cons 0 Δ' =>
-      if eq_var x y
-      then
-        false
-      else
-        lmem_find x xs' Δ'
-  | _, _ => false
-  end.
 
 Lemma is_mt_sound:
   ∀ {Δ}, Bool.Is_true (is_mt Δ) → Δ = mt (length Δ).
@@ -1076,46 +714,6 @@ Proof using .
   all: auto.
 Qed.
 
-Lemma lmem_find_sound:
-  ∀ {x xs Δ}, Bool.Is_true (lmem_find x xs Δ) → lmem x xs Δ.
-Proof using .
-  intros x xs Δ.
-  functional induction (lmem_find x xs Δ).
-  all: cbn.
-  all: intros p.
-  all: try contradiction.
-  - assert (q := @is_mt_sound Δ').
-    destruct is_mt.
-    2: discriminate.
-    rewrite q.
-    2: auto.
-    rewrite _x0.
-    rewrite <- length_len.
-    constructor.
-  - constructor.
-    all: auto.
-Qed.
-
-Lemma lmem_find_complete {x xs Δ}:
-  lmem x xs Δ → lmem_find x xs Δ = true.
-Proof using .
-  intro p.
-  induction p.
-  all: cbn.
-  - destruct eq_var.
-    2: contradiction.
-    rewrite is_mt_complete.
-    rewrite length_mt.
-    rewrite length_len.
-    destruct Nat.eq_dec.
-    2: contradiction.
-    cbv.
-    auto.
-  - destruct eq_var.
-    1: subst; contradiction.
-    auto.
-Qed.
-
 Function minus_xs x xs :=
   match xs with
   | cons y T' =>
@@ -1127,18 +725,10 @@ Function minus_xs x xs :=
   | _ => nil
   end.
 
-Function rm x xs Δ :=
-  match xs, Δ with
-  | cons y T, cons n T' =>
-      if eq_var x y
-      then
-        if Nat.eq_dec n 1
-        then
-          T'
-        else
-          nil
-      else
-        cons n (rm x T T')
+Function rm n Δ :=
+  match n, Δ with
+  | O, cons u_used Δ' => Δ'
+  | S n', cons u_unused Δ' => cons u_unused (rm n' Δ')
   | _, _ => nil
   end.
 
@@ -1156,27 +746,4 @@ Proof.
   cbn.
   rewrite IHΓ.
   auto.
-Qed.
-
-
-Lemma is_mt_rm {x xs Δ}:
-  Bool.Is_true (is_mt Δ) → is_mt (rm x xs Δ) = true.
-Proof.
-  generalize dependent xs.
-  functional induction (is_mt Δ).
-  all: cbn.
-  all: try contradiction.
-  all: intros xs q.
-  - destruct xs.
-    all: cbn.
-    1: auto.
-    destruct eq_var.
-    1: auto.
-    cbn.
-    auto.
-  - destruct Δ.
-    2: contradiction.
-    destruct xs.
-    all: cbn.
-    all: auto.
 Qed.

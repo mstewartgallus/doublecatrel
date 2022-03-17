@@ -678,6 +678,21 @@ Proof.
   all: eauto.
 Qed.
 
+Definition linmap Γ Γ' := ∀ v t, Γ ⊢ v in t → Γ' ⊢ v in t.
+
+Lemma map_mem {Γ Γ'}:
+  linmap Γ Γ' →
+  ∀ {x t}, mem x t Γ → mem x t Γ'.
+Proof.
+  unfold linmap.
+  intros p.
+  intros x t q.
+  assert (q' := p _ _ (Jv_var _ _ _ q)).
+  inversion q'.
+  subst.
+  auto.
+Qed.
+
 Definition shadow {v Γ x t0 t1 t2}:
   ((x, t0) :: Γ)%list ⊢ v in t2 → ((x, t0) :: (x, t1) :: Γ)%list ⊢ v in t2 :=
   map Environment.shadow.
