@@ -747,3 +747,69 @@ Proof.
   rewrite IHΓ.
   auto.
 Qed.
+
+
+Lemma lookup_complete {x t Γ}:
+  mem x t Γ → ∀ {Δ Δ'}, lmem x (xsof Γ) Δ Δ' → lookup x Γ Δ = Some (Δ', t).
+Proof.
+  intros p.
+  induction p.
+  all: cbn.
+  all: intros Δ Δ' q.
+  all: inversion q.
+  all: subst.
+  all: try contradiction.
+  - rewrite length_xsof in H1.
+    rewrite H1.
+    destruct eq_var.
+    2: contradiction.
+    destruct Nat.eq_dec.
+    2: contradiction.
+    auto.
+  - destruct eq_var.
+    1: subst; contradiction.
+    erewrite IHp.
+    2: eauto.
+    auto.
+Qed.
+
+Lemma lookup_sound_mem {x t Γ Δ}:
+  ∀ {Δ'}, lookup x Γ Δ = Some (Δ', t) → mem x t Γ.
+Proof.
+  functional induction (lookup x Γ Δ).
+  all: cbn.
+  all: intros ? p.
+  all: inversion p.
+  all: subst.
+  all: constructor.
+  all: eauto.
+Qed.
+
+Lemma lookup_sound_lmem {x t Γ Δ}:
+  ∀ {Δ'}, lookup x Γ Δ = Some (Δ', t) → lmem x (xsof Γ) Δ Δ'.
+Proof.
+  functional induction (lookup x Γ Δ).
+  all: cbn.
+  all: intros ? p.
+  all: inversion p.
+  all: subst.
+  all: constructor.
+  all: eauto.
+  rewrite length_xsof.
+  auto.
+Qed.
+
+Definition check_beta E' x t Γ Δ E :=
+  (
+    if typecheck Γ Δ (E_app (E_lam x t E) E') is Some (Δ2, t)
+    then
+      if typecheck Γ Δ (subst_context E' x E) is Some (Δ2', t')
+      then
+        (if eq_usage Δ2 Δ2' then true else false)
+        && (if eq_type t t' then true else false)
+      else
+        false
+    else
+      true
+  )%bool.
+
