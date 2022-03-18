@@ -38,30 +38,13 @@ Module Import Hor.
   #[program]
   Definition compose {A B C} (f: Hor B C) (g: Hor A B): Hor A C := subst_term g X f.
 
-  #[local]
-   Lemma shadow:
-    ∀ {v Γ x t0 t1 t2},
-      ((x, t0) :: Γ)%list ⊢ v in t2 →
-      ((x, t0) :: (x, t1) :: Γ)%list ⊢ v in t2.
-  Proof.
-    intro v.
-    induction v.
-    all: intros ? ? ? ? ? p.
-    all: inversion p.
-    all: subst.
-    all: try econstructor.
-    all: try eauto.
-    apply Environment.shadow.
-    auto.
-  Qed.
-
   Next Obligation.
   Proof.
     destruct f as [f ?], g as [g ?].
     cbn.
     eapply Term.subst_preserve.
     all: eauto.
-    apply shadow.
+    apply Term.shadow.
     auto.
   Defined.
 
@@ -111,9 +94,9 @@ Module Import Hor.
       eapply Term.msubst_preserve.
       1: eauto.
       eapply Term.subst_preserve.
-      2: apply shadow; eauto.
+      2: apply Term.shadow; eauto.
       eapply Term.subst_preserve.
-      2: apply shadow; eauto.
+      2: apply Term.shadow; eauto.
       auto.
     }
     exists N.
@@ -257,7 +240,10 @@ Module Import Vert.
   Next Obligation.
   Proof using.
     constructor.
+    1:constructor.
+    cbn.
     constructor.
+    auto.
   Qed.
 
   #[program]

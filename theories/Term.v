@@ -694,11 +694,11 @@ Proof.
 Qed.
 
 Definition shadow {v Γ x t0 t1 t2}:
-  ((x, t0) :: Γ)%list ⊢ v in t2 → ((x, t0) :: (x, t1) :: Γ)%list ⊢ v in t2 :=
+  ((x, t0) :: Γ) ⊢ v in t2 → ((x, t0) :: (x, t1) :: Γ) ⊢ v in t2 :=
   map Environment.shadow.
 
 Definition unshadow {v Γ x t0 t1 t2}:
-  ((x, t0) :: (x, t1) :: Γ)%list ⊢ v in t2 → ((x, t0) :: Γ)%list ⊢ v in t2 :=
+  (x, t0) :: (x, t1) :: Γ ⊢ v in t2 → (x, t0) :: Γ ⊢ v in t2 :=
   map Environment.unshadow.
 
 Module Dec.

@@ -40,7 +40,7 @@ store, S {{ tex \sigma }} {{ coq σ }} :: 'S_'  ::= {{ coq (Map.map normal) }}
 span, P :: 'P_' ::=
   | S |- N  ::   :: with
 
-set, Ps {{ tex P^* }} :: 'X_' ::= {{ coq (list span) }}
+spans, Ps {{ tex P^* }} :: 'X_' ::= {{ coq (list span) }}
   | nil          ::   :: nil {{ coq nil }}
   | Ps , P       ::   :: cons {{ coq (cons [[P]] [[Ps]]) }}
 

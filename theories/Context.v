@@ -242,7 +242,7 @@ Fixpoint generate t: list normal :=
       [N_fanout N N']
   end%list.
 
-Fixpoint search σ E: list span :=
+Fixpoint search σ E: spans :=
   match E with
   | E_var x => if Map.find x σ is Some N then [x ↦ N |- N] else []
 
@@ -308,7 +308,7 @@ Fixpoint search σ E: list span :=
   end%list %map.
 
 Lemma sound_pure:
-  ∀ {σ E N}, sat σ E N → sound E ([σ |- N]%list).
+  ∀ {σ E N}, sat σ E N → sound E [σ |- N].
 Proof.
   repeat constructor.
   auto.
@@ -316,7 +316,7 @@ Defined.
 
 Lemma sound_mon {E p p'}:
   sound E p → sound E p' →
-  sound E ((p ++ p')%list).
+  sound E (p ++ p').
 Proof.
   intros.
   induction p.

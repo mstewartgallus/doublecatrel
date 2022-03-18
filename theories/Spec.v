@@ -161,7 +161,7 @@ Inductive context : Set :=
  | E_fanout (E:context) (E':context)
  | E_let (x:var) (y:var) (E:context) (E':context).
 
-Definition set : Set := (list span).
+Definition spans : Set := (list span).
 
 Definition nat : Set := nat.
 Lemma eq_use: forall (x y : use), {x = y} + {x <> y}.
@@ -284,10 +284,10 @@ Inductive sat : store -> context -> normal -> Type :=    (* defn sat *)
 (** definitions *)
 
 (* defns sound *)
-Inductive sound : context -> set -> Type :=    (* defn sound *)
+Inductive sound : context -> spans -> Type :=    (* defn sound *)
  | sound_nil : forall (E:context),
      sound E  nil 
- | sound_cons : forall (E:context) (Ps:set) (σ:store) (N:normal),
+ | sound_cons : forall (E:context) (Ps:spans) (σ:store) (N:normal),
      sound E Ps ->
      sat σ E N ->
      sound E  (cons  (P_with σ N)   Ps ) .

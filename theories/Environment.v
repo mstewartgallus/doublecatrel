@@ -50,7 +50,7 @@ Function find x Γ :=
     None.
 
 Fixpoint minus x Γ: environment :=
-  if Γ is cons (y, t) T
+  if Γ is ((y, t) :: T)%list
   then
     if eq_var x y
     then
@@ -106,8 +106,8 @@ Qed.
 
 Lemma unshadow {y t0 t1 Γ}:
   ∀ x t,
-  mem x t ((y, t0) :: (y, t1) :: Γ)%list →
-  mem x t ((y, t0) :: Γ)%list.
+  mem x t ((y, t0) :: (y, t1) :: Γ) →
+  mem x t ((y, t0) :: Γ).
 Proof using.
   intros ? ? p.
   inversion p.
@@ -123,8 +123,8 @@ Qed.
 
 Lemma shadow {y t0 t1 Γ}:
   ∀ x t,
-  mem x t ((y, t0) :: Γ)%list →
-  mem x t ((y, t0) :: (y, t1) :: Γ)%list.
+  mem x t ((y, t0) :: Γ) →
+  mem x t ((y, t0) :: (y, t1) :: Γ).
 Proof using.
   intros ? ? p.
   inversion p.
@@ -135,13 +135,13 @@ Proof using.
   all: auto.
 Qed.
 
-Lemma weaken_nil {Γ}: ∀ x t, mem x t nil → mem x t Γ.
+Lemma weaken_nil {Γ}: ∀ x t, mem x t [] → mem x t Γ.
 Proof using.
   intros ? ? p.
   inversion p.
 Qed.
 
-Lemma weaken {Δ Γ}: ∀ x t, mem x t Δ → mem x t (Δ ++ Γ)%list.
+Lemma weaken {Γ Γ'}: ∀ x t, mem x t Γ → mem x t (Γ ++ Γ').
 Proof using.
   intros ? ? p.
   induction p.
@@ -154,7 +154,7 @@ Qed.
 
 Lemma swap {Γ y y' t0 t1}:
   y ≠ y' →
-  ∀ x t, mem x t ((y, t0) :: (y', t1) :: Γ)%list → mem x t ((y', t1) :: (y, t0) :: Γ)%list.
+  ∀ x t, mem x t ((y, t0) :: (y', t1) :: Γ) → mem x t ((y', t1) :: (y, t0) :: Γ).
 Proof using.
   intros ? ? ? p.
   inversion p.
