@@ -139,7 +139,7 @@ Inductive big : term -> normal -> Prop :=    (* defn big *)
 Require Blech.Map.
 
 
-Definition store : Set := (Map.map normal).
+Definition store : Set := (Map.map (type * normal)).
 
 Inductive use : Set := 
  | u_used : use
@@ -148,18 +148,23 @@ Inductive use : Set :=
 Inductive span : Set := 
  | P_with (σ:store) (N:normal).
 
-Definition vars : Set := (list var).
+Inductive context : Set := 
+ | E_lam (x:var) (E:context)
+ | E_tt : context
+ | E_fanout (E:context) (E':context)
+ | E_neu (e:redex)
+with redex : Set := 
+ | e_var (x:var)
+ | e_app (e:redex) (E':context)
+ | e_step (e:redex) (E':context) (t:type)
+ | e_let (x:var) (y:var) (e:redex) (E':context) (t:type)
+ | e_cut (E:context) (t:type).
 
 Definition usage : Set := (list use).
 
-Inductive context : Set := 
- | E_var (x:var)
- | E_lam (x:var) (t:type) (E:context)
- | E_app (E:context) (E':context)
- | E_tt : context
- | E_step (E:context) (E':context)
- | E_fanout (E:context) (E':context)
- | E_let (x:var) (y:var) (E:context) (E':context).
+Definition vars : Set := (list var).
+
+Definition tyspans : Set := (list (type * span)).
 
 Definition spans : Set := (list span).
 
@@ -169,32 +174,6 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_use : ott_coq_equality.
-Lemma eq_context: forall (x y : context), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-Hint Resolve eq_context : ott_coq_equality.
-(** library functions *)
-Fixpoint list_mem A (eq:forall a b:A,{a=b}+{a<>b}) (x:A) (l:list A) {struct l} : bool :=
-  match l with
-  | nil => false
-  | cons h t => if eq h x then true else list_mem A eq x t
-end.
-Arguments list_mem [A] _ _ _.
-
-
-(** substitutions *)
-Fixpoint subst_context (E5:context) (x5:var) (E_6:context) {struct E_6} : context :=
-  match E_6 with
-  | (E_var x) => (if eq_var x x5 then E5 else (E_var x))
-  | (E_lam x t E) => E_lam x t (if list_mem eq_var x5 (cons x nil) then E else (subst_context E5 x5 E))
-  | (E_app E E') => E_app (subst_context E5 x5 E) (subst_context E5 x5 E')
-  | E_tt => E_tt 
-  | (E_step E E') => E_step (subst_context E5 x5 E) (subst_context E5 x5 E')
-  | (E_fanout E E') => E_fanout (subst_context E5 x5 E) (subst_context E5 x5 E')
-  | (E_let x y E E') => E_let x y (subst_context E5 x5 E) (if list_mem eq_var x5 (app (cons x nil) (cons y nil)) then E' else (subst_context E5 x5 E'))
-end.
-
 (** definitions *)
 
 (** funs empty *)
@@ -227,69 +206,90 @@ Inductive lmem : var -> vars -> usage -> usage -> Prop :=    (* defn lmem *)
 (** definitions *)
 
 (* defns judge_context *)
-Inductive JE : environment -> usage -> usage -> context -> type -> Prop :=    (* defn E *)
- | JE_var : forall (Γ:environment) (Δ Δ':usage) (x:var) (t:type),
+Inductive infer : environment -> usage -> usage -> redex -> type -> Prop :=    (* defn infer *)
+ | infer_var : forall (Γ:environment) (Δ Δ':usage) (x:var) (t:type),
      mem x t Γ ->
      lmem x  (xsof Γ )  Δ Δ' ->
-     JE Γ Δ Δ' (E_var x) t
- | JE_lam : forall (Γ:environment) (Δ Δ':usage) (x:var) (t1:type) (E:context) (t2:type),
-     JE  (cons ( x ,  t1 )  Γ )   (cons  u_unused   Δ )   (cons  u_used   Δ' )  E t2 ->
-     JE Γ Δ Δ' (E_lam x t1 E) (t_prod t1 t2)
- | JE_app : forall (Γ:environment) (Δ1 Δ3:usage) (E1 E2:context) (t2:type) (Δ2:usage) (t1:type),
-     JE Γ Δ1 Δ2 E1 (t_prod t1 t2) ->
-     JE Γ Δ2 Δ3 E2 t1 ->
-     JE Γ Δ1 Δ3 (E_app E1 E2) t2
- | JE_tt : forall (Γ:environment) (Δ:usage),
+     infer Γ Δ Δ' (e_var x) t
+ | infer_app : forall (Γ:environment) (Δ1 Δ3:usage) (e1:redex) (E2:context) (t2:type) (Δ2:usage) (t1:type),
+     infer Γ Δ1 Δ2 e1 (t_prod t1 t2) ->
+     check Γ Δ2 Δ3 E2 t1 ->
+     infer Γ Δ1 Δ3 (e_app e1 E2) t2
+ | infer_step : forall (Γ:environment) (Δ1 Δ3:usage) (e1:redex) (E2:context) (t:type) (Δ2:usage),
+     infer Γ Δ1 Δ2 e1 t_unit ->
+     check Γ Δ2 Δ3 E2 t ->
+     infer Γ Δ1 Δ3 (e_step e1 E2 t) t
+ | infer_let : forall (Γ:environment) (Δ1 Δ3:usage) (x y:var) (e1:redex) (E2:context) (t3:type) (Δ2:usage) (t1 t2:type),
+     infer Γ Δ1 Δ2 e1 (t_prod t1 t2) ->
+     check  (cons ( y ,  t2 )   (cons ( x ,  t1 )  Γ )  )   (cons  u_unused    (cons  u_unused   Δ2 )  )   (cons  u_used    (cons  u_used   Δ3 )  )  E2 t3 ->
+     infer Γ Δ1 Δ3 (e_let x y e1 E2 t3) t3
+ | infer_cut : forall (Γ:environment) (Δ Δ':usage) (E:context) (t:type),
+     check Γ Δ Δ' E t ->
+     infer Γ Δ Δ' (e_cut E t) t
+with check : environment -> usage -> usage -> context -> type -> Prop :=    (* defn check *)
+ | check_lam : forall (Γ:environment) (Δ Δ':usage) (x:var) (E:context) (t1 t2:type),
+     check  (cons ( x ,  t1 )  Γ )   (cons  u_unused   Δ )   (cons  u_used   Δ' )  E t2 ->
+     check Γ Δ Δ' (E_lam x E) (t_prod t1 t2)
+ | check_tt : forall (Γ:environment) (Δ:usage),
       (  (length  Γ )   =   (length  Δ )  )  ->
-     JE Γ Δ Δ E_tt t_unit
- | JE_step : forall (Γ:environment) (Δ1 Δ3:usage) (E1 E2:context) (t:type) (Δ2:usage),
-     JE Γ Δ1 Δ2 E1 t_unit ->
-     JE Γ Δ2 Δ3 E2 t ->
-     JE Γ Δ1 Δ3 (E_step E1 E2) t
- | JE_fanout : forall (Γ:environment) (Δ1 Δ3:usage) (E1 E2:context) (t1 t2:type) (Δ2:usage),
-     JE Γ Δ1 Δ2 E1 t1 ->
-     JE Γ Δ2 Δ3 E2 t2 ->
-     JE Γ Δ1 Δ3 (E_fanout E1 E2) (t_prod t1 t2)
- | JE_let : forall (Γ:environment) (Δ1 Δ3:usage) (x y:var) (E1 E2:context) (t3:type) (Δ2:usage) (t1 t2:type),
-     JE Γ Δ1 Δ2 E1 (t_prod t1 t2) ->
-     JE  (cons ( y ,  t2 )   (cons ( x ,  t1 )  Γ )  )   (cons  u_unused    (cons  u_unused   Δ2 )  )   (cons  u_used    (cons  u_used   Δ3 )  )  E2 t3 ->
-     JE Γ Δ1 Δ3 (E_let x y E1 E2) t3.
+     check Γ Δ Δ E_tt t_unit
+ | check_fanout : forall (Γ:environment) (Δ1 Δ3:usage) (E1 E2:context) (t1 t2:type) (Δ2:usage),
+     check Γ Δ1 Δ2 E1 t1 ->
+     check Γ Δ2 Δ3 E2 t2 ->
+     check Γ Δ1 Δ3 (E_fanout E1 E2) (t_prod t1 t2)
+ | check_neu : forall (Γ:environment) (Δ Δ':usage) (e:redex) (t:type),
+     infer Γ Δ Δ' e t ->
+     check Γ Δ Δ' (E_neu e) t.
 (** definitions *)
 
 (* defns sat *)
-Inductive sat : store -> context -> normal -> Type :=    (* defn sat *)
- | sat_var : forall (x:var) (N:normal),
-     sat  (Map.one  x   N )  (E_var x) N
- | sat_tt : 
-     sat  (Map.empty)  E_tt N_tt
- | sat_step : forall (σ σ':store) (E E':context) (N:normal),
-     sat σ E N_tt ->
-     sat σ' E' N ->
-     sat  (Map.merge  σ   σ' )   ( (E_step E E') )  N
- | sat_fanout : forall (σ σ':store) (E E':context) (N N':normal),
-     sat σ E N ->
-     sat σ' E' N' ->
-     sat  (Map.merge  σ   σ' )   ( (E_fanout E E') )  (N_fanout N N')
- | sat_let : forall (σ σ':store) (x y:var) (E E':context) (N2 N0 N1:normal),
-     sat σ E (N_fanout N0 N1) ->
-     sat  (Map.merge   (Map.one  y   N1 )     (Map.merge   (Map.one  x   N0 )    σ' )  )  E' N2 ->
-     sat  (Map.merge  σ   σ' )   ( (E_let x y E E') )  N2
- | sat_lam : forall (σ:store) (x:var) (t:type) (E:context) (N N':normal),
-     sat  (Map.merge   (Map.one  x   N )    σ )  E N' ->
-     sat σ  ( (E_lam x t E) )  (N_fanout N N')
- | sat_app : forall (σ σ':store) (E E':context) (N' N:normal),
-     sat σ E (N_fanout N N') ->
-     sat σ' E' N ->
-     sat  (Map.merge  σ   σ' )   ( (E_app E E') )  N'.
+Inductive sate : store -> redex -> normal -> type -> Type :=    (* defn sate *)
+ | sate_var : forall (x:var) (t:type) (N:normal),
+     sate  (Map.one  x  ( t ,  N ))  (e_var x) N t
+ | sate_step : forall (σ σ':store) (e:redex) (E':context) (t:type) (N:normal),
+     sate σ e N_tt t_unit ->
+     satE σ' E' N t ->
+     sate  (Map.merge  σ   σ' )   ( (e_step e E' t) )  N t
+ | sate_let : forall (σ σ':store) (x y:var) (e:redex) (E':context) (t:type) (N2 N0 N1:normal) (t1 t2:type),
+     sate σ e (N_fanout N0 N1) (t_prod t1 t2) ->
+     satE  (Map.merge   (Map.one  y  ( t2 ,  N1 ))     (Map.merge   (Map.one  x  ( t1 ,  N0 ))    σ' )  )  E' N2 t ->
+     sate  (Map.merge  σ   σ' )   ( (e_let x y e E' t) )  N2 t
+ | sate_app : forall (σ σ':store) (e:redex) (E':context) (N':normal) (t2:type) (N:normal) (t1:type),
+     sate σ e (N_fanout N N') (t_prod t1 t2) ->
+     satE σ' E' N t1 ->
+     sate  (Map.merge  σ   σ' )   ( (e_app e E') )  N' t2
+ | sate_cut : forall (σ:store) (E:context) (t:type) (N:normal),
+     satE σ E N t ->
+     sate σ  ( (e_cut E t) )  N t
+with satE : store -> context -> normal -> type -> Type :=    (* defn satE *)
+ | satE_tt : 
+     satE  (Map.empty)  E_tt N_tt t_unit
+ | satE_fanout : forall (σ σ':store) (E E':context) (N N':normal) (t1 t2:type),
+     satE σ E N t1 ->
+     satE σ' E' N' t2 ->
+     satE  (Map.merge  σ   σ' )   ( (E_fanout E E') )  (N_fanout N N') (t_prod t1 t2)
+ | satE_lam : forall (σ:store) (x:var) (E:context) (N N':normal) (t1 t2:type),
+     satE  (Map.merge   (Map.one  x  ( t1 ,  N ))    σ )  E N' t2 ->
+     satE σ  ( (E_lam x E) )  (N_fanout N N') (t_prod t1 t2)
+ | satE_neu : forall (σ:store) (e:redex) (N:normal) (t:type),
+     sate σ e N t ->
+     satE σ  ( (E_neu e) )  N t.
 (** definitions *)
 
 (* defns sound *)
-Inductive sound : context -> spans -> Type :=    (* defn sound *)
- | sound_nil : forall (E:context),
-     sound E  nil 
- | sound_cons : forall (E:context) (Ps:spans) (σ:store) (N:normal),
-     sound E Ps ->
-     sat σ E N ->
-     sound E  (cons  (P_with σ N)   Ps ) .
+Inductive sound : context -> spans -> type -> Type :=    (* defn sound *)
+ | sound_nil : forall (E:context) (t:type),
+     sound E  nil  t
+ | sound_cons : forall (E:context) (Ps:spans) (σ:store) (N:normal) (t:type),
+     sound E Ps t ->
+     satE σ E N t ->
+     sound E  (cons  (P_with σ N)   Ps )  t
+with sounde : redex -> tyspans -> Type :=    (* defn sounde *)
+ | sounde_nil : forall (e:redex),
+     sounde e  nil 
+ | sounde_cons : forall (e:redex) (ts:tyspans) (σ:store) (N:normal) (t:type),
+     sounde e ts ->
+     sate σ e N t ->
+     sounde e  (cons ( t ,  (P_with σ N) )  ts ) .
 
 

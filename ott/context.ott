@@ -4,15 +4,20 @@ Require Blech.Map.
 }}
 grammar
 
-context, E :: 'E_' ::= {{ coq-equality }}
-  | x                        ::   :: var
-  | lam x : t . E            ::   :: lam (+ bind x in E +)
-  | E E'                     ::   :: app
+context, E :: 'E_' ::=
+  | lam x . E                ::   :: lam (+ bind x in E +)
   | tt                       ::   :: tt
-  | E ; E'                   ::   :: step
   | E , E'                   ::   :: fanout
-  | let x , y = E in E'      ::   :: let (+ bind x union y in E' +)
+  | neu e                    ::   :: neu
   | ( E )                    :: S :: paren {{ icho ([[E]]) }}
+
+redex, e :: 'e_' ::=
+  | x                        ::   :: var
+  | e E'                     ::   :: app
+  | e ; E' : t               ::   :: step
+  | let x , y = e in E' : t  ::   :: let (+ bind x union y in E' +)
+  | cut E t                  ::   :: cut
+  | ( e )                    :: S :: paren {{ icho ([[e]]) }}
 
 use, u :: 'u_' ::= {{ coq-equality }}
   | used   ::  :: used
@@ -30,9 +35,9 @@ nat, n :: 'n_' ::= {{ coq nat }}
   | len D      :: M :: lenD {{ coq (length [[D]]) }}
   | ( n )      :: S :: paren {{ icho ([[n]]) }}
 
-store, S {{ tex \sigma }} {{ coq σ }} :: 'S_'  ::= {{ coq (Map.map normal) }}
+store, S {{ tex \sigma }} {{ coq σ }} :: 'S_'  ::= {{ coq (Map.map (type * normal)) }}
   | nil                   :: M :: empty {{ coq (Map.empty) }}
-  | x := N                :: M :: one {{ coq (Map.one [[x]] [[N]]) }}
+  | x : t := N            :: M :: one {{ coq (Map.one [[x]] ([[t]], [[N]])) }}
   | S , S'                :: M :: add {{ coq (Map.merge [[S']] [[S]]) }}
   | S ++ S'               :: M :: merge {{ coq (Map.merge [[S]] [[S']]) }}
 
@@ -42,6 +47,10 @@ span, P :: 'P_' ::=
 spans, Ps {{ tex P^* }} :: 'X_' ::= {{ coq (list span) }}
   | nil          ::   :: nil {{ coq nil }}
   | Ps , P       ::   :: cons {{ coq (cons [[P]] [[Ps]]) }}
+
+tyspans, ts {{ tex t^* }} :: 'ts_' ::= {{ coq (list (type * span)) }}
+  | nil          ::   :: nil {{ coq nil }}
+  | ts , P : t   ::   :: cons {{ coq (cons ([[t]], [[P]]) [[ts]]) }}
 
 vars, xs {{ tex x^* }} :: 'xs_' ::= {{ coq (list var) }}
   | nil          ::   :: nil {{ coq nil }}
@@ -65,6 +74,8 @@ terminals :: 'terminals_' ::=
   | let          ::   :: let  {{ tex \mathbin{\textbf{let} } }}
   | in           ::   :: letin  {{ tex \mathbin{\textbf{in} } }}
   | \in          ::   :: member  {{ tex \mathrel{\in} }}
+  | \infer       ::   :: infer  {{ tex \colon }}
+  | \check       ::   :: check  {{ tex \colon }}
   | once         ::   :: once  {{ tex \mathrel{\in!} }}
   | never        ::   :: never  {{ tex \mathrel{\notin} }}
   | !            ::   :: big     {{ tex \mathrel{\Downarrow} }}
@@ -119,95 +130,132 @@ x \in xs, y ; D, u -> D', u
 
 defns
 
-judge_context :: 'J' ::=
+judge_context :: '' ::=
 
 defn
-G ; D -> D' |- E : t ::   :: E :: 'E_'
+G ; D -> D' |- e \infer t ::   :: infer :: 'infer_'
 by
 
 x: t \in G
 x \in xsof G ; D -> D'
------------------------ :: var
-G ; D -> D' |- x: t
+-------------------------- :: var
+G ; D -> D' |- x \infer t
 
-G, x: t1 ; D, unused -> D', used |- E: t2
-------------------------------- :: lam
-G ; D -> D' |- lam x: t1 . E: t1 * t2
-
-G ; D1 -> D2 |- E1: t1 * t2
-G ; D2 -> D3 |- E2: t1
+G ; D1 -> D2 |- e1 \infer t1 * t2
+G ; D2 -> D3 |- E2 \check t1
 --------------------------------- :: app
-G ; D1 -> D3 |- E1 E2: t2
+G ; D1 -> D3 |- e1 E2 \infer t2
+
+G ; D1 -> D2 |- e1 \infer unit
+G ; D2 -> D3 |- E2 \check t
+---------------------------------- :: step
+G ; D1 -> D3 |- e1; E2 : t \infer t
+
+G ; D1 -> D2 |- e1 \infer t1 * t2
+G, x: t1, y: t2 ; D2, unused, unused -> D3, used, used |- E2 \check t3
+------------------------------------------------- :: let
+G ; D1 -> D3 |- let x, y = e1 in E2 : t3 \infer t3
+
+G ; D -> D' |- E \check t
+---------------------------------- :: cut
+G ; D -> D' |- cut E t \infer t
+
+defn
+G ; D -> D' |- E \check t ::   :: check :: 'check_'
+by
+
+G, x: t1 ; D, unused -> D', used |- E \check t2
+---------------------------------------- :: lam
+G ; D -> D' |- lam x . E \check t1 * t2
 
 len G = len D
 -------------------------------- :: tt
-G ; D -> D |- tt: unit
+G ; D -> D |- tt \check unit
 
-G ; D1 -> D2 |- E1: unit
-G ; D2 -> D3 |- E2: t
-------------------------- :: step
-G ; D1 -> D3 |- E1; E2: t
+G ; D1 -> D2 |- E1 \check t1
+G ; D2 -> D3 |- E2 \check t2
+----------------------------------- :: fanout
+G ; D1 -> D3 |- E1, E2 \check t1 * t2
 
-G ; D1 -> D2 |- E1: t1
-G ; D2 -> D3 |- E2: t2
-------------------------------- :: fanout
-G ; D1 -> D3 |- E1, E2: t1 * t2
-
-G ; D1 -> D2 |- E1 : t1 * t2
-G, x: t1, y: t2 ; D2, unused, unused -> D3, used, used |- E2: t3
-------------------------------------------------- :: let
-G ; D1 -> D3 |- let x, y = E1 in E2: t3
+G ; D -> D' |- e \infer t
+---------------------------------- :: neu
+G ; D -> D' |- neu e \check t
 
 defns
 
 sat :: '' ::= {{ coq-universe Type }}
 
 defn
-S |- E [ N ] ::   :: sat :: 'sat_' {{ tex [[S]] \mathrel{\vdash} [[E]] [ [[N]] ] }}
+S |- e [ N ] : t ::   :: sate :: 'sate_' {{ tex [[S]] \mathrel{\vdash} [[e]] [ [[N]] ] \colon [[t]] }}
 by
 
----------------------- :: var
-x := N |- x [ N ]
+-------------------------- :: var
+x : t := N |- x [ N ] : t
 
------------------- :: tt
-nil |- tt [tt]
+S |- e [ tt ] : unit
+S' |- E' [ N ] : t
+------------------------------- :: step
+S ++ S' |- (e; E': t) [ N ] : t
 
-S |- E [ tt ]
-S' |- E' [ N ]
--------------------------- :: step
-S ++ S' |- (E; E') [ N ]
+S |- e [N0, N1] : t1 * t2
+S', x : t1 := N0, y : t2 := N1 |- E' [ N2 ] : t
+------------------------------------------------ :: let
+S ++ S' |- (let x, y = e in E' : t) [ N2 ] : t
 
-S |-  E [N]
-S' |-  E' [N']
--------------------------- :: fanout
-S ++ S' |- (E, E') [N, N']
+S |- e [ N, N' ] : t1 * t2
+S' |- E' [N] : t1
+----------------------------- :: app
+S ++ S' |- (e E') [ N' ] : t2
 
-S |- E [N0, N1]
-S', x := N0, y := N1 |- E' [ N2 ]
-------------------------------------- :: let
-S ++ S' |- (let x, y = E in E') [ N2 ]
+S |- E [ N ] : t
+------------------------- :: cut
+S |- (cut E t) [ N ] : t
 
-S, x := N |- E [ N' ]
-------------------------- :: lam
-S |- (lam x: t. E) [ N, N' ]
+defn
+S |- E [ N ] : t ::   :: satE :: 'satE_' {{ tex [[S]] \mathrel{\vdash} [[E]] [ [[N]] ] \colon [[t]] }}
+by
 
-S |- E [ N, N' ]
-S' |- E' [N]
---------------------- :: app
-S ++ S' |- (E E') [ N' ]
+---------------------- :: tt
+nil |- tt [tt] : unit
+
+S |-  E [N] : t1
+S' |-  E' [N'] : t2
+------------------------------------- :: fanout
+S ++ S' |- (E, E') [N, N'] : t1 * t2
+
+S, x : t1 := N |- E [ N' ] : t2
+------------------------------------ :: lam
+S |- (lam x. E) [ N, N' ] : t1 * t2
+
+S |- e [ N ] : t
+--------------------------- :: neu
+S |- (neu e) [ N ] : t
 
 defns
 
 sound :: '' ::= {{ coq-universe Type }}
 
 defn
-E [ Ps ] ::   :: sound :: 'sound_'
+E [ Ps ] : t ::   :: sound :: 'sound_'
 by
 
------------ :: nil
-E [ nil ]
+-------------- :: nil
+E [ nil ] : t
 
-E [ Ps ]
-S |- E [N]
----------------- :: cons
-E [ Ps, S |- N ]
+E [ Ps ] : t
+S |- E [N] : t
+-------------------- :: cons
+E [ Ps, S |- N ] : t
+
+
+defn
+e [ ts ] ::   :: sounde :: 'sounde_'
+by
+
+-------------- :: nil
+e [ nil ]
+
+e [ ts ]
+S |- e [N] : t
+-------------------- :: cons
+e [ ts, S |- N : t ]

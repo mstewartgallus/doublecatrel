@@ -69,37 +69,6 @@ Proof.
   all: auto.
 Qed.
 
-Lemma length_same_l {Γ Δ Δ' E t}: JE Γ Δ Δ' E t → length Γ = length Δ.
-Proof.
-  intro p.
-  induction p.
-  all: cbn.
-  all: auto.
-  - assert (H0' := length_same_lmem_l H0).
-    symmetry in H0'.
-    symmetry.
-    rewrite H0'.
-    rewrite length_xsof.
-    auto.
-Qed.
-
-Lemma length_same_r {Γ Δ Δ' E t}: JE Γ Δ Δ' E t → length Γ = length Δ'.
-Proof.
-  intro p.
-  induction p.
-  all: cbn.
-  all: auto.
-  - assert (H0' := length_same_lmem_r H0).
-    symmetry in H0'.
-    symmetry.
-    rewrite H0'.
-    rewrite length_xsof.
-    auto.
-  - cbn in IHp2.
-    inversion IHp2.
-    auto.
-Qed.
-
 Section Typecheck.
   Import OptionNotations.
 
@@ -123,110 +92,227 @@ Section Typecheck.
     | _, _ => None
     end.
 
-  Function typecheck Γ Δ E: option (usage * type) :=
-    match E with
-    | E_var x => lookup x Γ Δ
-    | E_lam x t1 E =>
-        do (u_used :: Δ', t2) ← typecheck ((x, t1) :: Γ) (u_unused :: Δ) E ;
-        Some (Δ', t1 * t2)
-    | E_app E E' =>
-        do (Δ1, t1 * t2) ← typecheck Γ Δ E ;
-        do (Δ2, t1') ← typecheck Γ Δ1 E' ;
-        if eq_type t1 t1'
-        then
-          Some (Δ2, t2)
-        else
-          None
+  Function typecheck Γ Δ E t: option usage :=
+    match E, t with
+    | E_lam x E, t1 * t2 =>
+        do (u_used :: Δ') ← typecheck ((x, t1) :: Γ) (u_unused :: Δ) E t2 ;
+        Some Δ'
 
-    | E_tt =>
+    | E_tt, t_unit =>
         if Nat.eq_dec (length Γ) (length Δ)
         then
-          Some (Δ, t_unit)
+          Some Δ
         else
           None
-    | E_step E E' =>
-        do (Δ1, t_unit) ← typecheck Γ Δ E ;
-        do (Δ2, t) ← typecheck Γ Δ1 E' ;
+
+    | E_fanout E E', t1 * t2 =>
+        do Δ1 ← typecheck Γ Δ E t1 ;
+        do Δ2 ← typecheck Γ Δ1 E' t2 ;
+        Some Δ2
+
+    | E_neu e, _ =>
+        do (Δ, t') ← typeinfer Γ Δ e ;
+        if eq_type t t' then Some Δ else None
+
+    | _, _ => None
+    end
+      %list
+  with typeinfer Γ Δ e: option (usage * type) :=
+    match e with
+    | e_var x => lookup x Γ Δ
+
+    | e_app e E' =>
+        do (Δ1, t1 * t2) ← typeinfer Γ Δ e ;
+        do Δ2 ← typecheck Γ Δ1 E' t1 ;
+        Some (Δ2, t2)
+
+    | e_step e E' t =>
+        do (Δ1, t_unit) ← typeinfer Γ Δ e ;
+        do Δ2 ← typecheck Γ Δ1 E' t ;
         Some (Δ2, t)
 
-    | E_fanout E E' =>
-        do (Δ1, t1) ← typecheck Γ Δ E ;
-        do (Δ2, t2) ← typecheck Γ Δ1 E' ;
-        Some (Δ2, t1 * t2)
-
-    | E_let x y E E' =>
-        do (Δ1, t1 * t2) ← typecheck Γ Δ E ;
-        do (u_used :: u_used :: Δ2, t3) ← typecheck ((y, t2) :: (x, t1) :: Γ) (u_unused :: u_unused :: Δ1) E' ;
+    | e_let x y e E' t3 =>
+        do (Δ1, t1 * t2) ← typeinfer Γ Δ e ;
+        do (u_used :: u_used :: Δ2) ← typecheck ((y, t2) :: (x, t1) :: Γ) (u_unused :: u_unused :: Δ1) E' t3 ;
         Some (Δ2, t3)
+
+    | e_cut E t =>
+        do Δ ← typecheck Γ Δ E t ;
+        Some (Δ, t)
     end
       %list.
 End Typecheck.
 
-Theorem typecheck_sound:
-  ∀ Γ {E Δ Δ' t}, typecheck Γ Δ E = Some (Δ', t) → JE Γ Δ Δ' E t.
+Fixpoint
+  typecheck_sound {E} {struct E}:
+  ∀ {Γ Δ Δ' t}, typecheck Γ Δ E t = Some Δ' → check Γ Δ Δ' E t
+    with
+  typeinfer_sound {e} {struct e}:
+  ∀ {Γ Δ Δ' t}, typeinfer Γ Δ e = Some (Δ', t) → infer Γ Δ Δ' e t
+
+.
 Proof using.
-  intros Γ E Δ.
-  functional induction (typecheck Γ Δ E).
-  all: cbn.
-  all: intros ? ? p.
-  all: inversion p.
-  all: subst.
-  all: clear p.
-  all: econstructor; eauto.
-  - generalize dependent Δ'.
-    functional induction (lookup x Γ Δ).
+  - destruct E.
     all: cbn.
-    all: intros ? p.
+    all: intros ? ? ? ? p.
     all: inversion p.
     all: subst.
-    all: constructor.
-    all: eauto.
-  - generalize dependent Δ'.
-    functional induction (lookup x Γ Δ).
+    all: clear p.
+    + destruct t.
+      1: discriminate.
+      destruct typecheck eqn:q.
+      2: discriminate.
+      destruct u.
+      1: discriminate.
+      destruct u.
+      2: discriminate.
+      inversion H0.
+      subst.
+      constructor.
+      auto.
+    + destruct t.
+      2: discriminate.
+      destruct Nat.eq_dec.
+      2: discriminate.
+      inversion H0.
+      subst.
+      constructor.
+      auto.
+    + destruct t.
+      1: discriminate.
+      destruct typecheck eqn:q1.
+      2: discriminate.
+      destruct typecheck eqn:q2 in H0.
+      2: discriminate.
+      inversion H0.
+      subst.
+      econstructor.
+      all: eauto.
+    + constructor.
+      destruct typeinfer eqn:q.
+      2: discriminate.
+      destruct p.
+      destruct eq_type.
+      2: discriminate.
+      inversion H0.
+      subst.
+      eauto.
+  - destruct e.
     all: cbn.
-    all: intros ? p.
+    all: intros ? ? ? ? p.
     all: inversion p.
     all: subst.
-    all: constructor.
-    all: eauto.
-    rewrite length_xsof.
-    auto.
+    all: clear p.
+    + constructor.
+      * generalize dependent Δ'.
+        functional induction (lookup x Γ Δ).
+        all: cbn.
+        all: intros ? p.
+        all: inversion p.
+        all: subst.
+        all: constructor.
+        all: eauto.
+      * generalize dependent Δ'.
+        functional induction (lookup x Γ Δ).
+        all: cbn.
+        all: intros ? p.
+        all: inversion p.
+        all: subst.
+        all: constructor.
+        all: eauto.
+        rewrite length_xsof.
+        auto.
+    + destruct typeinfer eqn:q1.
+      2: discriminate.
+      destruct p.
+      destruct t0.
+      1: discriminate.
+      destruct typecheck eqn:q2.
+      2: discriminate.
+      inversion H0.
+      subst.
+      econstructor.
+      all: eauto.
+    + destruct typeinfer eqn:q1.
+      2: discriminate.
+      destruct p.
+      destruct t1.
+      2: discriminate.
+      destruct typecheck eqn:q2.
+      2: discriminate.
+      inversion H0.
+      subst.
+      econstructor.
+      all: eauto.
+    + destruct typeinfer eqn:q1.
+      2: discriminate.
+      destruct p.
+      destruct t1.
+      1: discriminate.
+      destruct typecheck eqn:q2.
+      2: discriminate.
+      destruct u0.
+      1: discriminate.
+      destruct u0.
+      2: discriminate.
+      destruct u1.
+      1: discriminate.
+      destruct u0.
+      2: discriminate.
+      inversion H0.
+      subst.
+      econstructor.
+      all: eauto.
+    + destruct typecheck eqn:q.
+      2: discriminate.
+      inversion H0.
+      subst.
+      constructor.
+      eauto.
 Qed.
 
-Theorem typecheck_complete:
-  ∀ Γ {E Δ Δ' t}, JE Γ Δ Δ' E t → typecheck Γ Δ E = Some (Δ', t).
+Fixpoint typecheck_complete {Γ E Δ Δ' t} (p: check Γ Δ Δ' E t):
+  typecheck Γ Δ E t = Some Δ'
+with
+typeinfer_complete {Γ e Δ Δ' t} (p: infer Γ Δ Δ' e t):
+  typeinfer Γ Δ e = Some (Δ', t).
 Proof using.
-  intros ? ? ? ? ? p.
-  induction p.
-  all: cbn.
-  all: try rewrite IHp.
-  all: try rewrite IHp1.
-  all: try rewrite IHp2.
-  all: auto.
-  - generalize dependent Δ'.
-    generalize dependent Δ.
-    induction H.
+  - destruct p.
     all: cbn.
-    all: intros ? ? q.
-    all: inversion q.
-    all: subst.
-    all: cbn.
-    all: try contradiction.
-    all: destruct eq_var.
-    all: try contradiction.
-    + rewrite <- H1.
-      rewrite length_xsof.
-      destruct Nat.eq_dec.
+    all: try rewrite (typecheck_complete _ _ _ _ _ p).
+    all: try rewrite (typecheck_complete _ _ _ _ _ p1).
+    all: try rewrite (typecheck_complete _ _ _ _ _ p2).
+    all: try rewrite (typeinfer_complete _ _ _ _ _ H).
+    all: auto.
+    + destruct Nat.eq_dec.
       2: contradiction.
       auto.
-    + rewrite (IHmem _ _ H7).
+    + destruct eq_type.
+      2: contradiction.
       auto.
-  - destruct eq_type.
-    2: contradiction.
-    auto.
-  - destruct Nat.eq_dec.
-    2: contradiction.
-    auto.
+  - destruct p.
+    all: cbn.
+    all: try rewrite (typeinfer_complete _ _ _ _ _ p).
+    all: try rewrite (typecheck_complete _ _ _ _ _ H).
+    all: auto.
+    + generalize dependent Δ'.
+      generalize dependent Δ.
+      induction H.
+      all: cbn.
+      all: intros ? ? q.
+      all: inversion q.
+      all: subst.
+      all: cbn.
+      all: try contradiction.
+      all: destruct eq_var.
+      all: try contradiction.
+      * rewrite <- H1.
+        rewrite length_xsof.
+        destruct Nat.eq_dec.
+        2: contradiction.
+        auto.
+      * rewrite (IHmem _ _ H7).
+        auto.
 Qed.
 
 Notation "'do' n ← e0 ; e1" :=
@@ -242,81 +328,109 @@ Fixpoint generate t: list normal :=
       [N_fanout N N']
   end%list.
 
-Fixpoint search σ E: spans :=
-  match E with
-  | E_var x => if Map.find x σ is Some N then [x ↦ N |- N] else []
-
-  | E_lam x t E =>
-      do N0 ← generate t ;
-      do (σ' |- N1) ← search (x ↦ N0 ∪ σ) E ;
-      if Map.find x σ' is Some N0'
+Fixpoint search σ E t: spans :=
+  match E, t with
+  | E_lam x E, t1 * t2 =>
+      do N0 ← generate t1 ;
+      do (σ' |- N1) ← search (x ↦ (t1, N0) ∪ σ) E t2 ;
+      if Map.find x σ' is Some (t1', N0')
       then
-        if eq_normal N0 N0'
-        then
-          [σ' \ x |- N_fanout N0 N1]
-        else
-          []
+        match eq_normal N0 N0', eq_type t1 t1' with
+        | left _, left _ => [σ' \ x |- N_fanout N0 N1]
+        | _, _ => []
+        end
       else
         []
 
-  | E_app E E' =>
-      do (σ1 |- N) ← search σ E ;
-      do (σ2 |- N0) ← search σ E' ;
-      if N is N_fanout N0' N1
-      then
-        if eq_normal N0 N0'
-        then
-          [σ1 ∪ σ2 |- N1]
-        else
-          []
-      else
-        []
+  | E_tt, t_unit => [∅ |- N_tt]
 
-  | E_tt => [∅ |- N_tt]
-
-  | E_step E E' =>
-      do (σ1 |- N) ← search σ E ;
-      do (σ2 |- N') ← search σ E' ;
-      if N is N_tt
-      then
-        [σ1 ∪ σ2 |- N']
-      else
-        []
-
-  | E_fanout E E' =>
-      do (σ1 |- N) ← search σ E ;
-      do (σ2 |- N') ← search σ E' ;
+  | E_fanout E E', t1 * t2 =>
+      do (σ1 |- N) ← search σ E t1 ;
+      do (σ2 |- N') ← search σ E' t2 ;
       [σ1 ∪ σ2 |- N_fanout N N']
 
-  | E_let x y E E' =>
-      do (σ1 |- N) ← search σ E ;
-      do (a, b) ← (if N is N_fanout a b then [(a, b)] else []) ;
-      do (σ2 |- N') ← search ((x ↦ a) ∪ (y ↦ b) ∪ σ) E' ;
-      match Map.find x (σ2 \ y), Map.find y σ2 with
-      | Some a', Some b' =>
-          if eq_normal a a'
+  | E_neu e, _ =>
+      do (t', p) ← search_redex σ e ;
+      if eq_type t t' then [p] else []
+  | _, _ => []
+  end%list %map
+with search_redex σ e: list (type * span) :=
+  match e with
+  | e_var x => if Map.find x σ is Some (t, N) then [(t, x ↦ (t, N) |- N)] else []
+
+  | e_app e E' =>
+      do (t, σ1 |- N) ← search_redex σ e ;
+      if t is t1 * t2
+      then
+        do (σ2 |- N0) ← search σ E' t1 ;
+        if N is N_fanout N0' N1
+        then
+          if eq_normal N0 N0'
           then
-            if eq_normal b b'
-            then
-              [σ1 ∪ ((σ2 \ y) \ x) |- N']
-            else
-              []
+            [(t2, σ1 ∪ σ2 |- N1)]
           else
             []
+        else
+          []
+      else
+        []
+
+  | e_step e E' t2 =>
+      do (t1, σ1 |- N) ← search_redex σ e ;
+      do (σ2 |- N') ← search σ E' t2 ;
+      if N is N_tt
+      then
+        if t1 is t_unit
+        then
+          [(t2, σ1 ∪ σ2 |- N')]
+        else
+          []
+      else
+        []
+
+  | e_let x y e E' t3 =>
+      do (t, σ1 |- N) ← search_redex σ e ;
+      do (t1, t2) ← (if t is a * b then [(a, b)] else []) ;
+      do (a, b) ← (if N is N_fanout a b then [(a, b)] else []) ;
+      do (σ2 |- N') ← search ((x ↦ (t1, a)) ∪ (y ↦ (t2, b)) ∪ σ) E' t3 ;
+      match Map.find x (σ2 \ y), Map.find y σ2 with
+      | Some (t1', a'), Some (t2', b') =>
+          match eq_normal a a', eq_normal b b', eq_type t1 t1', eq_type t2 t2' with
+          | left _, left _, left _, left _ =>
+              [(t3, σ1 ∪ ((σ2 \ y) \ x) |- N')]
+          | _, _, _, _ => []
+          end
       | _, _ => []
       end
+
+  | e_cut E t =>
+      do p ← search σ E t ;
+      [(t, p)]
   end%list %map.
 
 Lemma sound_pure:
-  ∀ {σ E N}, sat σ E N → sound E [σ |- N].
+  ∀ {σ E N t}, satE σ E N t → sound E [σ |- N] t.
 Proof.
   repeat constructor.
   auto.
 Defined.
 
-Lemma sound_mon {E p p'}:
-  sound E p → sound E p' →
-  sound E (p ++ p').
+Lemma sound_mon {E t p p'}:
+  sound E p t → sound E p' t →
+  sound E (p ++ p') t.
+Proof.
+  intros.
+  induction p.
+  1: auto.
+  cbn.
+  inversion H.
+  constructor.
+  all: auto.
+Defined.
+
+Lemma sounde_mon {e p p'}:
+  sounde e p → sounde e p' →
+  sounde e (p ++ p')%list.
 Proof.
   intros.
   induction p.
@@ -328,122 +442,189 @@ Proof.
 Defined.
 
 Theorem search_sound:
-  ∀ σ E, sound E (search σ E).
+  ∀ σ E t, sound E (search σ E t) t
+ with
+ searche_sound:
+   ∀ σ e, sounde e (search_redex σ e).
 Proof using.
   Open Scope map.
-  intros σ E.
-  generalize dependent σ.
-  induction E.
-  all: intros.
-  - cbn.
-    destruct Map.find eqn:q.
-    2: constructor.
-    apply sound_pure.
-    constructor.
-  - cbn.
-    induction (generate t).
-    1: cbn.
-    1: constructor.
-    cbn in *.
-    apply sound_mon.
-    2: auto.
-    clear IHl.
-    induction (IHE (x ↦ a ∪ σ)).
-    1: constructor.
-    cbn.
-    destruct Map.find eqn:q.
-    2: auto.
-    destruct (eq_normal a n).
-    2: auto.
-    subst.
-    constructor.
-    1: auto.
-    constructor.
-    rewrite Map.add_minus.
-    all: auto.
-  - cbn.
-    induction (IHE1 σ).
-    1: constructor.
-    cbn.
-    apply sound_mon.
-    2: auto.
-    clear IHs.
-    induction (IHE2 σ).
-    1: constructor.
-    cbn in *.
-    destruct N.
-    1: auto.
-    destruct (eq_normal N0 N1).
-    2: cbn.
-    2: auto.
-    cbn.
-    subst.
-    constructor.
-    1: auto.
-    econstructor.
-    all: eauto.
-  - all: repeat constructor.
-  - cbn.
-    induction (IHE1 σ).
-    1: constructor.
-    cbn.
-    apply sound_mon.
-    2: auto.
-    clear IHs.
-    induction (IHE2 σ).
-    1: constructor.
-    cbn.
-    destruct N.
-    2: auto.
-    constructor.
-    1: auto.
-    constructor.
-    all: auto.
-  - cbn.
-    induction (IHE1 σ).
-    1: constructor.
-    cbn.
-    apply sound_mon.
-    2: auto.
-    clear IHs.
-    induction (IHE2 σ).
-    1: constructor.
-    cbn.
-    constructor.
-    1: auto.
-    econstructor.
-    all: eauto.
-  - cbn.
-    induction (IHE1 σ).
-    1: constructor.
-    apply sound_mon.
-    2: auto.
-    clear IHs.
-    destruct N.
-    1: constructor.
-    cbn.
-    rewrite List.app_nil_r.
-    induction (IHE2 (((x ↦ N1 ∪ y ↦ N2) ∪ σ))).
-    1: constructor.
-    cbn.
-    destruct (Map.find x (σ1 \ y)) eqn:q.
-    2: auto.
-    destruct (Map.find y σ1) eqn:q'.
-    2: auto.
-    destruct (eq_normal N1 n).
-    2: auto.
-    subst.
-    destruct (eq_normal N2 n0).
-    2: auto.
-    subst.
-    cbn.
-    constructor.
-    1: auto.
-    econstructor.
-    all: eauto.
-    all: repeat rewrite Map.add_minus.
-    all: eauto.
-    all: cbn.
+  - intros σ E.
+    generalize dependent σ.
+    destruct E.
+    all: intros.
+    + cbn.
+      destruct t.
+      1:constructor.
+      induction (generate t1).
+      1: cbn.
+      1: constructor.
+      cbn in *.
+      apply sound_mon.
+      2: auto.
+      clear IHl.
+      induction (search_sound (x ↦ (t1, a) ∪ σ) E t2).
+      1: constructor.
+      cbn.
+      destruct Map.find eqn:q.
+      2: auto.
+      destruct p.
+      destruct (eq_normal a n).
+      2: auto.
+      subst.
+      destruct (eq_type t1 t0).
+      2: auto.
+      subst.
+      cbn.
+      constructor.
+      1: auto.
+      constructor.
+      rewrite Map.add_minus.
+      all: auto.
+    + cbn.
+      destruct t.
+      all: try econstructor.
+      all: constructor.
+    + cbn.
+      destruct t.
+      1: constructor.
+      induction (search_sound σ E1 t1).
+      1: constructor.
+      cbn.
+      apply sound_mon.
+      2: auto.
+      clear IHs.
+      induction (search_sound σ E2 t2).
+      1: constructor.
+      cbn.
+      constructor.
+      1: auto.
+      constructor.
+      all: eauto.
+    + cbn.
+      induction (searche_sound σ e).
+      1: constructor.
+      cbn.
+      destruct eq_type.
+      2: auto.
+      cbn.
+      subst.
+      cbn.
+      constructor.
+      1: auto.
+      constructor.
+      auto.
+  - intros σ e.
+    generalize dependent σ.
+    destruct e.
+    all: intros.
+    + cbn.
+      destruct Map.find eqn:q.
+      2: constructor.
+      destruct p.
+      constructor.
+      1: constructor.
+      constructor.
+    + cbn.
+      induction (searche_sound σ e).
+      1: constructor.
+      cbn.
+      destruct t.
+      all: cbn.
+      all: auto.
+      apply sounde_mon.
+      all: cbn.
+      2: auto.
+      clear IHs.
+      induction (search_sound σ E' t1).
+      all: cbn.
+      1: constructor.
+      cbn.
+      destruct N.
+      all: cbn.
+      all: auto.
+      destruct eq_normal.
+      all: cbn.
+      all: auto.
+      constructor.
+      1: auto.
+      subst.
+      econstructor.
+      all: eauto.
+    + cbn.
+      induction (searche_sound σ e).
+      1: constructor.
+      cbn.
+      apply sounde_mon.
+      all: cbn.
+      2: auto.
+      clear IHs.
+      induction (search_sound σ E' t).
+      all: cbn.
+      1: constructor.
+      cbn.
+      destruct N.
+      all: cbn.
+      all: auto.
+      destruct t0.
+      all: cbn.
+      all: auto.
+      constructor.
+      1: auto.
+      constructor.
+      all: eauto.
+    + cbn.
+      induction (searche_sound σ e).
+      1: constructor.
+      cbn.
+      apply sounde_mon.
+      2: auto.
+      clear IHs.
+      destruct t0.
+      1: constructor.
+      cbn.
+      destruct N.
+      cbn.
+      1: constructor.
+      cbn.
+      repeat rewrite List.app_nil_r.
+      induction (search_sound (((x ↦ (t0_1, N1) ∪ y ↦ (t0_2, N2)) ∪ σ)) E' t).
+      1: constructor.
+      cbn.
+      destruct (Map.find x (σ1 \ y)) eqn:q.
+      2: auto.
+      destruct p.
+      destruct (Map.find y σ1) eqn:q'.
+      2: auto.
+      destruct p.
+      destruct (eq_normal N1 n).
+      2: auto.
+      subst.
+      destruct (eq_normal N2 n0).
+      2: auto.
+      subst.
+      cbn.
+      destruct eq_type.
+      2: auto.
+      subst.
+      cbn.
+      destruct eq_type.
+      2: auto.
+      subst.
+      cbn.
+      constructor.
+      1: auto.
+      econstructor.
+      all: eauto.
+      all: repeat rewrite Map.add_minus.
+      all: eauto.
+    + cbn.
+      induction (search_sound σ E t).
+      1: constructor.
+      cbn.
+      constructor.
+      1: auto.
+      constructor.
+      auto.
 Qed.
 
 (* FIXME type check *)
@@ -453,94 +634,9 @@ Record span := {
   π2: s → normal ;
 }.
 
-Definition satspan E: span :=
-  {|
-    s := { σN & sat (fst σN) E (snd σN) } ;
-    π1 s := fst (projT1 s) ;
-    π2 s := snd (projT1 s) ;
-  |}.
-
-Definition searchspan E: span :=
-  {|
-    s := { '(σ, N, n) | List.nth_error (search σ E) n = Some (σ |- N) } ;
-    π1 '(exist _ (σ, _, _) _) := σ ;
-    π2 '(exist _ (_, N, _) _) := N ;
-  |}.
-
-Definition sound E: s (searchspan E) → s (satspan E).
-Proof.
-  cbn.
-  intros [[[σ N] n] p].
-  exists (σ, N).
-  cbn.
-  generalize dependent n.
-  induction (search_sound σ E).
-  all: intros n p.
-  1: destruct n; discriminate.
-  destruct n.
-  - cbn in p.
-    inversion p.
-    subst.
-    auto.
-  - cbn in p.
-    destruct Ps.
-    1: destruct n; discriminate.
-    apply (IHs0 n).
-    auto.
-Defined.
-
-Definition π1_sound1 E: ∀ s, π1 (searchspan E) s = π1 (satspan E) (sound E s).
-Proof.
-  cbn.
-  intros [[[σ N] n] p].
-  cbn.
-  auto.
-Defined.
-
-Definition π2_sound1 E: ∀ s, π2 (searchspan E) s = π2 (satspan E) (sound E s).
-Proof.
-  cbn.
-  intros [[[σ N] n] p].
-  cbn.
-  auto.
-Defined.
-
-Lemma subst_assoc {x f g h}:
-  subst_context (subst_context h x g) x f = subst_context h x (subst_context g x f).
-Proof.
-  induction f.
-  all: cbn.
-  all: auto.
-  - destruct eq_var eqn:q.
-    1: auto.
-    cbn.
-    rewrite q.
-    auto.
-  - rewrite IHf.
-    destruct eq_var eqn:q.
-    all: auto.
-  - rewrite IHf1.
-    rewrite IHf2.
-    auto.
-  - rewrite IHf1.
-    rewrite IHf2.
-    auto.
-  - rewrite IHf1.
-    rewrite IHf2.
-    auto.
-  - rewrite IHf1.
-    rewrite IHf2.
-    auto.
-    destruct eq_var.
-    1: auto.
-    destruct eq_var.
-    1: auto.
-    auto.
-Qed.
-
 Definition useonce Γ u: usage := List.map (λ '(x, t), u) Γ.
 
-Definition oftype Γ t := { E | JE Γ (useonce Γ u_unused) (useonce Γ u_used) E t }.
+Definition oftype Γ t := { E | check Γ (useonce Γ u_unused) (useonce Γ u_used) E t }.
 
 Record iso A B := {
     to: A → B ;
@@ -554,211 +650,3 @@ Arguments to_from {A B}.
 Arguments from_to {A B}.
 
 Inductive tr A: Prop := | tr_intro (a: A).
-
-Definition equiv E E' :=
-  ∀ σ N, tr (iso (sat σ E N) (sat σ E' N)).
-
-Instance equiv_Reflexive: Reflexive equiv.
-Proof.
-  unfold Reflexive.
-  intro.
-  exists.
-  exists (λ a, a) (λ a, a).
-  all: auto.
-Qed.
-
-Instance equiv_Symmetric: Symmetric equiv.
-Proof.
-  unfold Symmetric.
-  intros x y p σ N.
-  destruct (p σ N) as [p'].
-  exists.
-  exists (from p') (to p').
-  - apply from_to.
-  - apply to_from.
-Qed.
-
-Instance equiv_Transitive: Transitive equiv.
-Proof.
-  unfold Transitive.
-  intros ? ? ? p q σ N.
-  destruct (p σ N) as [p'].
-  destruct (q σ N) as [q'].
-  exists.
-  exists (λ a, to q' (to p' a)) (λ a, from p' (from q' a)).
-  - intros.
-    rewrite to_from.
-    rewrite to_from.
-    auto.
-  - intros.
-    rewrite from_to.
-    rewrite from_to.
-    auto.
-Qed.
-
-Instance equiv_Equivalence: Equivalence equiv := {
-    Equivalence_Reflexive := _ ;
-}.
-
-Instance context_Setoid: Setoid context := {
-    equiv := equiv ;
-}.
-
-Lemma subst_var {x E}:
-  subst_context (E_var x) x E = E.
-Proof.
-  induction E.
-  all: cbn.
-  all: auto.
-  all: try destruct eq_var.
-  all: subst.
-  all: auto.
-  all: try destruct eq_var.
-  all: try rewrite IHE.
-  all: try rewrite IHE1.
-  all: try rewrite IHE2.
-  all: auto.
-Qed.
-
-Lemma length_0 {A} {l: list A}: length l = 0 → l = nil.
-Proof.
-  destruct l.
-  1: auto.
-  cbn.
-  discriminate.
-Qed.
-
-Function is_mt Δ :=
-  if Δ is cons u Δ'
-  then
-    if u is u_unused
-    then is_mt Δ'
-    else false
-  else
-    true.
-
-Lemma is_mt_sound:
-  ∀ {Δ}, Bool.Is_true (is_mt Δ) → Δ = mt (length Δ).
-Proof using .
-  intros Δ.
-  functional induction (is_mt Δ).
-  all: cbn.
-  all: intro p.
-  - rewrite IHb.
-    all: auto.
-    rewrite length_mt.
-    auto.
-  - contradiction.
-  - destruct Δ.
-    1: auto.
-    contradiction.
-Qed.
-
-Lemma is_mt_complete:
-  ∀ {n}, is_mt (mt n) = true.
-Proof using .
-  intros n.
-  induction n.
-  all: cbn.
-  all: auto.
-Qed.
-
-Function minus_xs x xs :=
-  match xs with
-  | cons y T' =>
-      if eq_var x y
-      then
-        T'
-      else
-        cons y (minus_xs x T')
-  | _ => nil
-  end.
-
-Function rm n Δ :=
-  match n, Δ with
-  | O, cons u_used Δ' => Δ'
-  | S n', cons u_unused Δ' => cons u_unused (rm n' Δ')
-  | _, _ => nil
-  end.
-
-Lemma xsof_minus {x Γ}:
-  xsof (minus x Γ) = minus_xs x (xsof Γ).
-Proof.
-  induction Γ.
-  all: cbn.
-  1: auto.
-  destruct a as [y t].
-  cbn.
-  destruct eq_var.
-  all: subst.
-  1: auto.
-  cbn.
-  rewrite IHΓ.
-  auto.
-Qed.
-
-
-Lemma lookup_complete {x t Γ}:
-  mem x t Γ → ∀ {Δ Δ'}, lmem x (xsof Γ) Δ Δ' → lookup x Γ Δ = Some (Δ', t).
-Proof.
-  intros p.
-  induction p.
-  all: cbn.
-  all: intros Δ Δ' q.
-  all: inversion q.
-  all: subst.
-  all: try contradiction.
-  - rewrite length_xsof in H1.
-    rewrite H1.
-    destruct eq_var.
-    2: contradiction.
-    destruct Nat.eq_dec.
-    2: contradiction.
-    auto.
-  - destruct eq_var.
-    1: subst; contradiction.
-    erewrite IHp.
-    2: eauto.
-    auto.
-Qed.
-
-Lemma lookup_sound_mem {x t Γ Δ}:
-  ∀ {Δ'}, lookup x Γ Δ = Some (Δ', t) → mem x t Γ.
-Proof.
-  functional induction (lookup x Γ Δ).
-  all: cbn.
-  all: intros ? p.
-  all: inversion p.
-  all: subst.
-  all: constructor.
-  all: eauto.
-Qed.
-
-Lemma lookup_sound_lmem {x t Γ Δ}:
-  ∀ {Δ'}, lookup x Γ Δ = Some (Δ', t) → lmem x (xsof Γ) Δ Δ'.
-Proof.
-  functional induction (lookup x Γ Δ).
-  all: cbn.
-  all: intros ? p.
-  all: inversion p.
-  all: subst.
-  all: constructor.
-  all: eauto.
-  rewrite length_xsof.
-  auto.
-Qed.
-
-Definition check_beta E' x t Γ Δ E :=
-  (
-    if typecheck Γ Δ (E_app (E_lam x t E) E') is Some (Δ2, t)
-    then
-      if typecheck Γ Δ (subst_context E' x E) is Some (Δ2', t')
-      then
-        (if eq_usage Δ2 Δ2' then true else false)
-        && (if eq_type t t' then true else false)
-      else
-        false
-    else
-      true
-  )%bool.
-
