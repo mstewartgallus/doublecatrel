@@ -15,8 +15,8 @@ context, E :: 'E_' ::= {{ coq-equality }}
   | ( E )                    :: S :: paren {{ icho ([[E]]) }}
 
 use, u :: 'u_' ::= {{ coq-equality }}
-  | 1 ::  :: used
-  | 0 ::  :: unused
+  | used   ::  :: used
+  | unused ::  :: unused
 
 usage, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (list use) }}
   | nil                  ::   :: nil {{ coq nil }}
@@ -25,7 +25,6 @@ usage, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (list use) }}
 nat, n :: 'n_' ::= {{ coq nat }}
   | 0          ::  :: zero {{ coq 0 }}
   | S n        ::  :: succ {{ coq (S [[n]]) }} {{ tex [[n]] + 1 }}
-  | 1          :: M :: one {{ coq 1 }}
   | len xs     :: M :: lenxs {{ coq (length [[xs]]) }}
   | len G      :: M :: lenG {{ coq (length [[G]]) }}
   | len D      :: M :: lenD {{ coq (length [[D]]) }}
@@ -56,6 +55,8 @@ terminals :: 'terminals_' ::=
   | ->           ::   :: to  {{ tex \rightarrow }}
   | unit         ::   :: unit  {{ tex \textbf{I} }}
   | *            ::   :: prod  {{ tex \otimes{} }}
+  | used         ::   :: used  {{ tex \textbf{s} }}
+  | unused       ::   :: unused  {{ tex \textbf{f} }}
   | tt           ::   :: tt   {{ tex \mathop{ \textbf ! } }}
   | fst          ::   :: fst  {{ tex \pi{}_1 }}
   | snd          ::   :: snd  {{ tex \pi{}_2 }}
@@ -89,7 +90,7 @@ fun
   mt n :: D :: mt {{ tex \emptyset_{[[n]]} }}
 by
   mt 0 === nil
-  mt S n === mt n, 0
+  mt S n === mt n, unused
 
 funs
   xsofG ::=
@@ -109,7 +110,7 @@ by
 
 len xs = len D
 ---------------------------- :: eq
-x \in xs, x ; D, 0 -> D, 1
+x \in xs, x ; D, unused -> D, used
 
 x != y
 x \in xs ; D -> D'
@@ -129,7 +130,7 @@ x \in xsof G ; D -> D'
 ----------------------- :: var
 G ; D -> D' |- x: t
 
-G, x: t1 ; D, 0 -> D', 1 |- E: t2
+G, x: t1 ; D, unused -> D', used |- E: t2
 ------------------------------- :: lam
 G ; D -> D' |- lam x: t1 . E: t1 * t2
 
@@ -153,7 +154,7 @@ G ; D2 -> D3 |- E2: t2
 G ; D1 -> D3 |- E1, E2: t1 * t2
 
 G ; D1 -> D2 |- E1 : t1 * t2
-G, x: t1, y: t2 ; D2, 0, 0 -> D3, 1, 1 |- E2: t3
+G, x: t1, y: t2 ; D2, unused, unused -> D3, used, used |- E2: t3
 ------------------------------------------------- :: let
 G ; D1 -> D3 |- let x, y = E1 in E2: t3
 
