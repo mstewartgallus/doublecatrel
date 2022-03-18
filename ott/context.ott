@@ -8,7 +8,7 @@ context, E :: 'E_' ::=
   | lam x . E                ::   :: lam (+ bind x in E +)
   | tt                       ::   :: tt
   | E , E'                   ::   :: fanout
-  | neu e                    ::   :: neu
+  | neu e                    ::   :: neu {{ tex [ [[e]] ] }}
   | ( E )                    :: S :: paren {{ icho ([[E]]) }}
 
 redex, e :: 'e_' ::=
@@ -16,7 +16,7 @@ redex, e :: 'e_' ::=
   | e E'                     ::   :: app
   | e ; E' : t               ::   :: step
   | let x , y = e in E' : t  ::   :: let (+ bind x union y in E' +)
-  | cut E t                  ::   :: cut
+  | cut E t                  ::   :: cut {{ tex [[E]] \colon [[t]] }}
   | ( e )                    :: S :: paren {{ icho ([[e]]) }}
 
 use, u :: 'u_' ::= {{ coq-equality }}
@@ -78,6 +78,7 @@ terminals :: 'terminals_' ::=
   | \check       ::   :: check  {{ tex \colon }}
   | once         ::   :: once  {{ tex \mathrel{\in!} }}
   | never        ::   :: never  {{ tex \mathrel{\notin} }}
+  | ++            ::   :: merge  {{ tex \mathrel{\cup} }}
   | !            ::   :: big     {{ tex \mathrel{\Downarrow} }}
   | !=           ::   :: ne     {{ tex \mathrel{\ne} }}
   | ==           ::   :: equiv   {{ tex \mathrel{\sim} }}
