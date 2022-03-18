@@ -1,17 +1,3 @@
-embed
-{{ coq-preamble
-Require Import Blech.Opaque.
-
-#[local]
-Definition unknown: list nat -> list nat -> list nat := opaque (fun (_ _: list nat) => nil).
-
-Fixpoint merge (l r: list nat): list nat :=
-  match l, r with
-  | cons m l', cons n r' => cons (m + n) (merge l' r')
-  | nil, nil => nil
-  | _, _ => unknown l r
-  end.
-}}
 metavar var, x, y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[var]]} }}
 
 grammar
@@ -119,6 +105,22 @@ G |- snd v: t2
 
 defns
 
+judge_subst :: 'J' ::=
+
+defn
+p : G ::   :: p :: 'p_'
+by
+
+---------- :: nil
+nil: nil
+
+G |- v : t
+p: G
+------------------ :: cons
+p, x := v: G, x: t
+
+defns
+
 big :: '' ::=
 
 defn
@@ -140,19 +142,3 @@ fst v ! N1
 v ! N1, N2
 ------------------- :: snd
 snd v ! N2
-
-defns
-
-judge :: 'J' ::=
-
-defn
-p : G ::   :: p :: 'p_'
-by
-
----------- :: nil
-nil: nil
-
-G |- v : t
-p: G
------------------- :: cons
-p, x := v: G, x: t

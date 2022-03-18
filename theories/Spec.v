@@ -15,18 +15,6 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_type : ott_coq_equality.
-Require Import Blech.Opaque.
-
-#[local]
-Definition unknown: list nat -> list nat -> list nat := opaque (fun (_ _: list nat) => nil).
-
-Fixpoint merge (l r: list nat): list nat :=
-  match l, r with
-  | cons m l', cons n r' => cons (m + n) (merge l' r')
-  | nil, nil => nil
-  | _, _ => unknown l r
-  end.
-
 Definition var : Set := nat.
 Lemma eq_var: forall (x y : var), {x = y} + {x <> y}.
 Proof.
@@ -124,6 +112,16 @@ Inductive Jv : environment -> term -> type -> Prop :=    (* defn v *)
      Jv Γ (v_snd v) t2.
 (** definitions *)
 
+(* defns judge_subst *)
+Inductive Jp : subst -> environment -> Prop :=    (* defn p *)
+ | Jp_nil : 
+     Jp  nil   nil 
+ | Jp_cons : forall (ρ:subst) (x:var) (v:term) (Γ:environment) (t:type),
+     Jv Γ v t ->
+     Jp ρ Γ ->
+     Jp  (cons ( x ,  v )  ρ )   (cons ( x ,  t )  Γ ) .
+(** definitions *)
+
 (* defns big *)
 Inductive big : term -> normal -> Prop :=    (* defn big *)
  | big_tt : 
@@ -138,16 +136,6 @@ Inductive big : term -> normal -> Prop :=    (* defn big *)
  | big_snd : forall (v:term) (N2 N1:normal),
      big v (N_fanout N1 N2) ->
      big (v_snd v) N2.
-(** definitions *)
-
-(* defns judge *)
-Inductive Jp : subst -> environment -> Prop :=    (* defn p *)
- | Jp_nil : 
-     Jp  nil   nil 
- | Jp_cons : forall (ρ:subst) (x:var) (v:term) (Γ:environment) (t:type),
-     Jv Γ v t ->
-     Jp ρ Γ ->
-     Jp  (cons ( x ,  v )  ρ )   (cons ( x ,  t )  Γ ) .
 Require Blech.Map.
 
 
@@ -230,7 +218,7 @@ end.
 (* defns lfind *)
 Inductive lmem : var -> vars -> usage -> usage -> Prop :=    (* defn lmem *)
  | lmem_eq : forall (xs:vars) (x:var) (Δ:usage),
-     length xs = length Δ  ->
+      (  (length  xs )   =   (length  Δ )  )  ->
      lmem x  (cons  x   xs )   (cons  u_unused   Δ )   (cons  u_used   Δ ) 
  | lmem_ne : forall (xs:vars) (x y:var) (Δ:usage) (u:use) (Δ':usage),
       ( x  <>  y )  ->
@@ -252,7 +240,7 @@ Inductive JE : environment -> usage -> usage -> context -> type -> Prop :=    (*
      JE Γ Δ2 Δ3 E2 t1 ->
      JE Γ Δ1 Δ3 (E_app E1 E2) t2
  | JE_tt : forall (Γ:environment) (Δ:usage),
-     length Γ = length Δ  ->
+      (  (length  Γ )   =   (length  Δ )  )  ->
      JE Γ Δ Δ E_tt t_unit
  | JE_step : forall (Γ:environment) (Δ1 Δ3:usage) (E1 E2:context) (t:type) (Δ2:usage),
      JE Γ Δ1 Δ2 E1 t_unit ->

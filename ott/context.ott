@@ -27,9 +27,9 @@ nat, n :: 'n_' ::= {{ coq nat }}
   | S n        ::  :: succ {{ coq (S [[n]]) }} {{ tex [[n]] + 1 }}
   | 1          :: M :: one {{ coq 1 }}
   | len xs     :: M :: lenxs {{ coq (length [[xs]]) }}
+  | len G      :: M :: lenG {{ coq (length [[G]]) }}
   | len D      :: M :: lenD {{ coq (length [[D]]) }}
   | ( n )      :: S :: paren {{ icho ([[n]]) }}
-
 
 store, S {{ tex \sigma }} {{ coq σ }} :: 'S_'  ::= {{ coq (Map.map normal) }}
   | nil                   :: M :: empty {{ coq (Map.empty) }}
@@ -79,8 +79,9 @@ substitutions
 grammar
 formula :: formula_ ::=  
  | judgement                        ::   :: judgement
- | x != y                           :: M :: neq {{ icho ([[x]] <> [[y]]) }}
- | x = y                            :: M :: eq {{ icho ([[x]] = [[y]]) }}
+ | x != y                           :: M :: neqx {{ icho ([[x]] <> [[y]]) }}
+ | x = y                            :: M :: eqx {{ icho ([[x]] = [[y]]) }}
+ | n = n'                           :: M :: eqn {{ icho ([[n]] = [[n']]) }}
 
 funs
   empty ::=
@@ -106,7 +107,7 @@ defn
 x \in xs ; D -> D' ::   :: lmem :: 'lmem_'
 by
 
-{{ length [[xs]] = length [[D]] }}
+len xs = len D
 ---------------------------- :: eq
 x \in xs, x ; D, 0 -> D, 1
 
@@ -137,8 +138,8 @@ G ; D2 -> D3 |- E2: t1
 --------------------------------- :: app
 G ; D1 -> D3 |- E1 E2: t2
 
-{{ length [[G]] = length [[D]] }}
------------------------ :: tt
+len G = len D
+-------------------------------- :: tt
 G ; D -> D |- tt: unit
 
 G ; D1 -> D2 |- E1: unit
@@ -161,7 +162,7 @@ defns
 sat :: '' ::= {{ coq-universe Type }}
 
 defn
-S |- E [ N ] ::   :: sat :: 'sat_' {{ tex [[S]] \mathrel{\vdash} [[E]][ [[N]] ] }}
+S |- E [ N ] ::   :: sat :: 'sat_' {{ tex [[S]] \mathrel{\vdash} [[E]] [ [[N]] ] }}
 by
 
 ---------------------- :: var

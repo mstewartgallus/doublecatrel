@@ -43,57 +43,6 @@ Proof.
   auto.
 Qed.
 
-Fixpoint one x Γ: option usage :=
-  if Γ is cons (y, t) T
-  then
-    if eq_var x y
-    then
-      Some (cons u_used (mt (length T)))
-    else
-      if one x T is Some T'
-      then
-        Some (cons u_unused T')
-      else
-        None
-  else
-    None.
-
-Lemma find_one {x Γ t}: find x Γ = Some t → { ns & one x Γ = Some ns }.
-Proof.
-  induction Γ.
-  1: discriminate.
-  intros p.
-  cbn in *.
-  destruct a.
-  destruct eq_var.
-  all: subst.
-  - exists (cons u_used (mt (length Γ))).
-    auto.
-  - destruct (IHΓ p).
-    rewrite e.
-    exists (cons u_unused x0).
-    auto.
-Defined.
-
-Lemma length_merge_eq {ns ns'}:
-  length ns = length ns' →
-  length (merge ns ns') = length ns.
-Proof.
-  generalize dependent ns'.
-  induction ns.
-  all: cbn.
-  - intros ns' p.
-    destruct ns'.
-    all: cbn in *.
-    all: auto.
-    discriminate.
-  - intros ns' p.
-    destruct ns'.
-    all: cbn.
-    all: auto.
-    discriminate.
-Qed.
-
 Lemma length_xsof {Γ}: length (xsof Γ) = length Γ.
 Proof.
   induction Γ.
