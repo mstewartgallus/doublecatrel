@@ -139,7 +139,7 @@ Inductive big : term -> normal -> Prop :=    (* defn big *)
 Require Blech.Map.
 
 
-Definition store : Set := (Map.map (type * normal)).
+Definition store : Set := (Map.map normal).
 
 Inductive use : Set := 
  | u_used : use
@@ -164,7 +164,7 @@ Definition usage : Set := (list use).
 
 Definition vars : Set := (list var).
 
-Definition tyspans : Set := (list (type * span)).
+Definition stores : Set := (list store).
 
 Definition spans : Set := (list span).
 
@@ -243,53 +243,53 @@ with check : environment -> usage -> usage -> context -> type -> Prop :=    (* d
 (** definitions *)
 
 (* defns sat *)
-Inductive sate : store -> redex -> normal -> type -> Type :=    (* defn sate *)
- | sate_var : forall (x:var) (t:type) (N:normal),
-     sate  (Map.one  x  ( t ,  N ))  (e_var x) N t
+Inductive sate : store -> redex -> normal -> Type :=    (* defn sate *)
+ | sate_var : forall (x:var) (N:normal),
+     sate  (Map.one  x   N )  (e_var x) N
  | sate_step : forall (σ σ':store) (e:redex) (E':context) (t:type) (N:normal),
-     sate σ e N_tt t_unit ->
-     satE σ' E' N t ->
-     sate  (Map.merge  σ   σ' )   ( (e_step e E' t) )  N t
- | sate_let : forall (σ σ':store) (x y:var) (e:redex) (E':context) (t:type) (N2 N0 N1:normal) (t1 t2:type),
-     sate σ e (N_fanout N0 N1) (t_prod t1 t2) ->
-     satE  (Map.merge   (Map.one  y  ( t2 ,  N1 ))     (Map.merge   (Map.one  x  ( t1 ,  N0 ))    σ' )  )  E' N2 t ->
-     sate  (Map.merge  σ   σ' )   ( (e_let x y e E' t) )  N2 t
- | sate_app : forall (σ σ':store) (e:redex) (E':context) (N':normal) (t2:type) (N:normal) (t1:type),
-     sate σ e (N_fanout N N') (t_prod t1 t2) ->
-     satE σ' E' N t1 ->
-     sate  (Map.merge  σ   σ' )   ( (e_app e E') )  N' t2
+     sate σ e N_tt ->
+     satE σ' E' N ->
+     sate  (Map.merge  σ   σ' )   ( (e_step e E' t) )  N
+ | sate_let : forall (σ σ':store) (x y:var) (e:redex) (E':context) (t:type) (N2 N0 N1:normal),
+     sate σ e (N_fanout N0 N1) ->
+     satE  (Map.merge   (Map.one  y   N1 )     (Map.merge   (Map.one  x   N0 )    σ' )  )  E' N2 ->
+     sate  (Map.merge  σ   σ' )   ( (e_let x y e E' t) )  N2
+ | sate_app : forall (σ σ':store) (e:redex) (E':context) (N' N:normal),
+     sate σ e (N_fanout N N') ->
+     satE σ' E' N ->
+     sate  (Map.merge  σ   σ' )   ( (e_app e E') )  N'
  | sate_cut : forall (σ:store) (E:context) (t:type) (N:normal),
-     satE σ E N t ->
-     sate σ  ( (e_cut E t) )  N t
-with satE : store -> context -> normal -> type -> Type :=    (* defn satE *)
+     satE σ E N ->
+     sate σ  ( (e_cut E t) )  N
+with satE : store -> context -> normal -> Type :=    (* defn satE *)
  | satE_tt : 
-     satE  (Map.empty)  E_tt N_tt t_unit
- | satE_fanout : forall (σ σ':store) (E E':context) (N N':normal) (t1 t2:type),
-     satE σ E N t1 ->
-     satE σ' E' N' t2 ->
-     satE  (Map.merge  σ   σ' )   ( (E_fanout E E') )  (N_fanout N N') (t_prod t1 t2)
- | satE_lam : forall (σ:store) (x:var) (E:context) (N N':normal) (t1 t2:type),
-     satE  (Map.merge   (Map.one  x  ( t1 ,  N ))    σ )  E N' t2 ->
-     satE σ  ( (E_lam x E) )  (N_fanout N N') (t_prod t1 t2)
- | satE_neu : forall (σ:store) (e:redex) (N:normal) (t:type),
-     sate σ e N t ->
-     satE σ  ( (E_neu e) )  N t.
+     satE  (Map.empty)  E_tt N_tt
+ | satE_fanout : forall (σ σ':store) (E E':context) (N N':normal),
+     satE σ E N ->
+     satE σ' E' N' ->
+     satE  (Map.merge  σ   σ' )   ( (E_fanout E E') )  (N_fanout N N')
+ | satE_lam : forall (σ:store) (x:var) (E:context) (N N':normal),
+     satE  (Map.merge   (Map.one  x   N )    σ )  E N' ->
+     satE σ  ( (E_lam x E) )  (N_fanout N N')
+ | satE_neu : forall (σ:store) (e:redex) (N:normal),
+     sate σ e N ->
+     satE σ  ( (E_neu e) )  N.
 (** definitions *)
 
 (* defns sound *)
-Inductive sound : context -> spans -> type -> Type :=    (* defn sound *)
- | sound_nil : forall (E:context) (t:type),
-     sound E  nil  t
- | sound_cons : forall (E:context) (Ps:spans) (σ:store) (N:normal) (t:type),
-     sound E Ps t ->
-     satE σ E N t ->
-     sound E  (cons  (P_with σ N)   Ps )  t
-with sounde : redex -> tyspans -> Type :=    (* defn sounde *)
+Inductive sound : context -> stores -> normal -> Type :=    (* defn sound *)
+ | sound_nil : forall (E:context) (N:normal),
+     sound E  nil  N
+ | sound_cons : forall (E:context) (Ss:stores) (σ:store) (N:normal),
+     sound E Ss N ->
+     satE σ E N ->
+     sound E  (cons  σ   Ss )  N
+with sounde : redex -> spans -> Type :=    (* defn sounde *)
  | sounde_nil : forall (e:redex),
      sounde e  nil 
- | sounde_cons : forall (e:redex) (ts:tyspans) (σ:store) (N:normal) (t:type),
-     sounde e ts ->
-     sate σ e N t ->
-     sounde e  (cons ( t ,  (P_with σ N) )  ts ) .
+ | sounde_cons : forall (e:redex) (Ps:spans) (σ:store) (N:normal),
+     sounde e Ps ->
+     sate σ e N ->
+     sounde e  (cons  (P_with σ N)   Ps ) .
 
 
