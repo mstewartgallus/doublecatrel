@@ -396,7 +396,7 @@ with search σ e: list span :=
   end%list %map.
 
 Lemma sound_pure:
-  ∀ {σ E N}, satE σ E N → sound E [σ] N.
+  ∀ {σ E N}, accepts σ E N → sound E [σ] N.
 Proof.
   repeat constructor.
   auto.

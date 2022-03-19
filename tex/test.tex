@@ -772,28 +772,28 @@
 \ottdefnproduces{}\ottdefnaccepts{}}
 
 % defns sound
-%% defn E
-\newcommand{\ottdrulesoundEXXnil}[1]{\ottdrule[#1]{%
+%% defn sound
+\newcommand{\ottdrulesoundXXnil}[1]{\ottdrule[#1]{%
 }{
 \ottnt{E}  \ottsym{[}  \bullet{}  \ottsym{;}  \ottnt{N}  \ottsym{]}}{%
-{\ottdrulename{soundE\_nil}}{}%
+{\ottdrulename{sound\_nil}}{}%
 }}
 
 
-\newcommand{\ottdrulesoundEXXcons}[1]{\ottdrule[#1]{%
+\newcommand{\ottdrulesoundXXcons}[1]{\ottdrule[#1]{%
 \ottpremise{\ottnt{E}  \ottsym{[}  S^*  \ottsym{;}  \ottnt{N}  \ottsym{]}}%
 \ottpremise{ \sigma  \mathrel{\vdash}  \ottnt{E}  [  \ottnt{N}  ] }%
 }{
 \ottnt{E}  \ottsym{[}  S^*  \ottsym{,}  \sigma  \ottsym{;}  \ottnt{N}  \ottsym{]}}{%
-{\ottdrulename{soundE\_cons}}{}%
+{\ottdrulename{sound\_cons}}{}%
 }}
 
-\newcommand{\ottdefnsoundE}[1]{\begin{ottdefnblock}[#1]{$\ottnt{E}  \ottsym{[}  S^*  \ottsym{;}  \ottnt{N}  \ottsym{]}$}{}
-\ottusedrule{\ottdrulesoundEXXnil{}}
-\ottusedrule{\ottdrulesoundEXXcons{}}
+\newcommand{\ottdefnsound}[1]{\begin{ottdefnblock}[#1]{$\ottnt{E}  \ottsym{[}  S^*  \ottsym{;}  \ottnt{N}  \ottsym{]}$}{}
+\ottusedrule{\ottdrulesoundXXnil{}}
+\ottusedrule{\ottdrulesoundXXcons{}}
 \end{ottdefnblock}}
 
-%% defn e
+%% defn sounde
 \newcommand{\ottdrulesoundeXXnil}[1]{\ottdrule[#1]{%
 }{
 \ottnt{e}  \ottsym{[}  \bullet{}  \ottsym{]}}{%
@@ -816,7 +816,7 @@
 
 
 \newcommand{\ottdefnssound}{
-\ottdefnsoundE{}\ottdefnsounde{}}
+\ottdefnsound{}\ottdefnsounde{}}
 
 \newcommand{\ottdefnss}{
 \ottfundefnstoterm

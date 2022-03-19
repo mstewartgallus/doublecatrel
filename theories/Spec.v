@@ -286,37 +286,37 @@ with check : environment -> usage -> usage -> context -> type -> Prop :=    (* d
 (** definitions *)
 
 (* defns sat *)
-Inductive sate : store -> redex -> normal -> Type :=    (* defn sate *)
- | sate_var : forall (x:var) (N:normal),
-     sate  (Map.one  x   N )  (e_var x) N
- | sate_step : forall (σ σ':store) (e:redex) (E':context) (t:type) (N:normal),
-     sate σ e N_tt ->
-     satE σ' E' N ->
-     sate  (Map.merge  σ   σ' )   ( (e_step e E' t) )  N
- | sate_let : forall (σ σ':store) (x y:var) (e:redex) (E':context) (t:type) (N2 N0 N1:normal),
-     sate σ e (N_fanout N0 N1) ->
-     satE  (Map.merge   (Map.one  y   N1 )     (Map.merge   (Map.one  x   N0 )    σ' )  )  E' N2 ->
-     sate  (Map.merge  σ   σ' )   ( (e_let x y e E' t) )  N2
- | sate_app : forall (σ σ':store) (e:redex) (E':context) (N' N:normal),
-     sate σ e (N_fanout N N') ->
-     satE σ' E' N ->
-     sate  (Map.merge  σ   σ' )   ( (e_app e E') )  N'
- | sate_cut : forall (σ:store) (E:context) (t:type) (N:normal),
-     satE σ E N ->
-     sate σ  ( (e_cut E t) )  N
-with satE : store -> context -> normal -> Type :=    (* defn satE *)
- | satE_tt : 
-     satE  (Map.empty)  E_tt N_tt
- | satE_fanout : forall (σ σ':store) (E E':context) (N N':normal),
-     satE σ E N ->
-     satE σ' E' N' ->
-     satE  (Map.merge  σ   σ' )   ( (E_fanout E E') )  (N_fanout N N')
- | satE_lam : forall (σ:store) (x:var) (E:context) (N N':normal),
-     satE  (Map.merge   (Map.one  x   N )    σ )  E N' ->
-     satE σ  ( (E_lam x E) )  (N_fanout N N')
- | satE_neu : forall (σ:store) (e:redex) (N:normal),
-     sate σ e N ->
-     satE σ  ( (E_neu e) )  N.
+Inductive produces : store -> redex -> normal -> Type :=    (* defn produces *)
+ | produces_var : forall (x:var) (N:normal),
+     produces  (Map.one  x   N )  (e_var x) N
+ | produces_step : forall (σ σ':store) (e:redex) (E':context) (t:type) (N:normal),
+     produces σ e N_tt ->
+     accepts σ' E' N ->
+     produces  (Map.merge  σ   σ' )   ( (e_step e E' t) )  N
+ | produces_let : forall (σ σ':store) (x y:var) (e:redex) (E':context) (t:type) (N2 N0 N1:normal),
+     produces σ e (N_fanout N0 N1) ->
+     accepts  (Map.merge   (Map.one  y   N1 )     (Map.merge   (Map.one  x   N0 )    σ' )  )  E' N2 ->
+     produces  (Map.merge  σ   σ' )   ( (e_let x y e E' t) )  N2
+ | produces_app : forall (σ σ':store) (e:redex) (E':context) (N' N:normal),
+     produces σ e (N_fanout N N') ->
+     accepts σ' E' N ->
+     produces  (Map.merge  σ   σ' )   ( (e_app e E') )  N'
+ | produces_cut : forall (σ:store) (E:context) (t:type) (N:normal),
+     accepts σ E N ->
+     produces σ  ( (e_cut E t) )  N
+with accepts : store -> context -> normal -> Type :=    (* defn accepts *)
+ | accepts_tt : 
+     accepts  (Map.empty)  E_tt N_tt
+ | accepts_fanout : forall (σ σ':store) (E E':context) (N N':normal),
+     accepts σ E N ->
+     accepts σ' E' N' ->
+     accepts  (Map.merge  σ   σ' )   ( (E_fanout E E') )  (N_fanout N N')
+ | accepts_lam : forall (σ:store) (x:var) (E:context) (N N':normal),
+     accepts  (Map.merge   (Map.one  x   N )    σ )  E N' ->
+     accepts σ  ( (E_lam x E) )  (N_fanout N N')
+ | accepts_neu : forall (σ:store) (e:redex) (N:normal),
+     produces σ e N ->
+     accepts σ  ( (E_neu e) )  N.
 (** definitions *)
 
 (* defns sound *)
@@ -325,14 +325,14 @@ Inductive sound : context -> stores -> normal -> Type :=    (* defn sound *)
      sound E  nil  N
  | sound_cons : forall (E:context) (Ss:stores) (σ:store) (N:normal),
      sound E Ss N ->
-     satE σ E N ->
+     accepts σ E N ->
      sound E  (cons  σ   Ss )  N
 with sounde : redex -> spans -> Type :=    (* defn sounde *)
  | sounde_nil : forall (e:redex),
      sounde e  nil 
  | sounde_cons : forall (e:redex) (Ps:spans) (σ:store) (N:normal),
      sounde e Ps ->
-     sate σ e N ->
+     produces σ e N ->
      sounde e  (cons  (P_with σ N)   Ps ) .
 
 

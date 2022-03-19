@@ -188,7 +188,7 @@ defns
 sat :: '' ::= {{ coq-universe Type }}
 
 defn
-S |- e [ N ] ::   :: sate :: 'sate_' {{ tex [[S]] \mathrel{\vdash} [[e]] [ [[N]] ] }}
+S |- e [ N ] ::   :: produces :: 'produces_' {{ tex [[S]] \mathrel{\vdash} [[e]] [ [[N]] ] }}
 by
 
 -------------------------- :: var
@@ -214,7 +214,7 @@ S |- E [ N ]
 S |- (cut E t) [ N ]
 
 defn
-S |- E [ N ] ::   :: satE :: 'satE_' {{ tex [[S]] \mathrel{\vdash} [[E]] [ [[N]] ] }}
+S |- E [ N ] ::   :: accepts :: 'accepts_' {{ tex [[S]] \mathrel{\vdash} [[E]] [ [[N]] ] }}
 by
 
 ---------------------- :: tt
