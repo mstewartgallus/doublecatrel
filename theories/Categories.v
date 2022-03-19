@@ -33,23 +33,24 @@ Module Import Hor.
   Definition Hor t t' := Term.oftype (cons (X, t) nil) t'.
 
   #[program]
-  Definition id t: Hor t t := v_var X.
+  Definition id t: Hor t t := V_var X.
+
+  Next Obligation.
+  Proof.
+    repeat constructor.
+  Defined.
 
   #[program]
-  Definition compose {A B C} (f: Hor B C) (g: Hor A B): Hor A C := subst_term g X f.
+  Definition compose {A B C} (f: Hor B C) (g: Hor A B): Hor A C := subst_expr g X f.
 
   Next Obligation.
   Proof.
     destruct f as [f ?], g as [g ?].
     cbn.
-    eapply Term.subst_preserve.
+    eapply Term.subst_preserve_elim.
     all: eauto.
-    apply Term.shadow.
+    apply (Term.map_expr Environment.shadow).
     auto.
-  Defined.
-
-  Next Obligation.
-    repeat constructor.
   Defined.
 
   Lemma compose_id_left {A B} (f: Hor A B): compose (id _) f == f.
@@ -58,11 +59,10 @@ Module Import Hor.
     cbn.
     unfold compose, id.
     cbn.
-    intros ? H.
+    intros ? ?.
     cbn.
-    destruct (Term.normalize (Term.msubst_preserve H j)) as [N ?].
+    destruct (Term.msubst_normal H j) as [N ?].
     exists N.
-    cbn.
     split.
     all: auto.
   Qed.
@@ -73,8 +73,8 @@ Module Import Hor.
     cbn.
     intros ? H.
     cbn.
-    rewrite Term.subst_var.
-    destruct (Term.normalize (Term.msubst_preserve H j)) as [N ?].
+    rewrite Term.subst_var_elim.
+    destruct (Term.msubst_normal H j) as [N ?].
     exists N.
     split.
     all: auto.
@@ -87,42 +87,42 @@ Module Import Hor.
     cbn.
     intros ? H.
     cbn.
-    eset (N := @Term.normalize (msubst p (subst_term (subst_term h X g) X f)) D _).
+    rewrite Term.subst_expr_assoc.
+    eset (N := Term.msubst_normal H _).
     destruct N as [N ?].
-    Unshelve.
-    2: {
-      eapply Term.msubst_preserve.
-      1: eauto.
-      eapply Term.subst_preserve.
-      2: apply Term.shadow; eauto.
-      eapply Term.subst_preserve.
-      2: apply Term.shadow; eauto.
-      auto.
-    }
     exists N.
     split.
-    1: auto.
-    rewrite <- Term.subst_assoc.
-    auto.
+    all: eauto.
+    Unshelve.
+    2: {
+      eapply Term.subst_preserve_elim.
+      2: apply (Term.map_expr Environment.shadow); eauto.
+      eapply Term.subst_preserve_elim.
+      2: apply (Term.map_expr Environment.shadow); eauto.
+      auto.
+    }
   Qed.
 
   #[program]
-  Definition tt A: Hor A t_unit := v_tt.
+  Definition tt A: Hor A t_unit := V_cut v_tt t_unit.
 
   #[program]
-   Definition fanout {A B C} (f: Hor C A) (g: Hor C B): Hor C (A * B) := v_fanout f g.
+  Definition fanout {A B C} (f: Hor C A) (g: Hor C B): Hor C (A * B) :=
+    V_cut (v_fanout (v_neu f) (v_neu g)) (A * B).
 
   #[program]
-  Definition fst {A B}: Hor (A * B) A := v_fst (v_var X).
+  Definition fst {A B}: Hor (A * B) A := V_fst (V_var X).
 
   #[program]
-  Definition snd {A B}: Hor (A * B) B := v_snd (v_var X).
+  Definition snd {A B}: Hor (A * B) B := V_snd (V_var X).
 
   Next Obligation.
   Proof.
     destruct f as [f ?], g as [g ?].
     cbn.
     constructor.
+    constructor.
+    all: constructor.
     all: auto.
   Defined.
 
@@ -148,17 +148,16 @@ Module Import Hor.
     destruct f as [f ?].
     intros p ?.
     cbn.
-    eset (N := @Term.normalize (msubst p v_tt) t_unit _).
+    eset (N := Term.msubst_normal H _).
     destruct N as [N ?].
-    Unshelve.
-    2: {
-      eapply Term.msubst_preserve.
-      all: eauto.
-      constructor.
-    }
     exists N.
     split.
-    all: auto.
+    all: eauto.
+    Unshelve.
+    2: {
+      constructor.
+      constructor.
+    }
   Qed.
 
   Lemma fst_fanout {C A B} (f: Hor C A) (g: Hor C B): compose fst (fanout f g) == f.
@@ -166,23 +165,20 @@ Module Import Hor.
     destruct f as [f ?], g as [g ?].
     intros p ?.
     cbn.
-    eset (N := @Term.normalize (msubst p f) A _).
-    destruct N as [N ?].
+    eset (N := Term.msubst_normal H _).
     Unshelve.
-    2: {
-      eapply Term.msubst_preserve.
-      all: eauto.
-    }
-    destruct (Term.normalize (Term.msubst_preserve H j0)).
+    4: eapply j.
+    destruct N as [N ?].
     exists N.
     split.
-    all: auto.
+    2: auto.
     rewrite Term.msubst_fst.
+    rewrite Term.msubst_cut.
     rewrite Term.msubst_fanout.
-    econstructor.
-    econstructor.
-    1: auto.
-    apply H1.
+    repeat rewrite Term.msubst_neu.
+    destruct (Term.msubst_normal H j0).
+    all: repeat econstructor.
+    all: eauto.
   Qed.
 
   Lemma snd_fanout {C A B} (f: Hor C A) (g: Hor C B): compose snd (fanout f g) == g.
@@ -190,24 +186,20 @@ Module Import Hor.
     destruct f as [f ?], g as [g ?].
     intros p ?.
     cbn.
-    eset (N := @Term.normalize (msubst p g) B _).
-    destruct N as [N ?].
+    eset (N := Term.msubst_normal H _).
     Unshelve.
-    2: {
-      eapply Term.msubst_preserve.
-      all: eauto.
-    }
-    destruct (Term.normalize (Term.msubst_preserve H j)).
+    4: eapply j0.
+    destruct N as [N ?].
     exists N.
     split.
-    all: auto.
+    2: auto.
     rewrite Term.msubst_snd.
+    rewrite Term.msubst_cut.
     rewrite Term.msubst_fanout.
-    econstructor.
-    econstructor.
-    1: auto.
-    apply H1.
-    auto.
+    repeat rewrite Term.msubst_neu.
+    destruct (Term.msubst_normal H j).
+    all: repeat econstructor.
+    all: eauto.
   Qed.
 End Hor.
 
@@ -278,3 +270,4 @@ Module Import Vert.
     reflexivity.
   Qed.
 End Vert.
+

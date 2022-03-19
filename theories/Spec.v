@@ -38,7 +38,7 @@ with expr : Set :=
 
 Definition environment : Set := (list (var * type)).
 
-Definition subst : Set := (list (var * term)).
+Definition subst : Set := (list (var * expr)).
 Lemma eq_normal: forall (x y : normal), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -113,10 +113,10 @@ with Jv : environment -> term -> type -> Prop :=    (* defn v *)
 Inductive Jp : subst -> environment -> Prop :=    (* defn p *)
  | Jp_nil : 
      Jp  nil   nil 
- | Jp_cons : forall (ρ:subst) (x:var) (v:term) (Γ:environment) (t:type),
-     Jv Γ v t ->
+ | Jp_cons : forall (ρ:subst) (x:var) (V:expr) (Γ:environment) (t:type),
+     JV Γ V t ->
      Jp ρ Γ ->
-     Jp  (cons ( x ,  v )  ρ )   (cons ( x ,  t )  Γ ) .
+     Jp  (cons ( x ,  V )  ρ )   (cons ( x ,  t )  Γ ) .
 (** definitions *)
 
 (* defns big *)

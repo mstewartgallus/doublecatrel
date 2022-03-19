@@ -26,9 +26,9 @@ environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (list (var * typ
   | G , x : t   ::   :: add {{ coq (cons ([[x]], [[t]]) [[G]]) }}
   | ( G )       :: S :: paren {{ coq ([[G]]) }}
 
-subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (list (var * term)) }}
+subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (list (var * expr)) }}
   | nil                   :: M :: nil {{ coq nil }}
-  | p , x := v            :: M :: add {{ coq (cons ([[x]], [[v]]) [[p]]) }}
+  | p , x := V            :: M :: add {{ coq (cons ([[x]], [[V]]) [[p]]) }}
   | ( p )                 :: S :: paren {{ coq ([[p]]) }}
 
 substitutions
@@ -117,10 +117,10 @@ by
 ---------- :: nil
 nil: nil
 
-G |- v : t
+G |- V : t
 p: G
 ------------------ :: cons
-p, x := v: G, x: t
+p, x := V: G, x: t
 
 defns
 

@@ -284,12 +284,12 @@ Proof using.
 Qed.
 
 Theorem big_unique:
-  ∀ {v N N'},
-    v ⇓ N → v ⇓ N' → N = N'.
+  ∀ {V N N'},
+    bigV V N → bigV V N' → N = N'.
 Proof using.
-  intros v N N' p q.
-  set (p' := intro_complete p).
-  set (q' := intro_complete q).
+  intros V N N' p q.
+  assert (p' := elim_complete p).
+  assert (q' := elim_complete q).
   rewrite p' in q'.
   inversion q'.
   auto.
@@ -355,8 +355,6 @@ Proof using.
   all: constructor.
   all: auto.
 Qed.
-
-Definition oftype Γ A := { v | Γ ⊢ v in A }.
 
 Lemma subst_var {x v}:
   subst_term (V_var x) x v = v
@@ -434,4 +432,216 @@ Proof using.
       subst.
       constructor.
       auto.
+Qed.
+
+Lemma
+  subst_expr_assoc {x f g h}:
+  subst_expr f x (subst_expr g x h) = subst_expr (subst_expr f x g) x h
+with
+  subst_term_assoc {x f g h}:
+  subst_term f x (subst_term g x h) = subst_term (subst_expr f x g) x h
+.
+Proof using.
+  - destruct h.
+    all: cbn.
+    + destruct eq_var.
+      1: auto.
+      cbn.
+      destruct eq_var.
+      1: subst; contradiction.
+      auto.
+    + rewrite subst_expr_assoc.
+      auto.
+    + rewrite subst_expr_assoc.
+      auto.
+    + rewrite subst_term_assoc.
+      auto.
+  - destruct h.
+    all: cbn.
+    + auto.
+    + repeat rewrite subst_term_assoc.
+      auto.
+    + rewrite subst_expr_assoc.
+      auto.
+Qed.
+
+Lemma map_term {Γ Γ'}:
+  (∀ x t, mem x t Γ → mem x t Γ') →
+  ∀ {v t}, Γ ⊢ v in t → Γ' ⊢ v in t
+with map_expr {Γ Γ'}:
+  (∀ x t, mem x t Γ → mem x t Γ') →
+  ∀ {V t}, JV Γ V t → JV Γ' V t.
+Proof.
+  - intros f ? ? p.
+    destruct v.
+    all: inversion p.
+    all: subst.
+    all: clear p.
+    + constructor.
+    + constructor.
+      * eauto.
+      * eauto.
+    + constructor.
+      eauto.
+  - intros f ? ? p.
+    destruct V.
+    all: inversion p.
+    all: subst.
+    all: clear p.
+    + constructor.
+      auto.
+    + econstructor.
+      eauto.
+    + econstructor.
+      eauto.
+    + econstructor.
+      eauto.
+Qed.
+
+Fixpoint msubst (ρ: subst) (V: expr): expr :=
+  if ρ is cons (x, V') ρ'
+  then msubst ρ' (subst_expr V' x V)
+  else V.
+
+Fixpoint msubst_term (ρ: subst) (v: term): term :=
+  if ρ is cons (x, V') ρ'
+  then msubst_term ρ' (subst_term V' x v)
+  else v.
+
+Lemma msubst_preserve {ρ}:
+  ∀ {Γ},
+    Jp ρ Γ →
+  ∀ {V t},
+    JV Γ V t →
+    JV nil (msubst ρ V) t.
+Proof.
+  induction ρ.
+  all: intros Γ q.
+  all: inversion q.
+  all: subst.
+  all: cbn.
+  1: auto.
+  intros V' ? r.
+  eapply IHρ.
+  all: eauto.
+  eapply subst_preserve_elim.
+  all: eauto.
+Qed.
+
+Theorem msubst_normal {Γ ρ}:
+    Jp ρ Γ →
+  ∀ {V t},
+    JV Γ V t →
+    ∃ N, bigV (msubst ρ V) N.
+Proof using.
+  intros.
+  eapply elim_normal.
+  eapply msubst_preserve.
+  all: eauto.
+Qed.
+
+Definition oftype Γ t := { V | JV Γ V t }.
+
+Definition equiv {Γ t} (p q: oftype Γ t): Prop :=
+  ∀ ρ, Jp ρ Γ →
+  ∃ N, bigV (msubst ρ (proj1_sig p)) N ∧ bigV (msubst ρ (proj1_sig q)) N.
+
+Instance equiv_Reflexive Γ t: Reflexive (@equiv Γ t).
+Proof.
+  unfold Reflexive.
+  intros V ρ q.
+  destruct (msubst_normal q (proj2_sig V)) as [N ?].
+  exists N.
+  split.
+  all: auto.
+Qed.
+
+Instance equiv_Transitive Γ t: Transitive (@equiv Γ t).
+Proof.
+  unfold Transitive.
+  intros ? ? ? f g ? q.
+  destruct (f _ q) as [f' [? fq]], (g _ q) as [g' [gq ?]].
+  assert (eqv := big_unique fq gq).
+  subst.
+  exists g'.
+  split.
+  all: auto.
+Qed.
+
+Instance equiv_Symmetric Γ t: Symmetric (@equiv Γ t).
+Proof.
+  unfold Symmetric.
+  intros ? ? f ? q.
+  destruct (f _ q) as [f' [? ?]].
+  exists f'.
+  split.
+  all: auto.
+Qed.
+
+Instance equiv_Equivalence Γ t: Equivalence (@equiv Γ t) := {
+    Equivalence_Reflexive := _ ;
+}.
+
+Instance oftype_Setoid Γ t: Setoid (oftype Γ t) := {
+    equiv := @equiv Γ t ;
+}.
+
+Lemma msubst_fst {ρ}:
+  ∀ {V}, msubst ρ (V_fst V) = V_fst (msubst ρ V).
+Proof.
+  induction ρ.
+  1: auto.
+  cbn.
+  destruct a.
+  intros V.
+  rewrite IHρ.
+  auto.
+Qed.
+
+Lemma msubst_snd {ρ}:
+  ∀ {V}, msubst ρ (V_snd V) = V_snd (msubst ρ V).
+Proof.
+  induction ρ.
+  1: auto.
+  cbn.
+  destruct a.
+  intros V.
+  rewrite IHρ.
+  auto.
+Qed.
+
+Lemma msubst_cut {ρ}:
+  ∀ {v t}, msubst ρ (V_cut v t) = V_cut (msubst_term ρ v) t.
+Proof.
+  induction ρ.
+  1: auto.
+  cbn.
+  destruct a.
+  intros V t.
+  rewrite IHρ.
+  auto.
+Qed.
+
+Lemma msubst_fanout {ρ}:
+  ∀ {v1 v2}, msubst_term ρ (v_fanout v1 v2) = v_fanout (msubst_term ρ v1) (msubst_term ρ v2).
+Proof.
+  induction ρ.
+  1: auto.
+  cbn.
+  destruct a.
+  intros V t.
+  repeat rewrite IHρ.
+  auto.
+Qed.
+
+Lemma msubst_neu {ρ}:
+  ∀ {V}, msubst_term ρ (v_neu V) = v_neu (msubst ρ V).
+Proof.
+  induction ρ.
+  1: auto.
+  cbn.
+  destruct a.
+  intros V.
+  rewrite IHρ.
+  auto.
 Qed.
