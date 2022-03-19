@@ -61,7 +61,7 @@ Module Import Hor.
     cbn.
     intros ? ?.
     cbn.
-    destruct (Term.msubst_normal H j) as [N ?].
+    destruct (Term.elim_normal H j) as [N ?].
     exists N.
     split.
     all: auto.
@@ -74,7 +74,7 @@ Module Import Hor.
     intros ? H.
     cbn.
     rewrite Term.subst_var_elim.
-    destruct (Term.msubst_normal H j) as [N ?].
+    destruct (Term.elim_normal H j) as [N ?].
     exists N.
     split.
     all: auto.
@@ -88,7 +88,7 @@ Module Import Hor.
     intros ? H.
     cbn.
     rewrite Term.subst_expr_assoc.
-    eset (N := Term.msubst_normal H _).
+    eset (N := Term.elim_normal H _).
     destruct N as [N ?].
     exists N.
     split.
@@ -148,7 +148,7 @@ Module Import Hor.
     destruct f as [f ?].
     intros p ?.
     cbn.
-    eset (N := Term.msubst_normal H _).
+    eset (N := Term.elim_normal H _).
     destruct N as [N ?].
     exists N.
     split.
@@ -165,20 +165,15 @@ Module Import Hor.
     destruct f as [f ?], g as [g ?].
     intros p ?.
     cbn.
-    eset (N := Term.msubst_normal H _).
+    eset (N := Term.elim_normal H _).
     Unshelve.
     4: eapply j.
     destruct N as [N ?].
     exists N.
     split.
     2: auto.
-    rewrite Term.msubst_fst.
-    rewrite Term.msubst_cut.
-    rewrite Term.msubst_fanout.
-    repeat rewrite Term.msubst_neu.
-    destruct (Term.msubst_normal H j0).
-    all: repeat econstructor.
-    all: eauto.
+    destruct (Term.elim_normal H j0).
+    all: repeat econstructor; eauto.
   Qed.
 
   Lemma snd_fanout {C A B} (f: Hor C A) (g: Hor C B): compose snd (fanout f g) == g.
@@ -186,20 +181,15 @@ Module Import Hor.
     destruct f as [f ?], g as [g ?].
     intros p ?.
     cbn.
-    eset (N := Term.msubst_normal H _).
+    eset (N := Term.elim_normal H _).
     Unshelve.
     4: eapply j0.
     destruct N as [N ?].
     exists N.
     split.
     2: auto.
-    rewrite Term.msubst_snd.
-    rewrite Term.msubst_cut.
-    rewrite Term.msubst_fanout.
-    repeat rewrite Term.msubst_neu.
-    destruct (Term.msubst_normal H j).
-    all: repeat econstructor.
-    all: eauto.
+    destruct (Term.elim_normal H j).
+    all: repeat econstructor; eauto.
   Qed.
 End Hor.
 

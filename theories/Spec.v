@@ -36,9 +36,9 @@ with expr : Set :=
  | V_snd (V:expr)
  | V_cut (v:term) (t:type).
 
-Definition environment : Set := (list (var * type)).
+Definition subst : Set := (list (var * normal)).
 
-Definition subst : Set := (list (var * expr)).
+Definition environment : Set := (list (var * type)).
 Lemma eq_normal: forall (x y : normal), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -113,33 +113,46 @@ with Jv : environment -> term -> type -> Prop :=    (* defn v *)
 Inductive Jp : subst -> environment -> Prop :=    (* defn p *)
  | Jp_nil : 
      Jp  nil   nil 
- | Jp_cons : forall (ρ:subst) (x:var) (V:expr) (Γ:environment) (t:type),
-     JV Γ V t ->
+ | Jp_cons : forall (ρ:subst) (x:var) (N:normal) (Γ:environment) (t:type),
+     Jv  nil   (toterm N )  t ->
      Jp ρ Γ ->
-     Jp  (cons ( x ,  V )  ρ )   (cons ( x ,  t )  Γ ) .
+     Jp  (cons ( x ,  N )  ρ )   (cons ( x ,  t )  Γ ) .
+(** definitions *)
+
+(* defns lookup *)
+Inductive memp : var -> normal -> subst -> Prop :=    (* defn p *)
+ | memp_eq : forall (x:var) (N:normal) (ρ:subst),
+     memp x N  (cons ( x ,  N )  ρ ) 
+ | memp_ne : forall (x:var) (N:normal) (ρ:subst) (y:var) (N':normal),
+      ( x  <>  y )  ->
+     memp x N ρ ->
+     memp x N  (cons ( y ,  N' )  ρ ) .
 (** definitions *)
 
 (* defns big *)
-Inductive bigv : term -> normal -> Prop :=    (* defn v *)
- | bigv_tt : 
-     bigv v_tt N_tt
- | bigv_fanout : forall (v1 v2:term) (N1 N2:normal),
-     bigv v1 N1 ->
-     bigv v2 N2 ->
-     bigv (v_fanout v1 v2) (N_fanout N1 N2)
- | bigv_neu : forall (V:expr) (N:normal),
-     bigV V N ->
-     bigv (v_neu V) N
-with bigV : expr -> normal -> Prop :=    (* defn V *)
- | bigV_fst : forall (V:expr) (N1 N2:normal),
-     bigV V (N_fanout N1 N2) ->
-     bigV (V_fst V) N1
- | bigV_snd : forall (V:expr) (N2 N1:normal),
-     bigV V (N_fanout N1 N2) ->
-     bigV (V_snd V) N2
- | bigV_cut : forall (v:term) (t:type) (N:normal),
-     bigv v N ->
-     bigV (V_cut v t) N.
+Inductive bigv : subst -> term -> normal -> Prop :=    (* defn v *)
+ | bigv_tt : forall (ρ:subst),
+     bigv ρ v_tt N_tt
+ | bigv_fanout : forall (ρ:subst) (v1 v2:term) (N1 N2:normal),
+     bigv ρ v1 N1 ->
+     bigv ρ v2 N2 ->
+     bigv ρ (v_fanout v1 v2) (N_fanout N1 N2)
+ | bigv_neu : forall (ρ:subst) (V:expr) (N:normal),
+     bigV ρ V N ->
+     bigv ρ (v_neu V) N
+with bigV : subst -> expr -> normal -> Prop :=    (* defn V *)
+ | bigV_var : forall (ρ:subst) (x:var) (N:normal),
+     memp x N ρ ->
+     bigV ρ (V_var x) N
+ | bigV_fst : forall (ρ:subst) (V:expr) (N1 N2:normal),
+     bigV ρ V (N_fanout N1 N2) ->
+     bigV ρ (V_fst V) N1
+ | bigV_snd : forall (ρ:subst) (V:expr) (N2 N1:normal),
+     bigV ρ V (N_fanout N1 N2) ->
+     bigV ρ (V_snd V) N2
+ | bigV_cut : forall (ρ:subst) (v:term) (t:type) (N:normal),
+     bigv ρ v N ->
+     bigV ρ (V_cut v t) N.
 Require Blech.Map.
 
 
@@ -152,10 +165,6 @@ Inductive use : Set :=
 Inductive span : Set := 
  | P_with (σ:store) (N:normal).
 
-Definition usage : Set := (list use).
-
-Definition vars : Set := (list var).
-
 Inductive context : Set := 
  | E_lam (x:var) (E:context)
  | E_tt : context
@@ -167,6 +176,10 @@ with redex : Set :=
  | e_step (e:redex) (E':context) (t:type)
  | e_let (x:var) (y:var) (e:redex) (E':context) (t:type)
  | e_cut (E:context) (t:type).
+
+Definition usage : Set := (list use).
+
+Definition vars : Set := (list var).
 
 Definition stores : Set := (list store).
 

@@ -26,9 +26,9 @@ environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (list (var * typ
   | G , x : t   ::   :: add {{ coq (cons ([[x]], [[t]]) [[G]]) }}
   | ( G )       :: S :: paren {{ coq ([[G]]) }}
 
-subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (list (var * expr)) }}
+subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (list (var * normal)) }}
   | nil                   :: M :: nil {{ coq nil }}
-  | p , x := V            :: M :: add {{ coq (cons ([[x]], [[V]]) [[p]]) }}
+  | p , x := N            :: M :: add {{ coq (cons ([[x]], [[N]]) [[p]]) }}
   | ( p )                 :: S :: paren {{ coq ([[p]]) }}
 
 substitutions
@@ -117,43 +117,63 @@ by
 ---------- :: nil
 nil: nil
 
-G |- V : t
+nil |- [N] : t
 p: G
------------------- :: cons
-p, x := V: G, x: t
+------------------- :: cons
+p, x := N: G, x: t
+
+defns
+
+lookup :: 'mem' ::=
+
+defn
+x := N \in p ::   :: p :: 'p_'
+by
+
+--------------------- :: eq
+x := N \in p, x := N
+
+x != y
+x := N \in p
+----------------------- :: ne
+x := N \in p, y := N'
 
 defns
 
 big :: 'big' ::=
 
 defn
-v ! N ::   :: v :: 'v_'
+p |- v ! N ::   :: v :: 'v_'
 by
 
--------------------- :: tt
-tt ! tt
+-------------- :: tt
+p |- tt ! tt
 
-v1 ! N1
-v2 ! N2
+p |- v1 ! N1
+p |- v2 ! N2
 -------------------- :: fanout
-v1, v2 ! N1, N2
+p |- v1, v2 ! N1, N2
 
-V ! N
+p |- V ! N
 ------------- :: neu
-neu V ! N
+p |- neu V ! N
 
 defn
-V ! N ::   :: V :: 'V_'
+p |- V ! N ::   :: V :: 'V_'
 by
 
-V ! N1, N2
+x := N \in p
+------------- :: var
+p |- x ! N
+
+p |- V ! N1, N2
 ---------- :: fst
-fst V ! N1
+p |- fst V ! N1
 
-V ! N1, N2
+p |- V ! N1, N2
 ---------- :: snd
-snd V ! N2
+p |- snd V ! N2
 
-v ! N
+p |- v ! N
 ------------- :: cut
-cut v t ! N
+p |- cut v t ! N

@@ -19,6 +19,7 @@ Implicit Type v: term.
 Implicit Type t: type.
 Implicit Type N: normal.
 Implicit Types x y: var.
+Implicit Type ρ: subst.
 
 Function typecheck Γ v t: bool :=
   match v, t with
@@ -46,25 +47,33 @@ with typeinfer Γ V :=
       else None
   end.
 
-Function intro v :=
+Function lookup x ρ: option normal :=
+  if ρ is ((y, t) :: ρ')%list
+  then
+    if eq_var x y
+    then Some t
+    else lookup x ρ'
+  else None.
+
+Function intro ρ v :=
   match v with
   | v_tt => Some N_tt
   | v_fanout v0 v1 =>
-      do v0' ← intro v0 ;
-      do v1' ← intro v1 ;
+      do v0' ← intro ρ v0 ;
+      do v1' ← intro ρ v1 ;
       Some (N_fanout v0' v1')
-  | v_neu V => elim V
+  | v_neu V => elim ρ V
   end
-with elim (V: expr) :=
+with elim ρ (V: expr) :=
   match V with
-  | V_var _ => None
+  | V_var x => lookup x ρ
   | V_fst V =>
-      do N_fanout a _ ← elim V ;
+      do N_fanout a _ ← elim ρ V ;
       Some a
   | V_snd V =>
-      do N_fanout _ a ← elim V ;
+      do N_fanout _ a ← elim ρ V ;
       Some a
-  | V_cut v _ => intro v
+  | V_cut v _ => intro ρ v
   end.
 
 Theorem typecheck_sound:
@@ -169,13 +178,36 @@ Proof using .
       all: auto.
 Qed.
 
-Theorem intro_sound:
-  ∀ {v N}, intro v = Some N → v ⇓ N
-with elim_sound:
-  ∀ {V N}, elim V = Some N → bigV V N
-.
+
+Lemma lookup_sound {x ρ}:
+  ∀ {N}, lookup x ρ = Some N → memp x N ρ.
+Proof using .
+  functional induction (lookup x ρ).
+  all: intros ? p.
+  all: inversion p.
+  all: subst.
+  all: constructor.
+  all: auto.
+Qed.
+
+Lemma lookup_complete {x ρ N}:
+  memp x N ρ → lookup x ρ = Some N.
+Proof using .
+  intro p.
+  induction p.
+  all: cbn.
+  - destruct eq_var.
+    2: contradiction.
+    reflexivity.
+  - destruct eq_var.
+    1: contradiction.
+    auto.
+Qed.
+
+Theorem intro_sound {ρ v N}: intro ρ v = Some N → ρ ⊢ v ⇓ N
+with elim_sound {ρ V N}: elim ρ V = Some N → bigV ρ V N.
 Proof using.
-  - intros v N p.
+  - intro p.
     destruct v.
     all: cbn in p.
     + inversion p.
@@ -190,10 +222,12 @@ Proof using.
     + constructor.
       apply elim_sound.
       auto.
-  - intros V N p.
+  - intro p.
     destruct V.
     all: cbn in p.
-    + inversion p.
+    + constructor.
+      apply lookup_sound.
+      auto.
     + destruct elim eqn:q1.
       2: discriminate.
       destruct n.
@@ -215,23 +249,21 @@ Proof using.
       auto.
 Qed.
 
-Theorem intro_complete:
-  ∀ {v N}, v ⇓ N → intro v = Some N
-with
-elim_complete:
-  ∀ {V N},
-       bigV V N → elim V = Some N.
+Theorem intro_complete {ρ v N}: ρ ⊢ v ⇓ N → intro ρ v = Some N
+with elim_complete {ρ V N}: bigV ρ V N → elim ρ V = Some N.
 Proof using.
-  - intros ? ? p.
+  - intros p.
     destruct p.
     all: cbn.
     + auto.
     + repeat erewrite intro_complete.
       all: eauto.
     + auto.
-  - intros ? ? p.
+  - intros p.
     destruct p.
     all: cbn.
+    + apply lookup_complete.
+      auto.
     + repeat erewrite elim_complete.
       all: eauto.
       cbn.
@@ -244,50 +276,66 @@ Proof using.
       auto.
 Qed.
 
-Theorem intro_preserve:
-  ∀ {v N},
-    v ⇓ N →
-    ∀ Γ t, Γ ⊢ v in t → Γ ⊢ N in t
-with elim_preserve:
-  ∀ {V N},
-    bigV V N →
-    ∀ Γ t, JV Γ V t → Γ ⊢ N in t
+Theorem intro_preserve {ρ v N}:
+    ρ ⊢ v ⇓ N →
+    ∀ {Γ},
+      Jp ρ Γ →
+      ∀ {t},
+      Γ ⊢ v in t → nil ⊢ N in t
+with elim_preserve {ρ V N}:
+    bigV ρ V N →
+    ∀ {Γ},
+      Jp ρ Γ →
+      ∀ {t}, JV Γ V t → nil ⊢ N in t
 .
 Proof using.
-  - intros v N p.
+  - intros p.
     destruct p.
-    all: intros ? ? q.
+    all: intros ? ? ? q.
     all: inversion q.
     all: subst.
     all: cbn.
-    + auto.
+    + constructor.
     + constructor.
       all: eauto.
     + eapply elim_preserve.
       all: eauto.
-  - intros V N p.
+  - intros p.
     destruct p.
-    all: intros ? ? q.
+    all: intros ? ? ? q.
     all: inversion q.
     all: subst.
     all: cbn.
-    + assert (H1' := elim_preserve _ _ p _ _ H1).
-      cbn in H1'.
-      inversion H1'.
+    + induction H0.
+      1: inversion H3.
+      inversion H3.
+      all: subst.
+      all: inversion H.
+      all: subst.
+      all: try contradiction.
+      * auto.
+      * eapply IHJp.
+        all: eauto.
+        constructor.
+        auto.
+    + assert (H2' := elim_preserve _ _ _ p _ H _ H2).
+      cbn in H2'.
+      inversion H2'.
+      subst.
       auto.
-    + assert (H1' := elim_preserve _ _ p _ _ H1).
-      cbn in H1'.
-      inversion H1'.
+    + assert (H2' := elim_preserve _ _ _ p _ H _ H2).
+      cbn in H2'.
+      inversion H2'.
+      subst.
       auto.
     + eapply intro_preserve.
       all: eauto.
 Qed.
 
-Theorem big_unique:
-  ∀ {V N N'},
-    bigV V N → bigV V N' → N = N'.
+Theorem big_unique {ρ V N N'}:
+    bigV ρ V N → bigV ρ V N' → N = N'.
 Proof using.
-  intros V N N' p q.
+  intros p q.
   assert (p' := elim_complete p).
   assert (q' := elim_complete q).
   rewrite p' in q'.
@@ -295,61 +343,73 @@ Proof using.
   auto.
 Qed.
 
-Theorem intro_normal:
-  ∀ {v t},
-   nil ⊢ v in t →
-   ∃ N, v ⇓ N
-with elim_normal:
-  ∀ {V t},
-   JV nil V t →
-   ∃ N, bigV V N.
+Theorem intro_normal {ρ v Γ t}:
+    Jp ρ Γ →
+   Γ ⊢ v in t →
+   ∃ N, ρ ⊢ v ⇓ N
+with elim_normal {ρ V Γ t}:
+    Jp ρ Γ →
+   JV Γ V t →
+   ∃ N, bigV ρ V N.
 Proof using.
-  - intros v t p.
+  - intros q p.
     destruct v.
     all: inversion p.
     all: subst.
     + exists N_tt.
       constructor.
-    + destruct (intro_normal _ _ H2) as [N1 s1].
-      destruct (intro_normal _ _ H4) as [N2 s2].
+    + destruct (intro_normal _ _ _ _ q H2) as [N1 s1].
+      destruct (intro_normal _ _ _ _ q H4) as [N2 s2].
       exists (N_fanout N1 N2).
       constructor.
       all: auto.
-    + destruct (elim_normal _ _ H1) as [N s].
+    + destruct (elim_normal _ _ _ _ q H1) as [N s].
       exists N.
       constructor.
       auto.
-  - intros V t p.
+  - intros q p.
     destruct V.
     all: inversion p.
     all: subst.
-    + inversion H1.
-    + destruct (elim_normal _ _ H1) as [N s].
-      assert (wf := elim_preserve s _ _ H1).
+    + clear p.
+      induction q.
+      1: inversion H1.
+      inversion H1.
+      all: subst.
+      * exists N.
+        constructor.
+        constructor.
+      * destruct (IHq H7) as [N' ?].
+        exists N'.
+        constructor.
+        inversion H0.
+        subst.
+        constructor.
+        all: eauto.
+    + destruct (elim_normal _ _ _ _ q H1) as [N s].
+      assert (wf := elim_preserve s q H1).
       destruct N.
       all: inversion wf.
       subst.
       exists N1.
       econstructor.
       eauto.
-    + destruct (elim_normal _ _ H1) as [N s].
-      assert (wf := elim_preserve s _ _ H1).
+    + destruct (elim_normal _ _ _ _ q H1) as [N s].
+      assert (wf := elim_preserve s q H1).
       destruct N.
       all: inversion wf.
       subst.
       exists N2.
       econstructor.
       eauto.
-    + destruct (intro_normal _ _ H3) as [N s].
+    + destruct (intro_normal _ _ _ _ q H3) as [N s].
       exists N.
       constructor.
       auto.
 Qed.
 
-Lemma big_normal:
-  ∀ {N}, N ⇓ N.
+Lemma big_normal {ρ N}: ρ ⊢ N ⇓ N.
 Proof using.
-  intro N.
   induction N.
   all: cbn.
   all: constructor.
@@ -397,7 +457,7 @@ Lemma
     JV Γ V' t →
   ∀ {v t'},
     cons (x, t) Γ ⊢ v in t' →
-                         Γ ⊢ subst_term V' x v in t'
+    Γ ⊢ subst_term V' x v in t'
 with
   subst_preserve_elim:
   ∀ {Γ V' t x},
@@ -498,59 +558,17 @@ Proof.
       eauto.
 Qed.
 
-Fixpoint msubst (ρ: subst) (V: expr): expr :=
-  if ρ is cons (x, V') ρ'
-  then msubst ρ' (subst_expr V' x V)
-  else V.
-
-Fixpoint msubst_term (ρ: subst) (v: term): term :=
-  if ρ is cons (x, V') ρ'
-  then msubst_term ρ' (subst_term V' x v)
-  else v.
-
-Lemma msubst_preserve {ρ}:
-  ∀ {Γ},
-    Jp ρ Γ →
-  ∀ {V t},
-    JV Γ V t →
-    JV nil (msubst ρ V) t.
-Proof.
-  induction ρ.
-  all: intros Γ q.
-  all: inversion q.
-  all: subst.
-  all: cbn.
-  1: auto.
-  intros V' ? r.
-  eapply IHρ.
-  all: eauto.
-  eapply subst_preserve_elim.
-  all: eauto.
-Qed.
-
-Theorem msubst_normal {Γ ρ}:
-    Jp ρ Γ →
-  ∀ {V t},
-    JV Γ V t →
-    ∃ N, bigV (msubst ρ V) N.
-Proof using.
-  intros.
-  eapply elim_normal.
-  eapply msubst_preserve.
-  all: eauto.
-Qed.
-
 Definition oftype Γ t := { V | JV Γ V t }.
 
 Definition equiv {Γ t} (p q: oftype Γ t): Prop :=
   ∀ ρ, Jp ρ Γ →
-  ∃ N, bigV (msubst ρ (proj1_sig p)) N ∧ bigV (msubst ρ (proj1_sig q)) N.
+  ∃ N, bigV ρ (proj1_sig p) N ∧ bigV ρ (proj1_sig q) N.
 
 Instance equiv_Reflexive Γ t: Reflexive (@equiv Γ t).
 Proof.
   unfold Reflexive.
   intros V ρ q.
-  destruct (msubst_normal q (proj2_sig V)) as [N ?].
+  destruct (elim_normal q (proj2_sig V)) as [N ?].
   exists N.
   split.
   all: auto.
@@ -585,63 +603,3 @@ Instance equiv_Equivalence Γ t: Equivalence (@equiv Γ t) := {
 Instance oftype_Setoid Γ t: Setoid (oftype Γ t) := {
     equiv := @equiv Γ t ;
 }.
-
-Lemma msubst_fst {ρ}:
-  ∀ {V}, msubst ρ (V_fst V) = V_fst (msubst ρ V).
-Proof.
-  induction ρ.
-  1: auto.
-  cbn.
-  destruct a.
-  intros V.
-  rewrite IHρ.
-  auto.
-Qed.
-
-Lemma msubst_snd {ρ}:
-  ∀ {V}, msubst ρ (V_snd V) = V_snd (msubst ρ V).
-Proof.
-  induction ρ.
-  1: auto.
-  cbn.
-  destruct a.
-  intros V.
-  rewrite IHρ.
-  auto.
-Qed.
-
-Lemma msubst_cut {ρ}:
-  ∀ {v t}, msubst ρ (V_cut v t) = V_cut (msubst_term ρ v) t.
-Proof.
-  induction ρ.
-  1: auto.
-  cbn.
-  destruct a.
-  intros V t.
-  rewrite IHρ.
-  auto.
-Qed.
-
-Lemma msubst_fanout {ρ}:
-  ∀ {v1 v2}, msubst_term ρ (v_fanout v1 v2) = v_fanout (msubst_term ρ v1) (msubst_term ρ v2).
-Proof.
-  induction ρ.
-  1: auto.
-  cbn.
-  destruct a.
-  intros V t.
-  repeat rewrite IHρ.
-  auto.
-Qed.
-
-Lemma msubst_neu {ρ}:
-  ∀ {V}, msubst_term ρ (v_neu V) = v_neu (msubst ρ V).
-Proof.
-  induction ρ.
-  1: auto.
-  cbn.
-  destruct a.
-  intros V.
-  rewrite IHρ.
-  auto.
-Qed.
