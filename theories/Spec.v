@@ -27,11 +27,14 @@ Inductive normal : Set :=
  | N_fanout (N:normal) (N':normal).
 
 Inductive term : Set := 
- | v_var (x:var)
  | v_tt : term
- | v_fst (v:term)
- | v_snd (v:term)
- | v_fanout (v:term) (v':term).
+ | v_fanout (v:term) (v':term)
+ | v_neu (V:expr)
+with expr : Set := 
+ | V_var (x:var)
+ | V_fst (V:expr)
+ | V_snd (V:expr)
+ | V_cut (v:term) (t:type).
 
 Definition environment : Set := (list (var * type)).
 
@@ -41,20 +44,20 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_normal : ott_coq_equality.
-Lemma eq_term: forall (x y : term), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-Hint Resolve eq_term : ott_coq_equality.
 
 (** substitutions *)
-Fixpoint subst_term (v5:term) (x5:var) (v_6:term) {struct v_6} : term :=
-  match v_6 with
-  | (v_var x) => (if eq_var x x5 then v5 else (v_var x))
+Fixpoint subst_expr (V5:expr) (x5:var) (V_6:expr) {struct V_6} : expr :=
+  match V_6 with
+  | (V_var x) => (if eq_var x x5 then V5 else (V_var x))
+  | (V_fst V) => V_fst (subst_expr V5 x5 V)
+  | (V_snd V) => V_snd (subst_expr V5 x5 V)
+  | (V_cut v t) => V_cut (subst_term V5 x5 v) t
+end
+with subst_term (V5:expr) (x5:var) (v5:term) {struct v5} : term :=
+  match v5 with
   | v_tt => v_tt 
-  | (v_fst v) => v_fst (subst_term v5 x5 v)
-  | (v_snd v) => v_snd (subst_term v5 x5 v)
-  | (v_fanout v v') => v_fanout (subst_term v5 x5 v) (subst_term v5 x5 v')
+  | (v_fanout v v') => v_fanout (subst_term V5 x5 v) (subst_term V5 x5 v')
+  | (v_neu V) => v_neu (subst_expr V5 x5 V)
 end.
 
 (** definitions *)
@@ -70,19 +73,6 @@ Coercion toterm: normal >-> term.
 
 (** definitions *)
 
-(** funs msubst *)
-Fixpoint msubst (x1:subst) (x2:term) : term:=
-  match x1,x2 with
-  |  nil  , v => v
-  |  (cons ( x ,  v' )  ρ )  , v =>  (msubst ρ  (  (subst_term  v'   x   v )  )  ) 
-end.
-
-(** definitions *)
-
-(* defns dummy *)
-Inductive jdummy : Prop :=    (* defn jdummy *).
-(** definitions *)
-
 (* defns find *)
 Inductive mem : var -> type -> environment -> Prop :=    (* defn mem *)
  | mem_eq : forall (x:var) (t:type) (Γ:environment),
@@ -94,22 +84,29 @@ Inductive mem : var -> type -> environment -> Prop :=    (* defn mem *)
 (** definitions *)
 
 (* defns judge_term *)
-Inductive Jv : environment -> term -> type -> Prop :=    (* defn v *)
- | Jv_var : forall (Γ:environment) (x:var) (t:type),
+Inductive JV : environment -> expr -> type -> Prop :=    (* defn V *)
+ | JV_var : forall (Γ:environment) (x:var) (t:type),
      mem x t Γ ->
-     Jv Γ (v_var x) t
+     JV Γ (V_var x) t
+ | JV_fst : forall (Γ:environment) (V:expr) (t1 t2:type),
+     JV Γ V (t_prod t1 t2) ->
+     JV Γ (V_fst V) t1
+ | JV_snd : forall (Γ:environment) (V:expr) (t2 t1:type),
+     JV Γ V (t_prod t1 t2) ->
+     JV Γ (V_snd V) t2
+ | JV_cut : forall (Γ:environment) (v:term) (t:type),
+     Jv Γ v t ->
+     JV Γ (V_cut v t) t
+with Jv : environment -> term -> type -> Prop :=    (* defn v *)
  | Jv_tt : forall (Γ:environment),
      Jv Γ v_tt t_unit
  | Jv_fanout : forall (Γ:environment) (v1 v2:term) (t1 t2:type),
      Jv Γ v1 t1 ->
      Jv Γ v2 t2 ->
      Jv Γ (v_fanout v1 v2) (t_prod t1 t2)
- | Jv_fst : forall (Γ:environment) (v:term) (t1 t2:type),
-     Jv Γ v (t_prod t1 t2) ->
-     Jv Γ (v_fst v) t1
- | Jv_snd : forall (Γ:environment) (v:term) (t2 t1:type),
-     Jv Γ v (t_prod t1 t2) ->
-     Jv Γ (v_snd v) t2.
+ | Jv_neu : forall (Γ:environment) (V:expr) (t:type),
+     JV Γ V t ->
+     Jv Γ (v_neu V) t.
 (** definitions *)
 
 (* defns judge_subst *)
@@ -123,19 +120,26 @@ Inductive Jp : subst -> environment -> Prop :=    (* defn p *)
 (** definitions *)
 
 (* defns big *)
-Inductive big : term -> normal -> Prop :=    (* defn big *)
- | big_tt : 
-     big v_tt N_tt
- | big_fanout : forall (v1 v2:term) (N1 N2:normal),
-     big v1 N1 ->
-     big v2 N2 ->
-     big (v_fanout v1 v2) (N_fanout N1 N2)
- | big_fst : forall (v:term) (N1 N2:normal),
-     big v (N_fanout N1 N2) ->
-     big (v_fst v) N1
- | big_snd : forall (v:term) (N2 N1:normal),
-     big v (N_fanout N1 N2) ->
-     big (v_snd v) N2.
+Inductive bigv : term -> normal -> Prop :=    (* defn v *)
+ | bigv_tt : 
+     bigv v_tt N_tt
+ | bigv_fanout : forall (v1 v2:term) (N1 N2:normal),
+     bigv v1 N1 ->
+     bigv v2 N2 ->
+     bigv (v_fanout v1 v2) (N_fanout N1 N2)
+ | bigv_neu : forall (V:expr) (N:normal),
+     bigV V N ->
+     bigv (v_neu V) N
+with bigV : expr -> normal -> Prop :=    (* defn V *)
+ | bigV_fst : forall (V:expr) (N1 N2:normal),
+     bigV V (N_fanout N1 N2) ->
+     bigV (V_fst V) N1
+ | bigV_snd : forall (V:expr) (N2 N1:normal),
+     bigV V (N_fanout N1 N2) ->
+     bigV (V_snd V) N2
+ | bigV_cut : forall (v:term) (t:type) (N:normal),
+     bigv v N ->
+     bigV (V_cut v t) N.
 Require Blech.Map.
 
 
@@ -147,6 +151,10 @@ Inductive use : Set :=
 
 Inductive span : Set := 
  | P_with (σ:store) (N:normal).
+
+Definition usage : Set := (list use).
+
+Definition vars : Set := (list var).
 
 Inductive context : Set := 
  | E_lam (x:var) (E:context)
@@ -160,10 +168,6 @@ with redex : Set :=
  | e_let (x:var) (y:var) (e:redex) (E':context) (t:type)
  | e_cut (E:context) (t:type).
 
-Definition usage : Set := (list use).
-
-Definition vars : Set := (list var).
-
 Definition stores : Set := (list store).
 
 Definition spans : Set := (list span).
@@ -174,6 +178,32 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_use : ott_coq_equality.
+(** library functions *)
+Fixpoint list_mem A (eq:forall a b:A,{a=b}+{a<>b}) (x:A) (l:list A) {struct l} : bool :=
+  match l with
+  | nil => false
+  | cons h t => if eq h x then true else list_mem A eq x t
+end.
+Arguments list_mem [A] _ _ _.
+
+
+(** substitutions *)
+Fixpoint subst_redex (e5:redex) (x5:var) (e_6:redex) {struct e_6} : redex :=
+  match e_6 with
+  | (e_var x) => (if eq_var x x5 then e5 else (e_var x))
+  | (e_app e E') => e_app (subst_redex e5 x5 e) (subst_context e5 x5 E')
+  | (e_step e E' t) => e_step (subst_redex e5 x5 e) (subst_context e5 x5 E') t
+  | (e_let x y e E' t) => e_let x y (subst_redex e5 x5 e) (if list_mem eq_var x5 (app (cons x nil) (cons y nil)) then E' else (subst_context e5 x5 E')) t
+  | (e_cut E t) => e_cut (subst_context e5 x5 E) t
+end
+with subst_context (e5:redex) (x5:var) (E5:context) {struct E5} : context :=
+  match E5 with
+  | (E_lam x E) => E_lam x (if list_mem eq_var x5 (cons x nil) then E else (subst_context e5 x5 E))
+  | E_tt => E_tt 
+  | (E_fanout E E') => E_fanout (subst_context e5 x5 E) (subst_context e5 x5 E')
+  | (E_neu e) => E_neu (subst_redex e5 x5 e)
+end.
+
 (** definitions *)
 
 (** funs empty *)

@@ -88,6 +88,7 @@ parsing
 
 substitutions
   single E x :: subst
+  single e x :: subst
 
 grammar
 formula :: formula_ ::=  

@@ -10,8 +10,7 @@ Bind Scope list_scope with stores.
 Infix "*" := t_prod.
 
 Notation "G ⊢ v 'in' t" := (Jv G v t) (at level 90).
-
-Notation "v ⇓ N" := (big v N) (at level 90).
+Notation "v ⇓ N" := (bigv v N) (at level 90).
 
 Infix "|-" := P_with (at level 30).
 

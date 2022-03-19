@@ -1,14 +1,18 @@
 metavar var, x, y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[var]]} }}
 
 grammar
-term, v :: 'v_' ::= {{ coq-equality }}
-  | x              ::   :: var
+term, v :: 'v_' ::=
   | tt             ::   :: tt
-  | fst v          ::   :: fst
-  | snd v          ::   :: snd
   | v , v'         ::   :: fanout
+  | neu V          ::   :: neu {{ tex [ [[V]] ] }}
   | ( v )          :: S :: paren {{ icho ([[v]]) }}
-  | [ x := v ] v'  :: M :: subst {{ icho (subst_term [[v]] [[x]] [[v']]) }}
+
+expr, V :: 'V_' ::=
+  | x              ::   :: var
+  | fst V          ::   :: fst
+  | snd V          ::   :: snd
+  | cut v t        ::   :: cut {{ tex [[v]] \colon [[t]] }}
+  | ( V )          :: S :: paren {{ icho ([[V]]) }}
 
 normal, N :: 'N_' ::= {{ coq-equality }}
   | tt      ::   :: tt
@@ -29,6 +33,7 @@ subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (list (var * term)) }}
 
 substitutions
   single v x :: subst
+  single V x :: subst
 
 % subrules are awkward
 funs
@@ -43,21 +48,6 @@ embed
 {{ coq
 Coercion toterm: normal >-> term.
 }}
-
-funs
-  msubst ::=
-fun
-  [ := p ] v' :: v :: msubst
-by
-  [ := nil ] v === v
-  [ := p, x := v'] v === [:= p] ([ x := v'] v)
-
-defns
-dummy :: '' ::=
-
-defn
-jdummy ::   :: jdummy :: 'jdummy_'
-by
 
 defns
 
@@ -80,14 +70,30 @@ defns
 judge_term :: 'J' ::=
 
 defn
-G |- v : t ::   :: v :: 'v_'
+G |- V : t ::   :: V :: 'V_'
 by
 
 x: t \in G
 ------------ :: var
 G |- x: t
 
------------- :: tt
+G |- V: t1 * t2
+------------------ :: fst
+G |- fst V: t1
+
+G |- V: t1 * t2
+------------------ :: snd
+G |- snd V: t2
+
+G |- v: t
+---------------- :: cut
+G |- cut v t : t
+
+defn
+G |- v : t ::   :: v :: 'v_'
+by
+
+--------------- :: tt
 G |- tt: unit
 
 G |- v1: t1
@@ -95,13 +101,10 @@ G |- v2: t2
 ------------------ :: fanout
 G |- v1, v2: t1 * t2
 
-G |- v: t1 * t2
------------------- :: fst
-G |- fst v: t1
+G |- V: t
+---------------- :: neu
+G |- neu V : t
 
-G |- v: t1 * t2
------------------- :: snd
-G |- snd v: t2
 
 defns
 
@@ -121,10 +124,10 @@ p, x := v: G, x: t
 
 defns
 
-big :: '' ::=
+big :: 'big' ::=
 
 defn
-v ! N ::   :: big :: 'big_'
+v ! N ::   :: v :: 'v_'
 by
 
 -------------------- :: tt
@@ -135,10 +138,22 @@ v2 ! N2
 -------------------- :: fanout
 v1, v2 ! N1, N2
 
-v ! N1, N2
--------------------- :: fst
-fst v ! N1
+V ! N
+------------- :: neu
+neu V ! N
 
-v ! N1, N2
-------------------- :: snd
-snd v ! N2
+defn
+V ! N ::   :: V :: 'V_'
+by
+
+V ! N1, N2
+---------- :: fst
+fst V ! N1
+
+V ! N1, N2
+---------- :: snd
+snd V ! N2
+
+v ! N
+------------- :: cut
+cut v t ! N
