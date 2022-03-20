@@ -33,6 +33,11 @@ Inductive normal : Set :=
  | N_tt : normal
  | N_fanout (N:normal) (N':normal).
 
+Inductive expr : Set := 
+ | V_var (x:var)
+ | V_fst (V:expr)
+ | V_snd (V:expr).
+
 Definition subst : Set := (list (var * normal)).
 
 Definition environment : Set := (list (var * type)).
@@ -40,12 +45,7 @@ Definition environment : Set := (list (var * type)).
 Inductive term : Set := 
  | v_tt : term
  | v_fanout (v:term) (v':term)
- | v_neu (V:expr)
-with expr : Set := 
- | V_var (x:var)
- | V_fst (V:expr)
- | V_snd (V:expr)
- | V_cut (v:term) (t:type).
+ | v_neu (V:expr).
 Lemma eq_normal: forall (x y : normal), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -58,9 +58,9 @@ Fixpoint subst_expr (V5:expr) (x5:var) (V_6:expr) {struct V_6} : expr :=
   | (V_var x) => (if eq_var x x5 then V5 else (V_var x))
   | (V_fst V) => V_fst (subst_expr V5 x5 V)
   | (V_snd V) => V_snd (subst_expr V5 x5 V)
-  | (V_cut v t) => V_cut (subst_term V5 x5 v) t
-end
-with subst_term (V5:expr) (x5:var) (v5:term) {struct v5} : term :=
+end.
+
+Fixpoint subst_term (V5:expr) (x5:var) (v5:term) {struct v5} : term :=
   match v5 with
   | v_tt => v_tt 
   | (v_fanout v v') => v_fanout (subst_term V5 x5 v) (subst_term V5 x5 v')
@@ -101,9 +101,6 @@ Inductive JV : environment -> expr -> type -> Prop :=    (* defn V *)
  | JV_snd : forall (Γ:environment) (V:expr) (t2 t1:type),
      JV Γ V (t_prod t1 t2) ->
      JV Γ (V_snd V) t2
- | JV_cut : forall (Γ:environment) (v:term) (t:type),
-     Jv Γ v t ->
-     JV Γ (V_cut v t) t
 with Jv : environment -> term -> type -> Prop :=    (* defn v *)
  | Jv_tt : forall (Γ:environment),
      Jv Γ v_tt t_unit
@@ -111,9 +108,9 @@ with Jv : environment -> term -> type -> Prop :=    (* defn v *)
      Jv Γ v1 t1 ->
      Jv Γ v2 t2 ->
      Jv Γ (v_fanout v1 v2) (t_prod t1 t2)
- | Jv_neu : forall (Γ:environment) (V:expr) (t:type),
-     JV Γ V t ->
-     Jv Γ (v_neu V) t.
+ | Jv_neu : forall (Γ:environment) (V:expr) (A:tyvar),
+     JV Γ V (t_var A) ->
+     Jv Γ (v_neu V) (t_var A).
 (** definitions *)
 
 (* defns judge_subst *)
@@ -136,6 +133,44 @@ Inductive memp : var -> normal -> subst -> Prop :=    (* defn p *)
      memp x N  (cons ( y ,  N' )  ρ ) .
 (** definitions *)
 
+(* defns hsubstV *)
+Inductive hsubstV : var -> term -> expr -> term -> Prop :=    (* defn  *)
+ | hsubstV_var : forall (x:var) (v:term),
+     hsubstV x v (V_var x) v
+ | hsubstV_fst : forall (x:var) (v:term) (V:expr) (v1 v2:term),
+     hsubstV x v V (v_fanout v1 v2) ->
+     hsubstV x v (V_fst V) v1
+ | hsubstV_snd : forall (x:var) (v:term) (V:expr) (v2 v1:term),
+     hsubstV x v V (v_fanout v1 v2) ->
+     hsubstV x v (V_snd V) v2.
+(** definitions *)
+
+(* defns hsubstVV *)
+Inductive hsubstVV : var -> term -> expr -> expr -> Prop :=    (* defn  *)
+ | hsubstVV_var : forall (x:var) (v:term) (y:var),
+      ( x  <>  y )  ->
+     hsubstVV x v (V_var y) (V_var y)
+ | hsubstVV_fst : forall (x:var) (v:term) (V V':expr),
+     hsubstVV x v V V' ->
+     hsubstVV x v (V_fst V) (V_fst V')
+ | hsubstVV_snd : forall (x:var) (v:term) (V V':expr),
+     hsubstVV x v V V' ->
+     hsubstVV x v (V_snd V) (V_snd V').
+(** definitions *)
+
+(* defns hsubstv *)
+Inductive hsubstv : var -> term -> term -> term -> Prop :=    (* defn  *)
+ | hsubstv_tt : forall (x:var) (v:term),
+     hsubstv x v v_tt v_tt
+ | hsubstv_fanout : forall (x:var) (v v1 v2 v1' v2':term),
+     hsubstv x v v1 v1' ->
+     hsubstv x v v2 v2' ->
+     hsubstv x v  ( (v_fanout v1 v2) )  (v_fanout v1' v2')
+ | hsubstv_neu : forall (x:var) (v:term) (V:expr) (v':term),
+     hsubstV x v V v' ->
+     hsubstv x v (v_neu V) v'.
+(** definitions *)
+
 (* defns big *)
 Inductive bigv : subst -> term -> normal -> Prop :=    (* defn v *)
  | bigv_tt : forall (ρ:subst),
@@ -156,25 +191,18 @@ with bigV : subst -> expr -> normal -> Prop :=    (* defn V *)
      bigV ρ (V_fst V) N1
  | bigV_snd : forall (ρ:subst) (V:expr) (N2 N1:normal),
      bigV ρ V (N_fanout N1 N2) ->
-     bigV ρ (V_snd V) N2
- | bigV_cut : forall (ρ:subst) (v:term) (t:type) (N:normal),
-     bigv ρ v N ->
-     bigV ρ (V_cut v t) N.
+     bigV ρ (V_snd V) N2.
 Require Blech.Map.
 
 
 Definition store : Set := (Map.map normal).
 
-Inductive use : Set := 
- | u_used : use
- | u_unused : use.
-
 Inductive span : Set := 
  | P_with (σ:store) (N:normal).
 
-Definition usage : Set := (list use).
-
-Definition vars : Set := (list var).
+Inductive use : Set := 
+ | u_used : use
+ | u_unused : use.
 
 Inductive context : Set := 
  | E_lam (x:var) (E:context)
@@ -188,9 +216,13 @@ with redex : Set :=
  | e_let (x:var) (y:var) (e:redex) (E':context) (t:type)
  | e_cut (E:context) (t:type).
 
+Definition stores : Set := (list store).
+
 Definition spans : Set := (list span).
 
-Definition stores : Set := (list store).
+Definition usage : Set := (list use).
+
+Definition vars : Set := (list var).
 
 Definition nat : Set := nat.
 Lemma eq_use: forall (x y : use), {x = y} + {x <> y}.

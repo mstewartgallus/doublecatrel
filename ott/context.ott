@@ -60,6 +60,7 @@ vars, xs {{ tex x^* }} :: 'xs_' ::= {{ coq (list var) }}
 terminals :: 'terminals_' ::=
   | :            ::   :: in     {{ tex \colon{} }}
   | |-           ::   :: turnstile   {{ tex \vdash{} }}
+  | ===          ::   :: eequiv   {{ tex \equiv{} }}
   | :=           ::   :: update  {{ tex \mathbin{:=} }}
   | ->           ::   :: to  {{ tex \rightarrow }}
   | unit         ::   :: unit  {{ tex \textbf{I} }}

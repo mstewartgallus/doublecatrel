@@ -30,167 +30,150 @@ Module Import Hor.
   #[local]
   Definition X: var := 0.
 
-  Definition Hor t t' := Term.oftype (cons (X, t) nil) t'.
+  Definition Hor t t' := Term.oftype ((X, t) :: nil) t'.
 
   #[program]
-  Definition id t: Hor t t := V_var X.
+  Definition id t: Hor t t := Term.η t (V_var X).
 
   Next Obligation.
   Proof.
-    repeat constructor.
+    erewrite (Term.typecheck_complete (Term.η_preserve _)).
+    cbv.
+    auto.
+    Unshelve.
+    constructor.
+    apply Environment.find_sound.
+    auto.
   Defined.
 
-  #[program]
-  Definition compose {A B C} (f: Hor B C) (g: Hor A B): Hor A C := subst_expr g X f.
-
-  Next Obligation.
+  Definition compose {A B C} (f: Hor B C) (g: Hor A B): Hor A C.
   Proof.
-    destruct f as [f ?], g as [g ?].
-    cbn.
-    eapply Term.subst_preserve_elim.
-    all: eauto.
-    apply (Term.map_expr Environment.shadow).
-    auto.
+    destruct (Term.hsubst_term (proj1_sig g) X (proj1_sig f)) eqn:q.
+    - exists t.
+      erewrite (Term.typecheck_complete (Term.hsubst_preserve_term _ _ q)).
+      cbv.
+      auto.
+      Unshelve.
+      2: eapply (Term.typecheck_sound (proj2_sig g)).
+      apply (Term.map_term Environment.shadow).
+      apply (Term.typecheck_sound (proj2_sig f)).
+    - refine (match _: False with end).
+      destruct (Term.hsubst_term_total (Term.typecheck_sound (proj2_sig f)) (Term.typecheck_sound (proj2_sig g))).
+      rewrite H in q.
+      discriminate.
   Defined.
 
   Lemma compose_id_left {A B} (f: Hor A B): compose (id _) f == f.
   Proof.
     destruct f as [f ?].
     cbn.
+    unfold Term.equiv.
+    cbn.
     unfold compose, id.
     cbn.
-    intros ? ?.
-    cbn.
-    destruct (Term.elim_normal H j) as [N ?].
-    exists N.
-    split.
-    all: auto.
-  Qed.
+    induction B.
+    all: cbn.
+    1: auto.
+    + assert (i' := Term.typecheck_sound i).
+      inversion i'.
+      auto.
+    + admit.
+  Admitted.
 
   Lemma compose_id_right {A B} (f: Hor A B): compose f (id _) == f.
   Proof.
+    cbn.
+    unfold Term.equiv, compose, id.
     destruct f as [f ?].
     cbn.
-    intros ? H.
-    cbn.
-    rewrite Term.subst_var_elim.
-    destruct (Term.elim_normal H j) as [N ?].
-    exists N.
-    split.
-    all: auto.
-  Qed.
+    admit.
+  Admitted.
 
   Lemma compose_assoc {A B C D} (f: Hor C D) (g: Hor B C) (h: Hor A B):
     compose f (compose g h) == compose (compose f g) h.
   Proof.
     destruct f as [f ?], g as [g ?], h as [h ?].
     cbn.
-    intros ? H.
+    unfold Term.equiv, compose.
     cbn.
-    rewrite Term.subst_expr_assoc.
-    eset (N := Term.elim_normal H _).
-    destruct N as [N ?].
-    exists N.
-    split.
-    all: eauto.
-    Unshelve.
-    2: {
-      eapply Term.subst_preserve_elim.
-      2: apply (Term.map_expr Environment.shadow); eauto.
-      eapply Term.subst_preserve_elim.
-      2: apply (Term.map_expr Environment.shadow); eauto.
-      auto.
-    }
-  Qed.
+    admit.
+  Admitted.
 
   #[program]
-  Definition tt A: Hor A t_unit := V_cut v_tt t_unit.
+  Definition tt A: Hor A t_unit := v_tt.
 
   #[program]
   Definition fanout {A B C} (f: Hor C A) (g: Hor C B): Hor C (A * B) :=
-    V_cut (v_fanout (v_neu f) (v_neu g)) (A * B).
+    v_fanout f g.
+
+  Next Obligation.
+  Proof.
+    assert (f' := proj2_sig f).
+    assert (g' := proj2_sig g).
+    cbn in *.
+    destruct Term.typecheck.
+    2: contradiction.
+    destruct Term.typecheck.
+    2: contradiction.
+    cbv.
+    auto.
+  Qed.
 
   #[program]
-  Definition fst {A B}: Hor (A * B) A := V_fst (V_var X).
+  Definition fst {A B}: Hor (A * B) A := Term.η A (V_fst (V_var X)).
+
+  Next Obligation.
+  Proof.
+    erewrite (Term.typecheck_complete (Term.η_preserve _)).
+    cbv.
+    auto.
+    Unshelve.
+    apply Term.typeinfer_sound.
+    cbv.
+    auto.
+  Qed.
 
   #[program]
-  Definition snd {A B}: Hor (A * B) B := V_snd (V_var X).
+  Definition snd {A B}: Hor (A * B) B := Term.η B (V_snd (V_var X)).
 
   Next Obligation.
   Proof.
-    destruct f as [f ?], g as [g ?].
-    cbn.
-    constructor.
-    constructor.
-    all: constructor.
-    all: auto.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    repeat econstructor.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    repeat econstructor.
-  Defined.
-
-  Next Obligation.
-  Proof.
-    repeat econstructor.
-  Defined.
+    erewrite (Term.typecheck_complete (Term.η_preserve _)).
+    cbv.
+    auto.
+    Unshelve.
+    apply Term.typeinfer_sound.
+    cbv.
+    auto.
+  Qed.
 
   (* Prove a strict terminal object *)
   Lemma compose_tt {A B} (f: Hor A B): compose (tt _) f == tt _.
   Proof.
     cbn.
     destruct f as [f ?].
-    intros p ?.
+    unfold Term.equiv.
     cbn.
-    eset (N := Term.elim_normal H _).
-    destruct N as [N ?].
-    exists N.
-    split.
-    all: eauto.
-    Unshelve.
-    2: {
-      constructor.
-      constructor.
-    }
+    auto.
   Qed.
 
   Lemma fst_fanout {C A B} (f: Hor C A) (g: Hor C B): compose fst (fanout f g) == f.
   Proof.
     destruct f as [f ?], g as [g ?].
-    intros p ?.
     cbn.
-    eset (N := Term.elim_normal H _).
-    Unshelve.
-    4: eapply j.
-    destruct N as [N ?].
-    exists N.
-    split.
-    2: auto.
-    destruct (Term.elim_normal H j0).
-    all: repeat econstructor; eauto.
-  Qed.
+    unfold Term.equiv, compose, fst, fanout.
+    cbn.
+    admit.
+  Admitted.
 
   Lemma snd_fanout {C A B} (f: Hor C A) (g: Hor C B): compose snd (fanout f g) == g.
   Proof.
     destruct f as [f ?], g as [g ?].
-    intros p ?.
     cbn.
-    eset (N := Term.elim_normal H _).
-    Unshelve.
-    4: eapply j0.
-    destruct N as [N ?].
-    exists N.
-    split.
-    2: auto.
-    destruct (Term.elim_normal H j).
-    all: repeat econstructor; eauto.
-  Qed.
+    unfold Term.equiv, compose, fst, fanout.
+    cbn.
+    admit.
+  Admitted.
 End Hor.
 
 Module Import Vert.
