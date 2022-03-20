@@ -1,4 +1,6 @@
+metavar tyvar, A ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[tyvar]]} }}
 grammar
 type, t :: 't_' ::= {{ coq-equality }}
+  | A            ::   :: var
   | unit         ::   :: unit
   | t * t'       ::   :: prod

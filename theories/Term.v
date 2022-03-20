@@ -85,10 +85,10 @@ Proof using .
     destruct v.
     all: cbn.
     + destruct t.
-      2: contradiction.
+      all: try contradiction.
       constructor.
     + destruct t.
-      1: contradiction.
+      all: try contradiction.
       cbn in p.
       destruct typecheck eqn:q1.
       2: contradiction.
@@ -121,7 +121,7 @@ Proof using .
       destruct typeinfer eqn:q.
       2: discriminate.
       destruct t0.
-      1: discriminate.
+      all: try discriminate.
       inversion p.
       subst.
       econstructor.
@@ -131,7 +131,7 @@ Proof using .
       destruct typeinfer eqn:q.
       2: discriminate.
       destruct t0.
-      1: discriminate.
+      all: try discriminate.
       inversion p.
       subst.
       econstructor.

@@ -27,12 +27,14 @@
 \newcommand{\ottafterlastrule}{\\}
 \newcommand{\ottmetavars}{
 \ottmetavartabular{
+ $ \mathit{tyvar} ,\, \mathit{A} $ &  \\
  $ \mathit{var} ,\, \mathit{x} ,\, \mathit{y} $ &  \\
 }}
 
 \newcommand{\otttype}{
 \ottrulehead{\ottnt{type}  ,\ \ottnt{t}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\textbf{I}}{}{}{}{}\ottprodnewline
+\ottfirstprodline{|}{\mathit{A}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\textbf{I}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{t}  \otimes{}  \ottnt{t'}}{}{}{}{}}
 
 \newcommand{\ottterm}{
@@ -235,7 +237,8 @@
 
 \newcommand{\ottuserXXsyntax}{
 \ottrulehead{\ottnt{user\_syntax}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\mathit{var}}{}{}{}{}\ottprodnewline
+\ottfirstprodline{|}{\mathit{tyvar}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\mathit{var}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{type}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{term}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{expr}}{}{}{}{}\ottprodnewline

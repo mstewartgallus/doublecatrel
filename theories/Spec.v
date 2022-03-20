@@ -6,8 +6,15 @@ Require Import List.
 Require Import Ott.ott_list_core.
 
 
+Definition tyvar : Set := nat.
+Lemma eq_tyvar: forall (x y : tyvar), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_tyvar : ott_coq_equality.
 
 Inductive type : Set := 
+ | t_var (A:tyvar)
  | t_unit : type
  | t_prod (t:type) (t':type).
 Lemma eq_type: forall (x y : type), {x = y} + {x <> y}.
@@ -26,6 +33,10 @@ Inductive normal : Set :=
  | N_tt : normal
  | N_fanout (N:normal) (N':normal).
 
+Definition subst : Set := (list (var * normal)).
+
+Definition environment : Set := (list (var * type)).
+
 Inductive term : Set := 
  | v_tt : term
  | v_fanout (v:term) (v':term)
@@ -35,10 +46,6 @@ with expr : Set :=
  | V_fst (V:expr)
  | V_snd (V:expr)
  | V_cut (v:term) (t:type).
-
-Definition subst : Set := (list (var * normal)).
-
-Definition environment : Set := (list (var * type)).
 Lemma eq_normal: forall (x y : normal), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -165,6 +172,10 @@ Inductive use : Set :=
 Inductive span : Set := 
  | P_with (σ:store) (N:normal).
 
+Definition usage : Set := (list use).
+
+Definition vars : Set := (list var).
+
 Inductive context : Set := 
  | E_lam (x:var) (E:context)
  | E_tt : context
@@ -177,13 +188,9 @@ with redex : Set :=
  | e_let (x:var) (y:var) (e:redex) (E':context) (t:type)
  | e_cut (E:context) (t:type).
 
-Definition usage : Set := (list use).
-
-Definition vars : Set := (list var).
+Definition spans : Set := (list span).
 
 Definition stores : Set := (list store).
-
-Definition spans : Set := (list span).
 
 Definition nat : Set := nat.
 Lemma eq_use: forall (x y : use), {x = y} + {x <> y}.

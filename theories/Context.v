@@ -159,7 +159,7 @@ Proof using.
     all: subst.
     all: clear p.
     + destruct t.
-      1: discriminate.
+      all: try discriminate.
       destruct typecheck eqn:q.
       2: discriminate.
       destruct u.
@@ -171,7 +171,7 @@ Proof using.
       constructor.
       auto.
     + destruct t.
-      2: discriminate.
+      all: try discriminate.
       destruct Nat.eq_dec.
       2: discriminate.
       inversion H0.
@@ -179,7 +179,7 @@ Proof using.
       constructor.
       auto.
     + destruct t.
-      1: discriminate.
+      all: try discriminate.
       destruct typecheck eqn:q1.
       2: discriminate.
       destruct typecheck eqn:q2 in H0.
@@ -226,7 +226,7 @@ Proof using.
       2: discriminate.
       destruct p.
       destruct t0.
-      1: discriminate.
+      all: try discriminate.
       destruct typecheck eqn:q2.
       2: discriminate.
       inversion H0.
@@ -237,7 +237,7 @@ Proof using.
       2: discriminate.
       destruct p.
       destruct t1.
-      2: discriminate.
+      all: try discriminate.
       destruct typecheck eqn:q2.
       2: discriminate.
       inversion H0.
@@ -248,7 +248,7 @@ Proof using.
       2: discriminate.
       destruct p.
       destruct t1.
-      1: discriminate.
+      all: try discriminate.
       destruct typecheck eqn:q2.
       2: discriminate.
       destruct u0.
@@ -321,6 +321,7 @@ Notation "'do' n ← e0 ; e1" :=
 
 Fixpoint generate t: list normal :=
   match t with
+  | t_var _ => []
   | t_unit => [N_tt]
   | t * t' =>
       do N ← generate t ;
