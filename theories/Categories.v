@@ -44,29 +44,22 @@ Module Import Hor.
     constructor.
     apply Environment.find_sound.
     auto.
-  Defined.
+  Qed.
 
-  Definition compose {A B C} (f: Hor B C) (g: Hor A B): Hor A C.
+  #[program]
+   Definition compose {A B C} (f: Hor B C) (g: Hor A B): Hor A C :=
+    Term.hsubst_term [(X, proj1_sig g)] (proj1_sig f).
+
+  Next Obligation.
   Proof.
-    exists (if Term.hsubst_term [(X, proj1_sig g)] (proj1_sig f) is Some v
-            then v
-            else v_tt).
-    eassert (total := Term.hsubst_term_total _ (Term.typecheck_sound (proj2_sig f))).
-    destruct total as [? q].
-    rewrite q.
-    erewrite (Term.typecheck_complete (Term.hsubst_preserve_term _ _ q)).
-    cbv.
-    auto.
-    Unshelve.
-    2: {
-      constructor.
+    rewrite Term.typecheck_complete.
+    1: cbv.
+    1: auto.
+    eapply Term.hsubst_preserve_term.
+    - constructor.
       2:constructor.
       apply (Term.typecheck_sound (proj2_sig g)).
-    }
-    3: apply (Term.typecheck_sound (proj2_sig f)).
-    constructor.
-    2: constructor.
-    apply (Term.typecheck_sound (proj2_sig g)).
+    - apply (Term.typecheck_sound (proj2_sig f)).
   Defined.
 
   Lemma compose_id_left {A B} (f: Hor A B): compose (id _) f == f.
@@ -75,21 +68,24 @@ Module Import Hor.
     cbn.
     unfold Term.equiv.
     cbn.
-    unfold compose, id.
-    cbn.
     assert (i' := Term.typecheck_sound i).
-    assert (j' := Term.typecheck_sound (proj2_sig (id B))).
-    cbn in j'.
-    eassert (total := Term.hsubst_term_total _ j').
-    Unshelve.
-    4: {
-      constructor.
-      2: constructor.
-      eapply i'.
-    }
-    destruct total.
-    rewrite H.
     clear i.
+    generalize dependent A.
+    generalize dependent f.
+    generalize dependent B.
+    intro B.
+    induction B.
+    all: cbn.
+    all: intros ? ? q.
+    all: inversion q.
+    all: subst.
+    all: clear q.
+    all: auto.
+    assert (IHB1' := IHB1 _ _ H3).
+    assert (IHB2' := IHB2 _ _ H4).
+    assert (B1' := Term.typecheck_sound (proj2_sig (id B1))).
+    assert (B2' := Term.typecheck_sound (proj2_sig (id B2))).
+    cbn in B1', B2'.
     admit.
   Admitted.
 
@@ -99,8 +95,92 @@ Module Import Hor.
     unfold Term.equiv, compose, id.
     destruct f as [f ?].
     cbn.
-    admit.
+    assert (i' := Term.typecheck_sound i).
+    clear i.
+    generalize dependent A.
+    generalize dependent B.
+    generalize dependent f.
+    intro f.
+    induction f.
+    all: cbn.
+    all: intros ? ? p.
+    all: inversion p.
+    all: subst.
+    all: clear p.
+    all: auto.
+    - erewrite IHf1, IHf2.
+      all: eauto.
+    - admit.
   Admitted.
+
+  #[local]
+  Lemma hsubst_expr_assoc {x f}:
+   ∀ {g h A B C D},
+     JV [(x, C)] f D →
+     [(x, B)] ⊢ g in C →
+     [(x, A)] ⊢ h in B →
+    Term.hsubst_expr [(x, Term.hsubst_term [(x, h)] g)] f = Term.hsubst_term [(x, h)] (Term.hsubst_expr [(x, g)] f).
+  Proof.
+    induction f.
+    all: cbn.
+    all: intros ? ? ? ? ? ? p q r.
+    all: inversion p.
+    all: subst.
+    all: clear p.
+    - inversion H1.
+      all: subst.
+      2: inversion H6.
+      destruct eq_var.
+      2: contradiction.
+      auto.
+    - erewrite IHf.
+      all: eauto.
+      eassert (H1' := Term.hsubst_preserve_expr _ H1).
+      Unshelve.
+      4: {
+        constructor.
+        2: constructor.
+        apply q.
+      }
+      inversion H1'.
+      subst.
+      cbn.
+      auto.
+    - erewrite IHf.
+      all: eauto.
+      eassert (H1' := Term.hsubst_preserve_expr _ H1).
+      Unshelve.
+      4: {
+        constructor.
+        2: constructor.
+        apply q.
+      }
+      inversion H1'.
+      subst.
+      cbn.
+      auto.
+  Qed.
+
+  #[local]
+  Lemma hsubst_term_assoc {x f}:
+   ∀ {g h A B C D},
+     [(x, C)] ⊢ f in D →
+     [(x, B)] ⊢ g in C →
+     [(x, A)] ⊢ h in B →
+    Term.hsubst_term [(x, Term.hsubst_term [(x, h)] g)] f = Term.hsubst_term [(x, h)] (Term.hsubst_term [(x, g)] f).
+  Proof.
+    induction f.
+    all: cbn.
+    all: intros ? ? ? ? ? ? p q r.
+    all: inversion p.
+    all: subst.
+    all: clear p.
+    all: auto.
+    - erewrite IHf1, IHf2.
+      all: eauto.
+    - eapply hsubst_expr_assoc.
+      all: eauto.
+  Qed.
 
   Lemma compose_assoc {A B C D} (f: Hor C D) (g: Hor B C) (h: Hor A B):
     compose f (compose g h) == compose (compose f g) h.
@@ -109,8 +189,10 @@ Module Import Hor.
     cbn.
     unfold Term.equiv, compose.
     cbn.
-    admit.
-  Admitted.
+    eapply hsubst_term_assoc.
+    all: apply Term.typecheck_sound.
+    all: eauto.
+  Qed.
 
   #[program]
   Definition tt A: Hor A t_unit := v_tt.
@@ -172,10 +254,29 @@ Module Import Hor.
 
   Lemma fst_fanout {C A B} (f: Hor C A) (g: Hor C B): compose fst (fanout f g) == f.
   Proof.
-    destruct f as [f ?], g as [g ?].
+    destruct f as [f qf], g as [g qg].
     cbn.
     unfold Term.equiv, compose, fst, fanout.
     cbn.
+    assert (qf' := Term.typecheck_sound qf).
+    clear qf.
+    assert (qg' := Term.typecheck_sound qg).
+    clear qg.
+    generalize dependent f.
+    generalize dependent g.
+    generalize dependent B.
+    generalize dependent C.
+    generalize dependent A.
+    intro A.
+    induction A.
+    all: cbn.
+    all: intros ? ? g qg ? fg.
+    all: inversion fg.
+    all: subst.
+    all: clear fg.
+    all: auto.
+    assert (H3' := IHA1 _ _ _ qg _ H3).
+    assert (H4' := IHA2 _ _ _ qg _ H4).
     admit.
   Admitted.
 

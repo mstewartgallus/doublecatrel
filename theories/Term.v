@@ -60,22 +60,21 @@ Function lookup x ρ: option term :=
 
 Function hsubst_expr ρ V :=
   match V with
-  | V_var x => lookup x ρ
+  | V_var x => if lookup x ρ is Some v then v else v_tt
   | V_fst V =>
-      do v_fanout v1 _ ← hsubst_expr ρ V ;
-      Some v1
+      if hsubst_expr ρ V is v_fanout v1 _
+      then v1 else v_tt
   | V_snd V =>
-      do v_fanout _ v2 ← hsubst_expr ρ V ;
-      Some v2
+      if hsubst_expr ρ V is v_fanout _ v2 then v2 else v_tt
   end.
 
 Function hsubst_term ρ v :=
   match v with
-  | v_tt => Some v_tt
+  | v_tt => v_tt
   | v_fanout v1 v2 =>
-      do v1' ← hsubst_term ρ v1 ;
-      do v2' ← hsubst_term ρ v2 ;
-      Some (v_fanout v1' v2')
+      let v1' := hsubst_term ρ v1 in
+      let v2' := hsubst_term ρ v2 in
+      v_fanout v1' v2'
   | v_neu V => hsubst_expr ρ V
   end.
 
@@ -84,48 +83,64 @@ Lemma hsubst_preserve_expr {ρ V}:
     Jp Γ' ρ Γ →
   ∀ {t'},
     JV Γ V t' →
-    ∀ {vout}, hsubst_expr ρ V = Some vout →
-    Γ' ⊢ vout in t'.
+    Γ' ⊢ hsubst_expr ρ V in t'.
 Proof.
   functional induction (hsubst_expr ρ V).
-  all: intros ? ? q ? p ? r.
+  all: intros ? ? q ? p.
   all: inversion p.
   all: subst.
   all: clear p.
-  all: try discriminate.
-  - generalize dependent r.
-    generalize dependent vout.
-    generalize dependent H1.
-    generalize dependent t'.
+  - generalize dependent t'.
     generalize dependent x.
     induction q.
-    all: intros ? ? p ? r.
+    all: cbn.
+    all: intros ? p ? r.
+    all: inversion p.
+    destruct eq_var.
+    all: subst.
+    all: inversion H1.
+    all: subst.
+    all: inversion r.
+    all: subst.
+    all: try contradiction.
+    + auto.
+    + eapply IHq.
+      all: eauto.
+  - generalize dependent x.
+    induction q.
+    all: cbn.
+    all: intros ? ? p.
     all: inversion p.
     all: subst.
-    + cbn in r.
-      destruct eq_var.
-      2: contradiction.
-      inversion r.
-      subst.
-      auto.
-    + cbn in r.
-      destruct eq_var.
-      all: subst.
-      1: contradiction.
-      eapply IHq.
-      all: eauto.
-  - inversion r.
-    subst.
-    assert (e0' := IHo _ _ q _ H1 _ e0).
+    all: destruct eq_var.
+    all: subst.
+    all: try contradiction.
+    eapply IHq.
+    all: eauto.
+  - assert (e0' := IHt _ _ q _ H1).
     inversion e0'.
     subst.
-    auto.
-  - inversion r.
+    rewrite <- H in e0.
+    inversion e0.
     subst.
-    assert (e0' := IHo _ _ q _ H1 _ e0).
+    auto.
+  - assert (e0' := IHt _ _ q _ H1).
     inversion e0'.
     subst.
+    rewrite <- H in y.
+    contradiction.
+  - assert (e0' := IHt _ _ q _ H1).
+    inversion e0'.
+    subst.
+    rewrite <- H in e0.
+    inversion e0.
+    subst.
     auto.
+  - assert (e0' := IHt _ _ q _ H1).
+    inversion e0'.
+    subst.
+    rewrite <- H in y.
+    contradiction.
 Qed.
 
 Lemma hsubst_preserve_term {ρ v}:
@@ -133,21 +148,15 @@ Lemma hsubst_preserve_term {ρ v}:
     Jp Γ' ρ Γ →
   ∀ {t'},
     Γ ⊢ v in t' →
-    ∀ {vout}, hsubst_term ρ v = Some vout →
-    Γ' ⊢ vout in t'.
+    Γ' ⊢ hsubst_term ρ v in t'.
 Proof.
   functional induction (hsubst_term ρ v).
-  all: intros ? ? q ? p ? r.
+  all: intros ? ? q ? p.
   all: inversion p.
   all: subst.
   all: clear p.
-  all: try discriminate.
-  - inversion r.
-    subst.
-    constructor.
-  - inversion r.
-    subst.
-    constructor.
+  - constructor.
+  - constructor.
     all: eauto.
   - eapply hsubst_preserve_expr.
     all: eauto.
@@ -173,78 +182,6 @@ Proof.
   all: eauto.
   eapply map_expr.
   all: eauto.
-Qed.
-
-Lemma hsubst_expr_total {ρ V}:
-  ∀ {Γ' Γ},
-    Jp Γ' ρ Γ →
-  ∀ {t'},
-  JV Γ V t' →
-  ∃ vout, hsubst_expr ρ V = Some vout.
-Proof.
-  functional induction (hsubst_expr ρ V).
-  all: cbn.
-  all: intros ? ? q ? p.
-  all: inversion p.
-  all: clear p.
-  all: subst.
-  - generalize dependent x.
-    induction q.
-    all: cbn in *.
-    all: intros ? p.
-    all: inversion p.
-    all: subst.
-    all: cbn in *.
-    all: destruct eq_var.
-    all: subst.
-    all: try contradiction.
-    + eexists.
-      eauto.
-    + eapply IHq.
-      auto.
-  - eexists.
-    eauto.
-  - destruct (IHo _ _ q _ H1) as [? e1].
-    rewrite e1 in y.
-    assert (H1' := hsubst_preserve_expr q H1 e1).
-    inversion H1'.
-    subst.
-    contradiction.
-  - eexists.
-    eauto.
-  - destruct (IHo _ _ q _ H1) as [? e1].
-    rewrite e1 in y.
-    assert (H1' := hsubst_preserve_expr q H1 e1).
-    inversion H1'.
-    subst.
-    contradiction.
-Qed.
-
-Lemma hsubst_term_total {ρ v}:
-  ∀ {Γ' Γ},
-    Jp Γ' ρ Γ →
-  ∀ {t'},
-  Γ ⊢ v in t' →
-  ∃ vout, hsubst_term ρ v = Some vout.
-Proof.
-  functional induction (hsubst_term ρ v).
-  all: cbn.
-  all: intros ? ? q ? p.
-  all: inversion p.
-  all: clear p.
-  all: subst.
-  - eexists.
-    eauto.
-  - eexists.
-    eauto.
-  - destruct (IHo0 _ _ q _ H4) as [? q2].
-    rewrite q2 in y.
-    contradiction.
-  - destruct (IHo _ _ q _ H2) as [? q1].
-    rewrite q1 in y.
-    contradiction.
-  - eapply hsubst_expr_total.
-    all: eauto.
 Qed.
 
 Function typeinfer Γ V :=
