@@ -9,9 +9,11 @@ Require Blech.Map.
 Require Import Coq.Unicode.Utf8.
 Require Import Coq.Classes.SetoidClass.
 Require Import Coq.Program.Tactics.
+Require Import Coq.Lists.List.
 
 Import IfNotations.
 Import Map.MapNotations.
+Import List.ListNotations.
 
 Require Import FunInd.
 
@@ -28,7 +30,7 @@ Module Import Hor.
   #[local]
   Definition X: var := 0.
 
-  Definition Hor t t' := Term.oftype ((X, t) :: nil) t'.
+  Definition Hor t t' := Term.oftype [(X, t)] t'.
 
   #[program]
   Definition id t: Hor t t := Term.η t (V_var X).
@@ -46,18 +48,25 @@ Module Import Hor.
 
   Definition compose {A B C} (f: Hor B C) (g: Hor A B): Hor A C.
   Proof.
-    exists (if Term.hsubst_term (proj1_sig g) X (proj1_sig f) is Some v
+    exists (if Term.hsubst_term [(X, proj1_sig g)] (proj1_sig f) is Some v
             then v
             else v_tt).
-    destruct (Term.hsubst_term_total (Term.typecheck_sound (proj2_sig f)) (Term.typecheck_sound (proj2_sig g))).
-    rewrite H.
-    erewrite (Term.typecheck_complete (Term.hsubst_preserve_term _ _ H)).
+    eassert (total := Term.hsubst_term_total _ (Term.typecheck_sound (proj2_sig f))).
+    destruct total as [? q].
+    rewrite q.
+    erewrite (Term.typecheck_complete (Term.hsubst_preserve_term _ _ q)).
     cbv.
     auto.
     Unshelve.
-    2: eapply (Term.typecheck_sound (proj2_sig g)).
-    apply (Term.map_term Environment.shadow).
-    apply (Term.typecheck_sound (proj2_sig f)).
+    2: {
+      constructor.
+      2:constructor.
+      apply (Term.typecheck_sound (proj2_sig g)).
+    }
+    3: apply (Term.typecheck_sound (proj2_sig f)).
+    constructor.
+    2: constructor.
+    apply (Term.typecheck_sound (proj2_sig g)).
   Defined.
 
   Lemma compose_id_left {A B} (f: Hor A B): compose (id _) f == f.
@@ -71,8 +80,16 @@ Module Import Hor.
     assert (i' := Term.typecheck_sound i).
     assert (j' := Term.typecheck_sound (proj2_sig (id B))).
     cbn in j'.
-    destruct (Term.hsubst_term_total j' i').
+    eassert (total := Term.hsubst_term_total _ j').
+    Unshelve.
+    4: {
+      constructor.
+      2: constructor.
+      eapply i'.
+    }
+    destruct total.
     rewrite H.
+    clear i.
     admit.
   Admitted.
 

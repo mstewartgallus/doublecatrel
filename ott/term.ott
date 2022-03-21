@@ -26,9 +26,9 @@ environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (list (var * typ
   | G , x : t   ::   :: add {{ coq (cons ([[x]], [[t]]) [[G]]) }}
   | ( G )       :: S :: paren {{ coq ([[G]]) }}
 
-subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (list (var * normal)) }}
+subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (list (var * term)) }}
   | nil                   :: M :: nil {{ coq nil }}
-  | p , x := N            :: M :: add {{ coq (cons ([[x]], [[N]]) [[p]]) }}
+  | p , x := v            :: M :: add {{ coq (cons ([[x]], [[v]]) [[p]]) }}
   | ( p )                 :: S :: paren {{ coq ([[p]]) }}
 
 substitutions
@@ -48,6 +48,14 @@ embed
 {{ coq
 Coercion toterm: normal >-> term.
 }}
+
+defns
+
+dummy :: '' ::=
+
+defn
+jdummy ::   :: jdum :: 'jdum_'
+by
 
 defns
 
@@ -107,120 +115,13 @@ defns
 judge_subst :: 'J' ::=
 
 defn
-p : G ::   :: p :: 'p_'
+G |- p : G' ::   :: p :: 'p_'
 by
 
----------- :: nil
-nil: nil
+-------------- :: nil
+G |- nil: nil
 
-nil |- [N] : t
-p: G
-------------------- :: cons
-p, x := N: G, x: t
-
-defns
-
-lookup :: 'mem' ::=
-
-defn
-x := N \in p ::   :: p :: 'p_'
-by
-
---------------------- :: eq
-x := N \in p, x := N
-
-x != y
-x := N \in p
------------------------ :: ne
-x := N \in p, y := N'
-
-
-defns
-  hsubstV :: 'hsubstV' ::=
-defn
-  [ x := v1 ] V === v2 ::   :: '' :: '_'
-by
-
-------------------- :: var
-[x := v] x === v
-
-
-[x := v] V === v1, v2
------------------------- :: fst
-[x := v] fst V === v1
-
-[x := v] V === v1, v2
------------------------- :: snd
-[x := v] snd V === v2
-
-defns
-  hsubstVV :: 'hsubstVV' ::=
-defn
-  [ x := v ] V === V' ::   :: '' :: '_'
-by
-
-x != y
--------------------- :: var
-[ x := v ] y === y
-
-[x := v] V === V'
-------------------------- :: fst
-[x := v] fst V === fst V'
-
-[x := v] V === V'
-------------------------- :: snd
-[x := v] snd V === snd V'
-
-defns
-  hsubstv :: 'hsubstv' ::=
-defn
-  [ x := v1 ] v2 === v3 ::   :: '' :: '_'
-by
-
--------------------- :: tt
-[ x := v ] tt === tt
-
-[x := v] v1 === v1'
-[x := v] v2 === v2'
-------------------------------- :: fanout
-[ x := v ] (v1, v2) === v1', v2'
-
-[x := v] V === v'
---------------------- :: neu
-[x := v] neu V === v'
-
-defns
-
-big :: 'big' ::=
-
-defn
-p |- v ! N ::   :: v :: 'v_'
-by
-
--------------- :: tt
-p |- tt ! tt
-
-p |- v1 ! N1
-p |- v2 ! N2
--------------------- :: fanout
-p |- v1, v2 ! N1, N2
-
-p |- V ! N
-------------- :: neu
-p |- neu V ! N
-
-defn
-p |- V ! N ::   :: V :: 'V_'
-by
-
-x := N \in p
-------------- :: var
-p |- x ! N
-
-p |- V ! N1, N2
----------- :: fst
-p |- fst V ! N1
-
-p |- V ! N1, N2
----------- :: snd
-p |- snd V ! N2
+G' |- v : t
+G' |- p: G
+------------------------- :: cons
+G' |- p, x := v: G, x: t
