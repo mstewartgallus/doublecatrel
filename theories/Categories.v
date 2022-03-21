@@ -5,7 +5,6 @@ Require Blech.Environment.
 Require Blech.Term.
 Require Blech.Context.
 Require Blech.Map.
-Require Blech.Multiset.
 
 Require Import Coq.Unicode.Utf8.
 Require Import Coq.Classes.SetoidClass.
@@ -13,7 +12,6 @@ Require Import Coq.Program.Tactics.
 
 Import IfNotations.
 Import Map.MapNotations.
-Import Multiset.MultisetNotations.
 
 Require Import FunInd.
 
@@ -48,19 +46,18 @@ Module Import Hor.
 
   Definition compose {A B C} (f: Hor B C) (g: Hor A B): Hor A C.
   Proof.
-    destruct (Term.hsubst_term (proj1_sig g) X (proj1_sig f)) eqn:q.
-    - exists t.
-      erewrite (Term.typecheck_complete (Term.hsubst_preserve_term _ _ q)).
-      cbv.
-      auto.
-      Unshelve.
-      2: eapply (Term.typecheck_sound (proj2_sig g)).
-      apply (Term.map_term Environment.shadow).
-      apply (Term.typecheck_sound (proj2_sig f)).
-    - refine (match _: False with end).
-      destruct (Term.hsubst_term_total (Term.typecheck_sound (proj2_sig f)) (Term.typecheck_sound (proj2_sig g))).
-      rewrite H in q.
-      discriminate.
+    exists (if Term.hsubst_term (proj1_sig g) X (proj1_sig f) is Some v
+            then v
+            else v_tt).
+    destruct (Term.hsubst_term_total (Term.typecheck_sound (proj2_sig f)) (Term.typecheck_sound (proj2_sig g))).
+    rewrite H.
+    erewrite (Term.typecheck_complete (Term.hsubst_preserve_term _ _ H)).
+    cbv.
+    auto.
+    Unshelve.
+    2: eapply (Term.typecheck_sound (proj2_sig g)).
+    apply (Term.map_term Environment.shadow).
+    apply (Term.typecheck_sound (proj2_sig f)).
   Defined.
 
   Lemma compose_id_left {A B} (f: Hor A B): compose (id _) f == f.
@@ -71,13 +68,12 @@ Module Import Hor.
     cbn.
     unfold compose, id.
     cbn.
-    induction B.
-    all: cbn.
-    1: auto.
-    + assert (i' := Term.typecheck_sound i).
-      inversion i'.
-      auto.
-    + admit.
+    assert (i' := Term.typecheck_sound i).
+    assert (j' := Term.typecheck_sound (proj2_sig (id B))).
+    cbn in j'.
+    destruct (Term.hsubst_term_total j' i').
+    rewrite H.
+    admit.
   Admitted.
 
   Lemma compose_id_right {A B} (f: Hor A B): compose f (id _) == f.
