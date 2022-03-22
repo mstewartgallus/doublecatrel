@@ -11,6 +11,7 @@ Require Coq.Bool.Bool.
 Require Coq.Lists.List.
 
 Import IfNotations.
+Import List.ListNotations.
 
 Require Import FunInd.
 
@@ -351,4 +352,110 @@ Proof.
   intros.
   destruct p', p.
   auto.
+Qed.
+
+Definition idsubst: environment → subst := List.map (λ '(x, t), (x, η t (V_var x))).
+
+Lemma hsubst_expr_idsubst {Γ V t}:
+  JV Γ V t →
+  hsubst_expr (idsubst Γ) V = Term.η t V.
+Proof.
+  intros p.
+  induction p.
+  all: cbn.
+  - induction H.
+    all: cbn.
+    all: destruct eq_var.
+    all: subst.
+    all: try contradiction.
+    + auto.
+    + eauto.
+  - rewrite IHp.
+    cbn.
+    auto.
+  - rewrite IHp.
+    cbn.
+    auto.
+Qed.
+
+Lemma hsubst_term_idsubst {Γ v t}:
+  Γ ⊢ v in t →
+  hsubst_term (idsubst Γ) v = v.
+Proof.
+  intros p.
+  induction p.
+  all: cbn.
+  1: auto.
+  - rewrite IHp1, IHp2.
+    auto.
+  - cbn.
+    apply (hsubst_expr_idsubst H).
+Qed.
+
+Lemma hsubst_expr_assoc {x y f}:
+  ∀ {g h Γ B C D},
+    JV [(x, C)] f D →
+    [(y, B)] ⊢ g in C →
+    Γ ⊢ h in B →
+    hsubst_expr [(x, Term.hsubst_term [(y, h)] g)] f = hsubst_term [(y, h)] (Term.hsubst_expr [(x, g)] f).
+Proof.
+  induction f.
+  all: cbn.
+  all: intros ? ? ? ? ? ? p q r.
+  all: inversion p.
+  all: subst.
+  all: clear p.
+  - inversion H1.
+    all: subst.
+    2: inversion H6.
+    destruct eq_var.
+    2: contradiction.
+    auto.
+  - erewrite IHf.
+    all: eauto.
+    eassert (H1' := hsubst_preserve_expr _ H1).
+    Unshelve.
+    4: {
+      constructor.
+      2: constructor.
+      apply q.
+    }
+    inversion H1'.
+    subst.
+    cbn.
+    auto.
+  - erewrite IHf.
+    all: eauto.
+    eassert (H1' := hsubst_preserve_expr _ H1).
+    Unshelve.
+    4: {
+      constructor.
+      2: constructor.
+      apply q.
+    }
+    inversion H1'.
+    subst.
+    cbn.
+    auto.
+Qed.
+
+#[local]
+Lemma hsubst_term_assoc {x y f}:
+  ∀ {g h Γ B C D},
+  [(x, C)] ⊢ f in D →
+  [(y, B)] ⊢ g in C →
+  Γ ⊢ h in B →
+  hsubst_term [(x, hsubst_term [(y, h)] g)] f = hsubst_term [(y, h)] (hsubst_term [(x, g)] f).
+Proof.
+  induction f.
+  all: cbn.
+  all: intros ? ? ? ? ? ? p q r.
+  all: inversion p.
+  all: subst.
+  all: clear p.
+  all: auto.
+  - erewrite IHf1, IHf2.
+    all: eauto.
+  - eapply hsubst_expr_assoc.
+    all: eauto.
 Qed.

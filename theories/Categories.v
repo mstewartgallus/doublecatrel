@@ -62,30 +62,37 @@ Module Import Hor.
     - apply (Term.typecheck_sound (proj2_sig f)).
   Defined.
 
+  Lemma hsubst_expr_var {Γ ρ Γ'}:
+    Jp Γ ρ Γ' →
+    ∀ {x t},
+    mem x t Γ' →
+    ∀ {ρ v},
+    Term.lookup x ρ = Some v →
+    Term.hsubst_expr ρ (V_var x) = v.
+  Proof.
+    intros.
+    cbn.
+    rewrite H1.
+    auto.
+  Qed.
+
+  Lemma hsubst_var {Γ ρ Γ'}:
+    Jp Γ ρ Γ' →
+    ∀ {x t},
+    mem x t Γ' →
+    ∀ {ρ v},
+    Term.lookup x ρ = Some v →
+    Term.hsubst_term ρ (Term.η t (V_var x)) = v.
+  Proof.
+    admit.
+  Admitted.
+
   Lemma compose_id_left {A B} (f: Hor A B): compose (id _) f == f.
   Proof.
     destruct f as [f ?].
     cbn.
     unfold Term.equiv.
     cbn.
-    assert (i' := Term.typecheck_sound i).
-    clear i.
-    generalize dependent A.
-    generalize dependent f.
-    generalize dependent B.
-    intro B.
-    induction B.
-    all: cbn.
-    all: intros ? ? q.
-    all: inversion q.
-    all: subst.
-    all: clear q.
-    all: auto.
-    assert (IHB1' := IHB1 _ _ H3).
-    assert (IHB2' := IHB2 _ _ H4).
-    assert (B1' := Term.typecheck_sound (proj2_sig (id B1))).
-    assert (B2' := Term.typecheck_sound (proj2_sig (id B2))).
-    cbn in B1', B2'.
     admit.
   Admitted.
 
@@ -95,91 +102,7 @@ Module Import Hor.
     unfold Term.equiv, compose, id.
     destruct f as [f ?].
     cbn.
-    assert (i' := Term.typecheck_sound i).
-    clear i.
-    generalize dependent A.
-    generalize dependent B.
-    generalize dependent f.
-    intro f.
-    induction f.
-    all: cbn.
-    all: intros ? ? p.
-    all: inversion p.
-    all: subst.
-    all: clear p.
-    all: auto.
-    - erewrite IHf1, IHf2.
-      all: eauto.
-    - admit.
-  Admitted.
-
-  #[local]
-  Lemma hsubst_expr_assoc {x f}:
-   ∀ {g h A B C D},
-     JV [(x, C)] f D →
-     [(x, B)] ⊢ g in C →
-     [(x, A)] ⊢ h in B →
-    Term.hsubst_expr [(x, Term.hsubst_term [(x, h)] g)] f = Term.hsubst_term [(x, h)] (Term.hsubst_expr [(x, g)] f).
-  Proof.
-    induction f.
-    all: cbn.
-    all: intros ? ? ? ? ? ? p q r.
-    all: inversion p.
-    all: subst.
-    all: clear p.
-    - inversion H1.
-      all: subst.
-      2: inversion H6.
-      destruct eq_var.
-      2: contradiction.
-      auto.
-    - erewrite IHf.
-      all: eauto.
-      eassert (H1' := Term.hsubst_preserve_expr _ H1).
-      Unshelve.
-      4: {
-        constructor.
-        2: constructor.
-        apply q.
-      }
-      inversion H1'.
-      subst.
-      cbn.
-      auto.
-    - erewrite IHf.
-      all: eauto.
-      eassert (H1' := Term.hsubst_preserve_expr _ H1).
-      Unshelve.
-      4: {
-        constructor.
-        2: constructor.
-        apply q.
-      }
-      inversion H1'.
-      subst.
-      cbn.
-      auto.
-  Qed.
-
-  #[local]
-  Lemma hsubst_term_assoc {x f}:
-   ∀ {g h A B C D},
-     [(x, C)] ⊢ f in D →
-     [(x, B)] ⊢ g in C →
-     [(x, A)] ⊢ h in B →
-    Term.hsubst_term [(x, Term.hsubst_term [(x, h)] g)] f = Term.hsubst_term [(x, h)] (Term.hsubst_term [(x, g)] f).
-  Proof.
-    induction f.
-    all: cbn.
-    all: intros ? ? ? ? ? ? p q r.
-    all: inversion p.
-    all: subst.
-    all: clear p.
-    all: auto.
-    - erewrite IHf1, IHf2.
-      all: eauto.
-    - eapply hsubst_expr_assoc.
-      all: eauto.
+    apply (Term.hsubst_term_idsubst (Term.typecheck_sound i)).
   Qed.
 
   Lemma compose_assoc {A B C D} (f: Hor C D) (g: Hor B C) (h: Hor A B):
@@ -189,7 +112,7 @@ Module Import Hor.
     cbn.
     unfold Term.equiv, compose.
     cbn.
-    eapply hsubst_term_assoc.
+    eapply Term.hsubst_term_assoc.
     all: apply Term.typecheck_sound.
     all: eauto.
   Qed.
@@ -198,8 +121,7 @@ Module Import Hor.
   Definition tt A: Hor A t_unit := v_tt.
 
   #[program]
-  Definition fanout {A B C} (f: Hor C A) (g: Hor C B): Hor C (A * B) :=
-    v_fanout f g.
+  Definition fanout {A B C} (f: Hor C A) (g: Hor C B): Hor C (A * B) := v_fanout f g.
 
   Next Obligation.
   Proof.
