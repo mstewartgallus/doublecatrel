@@ -5,6 +5,7 @@ Require Blech.Environment.
 Require Blech.Term.
 Require Blech.Context.
 Require Blech.Map.
+Require Blech.Assoc.
 
 Require Import Coq.Unicode.Utf8.
 Require Import Coq.Classes.SetoidClass.
@@ -22,7 +23,6 @@ Implicit Type Δ: usage.
 Implicit Type E: context.
 Implicit Type t: type.
 Implicit Type v: term.
-Implicit Type N: normal.
 Implicit Types x y: var.
 Implicit Type σ: store.
 
@@ -33,7 +33,7 @@ Module Import Hor.
   Definition Hor t t' := Term.oftype [(X, t)] t'.
 
   #[program]
-  Definition id t: Hor t t := Term.η t (V_var X).
+  Definition id t: Hor t t := η t (V_var X).
 
   Next Obligation.
   Proof.
@@ -67,7 +67,7 @@ Module Import Hor.
     ∀ {x t},
     mem x t Γ' →
     ∀ {ρ v},
-    Term.lookup x ρ = Some v →
+    Assoc.find x ρ = Some v →
     Term.hsubst_expr ρ (V_var x) = v.
   Proof.
     intros.
@@ -81,8 +81,8 @@ Module Import Hor.
     ∀ {x t},
     mem x t Γ' →
     ∀ {ρ v},
-    Term.lookup x ρ = Some v →
-    Term.hsubst_term ρ (Term.η t (V_var x)) = v.
+    Assoc.find x ρ = Some v →
+    Term.hsubst_term ρ (η t (V_var x)) = v.
   Proof.
     admit.
   Admitted.
@@ -137,7 +137,7 @@ Module Import Hor.
   Qed.
 
   #[program]
-  Definition fst {A B}: Hor (A * B) A := Term.η A (V_fst (V_var X)).
+  Definition fst {A B}: Hor (A * B) A := η A (V_fst (V_var X)).
 
   Next Obligation.
   Proof.
@@ -151,7 +151,7 @@ Module Import Hor.
   Qed.
 
   #[program]
-  Definition snd {A B}: Hor (A * B) B := Term.η B (V_snd (V_var X)).
+  Definition snd {A B}: Hor (A * B) B := η B (V_snd (V_var X)).
 
   Next Obligation.
   Proof.
@@ -180,7 +180,7 @@ Module Import Hor.
     Γ ⊢ f in A →
     Γ ⊢ g in B →
     ∀ {x},
-    Term.lookup x ρ = Some (v_fanout f g) →
+    Assoc.find x ρ = Some (v_fanout f g) →
     Term.hsubst_expr ρ (V_fst (V_var x)) = f.
   Proof.
     cbn.

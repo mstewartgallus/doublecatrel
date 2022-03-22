@@ -9,6 +9,8 @@ Bind Scope list_scope with stores.
 
 Infix "*" := t_prod.
 
+Notation "'η'" := (eta) (at level 0).
+
 Notation "G ⊢ v 'in' t" := (Jv G v t) (at level 90).
 
 Infix "|-" := P_with (at level 30).

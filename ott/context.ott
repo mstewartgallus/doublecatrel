@@ -35,14 +35,14 @@ nat, n :: 'n_' ::= {{ coq nat }}
   | len D      :: M :: lenD {{ coq (length [[D]]) }}
   | ( n )      :: S :: paren {{ icho ([[n]]) }}
 
-store, S {{ tex \sigma }} {{ coq σ }} :: 'S_'  ::= {{ coq (Map.map normal) }}
+store, S {{ tex \sigma }} {{ coq σ }} :: 'S_'  ::= {{ coq (Map.map term) }}
   | nil                   :: M :: empty {{ coq (Map.empty) }}
-  | x := N            :: M :: one {{ coq (Map.one [[x]] [[N]]) }}
+  | x := v            :: M :: one {{ coq (Map.one [[x]] [[v]]) }}
   | S , S'                :: M :: add {{ coq (Map.merge [[S']] [[S]]) }}
   | S ++ S'               :: M :: merge {{ coq (Map.merge [[S]] [[S']]) }}
 
 span, P :: 'P_' ::=
-  | S |- N  ::   :: with
+  | S |- v  ::   :: with
 
 spans, Ps {{ tex P^* }} :: 'Ps_' ::= {{ coq (list span) }}
   | nil          ::   :: nil {{ coq nil }}
@@ -68,6 +68,7 @@ terminals :: 'terminals_' ::=
   | used         ::   :: used  {{ tex \textbf{s} }}
   | unused       ::   :: unused  {{ tex \textbf{f} }}
   | tt           ::   :: tt   {{ tex \mathop{ \textbf ! } }}
+  | eta          ::   :: eta
   | fst          ::   :: fst  {{ tex \pi{}_1 }}
   | snd          ::   :: snd  {{ tex \pi{}_2 }}
   | lam          ::   :: lam  {{ tex \lambda{} }}
@@ -189,66 +190,66 @@ defns
 sat :: '' ::= {{ coq-universe Type }}
 
 defn
-S |- e [ N ] ::   :: produces :: 'produces_' {{ tex [[S]] \mathrel{\vdash} [[e]] [ [[N]] ] }}
+S |- e [ v ] ::   :: produces :: 'produces_' {{ tex [[S]] \mathrel{\vdash} [[e]] [ [[v]] ] }}
 by
 
 -------------------------- :: var
-x := N |- x [ N ]
+x := v |- x [ v ]
 
 S |- e [ tt ]
-S' |- E' [ N ]
+S' |- E' [ v ]
 ------------------------------- :: step
-S ++ S' |- (e; E': t) [ N ]
+S ++ S' |- (e; E': t) [ v ]
 
-S |- e [N0, N1]
-S', x := N0, y := N1 |- E' [ N2 ]
+S |- e [v0, v1]
+S', x := v0, y := v1 |- E' [ v2 ]
 ------------------------------------------------ :: let
-S ++ S' |- (let x, y = e in E' : t) [ N2 ]
+S ++ S' |- (let x, y = e in E' : t) [ v2 ]
 
-S |- e [ N, N' ]
-S' |- E' [N]
+S |- e [ v, v' ]
+S' |- E' [v]
 ----------------------------- :: app
-S ++ S' |- (e E') [ N' ]
+S ++ S' |- (e E') [ v' ]
 
-S |- E [ N ]
+S |- E [ v ]
 ------------------------- :: cut
-S |- (cut E t) [ N ]
+S |- (cut E t) [ v ]
 
 defn
-S |- E [ N ] ::   :: accepts :: 'accepts_' {{ tex [[S]] \mathrel{\vdash} [[E]] [ [[N]] ] }}
+S |- E [ v ] ::   :: accepts :: 'accepts_' {{ tex [[S]] \mathrel{\vdash} [[E]] [ [[v]] ] }}
 by
 
----------------------- :: tt
+--------------- :: tt
 nil |- tt [tt]
 
-S |- E [N]
-S' |- E' [N']
-------------------------------------- :: fanout
-S ++ S' |- (E, E') [N, N']
+S |- E [v]
+S' |- E' [v']
+--------------------------- :: fanout
+S ++ S' |- (E, E') [v, v']
 
-S, x := N |- E [ N' ]
+S, x := v |- E [ v' ]
 ------------------------------------ :: lam
-S |- (lam x. E) [ N, N' ]
+S |- (lam x. E) [ v, v' ]
 
-S |- e [ N ]
+S |- e [ v ]
 --------------------------- :: neu
-S |- (neu e) [ N ]
+S |- (neu e) [ v ]
 
 defns
 
 sound :: '' ::= {{ coq-universe Type }}
 
 defn
-E [ Ss ; N ] ::   :: sound :: 'sound_'
+E [ Ss ; v ] ::   :: sound :: 'sound_'
 by
 
--------------- :: nil
-E [ nil ; N ]
+------------- :: nil
+E [ nil ; v ]
 
-E [ Ss ; N ]
-S |- E [N]
--------------------- :: cons
-E [ Ss, S ; N ]
+E [ Ss ; v ]
+S |- E [v]
+----------------- :: cons
+E [ Ss, S ; v ]
 
 
 defn
@@ -259,6 +260,6 @@ by
 e [ nil ]
 
 e [ Ps ]
-S |- e [N]
+S |- e [v]
 -------------------- :: cons
-e [ Ps , S |- N ]
+e [ Ps , S |- v ]

@@ -21,7 +21,6 @@ Implicit Type Γ: environment.
 Implicit Type Δ: usage.
 Implicit Type E: context.
 Implicit Type t: type.
-Implicit Type N: normal.
 Implicit Types x y: var.
 Implicit Type xs: vars.
 Implicit Type σ: store.
@@ -319,93 +318,93 @@ Notation "'do' n ← e0 ; e1" :=
   (List.flat_map (λ n, e1) e0)
     (n pattern, at level 200, left associativity): list_scope.
 
-Fixpoint generate t: list normal :=
+Fixpoint generate t: list term :=
   match t with
   | t_var _ => []
-  | t_unit => [N_tt]
+  | t_unit => [v_tt]
   | t * t' =>
-      do N ← generate t ;
-      do N' ← generate t' ;
-      [N_fanout N N']
+      do v ← generate t ;
+      do v' ← generate t' ;
+      [v_fanout v v']
   end%list.
 
-Fixpoint verify σ E N: list store :=
-  match E, N with
-  | E_lam x E, N_fanout N1 N2 =>
-      do σ' ← verify (x ↦ N1 ∪ σ) E N2 ;
-      if Map.find x σ' is Some N1'
+Fixpoint verify σ E v: list store :=
+  match E, v with
+  | E_lam x E, v_fanout v1 v2 =>
+      do σ' ← verify (x ↦ v1 ∪ σ) E v2 ;
+      if Map.find x σ' is Some v1'
       then
-        if eq_normal N1 N1'
+        if eq_term v1 v1'
         then [σ' \ x]
         else []
       else
         []
 
-  | E_tt, N_tt => [∅]
+  | E_tt, v_tt => [∅]
 
-  | E_fanout E E', N_fanout N1 N2 =>
-      do σ1 ← verify σ E N1 ;
-      do σ2 ← verify σ E' N2 ;
+  | E_fanout E E', v_fanout v1 v2 =>
+      do σ1 ← verify σ E v1 ;
+      do σ2 ← verify σ E' v2 ;
       [σ1 ∪ σ2]
 
   | E_neu e, _ =>
-      do (σ' |- N') ← search σ e ;
-      if eq_normal N N'
+      do (σ' |- v') ← search σ e ;
+      if eq_term v v'
       then [σ']
       else []
   | _, _ => []
   end%list %map
 with search σ e: list span :=
   match e with
-  | e_var x => if Map.find x σ is Some N then [x ↦ N |- N] else []
+  | e_var x => if Map.find x σ is Some v then [x ↦ v |- v] else []
 
   | e_app e E' =>
-      do (σ1 |- N) ← search σ e ;
-      if N is N_fanout N0 N1
+      do (σ1 |- v) ← search σ e ;
+      if v is v_fanout v0 v1
       then
-          do σ2 ← verify σ E' N0 ;
-          [σ1 ∪ σ2 |- N1]
+          do σ2 ← verify σ E' v0 ;
+          [σ1 ∪ σ2 |- v1]
       else []
 
   | e_step e E' t2 =>
-      do (σ1 |- N) ← search σ e ;
-      do N' ← generate t2 ;
-      do σ2 ← verify σ E' N' ;
-      if N is N_tt
-      then [σ1 ∪ σ2 |- N']
+      do (σ1 |- v) ← search σ e ;
+      do v' ← generate t2 ;
+      do σ2 ← verify σ E' v' ;
+      if v is v_tt
+      then [σ1 ∪ σ2 |- v']
       else []
 
   | e_let x y e E' t3 =>
-      do (σ1 |- N) ← search σ e ;
-      do (a, b) ← (if N is N_fanout a b then [(a, b)] else []) ;
-      do N' ← generate t3 ;
-      do σ2 ← verify ((x ↦ a) ∪ (y ↦ b) ∪ σ) E' N' ;
+      do (σ1 |- v) ← search σ e ;
+      do (a, b) ← (if v is v_fanout a b then [(a, b)] else []) ;
+      do v' ← generate t3 ;
+      do σ2 ← verify ((x ↦ a) ∪ (y ↦ b) ∪ σ) E' v' ;
       match Map.find x (σ2 \ y), Map.find y σ2 with
       | Some a', Some b' =>
-          match eq_normal a a', eq_normal b b' with
+          match eq_term a a', eq_term b b' with
           | left _, left _ =>
-              [(σ1 ∪ ((σ2 \ y) \ x) |- N')]
+              [(σ1 ∪ ((σ2 \ y) \ x) |- v')]
           | _, _ => []
           end
       | _, _ => []
       end
 
   | e_cut E t =>
-      do N ← generate t ;
-      do σ ← verify σ E N ;
-      [σ |- N]
+      do v ← generate t ;
+      do σ ← verify σ E v ;
+      [σ |- v]
   end%list %map.
 
 Lemma sound_pure:
-  ∀ {σ E N}, accepts σ E N → sound E [σ] N.
+  ∀ {σ E v}, accepts σ E v → sound E [σ] v.
 Proof.
   repeat constructor.
   auto.
 Defined.
 
-Lemma sound_mon {E p p' N}:
-  sound E p N → sound E p' N →
-  sound E (p ++ p') N.
+Lemma sound_mon {E p p' v}:
+  sound E p v → sound E p' v →
+  sound E (p ++ p') v.
 Proof.
   intros.
   induction p.
@@ -430,7 +429,7 @@ Proof.
 Defined.
 
 Theorem verify_sound:
-  ∀ σ E N, sound E (verify σ E N) N
+  ∀ σ E v, sound E (verify σ E v) v
  with
  search_sound:
    ∀ σ e, sounde e (search σ e).
@@ -441,14 +440,14 @@ Proof using.
     destruct E.
     all: intros.
     + cbn.
-      destruct N.
+      destruct v.
       1: constructor.
-      induction (verify_sound (x ↦ N1 ∪ σ) E N2).
-      1: constructor.
+      induction (verify_sound (x ↦ v1 ∪ σ) E v2).
+      1,3: constructor.
       cbn.
       destruct Map.find eqn:q.
       2: auto.
-      destruct (eq_normal N1 n).
+      destruct eq_term.
       2: auto.
       subst.
       cbn.
@@ -458,20 +457,20 @@ Proof using.
       rewrite Map.add_minus.
       all: eauto.
     + cbn.
-      destruct N.
+      destruct v.
       all: try econstructor.
       all: constructor.
     + cbn.
-      destruct N.
+      destruct v.
       1: constructor.
-      induction (verify_sound σ E1 N1).
+      induction (verify_sound σ E1 v1).
       1: constructor.
       cbn.
       apply sound_mon.
       2: auto.
       clear IHs.
-      induction (verify_sound σ E2 N2).
-      1: constructor.
+      induction (verify_sound σ E2 v2).
+      1,3: constructor.
       cbn.
       econstructor.
       1: auto.
@@ -481,7 +480,7 @@ Proof using.
       induction (search_sound σ e).
       1: constructor.
       cbn.
-      destruct eq_normal.
+      destruct eq_term.
       2: auto.
       cbn.
       subst.
@@ -504,14 +503,14 @@ Proof using.
       induction (search_sound σ e).
       1: constructor.
       cbn.
-      destruct N.
+      destruct v.
       all: cbn.
       all: auto.
       apply sounde_mon.
       all: cbn.
       2: auto.
       clear IHs.
-      induction (verify_sound σ E' N1).
+      induction (verify_sound σ E' v1).
       all: cbn.
       1: constructor.
       cbn.
@@ -534,7 +533,7 @@ Proof using.
       all: cbn.
       1: auto.
       cbn.
-      destruct N.
+      destruct v.
       all: cbn.
       all: auto.
       econstructor.
@@ -548,7 +547,7 @@ Proof using.
       apply sounde_mon.
       2: auto.
       clear IHs.
-      destruct N.
+      destruct v.
       1: constructor.
       cbn.
       repeat rewrite List.app_nil_r.
@@ -559,7 +558,7 @@ Proof using.
       apply sounde_mon.
       all: cbn.
       2: auto.
-      induction (verify_sound (((x ↦  N1 ∪ y ↦ N2) ∪ σ)) E' a).
+      induction (verify_sound (((x ↦ v1 ∪ y ↦ v2) ∪ σ)) E' a).
       1: constructor.
       cbn.
       apply sounde_mon.
@@ -569,10 +568,10 @@ Proof using.
       2: constructor.
       destruct (Map.find y σ1) eqn:q'.
       2: constructor.
-      destruct (eq_normal N1 n).
+      destruct (eq_term v1 t0).
       2: constructor.
       subst.
-      destruct (eq_normal N2 n0).
+      destruct (eq_term v2 t1).
       2: constructor.
       subst.
       constructor.
@@ -580,6 +579,7 @@ Proof using.
       econstructor.
       all: repeat rewrite Map.add_minus.
       all: eauto.
+      constructor.
     + cbn.
       induction (generate t).
       1: constructor.
@@ -599,7 +599,7 @@ Qed.
 Record span := {
   s: Set ;
   π1: s → store ;
-  π2: s → normal ;
+  π2: s → term ;
 }.
 
 Definition useonce Γ u: usage := List.map (λ '(x, t), u) Γ.

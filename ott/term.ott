@@ -5,23 +5,17 @@ Require Blech.Assoc.
 metavar var, x, y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[var]]} }}
 
 grammar
-term, v :: 'v_' ::=
-  | tt             ::   :: tt
-  | v , v'         ::   :: fanout
-  | neu V          ::   :: neu {{ tex [ [[V]] ] }}
-  | ( v )          :: S :: paren {{ icho ([[v]]) }}
-
-expr, V :: 'V_' ::=
+expr, V :: 'V_' ::= {{ coq-equality }}
   | x              ::   :: var
   | fst V          ::   :: fst
   | snd V          ::   :: snd
   | ( V )          :: S :: paren {{ icho ([[V]]) }}
 
-normal, N :: 'N_' ::= {{ coq-equality }}
-  | tt      ::   :: tt
-  | N , N'  ::   :: fanout
-  | ( N )   :: S :: paren {{ coq ([[N]]) }}
-
+term, v :: 'v_' ::= {{ coq-equality }}
+  | tt             ::   :: tt
+  | v , v'         ::   :: fanout
+  | neu ( V )      ::   :: neu {{ tex [ [[V]] ] }}
+  | ( v )          :: S :: paren {{ icho ([[v]]) }}
 grammar
 
 environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (Assoc.assoc type) }}
@@ -34,19 +28,14 @@ subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (Assoc.assoc term) }}
   | p , x := v            :: M :: add {{ coq (cons ([[x]], [[v]]) [[p]]) }}
   | ( p )                 :: S :: paren {{ coq ([[p]]) }}
 
-% subrules are awkward
 funs
-  toterm ::=
+  eta_expand ::=
 fun
-  [ N ] :: v :: toterm {{ tex \llbracket [[N]] \rrbracket }}
+  eta ( t , V ) :: v :: eta {{ tex \eta_{[[t]]} [[V]] }}
 by
-  [ tt ] === tt
-  [ N, N' ] === [ N ], [ N' ]
-
-embed
-{{ coq
-Coercion toterm: normal >-> term.
-}}
+  eta ( A , V ) === neu( V )
+  eta ( unit , V ) === tt
+  eta (t1 * t2 , V ) === eta ( t1 , (fst V)), eta ( t2 , (snd V))
 
 defns
 
@@ -105,8 +94,8 @@ G |- v2: t2
 G |- v1, v2: t1 * t2
 
 G |- V: A
----------------- :: neu
-G |- neu V : A
+----------------- :: neu
+G |- neu ( V) : A
 
 
 defns

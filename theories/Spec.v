@@ -31,38 +31,38 @@ Proof.
 Defined.
 Hint Resolve eq_var : ott_coq_equality.
 
-Inductive normal : Set := 
- | N_tt : normal
- | N_fanout (N:normal) (N':normal).
-
 Inductive expr : Set := 
  | V_var (x:var)
  | V_fst (V:expr)
  | V_snd (V:expr).
-
-Definition environment : Set := (Assoc.assoc type).
 
 Inductive term : Set := 
  | v_tt : term
  | v_fanout (v:term) (v':term)
  | v_neu (V:expr).
 
+Definition environment : Set := (Assoc.assoc type).
+
 Definition subst : Set := (Assoc.assoc term).
-Lemma eq_normal: forall (x y : normal), {x = y} + {x <> y}.
+Lemma eq_expr: forall (x y : expr), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
-Hint Resolve eq_normal : ott_coq_equality.
+Hint Resolve eq_expr : ott_coq_equality.
+Lemma eq_term: forall (x y : term), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_term : ott_coq_equality.
 (** definitions *)
 
-(** funs toterm *)
-Fixpoint toterm (x1:normal) : term:=
-  match x1 with
-  | N_tt => v_tt
-  | (N_fanout N N') => (v_fanout  (toterm N )   (toterm N' ) )
+(** funs eta_expand *)
+Fixpoint eta (x1:type) (x2:expr) : term:=
+  match x1,x2 with
+  | (t_var A) , V => (v_neu V)
+  | t_unit , V => v_tt
+  | (t_prod t1 t2) , V => (v_fanout  (eta t1  ( (V_fst V) )  )   (eta t2  ( (V_snd V) )  ) )
 end.
-
-Coercion toterm: normal >-> term.
 
 (** definitions *)
 
@@ -114,18 +114,14 @@ Inductive Jp : environment -> subst -> environment -> Prop :=    (* defn p *)
 Require Blech.Map.
 
 
-Definition store : Set := (Map.map normal).
+Definition store : Set := (Map.map term).
 
 Inductive use : Set := 
  | u_used : use
  | u_unused : use.
 
 Inductive span : Set := 
- | P_with (σ:store) (N:normal).
-
-Definition usage : Set := (list use).
-
-Definition vars : Set := (list var).
+ | P_with (σ:store) (v:term).
 
 Inductive context : Set := 
  | E_lam (x:var) (E:context)
@@ -139,9 +135,13 @@ with redex : Set :=
  | e_let (x:var) (y:var) (e:redex) (E':context) (t:type)
  | e_cut (E:context) (t:type).
 
-Definition stores : Set := (list store).
+Definition usage : Set := (list use).
+
+Definition vars : Set := (list var).
 
 Definition spans : Set := (list span).
+
+Definition stores : Set := (list store).
 
 Definition nat : Set := nat.
 Lemma eq_use: forall (x y : use), {x = y} + {x <> y}.
@@ -244,53 +244,53 @@ with check : environment -> usage -> usage -> context -> type -> Prop :=    (* d
 (** definitions *)
 
 (* defns sat *)
-Inductive produces : store -> redex -> normal -> Type :=    (* defn produces *)
- | produces_var : forall (x:var) (N:normal),
-     produces  (Map.one  x   N )  (e_var x) N
- | produces_step : forall (σ σ':store) (e:redex) (E':context) (t:type) (N:normal),
-     produces σ e N_tt ->
-     accepts σ' E' N ->
-     produces  (Map.merge  σ   σ' )   ( (e_step e E' t) )  N
- | produces_let : forall (σ σ':store) (x y:var) (e:redex) (E':context) (t:type) (N2 N0 N1:normal),
-     produces σ e (N_fanout N0 N1) ->
-     accepts  (Map.merge   (Map.one  y   N1 )     (Map.merge   (Map.one  x   N0 )    σ' )  )  E' N2 ->
-     produces  (Map.merge  σ   σ' )   ( (e_let x y e E' t) )  N2
- | produces_app : forall (σ σ':store) (e:redex) (E':context) (N' N:normal),
-     produces σ e (N_fanout N N') ->
-     accepts σ' E' N ->
-     produces  (Map.merge  σ   σ' )   ( (e_app e E') )  N'
- | produces_cut : forall (σ:store) (E:context) (t:type) (N:normal),
-     accepts σ E N ->
-     produces σ  ( (e_cut E t) )  N
-with accepts : store -> context -> normal -> Type :=    (* defn accepts *)
+Inductive produces : store -> redex -> term -> Type :=    (* defn produces *)
+ | produces_var : forall (x:var) (v:term),
+     produces  (Map.one  x   v )  (e_var x) v
+ | produces_step : forall (σ σ':store) (e:redex) (E':context) (t:type) (v:term),
+     produces σ e v_tt ->
+     accepts σ' E' v ->
+     produces  (Map.merge  σ   σ' )   ( (e_step e E' t) )  v
+ | produces_let : forall (σ σ':store) (x y:var) (e:redex) (E':context) (t:type) (v2 v0 v1:term),
+     produces σ e (v_fanout v0 v1) ->
+     accepts  (Map.merge   (Map.one  y   v1 )     (Map.merge   (Map.one  x   v0 )    σ' )  )  E' v2 ->
+     produces  (Map.merge  σ   σ' )   ( (e_let x y e E' t) )  v2
+ | produces_app : forall (σ σ':store) (e:redex) (E':context) (v' v:term),
+     produces σ e (v_fanout v v') ->
+     accepts σ' E' v ->
+     produces  (Map.merge  σ   σ' )   ( (e_app e E') )  v'
+ | produces_cut : forall (σ:store) (E:context) (t:type) (v:term),
+     accepts σ E v ->
+     produces σ  ( (e_cut E t) )  v
+with accepts : store -> context -> term -> Type :=    (* defn accepts *)
  | accepts_tt : 
-     accepts  (Map.empty)  E_tt N_tt
- | accepts_fanout : forall (σ σ':store) (E E':context) (N N':normal),
-     accepts σ E N ->
-     accepts σ' E' N' ->
-     accepts  (Map.merge  σ   σ' )   ( (E_fanout E E') )  (N_fanout N N')
- | accepts_lam : forall (σ:store) (x:var) (E:context) (N N':normal),
-     accepts  (Map.merge   (Map.one  x   N )    σ )  E N' ->
-     accepts σ  ( (E_lam x E) )  (N_fanout N N')
- | accepts_neu : forall (σ:store) (e:redex) (N:normal),
-     produces σ e N ->
-     accepts σ  ( (E_neu e) )  N.
+     accepts  (Map.empty)  E_tt v_tt
+ | accepts_fanout : forall (σ σ':store) (E E':context) (v v':term),
+     accepts σ E v ->
+     accepts σ' E' v' ->
+     accepts  (Map.merge  σ   σ' )   ( (E_fanout E E') )  (v_fanout v v')
+ | accepts_lam : forall (σ:store) (x:var) (E:context) (v v':term),
+     accepts  (Map.merge   (Map.one  x   v )    σ )  E v' ->
+     accepts σ  ( (E_lam x E) )  (v_fanout v v')
+ | accepts_neu : forall (σ:store) (e:redex) (v:term),
+     produces σ e v ->
+     accepts σ  ( (E_neu e) )  v.
 (** definitions *)
 
 (* defns sound *)
-Inductive sound : context -> stores -> normal -> Type :=    (* defn sound *)
- | sound_nil : forall (E:context) (N:normal),
-     sound E  nil  N
- | sound_cons : forall (E:context) (Ss:stores) (σ:store) (N:normal),
-     sound E Ss N ->
-     accepts σ E N ->
-     sound E  (cons  σ   Ss )  N
+Inductive sound : context -> stores -> term -> Type :=    (* defn sound *)
+ | sound_nil : forall (E:context) (v:term),
+     sound E  nil  v
+ | sound_cons : forall (E:context) (Ss:stores) (σ:store) (v:term),
+     sound E Ss v ->
+     accepts σ E v ->
+     sound E  (cons  σ   Ss )  v
 with sounde : redex -> spans -> Type :=    (* defn sounde *)
  | sounde_nil : forall (e:redex),
      sounde e  nil 
- | sounde_cons : forall (e:redex) (Ps:spans) (σ:store) (N:normal),
+ | sounde_cons : forall (e:redex) (Ps:spans) (σ:store) (v:term),
      sounde e Ps ->
-     produces σ e N ->
-     sounde e  (cons  (P_with σ N)   Ps ) .
+     produces σ e v ->
+     sounde e  (cons  (P_with σ v)   Ps ) .
 
 

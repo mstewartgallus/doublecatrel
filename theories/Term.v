@@ -20,17 +20,8 @@ Require Import FunInd.
 Implicit Type Γ: environment.
 Implicit Type v: term.
 Implicit Type t: type.
-Implicit Type N: normal.
 Implicit Types x y: var.
 Implicit Type ρ: subst.
-
-Function η t V :=
-  match t with
-  | t_var _ => v_neu V
-  | t_unit => v_tt
-  | t1 * t2 =>
-      v_fanout (η t1 (V_fst V))  (η t2 (V_snd V))
-  end.
 
 Theorem η_preserve {t}:
   ∀ {Γ V},
@@ -352,7 +343,7 @@ Definition idsubst: environment → subst := List.map (λ '(x, t), (x, η t (V_v
 
 Lemma hsubst_expr_idsubst {Γ V t}:
   JV Γ V t →
-  hsubst_expr (idsubst Γ) V = Term.η t V.
+  hsubst_expr (idsubst Γ) V = η t V.
 Proof.
   intros p.
   induction p.

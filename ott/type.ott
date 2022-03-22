@@ -4,3 +4,4 @@ type, t :: 't_' ::= {{ coq-equality }}
   | A            ::   :: var
   | unit         ::   :: unit
   | t * t'       ::   :: prod
+  | ( t )        :: S :: paren {{ coq ([[t]]) }}
