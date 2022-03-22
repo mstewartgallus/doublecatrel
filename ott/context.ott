@@ -63,12 +63,13 @@ terminals :: 'terminals_' ::=
   | ===          ::   :: eequiv   {{ tex \equiv{} }}
   | :=           ::   :: update  {{ tex \mathbin{:=} }}
   | ->           ::   :: to  {{ tex \rightarrow }}
+  | &            ::   :: act  {{ tex \otimes }}
+  | @            ::   :: compose  {{ tex \circ }}
   | unit         ::   :: unit  {{ tex \textbf{I} }}
   | *            ::   :: prod  {{ tex \otimes{} }}
   | used         ::   :: used  {{ tex \textbf{s} }}
   | unused       ::   :: unused  {{ tex \textbf{f} }}
   | tt           ::   :: tt   {{ tex \mathop{ \textbf ! } }}
-  | eta          ::   :: eta
   | fst          ::   :: fst  {{ tex \pi{}_1 }}
   | snd          ::   :: snd  {{ tex \pi{}_2 }}
   | lam          ::   :: lam  {{ tex \lambda{} }}

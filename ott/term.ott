@@ -97,7 +97,6 @@ G |- V: A
 ----------------- :: neu
 G |- neu ( V) : A
 
-
 defns
 
 judge_subst :: 'J' ::=
@@ -113,3 +112,43 @@ G' |- v : t
 G' |- p: G
 ------------------------- :: cons
 G' |- p, x := v: G, x: t
+
+defns
+
+hsubstsV :: '' ::=
+
+defn
+V & p === v' ::   :: hsubstsV :: 'hsubstsV_'
+by
+
+{{ Assoc.find [[x]] [[p]] = Some [[v]] }}
+------------------------------------------ :: var
+x & p === v
+
+V & p === v1, v2
+----------------- :: fst
+fst V & p === v1
+
+V & p === v1, v2
+----------------- :: snd
+snd V & p === v2
+
+defns
+
+hsubstsv :: '' ::=
+
+defn
+v @ p === v' ::   :: hsubstsv :: 'hsubstsv_'
+by
+
+------------- :: tt
+tt @ p === tt
+
+v1 @ p === v1'
+v2 @ p === v2'
+----------------------- :: fanout
+v1, v2 @ p === v1', v2'
+
+V & p === v
+-------------------- :: neu
+neu( V ) @ p === v

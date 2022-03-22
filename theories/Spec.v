@@ -111,17 +111,43 @@ Inductive Jp : environment -> subst -> environment -> Prop :=    (* defn p *)
      Jv Γ' v t ->
      Jp Γ' ρ Γ ->
      Jp Γ'  (cons ( x ,  v )  ρ )   (cons ( x ,  t )  Γ ) .
+(** definitions *)
+
+(* defns hsubstsV *)
+Inductive hsubstsV : expr -> subst -> term -> Prop :=    (* defn hsubstsV *)
+ | hsubstsV_var : forall (x:var) (ρ:subst) (v:term),
+     Assoc.find x ρ = Some v  ->
+     hsubstsV (V_var x) ρ v
+ | hsubstsV_fst : forall (V:expr) (ρ:subst) (v1 v2:term),
+     hsubstsV V ρ (v_fanout v1 v2) ->
+     hsubstsV (V_fst V) ρ v1
+ | hsubstsV_snd : forall (V:expr) (ρ:subst) (v2 v1:term),
+     hsubstsV V ρ (v_fanout v1 v2) ->
+     hsubstsV (V_snd V) ρ v2.
+(** definitions *)
+
+(* defns hsubstsv *)
+Inductive hsubstsv : term -> subst -> term -> Prop :=    (* defn hsubstsv *)
+ | hsubstsv_tt : forall (ρ:subst),
+     hsubstsv v_tt ρ v_tt
+ | hsubstsv_fanout : forall (v1 v2:term) (ρ:subst) (v1' v2':term),
+     hsubstsv v1 ρ v1' ->
+     hsubstsv v2 ρ v2' ->
+     hsubstsv (v_fanout v1 v2) ρ (v_fanout v1' v2')
+ | hsubstsv_neu : forall (V:expr) (ρ:subst) (v:term),
+     hsubstsV V ρ v ->
+     hsubstsv (v_neu V) ρ v.
 Require Blech.Map.
 
 
 Definition store : Set := (Map.map term).
 
+Inductive span : Set := 
+ | P_with (σ:store) (v:term).
+
 Inductive use : Set := 
  | u_used : use
  | u_unused : use.
-
-Inductive span : Set := 
- | P_with (σ:store) (v:term).
 
 Inductive context : Set := 
  | E_lam (x:var) (E:context)
@@ -135,13 +161,13 @@ with redex : Set :=
  | e_let (x:var) (y:var) (e:redex) (E':context) (t:type)
  | e_cut (E:context) (t:type).
 
-Definition usage : Set := (list use).
-
-Definition vars : Set := (list var).
-
 Definition spans : Set := (list span).
 
 Definition stores : Set := (list store).
+
+Definition usage : Set := (list use).
+
+Definition vars : Set := (list var).
 
 Definition nat : Set := nat.
 Lemma eq_use: forall (x y : use), {x = y} + {x <> y}.

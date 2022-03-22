@@ -64,6 +64,35 @@ Function hsubst_term ρ v :=
   | v_neu V => hsubst_expr ρ V
   end.
 
+Lemma hsubst_expr_complete {ρ V v}:
+  hsubstsV V ρ v →
+  hsubst_expr ρ V = v.
+Proof.
+  intro p.
+  induction p.
+  all: cbn in *.
+  - rewrite H.
+    auto.
+  - rewrite IHp.
+    auto.
+  - rewrite IHp.
+    auto.
+Qed.
+
+Lemma hsubst_term_complete {ρ v v'}:
+  hsubstsv v ρ v' →
+  hsubst_term ρ v = v'.
+Proof.
+  intro p.
+  induction p.
+  all: cbn in *.
+  - auto.
+  - rewrite IHp1, IHp2.
+    auto.
+  - apply hsubst_expr_complete.
+    auto.
+Qed.
+
 Lemma hsubst_preserve_expr {ρ V}:
   ∀ {Γ' Γ},
     Jp Γ' ρ Γ →
