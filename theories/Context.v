@@ -34,15 +34,6 @@ Proof.
   decide equality.
 Defined.
 
-Lemma length_mt {n}: length (mt n) = n.
-Proof.
-  induction n.
-  1: auto.
-  cbn.
-  rewrite IHn.
-  auto.
-Qed.
-
 Lemma length_xsof {Γ}: length (xsof Γ) = length Γ.
 Proof.
   induction Γ.

@@ -49,7 +49,7 @@ Module Import Hor.
 
   #[program]
    Definition compose {A B C} (f: Hor B C) (g: Hor A B): Hor A C :=
-    Term.hsubst_intro [(X, proj1_sig g)] (proj1_sig f).
+    Term.hsubst_intro_dfl [(X, proj1_sig g)] (proj1_sig f).
 
   Next Obligation.
   Proof.
@@ -69,7 +69,7 @@ Module Import Hor.
     mem x t Γ' →
     ∀ {ρ v},
     Assoc.find x ρ = Some v →
-    Term.hsubst_elim ρ (V_var x) = v.
+    Term.hsubst_elim_dfl ρ (V_var x) = v.
   Proof.
     intros.
     cbn.
@@ -83,7 +83,7 @@ Module Import Hor.
     mem x t Γ' →
     ∀ {ρ v},
     Assoc.find x ρ = Some v →
-    Term.hsubst_intro ρ (η t (V_var x)) = v.
+    Term.hsubst_intro_dfl ρ (η t (V_var x)) = v.
   Proof.
     admit.
   Admitted.
@@ -182,7 +182,7 @@ Module Import Hor.
     Γ ⊢ g in B →
     ∀ {x},
     Assoc.find x ρ = Some (v_fanout f g) →
-    Term.hsubst_elim ρ (V_fst (V_var x)) = f.
+    Term.hsubst_elim_dfl ρ (V_fst (V_var x)) = f.
   Proof.
     cbn.
     intros.
