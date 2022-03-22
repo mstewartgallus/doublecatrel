@@ -67,7 +67,7 @@ Function hsubst_intro ρ v :=
   end.
 
 Notation "V · ρ" := (hsubst_elim ρ V) (at level 30).
-Notation " v ∘ ρ" := (hsubst_intro ρ v) (at level 30).
+Notation "v ∘ ρ" := (hsubst_intro ρ v) (at level 30).
 
 Function hsubst_elim_dfl ρ V :=
   match V with
