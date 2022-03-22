@@ -38,15 +38,15 @@
 \ottprodline{|}{\ottnt{t}  \otimes{}  \ottnt{t'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{(}  \ottnt{t}  \ottsym{)}} {\textsf{S}}{}{}{}}
 
-\newcommand{\ottexpr}{
-\ottrulehead{\ottnt{expr}  ,\ \ottnt{V}}{::=}{}\ottprodnewline
+\newcommand{\ottelim}{
+\ottrulehead{\ottnt{elim}  ,\ \ottnt{V}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\mathit{x}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\pi{}_1 \, \ottnt{V}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\pi{}_2 \, \ottnt{V}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{(}  \ottnt{V}  \ottsym{)}} {\textsf{S}}{}{}{}}
 
-\newcommand{\ottterm}{
-\ottrulehead{\ottnt{term}  ,\ \ottnt{v}}{::=}{}\ottprodnewline
+\newcommand{\ottintro}{
+\ottrulehead{\ottnt{intro}  ,\ \ottnt{v}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\mathop{ \textbf ! }}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{v}  \ottsym{,}  \ottnt{v'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{ [  \ottnt{V}  ] }{}{}{}{}\ottprodnewline
@@ -90,8 +90,7 @@
 \newcommand{\ottusage}{
 \ottrulehead{\ottnt{usage}  ,\ \Delta}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\Delta  \ottsym{,}  \ottnt{u}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \emptyset_{ \ottnt{n} } } {\textsf{M}}{}{}{}}
+\ottprodline{|}{\Delta  \ottsym{,}  \ottnt{u}}{}{}{}{}}
 
 \newcommand{\ottnat}{
 \ottrulehead{\ottnt{nat}  ,\ \ottnt{n}}{::=}{}\ottprodnewline
@@ -137,7 +136,7 @@
 \ottprodline{|}{ \equiv{} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathbin{:=} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \rightarrow }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \otimes }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ \cdot }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \circ }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \textbf{I} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \otimes{} }{}{}{}{}\ottprodnewline
@@ -190,15 +189,11 @@
 
 \newcommand{\otthsubstsV}{
 \ottrulehead{\ottnt{hsubstsV}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\ottnt{V}  \otimes  \rho  \equiv{}  \ottnt{v'}}{}{}{}{}}
+\ottfirstprodline{|}{\ottnt{V}  \cdot  \rho  \equiv{}  \ottnt{v'}}{}{}{}{}}
 
 \newcommand{\otthsubstsv}{
 \ottrulehead{\ottnt{hsubstsv}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottnt{v}  \circ  \rho  \equiv{}  \ottnt{v'}}{}{}{}{}}
-
-\newcommand{\ottempty}{
-\ottrulehead{\ottnt{empty}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{ \emptyset_{ \ottnt{n} } }{}{}{}{}}
 
 \newcommand{\ottxsofG}{
 \ottrulehead{\ottnt{xsofG}}{::=}{}\ottprodnewline
@@ -241,8 +236,8 @@
 \ottfirstprodline{|}{\mathit{tyvar}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\mathit{var}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{type}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{expr}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{term}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{elim}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{intro}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{environment}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{subst}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{context}}{}{}{}{}\ottprodnewline
@@ -260,8 +255,8 @@
 
 \newcommand{\ottgrammar}{\ottgrammartabular{
 \otttype\ottinterrule
-\ottexpr\ottinterrule
-\ottterm\ottinterrule
+\ottelim\ottinterrule
+\ottintro\ottinterrule
 \ottenvironment\ottinterrule
 \ottsubst\ottinterrule
 \ottcontext\ottinterrule
@@ -283,7 +278,6 @@
 \ottjudgeXXsubst\ottinterrule
 \otthsubstsV\ottinterrule
 \otthsubstsv\ottinterrule
-\ottempty\ottinterrule
 \ottxsofG\ottinterrule
 \ottlfind\ottinterrule
 \ottjudgeXXcontext\ottinterrule
@@ -439,27 +433,27 @@
 \newcommand{\ottdrulehsubstsVXXvar}[1]{\ottdrule[#1]{%
 \ottpremise{\texttt{Assoc.find }\mathit{x}\texttt{ }\rho\texttt{ = Some }\ottnt{v}\texttt{ }}%
 }{
-\mathit{x}  \otimes  \rho  \equiv{}  \ottnt{v}}{%
+\mathit{x}  \cdot  \rho  \equiv{}  \ottnt{v}}{%
 {\ottdrulename{hsubstsV\_var}}{}%
 }}
 
 
 \newcommand{\ottdrulehsubstsVXXfst}[1]{\ottdrule[#1]{%
-\ottpremise{\ottnt{V}  \otimes  \rho  \equiv{}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}}%
+\ottpremise{\ottnt{V}  \cdot  \rho  \equiv{}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}}%
 }{
-\pi{}_1 \, \ottnt{V}  \otimes  \rho  \equiv{}  \ottnt{v_{{\mathrm{1}}}}}{%
+\pi{}_1 \, \ottnt{V}  \cdot  \rho  \equiv{}  \ottnt{v_{{\mathrm{1}}}}}{%
 {\ottdrulename{hsubstsV\_fst}}{}%
 }}
 
 
 \newcommand{\ottdrulehsubstsVXXsnd}[1]{\ottdrule[#1]{%
-\ottpremise{\ottnt{V}  \otimes  \rho  \equiv{}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}}%
+\ottpremise{\ottnt{V}  \cdot  \rho  \equiv{}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}}%
 }{
-\pi{}_2 \, \ottnt{V}  \otimes  \rho  \equiv{}  \ottnt{v_{{\mathrm{2}}}}}{%
+\pi{}_2 \, \ottnt{V}  \cdot  \rho  \equiv{}  \ottnt{v_{{\mathrm{2}}}}}{%
 {\ottdrulename{hsubstsV\_snd}}{}%
 }}
 
-\newcommand{\ottdefnhsubstsV}[1]{\begin{ottdefnblock}[#1]{$\ottnt{V}  \otimes  \rho  \equiv{}  \ottnt{v'}$}{}
+\newcommand{\ottdefnhsubstsV}[1]{\begin{ottdefnblock}[#1]{$\ottnt{V}  \cdot  \rho  \equiv{}  \ottnt{v'}$}{}
 \ottusedrule{\ottdrulehsubstsVXXvar{}}
 \ottusedrule{\ottdrulehsubstsVXXfst{}}
 \ottusedrule{\ottdrulehsubstsVXXsnd{}}
@@ -488,7 +482,7 @@
 
 
 \newcommand{\ottdrulehsubstsvXXneu}[1]{\ottdrule[#1]{%
-\ottpremise{\ottnt{V}  \otimes  \rho  \equiv{}  \ottnt{v}}%
+\ottpremise{\ottnt{V}  \cdot  \rho  \equiv{}  \ottnt{v}}%
 }{
  [  \ottnt{V}  ]   \circ  \rho  \equiv{}  \ottnt{v}}{%
 {\ottdrulename{hsubstsv\_neu}}{}%
@@ -503,18 +497,6 @@
 
 \newcommand{\ottdefnshsubstsv}{
 \ottdefnhsubstsv{}}
-
-% fundefns empty
-% fundefn mt
-
-\newcommand{\ottfundefnmt}[1]{\begin{ottfundefnblock}[#1]{$ \emptyset_{ \ottnt{n} } $}{}
-\ottfunclause{ \emptyset_{ \ottsym{0} } }{\bullet{}}%
-\ottfunclause{ \emptyset_{  \ottnt{n}  + 1  } }{ \emptyset_{ \ottnt{n} }   \ottsym{,}  \textbf{f}}%
-\end{ottfundefnblock}}
-
-
-\newcommand{\ottfundefnsempty}{
-\ottfundefnmt{}}
 
 % fundefns xsofG
 % fundefn xsof
@@ -801,7 +783,6 @@
 \ottdefnsjudgeXXsubst
 \ottdefnshsubstsV
 \ottdefnshsubstsv
-\ottfundefnsempty
 \ottfundefnsxsofG
 \ottdefnslfind
 \ottdefnsjudgeXXcontext

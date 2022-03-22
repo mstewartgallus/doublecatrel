@@ -22,7 +22,8 @@ Implicit Type Γ: environment.
 Implicit Type Δ: usage.
 Implicit Type E: context.
 Implicit Type t: type.
-Implicit Type v: term.
+Implicit Type v: intro.
+Implicit Type V: elim.
 Implicit Types x y: var.
 Implicit Type σ: store.
 
@@ -48,14 +49,14 @@ Module Import Hor.
 
   #[program]
    Definition compose {A B C} (f: Hor B C) (g: Hor A B): Hor A C :=
-    Term.hsubst_term [(X, proj1_sig g)] (proj1_sig f).
+    Term.hsubst_intro [(X, proj1_sig g)] (proj1_sig f).
 
   Next Obligation.
   Proof.
     rewrite Term.typecheck_complete.
     1: cbv.
     1: auto.
-    eapply Term.hsubst_preserve_term.
+    eapply Term.hsubst_preserve_intro.
     - constructor.
       2:constructor.
       apply (Term.typecheck_sound (proj2_sig g)).
@@ -68,7 +69,7 @@ Module Import Hor.
     mem x t Γ' →
     ∀ {ρ v},
     Assoc.find x ρ = Some v →
-    Term.hsubst_expr ρ (V_var x) = v.
+    Term.hsubst_elim ρ (V_var x) = v.
   Proof.
     intros.
     cbn.
@@ -82,7 +83,7 @@ Module Import Hor.
     mem x t Γ' →
     ∀ {ρ v},
     Assoc.find x ρ = Some v →
-    Term.hsubst_term ρ (η t (V_var x)) = v.
+    Term.hsubst_intro ρ (η t (V_var x)) = v.
   Proof.
     admit.
   Admitted.
@@ -102,7 +103,7 @@ Module Import Hor.
     unfold Term.equiv, compose, id.
     destruct f as [f ?].
     cbn.
-    apply (Term.hsubst_term_idsubst (Term.typecheck_sound i)).
+    apply (Term.hsubst_intro_idsubst (Term.typecheck_sound i)).
   Qed.
 
   Lemma compose_assoc {A B C D} (f: Hor C D) (g: Hor B C) (h: Hor A B):
@@ -112,7 +113,7 @@ Module Import Hor.
     cbn.
     unfold Term.equiv, compose.
     cbn.
-    eapply Term.hsubst_term_assoc.
+    eapply Term.hsubst_intro_assoc.
     all: apply Term.typecheck_sound.
     all: eauto.
   Qed.
@@ -176,12 +177,12 @@ Module Import Hor.
     auto.
   Qed.
 
-  Lemma hsubst_expr_fst_fanout {Γ A B} {f g} {ρ}:
+  Lemma hsubst_elim_fst_fanout {Γ A B} {f g} {ρ}:
     Γ ⊢ f in A →
     Γ ⊢ g in B →
     ∀ {x},
     Assoc.find x ρ = Some (v_fanout f g) →
-    Term.hsubst_expr ρ (V_fst (V_var x)) = f.
+    Term.hsubst_elim ρ (V_fst (V_var x)) = f.
   Proof.
     cbn.
     intros.

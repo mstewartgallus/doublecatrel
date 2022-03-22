@@ -18,7 +18,8 @@ Import List.ListNotations.
 Require Import FunInd.
 
 Implicit Type Γ: environment.
-Implicit Type v: term.
+Implicit Type v: intro.
+Implicit Type V: elim.
 Implicit Type t: type.
 Implicit Types x y: var.
 Implicit Type ρ: subst.
@@ -44,29 +45,29 @@ Proof.
       eauto.
 Qed.
 
-Function hsubst_expr ρ V :=
+Function hsubst_elim ρ V :=
   match V with
   | V_var x => if find x ρ is Some v then v else v_tt
   | V_fst V =>
-      if hsubst_expr ρ V is v_fanout v1 _
+      if hsubst_elim ρ V is v_fanout v1 _
       then v1 else v_tt
   | V_snd V =>
-      if hsubst_expr ρ V is v_fanout _ v2 then v2 else v_tt
+      if hsubst_elim ρ V is v_fanout _ v2 then v2 else v_tt
   end.
 
-Function hsubst_term ρ v :=
+Function hsubst_intro ρ v :=
   match v with
   | v_tt => v_tt
   | v_fanout v1 v2 =>
-      let v1' := hsubst_term ρ v1 in
-      let v2' := hsubst_term ρ v2 in
+      let v1' := hsubst_intro ρ v1 in
+      let v2' := hsubst_intro ρ v2 in
       v_fanout v1' v2'
-  | v_neu V => hsubst_expr ρ V
+  | v_neu V => hsubst_elim ρ V
   end.
 
-Lemma hsubst_expr_complete {ρ V v}:
+Lemma hsubst_elim_complete {ρ V v}:
   hsubstsV V ρ v →
-  hsubst_expr ρ V = v.
+  hsubst_elim ρ V = v.
 Proof.
   intro p.
   induction p.
@@ -79,9 +80,9 @@ Proof.
     auto.
 Qed.
 
-Lemma hsubst_term_complete {ρ v v'}:
+Lemma hsubst_intro_complete {ρ v v'}:
   hsubstsv v ρ v' →
-  hsubst_term ρ v = v'.
+  hsubst_intro ρ v = v'.
 Proof.
   intro p.
   induction p.
@@ -89,18 +90,18 @@ Proof.
   - auto.
   - rewrite IHp1, IHp2.
     auto.
-  - apply hsubst_expr_complete.
+  - apply hsubst_elim_complete.
     auto.
 Qed.
 
-Lemma hsubst_preserve_expr {ρ V}:
+Lemma hsubst_elim_preserve {ρ V}:
   ∀ {Γ' Γ},
     Jp Γ' ρ Γ →
   ∀ {t'},
     JV Γ V t' →
-    Γ' ⊢ hsubst_expr ρ V in t'.
+    Γ' ⊢ hsubst_elim ρ V in t'.
 Proof.
-  functional induction (hsubst_expr ρ V).
+  functional induction (hsubst_elim ρ V).
   all: intros ? ? q ? p.
   all: inversion p.
   all: subst.
@@ -132,40 +133,40 @@ Proof.
     all: try contradiction.
     eapply IHq.
     all: eauto.
-  - assert (e0' := IHt _ _ q _ H1).
+  - assert (e0' := IHi _ _ q _ H1).
     inversion e0'.
     subst.
     rewrite <- H in e0.
     inversion e0.
     subst.
     auto.
-  - assert (e0' := IHt _ _ q _ H1).
+  - assert (e0' := IHi _ _ q _ H1).
     inversion e0'.
     subst.
     rewrite <- H in y.
     contradiction.
-  - assert (e0' := IHt _ _ q _ H1).
+  - assert (e0' := IHi _ _ q _ H1).
     inversion e0'.
     subst.
     rewrite <- H in e0.
     inversion e0.
     subst.
     auto.
-  - assert (e0' := IHt _ _ q _ H1).
+  - assert (e0' := IHi _ _ q _ H1).
     inversion e0'.
     subst.
     rewrite <- H in y.
     contradiction.
 Qed.
 
-Lemma hsubst_preserve_term {ρ v}:
+Lemma hsubst_preserve_intro {ρ v}:
   ∀ {Γ' Γ},
     Jp Γ' ρ Γ →
   ∀ {t'},
     Γ ⊢ v in t' →
-    Γ' ⊢ hsubst_term ρ v in t'.
+    Γ' ⊢ hsubst_intro ρ v in t'.
 Proof.
-  functional induction (hsubst_term ρ v).
+  functional induction (hsubst_intro ρ v).
   all: intros ? ? q ? p.
   all: inversion p.
   all: subst.
@@ -173,11 +174,11 @@ Proof.
   - constructor.
   - constructor.
     all: eauto.
-  - eapply hsubst_preserve_expr.
+  - eapply hsubst_elim_preserve.
     all: eauto.
 Qed.
 
-Lemma map_expr {Γ Γ'}:
+Lemma map_elim {Γ Γ'}:
   (∀ x t, mem x t Γ → mem x t Γ') →
   ∀ {V t}, JV Γ V t → JV Γ' V t.
 Proof using.
@@ -187,7 +188,7 @@ Proof using.
   all: eauto.
 Qed.
 
-Lemma map_term {Γ Γ'}:
+Lemma map_intro {Γ Γ'}:
   (∀ x t, mem x t Γ → mem x t Γ') →
   ∀ {v t}, Γ ⊢ v in t → Γ' ⊢ v in t.
 Proof.
@@ -195,7 +196,7 @@ Proof.
   induction p.
   all: econstructor.
   all: eauto.
-  eapply map_expr.
+  eapply map_elim.
   all: eauto.
 Qed.
 
@@ -370,9 +371,9 @@ Qed.
 
 Definition idsubst: environment → subst := List.map (λ '(x, t), (x, η t (V_var x))).
 
-Lemma hsubst_expr_idsubst {Γ V t}:
+Lemma hsubst_elim_idsubst {Γ V t}:
   JV Γ V t →
-  hsubst_expr (idsubst Γ) V = η t V.
+  hsubst_elim (idsubst Γ) V = η t V.
 Proof.
   intros p.
   induction p.
@@ -392,9 +393,9 @@ Proof.
     auto.
 Qed.
 
-Lemma hsubst_term_idsubst {Γ v t}:
+Lemma hsubst_intro_idsubst {Γ v t}:
   Γ ⊢ v in t →
-  hsubst_term (idsubst Γ) v = v.
+  hsubst_intro (idsubst Γ) v = v.
 Proof.
   intros p.
   induction p.
@@ -403,15 +404,15 @@ Proof.
   - rewrite IHp1, IHp2.
     auto.
   - cbn.
-    apply (hsubst_expr_idsubst H).
+    apply (hsubst_elim_idsubst H).
 Qed.
 
-Lemma hsubst_expr_assoc {x y f}:
+Lemma hsubst_elim_assoc {x y f}:
   ∀ {g h Γ B C D},
     JV [(x, C)] f D →
     [(y, B)] ⊢ g in C →
     Γ ⊢ h in B →
-    hsubst_expr [(x, hsubst_term [(y, h)] g)] f = hsubst_term [(y, h)] (hsubst_expr [(x, g)] f).
+    hsubst_elim [(x, hsubst_intro [(y, h)] g)] f = hsubst_intro [(y, h)] (hsubst_elim [(x, g)] f).
 Proof.
   induction f.
   all: cbn.
@@ -427,7 +428,7 @@ Proof.
     auto.
   - erewrite IHf.
     all: eauto.
-    eassert (H1' := hsubst_preserve_expr _ H1).
+    eassert (H1' := hsubst_elim_preserve _ H1).
     Unshelve.
     4: {
       constructor.
@@ -437,13 +438,13 @@ Proof.
     inversion H1'.
     subst.
     symmetry in H.
-    destruct hsubst_expr.
+    destruct hsubst_elim.
     all: cbn.
     all: auto.
     discriminate.
   - erewrite IHf.
     all: eauto.
-    eassert (H1' := hsubst_preserve_expr _ H1).
+    eassert (H1' := hsubst_elim_preserve _ H1).
     Unshelve.
     4: {
       constructor.
@@ -454,18 +455,18 @@ Proof.
     subst.
     cbn.
     symmetry in H.
-    destruct hsubst_expr.
+    destruct hsubst_elim.
     all: auto.
     discriminate.
 Qed.
 
 #[local]
-Lemma hsubst_term_assoc {x y f}:
+Lemma hsubst_intro_assoc {x y f}:
   ∀ {g h Γ B C D},
   [(x, C)] ⊢ f in D →
   [(y, B)] ⊢ g in C →
   Γ ⊢ h in B →
-  hsubst_term [(x, hsubst_term [(y, h)] g)] f = hsubst_term [(y, h)] (hsubst_term [(x, g)] f).
+  hsubst_intro [(x, hsubst_intro [(y, h)] g)] f = hsubst_intro [(y, h)] (hsubst_intro [(x, g)] f).
 Proof.
   induction f.
   all: cbn.
@@ -476,6 +477,6 @@ Proof.
   all: auto.
   - erewrite IHf1, IHf2.
     all: eauto.
-  - eapply hsubst_expr_assoc.
+  - eapply hsubst_elim_assoc.
     all: eauto.
 Qed.

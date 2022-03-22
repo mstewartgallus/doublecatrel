@@ -5,13 +5,13 @@ Require Blech.Assoc.
 metavar var, x, y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[var]]} }}
 
 grammar
-expr, V :: 'V_' ::= {{ coq-equality }}
+elim, V :: 'V_' ::= {{ coq-equality }}
   | x              ::   :: var
   | fst V          ::   :: fst
   | snd V          ::   :: snd
   | ( V )          :: S :: paren {{ icho ([[V]]) }}
 
-term, v :: 'v_' ::= {{ coq-equality }}
+intro, v :: 'v_' ::= {{ coq-equality }}
   | tt             ::   :: tt
   | v , v'         ::   :: fanout
   | neu ( V )      ::   :: neu {{ tex [ [[V]] ] }}
@@ -23,7 +23,7 @@ environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (Assoc.assoc typ
   | G , x : t   ::   :: add {{ coq (cons ([[x]], [[t]]) [[G]]) }}
   | ( G )       :: S :: paren {{ coq ([[G]]) }}
 
-subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (Assoc.assoc term) }}
+subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (Assoc.assoc intro) }}
   | nil                   :: M :: nil {{ coq nil }}
   | p , x := v            :: M :: add {{ coq (cons ([[x]], [[v]]) [[p]]) }}
   | ( p )                 :: S :: paren {{ coq ([[p]]) }}

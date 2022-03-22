@@ -35,7 +35,7 @@ nat, n :: 'n_' ::= {{ coq nat }}
   | len D      :: M :: lenD {{ coq (length [[D]]) }}
   | ( n )      :: S :: paren {{ icho ([[n]]) }}
 
-store, S {{ tex \sigma }} {{ coq σ }} :: 'S_'  ::= {{ coq (Map.map term) }}
+store, S {{ tex \sigma }} {{ coq σ }} :: 'S_'  ::= {{ coq (Map.map intro) }}
   | nil                   :: M :: empty {{ coq (Map.empty) }}
   | x := v            :: M :: one {{ coq (Map.one [[x]] [[v]]) }}
   | S , S'                :: M :: add {{ coq (Map.merge [[S']] [[S]]) }}
@@ -63,7 +63,7 @@ terminals :: 'terminals_' ::=
   | ===          ::   :: eequiv   {{ tex \equiv{} }}
   | :=           ::   :: update  {{ tex \mathbin{:=} }}
   | ->           ::   :: to  {{ tex \rightarrow }}
-  | &            ::   :: act  {{ tex \otimes }}
+  | &            ::   :: act  {{ tex \cdot }}
   | @            ::   :: compose  {{ tex \circ }}
   | unit         ::   :: unit  {{ tex \textbf{I} }}
   | *            ::   :: prod  {{ tex \otimes{} }}
@@ -99,14 +99,6 @@ formula :: formula_ ::=
  | x != y                           :: M :: neqx {{ icho ([[x]] <> [[y]]) }}
  | x = y                            :: M :: eqx {{ icho ([[x]] = [[y]]) }}
  | n = n'                           :: M :: eqn {{ icho ([[n]] = [[n']]) }}
-
-funs
-  empty ::=
-fun
-  mt n :: D :: mt {{ tex \emptyset_{[[n]]} }}
-by
-  mt 0 === nil
-  mt S n === mt n, unused
 
 funs
   xsofG ::=

@@ -24,6 +24,7 @@ Implicit Type t: type.
 Implicit Types x y: var.
 Implicit Type xs: vars.
 Implicit Type σ: store.
+Implicit Type v: intro.
 
 Import Map.MapNotations.
 
@@ -318,7 +319,7 @@ Notation "'do' n ← e0 ; e1" :=
   (List.flat_map (λ n, e1) e0)
     (n pattern, at level 200, left associativity): list_scope.
 
-Fixpoint generate t: list term :=
+Fixpoint generate t: list intro :=
   match t with
   | t_var _ => []
   | t_unit => [v_tt]
@@ -334,7 +335,7 @@ Fixpoint verify σ E v: list store :=
       do σ' ← verify (x ↦ v1 ∪ σ) E v2 ;
       if Map.find x σ' is Some v1'
       then
-        if eq_term v1 v1'
+        if eq_intro v1 v1'
         then [σ' \ x]
         else []
       else
@@ -349,7 +350,7 @@ Fixpoint verify σ E v: list store :=
 
   | E_neu e, _ =>
       do (σ' |- v') ← search σ e ;
-      if eq_term v v'
+      if eq_intro v v'
       then [σ']
       else []
   | _, _ => []
@@ -381,7 +382,7 @@ with search σ e: list span :=
       do σ2 ← verify ((x ↦ a) ∪ (y ↦ b) ∪ σ) E' v' ;
       match Map.find x (σ2 \ y), Map.find y σ2 with
       | Some a', Some b' =>
-          match eq_term a a', eq_term b b' with
+          match eq_intro a a', eq_intro b b' with
           | left _, left _ =>
               [(σ1 ∪ ((σ2 \ y) \ x) |- v')]
           | _, _ => []
@@ -447,7 +448,7 @@ Proof using.
       cbn.
       destruct Map.find eqn:q.
       2: auto.
-      destruct eq_term.
+      destruct eq_intro.
       2: auto.
       subst.
       cbn.
@@ -480,7 +481,7 @@ Proof using.
       induction (search_sound σ e).
       1: constructor.
       cbn.
-      destruct eq_term.
+      destruct eq_intro.
       2: auto.
       cbn.
       subst.
@@ -568,10 +569,10 @@ Proof using.
       2: constructor.
       destruct (Map.find y σ1) eqn:q'.
       2: constructor.
-      destruct (eq_term v1 t0).
+      destruct eq_intro.
       2: constructor.
       subst.
-      destruct (eq_term v2 t1).
+      destruct eq_intro.
       2: constructor.
       subst.
       constructor.
@@ -599,7 +600,7 @@ Qed.
 Record span := {
   s: Set ;
   π1: s → store ;
-  π2: s → term ;
+  π2: s → intro ;
 }.
 
 Definition useonce Γ u: usage := List.map (λ '(x, t), u) Γ.
