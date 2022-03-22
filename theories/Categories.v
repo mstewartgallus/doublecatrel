@@ -63,31 +63,6 @@ Module Import Hor.
     - apply (Term.typecheck_sound (proj2_sig f)).
   Defined.
 
-  Lemma hsubst_expr_var {Γ ρ Γ'}:
-    Jp Γ ρ Γ' →
-    ∀ {x t},
-    mem x t Γ' →
-    ∀ {ρ v},
-    Assoc.find x ρ = Some v →
-    Term.hsubst_elim_dfl ρ (V_var x) = v.
-  Proof.
-    intros.
-    cbn.
-    rewrite H1.
-    auto.
-  Qed.
-
-  Lemma hsubst_var {Γ ρ Γ'}:
-    Jp Γ ρ Γ' →
-    ∀ {x t},
-    mem x t Γ' →
-    ∀ {ρ v},
-    Assoc.find x ρ = Some v →
-    Term.hsubst_intro_dfl ρ (η t (V_var x)) = v.
-  Proof.
-    admit.
-  Admitted.
-
   Lemma compose_id_left {A B} (f: Hor A B): compose (id _) f == f.
   Proof.
     destruct f as [f ?].
@@ -177,19 +152,6 @@ Module Import Hor.
     auto.
   Qed.
 
-  Lemma hsubst_elim_fst_fanout {Γ A B} {f g} {ρ}:
-    Γ ⊢ f in A →
-    Γ ⊢ g in B →
-    ∀ {x},
-    Assoc.find x ρ = Some (v_fanout f g) →
-    Term.hsubst_elim_dfl ρ (V_fst (V_var x)) = f.
-  Proof.
-    cbn.
-    intros.
-    rewrite H1.
-    auto.
-  Qed.
-
   Lemma fst_fanout {C A B} (f: Hor C A) (g: Hor C B): compose fst (fanout f g) == f.
   Proof.
     destruct f as [f qf], g as [g qg].
@@ -232,7 +194,7 @@ Module Import Vert.
   #[local]
   Definition x: var := 0.
 
-  Definition Vert t t' := Context.oftype (cons (x, t) nil) t'.
+  Definition Vert t t' := Context.oftype [(x, t)] t'.
 
   Instance Vert_Equivalence t t': Equivalence (λ (x y: Vert t t'), proj1_sig x == proj1_sig y).
   Proof.

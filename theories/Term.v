@@ -26,8 +26,8 @@ Implicit Type ρ: subst.
 
 Theorem η_preserve {t}:
   ∀ {Γ V},
-  JV Γ V t →
-  Γ ⊢ η t V in t.
+  Γ ⊢ V ⇒ t →
+  Γ ⊢ η t V ⇐ t.
 Proof.
   induction t.
   all: cbn.
@@ -66,6 +66,9 @@ Function hsubst_intro ρ v :=
   | v_neu V => hsubst_elim ρ V
   end.
 
+Notation "V · ρ" := (hsubst_elim ρ V) (at level 30).
+Notation " v ∘ ρ" := (hsubst_intro ρ v) (at level 30).
+
 Function hsubst_elim_dfl ρ V :=
   match V with
   | V_var x => if find x ρ is Some v then v else v_tt
@@ -83,12 +86,12 @@ Function hsubst_intro_dfl ρ v :=
   | v_neu V => hsubst_elim_dfl ρ V
   end.
 
-Definition hsubst_elim_valid ρ V := if hsubst_elim ρ V is Some _ then true else false.
-Definition hsubst_intro_valid ρ v := if hsubst_intro ρ v is Some _ then true else false.
+Definition hsubst_elim_valid ρ V := if V · ρ is Some _ then true else false.
+Definition hsubst_intro_valid ρ v := if v ∘ ρ is Some _ then true else false.
 
 Lemma hsubst_elim_complete {ρ V v}:
   hsubstsV V ρ v →
-  hsubst_elim ρ V = Some v.
+  V · ρ = Some v.
 Proof.
   intro p.
   induction p.
@@ -103,7 +106,7 @@ Qed.
 
 Lemma hsubst_intro_complete {ρ v v'}:
   hsubstsv v ρ v' →
-  hsubst_intro ρ v = Some v'.
+  v ∘ ρ = Some v'.
 Proof.
   intro p.
   induction p.
@@ -117,10 +120,10 @@ Qed.
 
 Lemma hsubst_elim_sound {ρ V}:
   ∀ {v},
-  hsubst_elim ρ V = Some v →
+  V · ρ = Some v →
   hsubstsV V ρ v.
 Proof.
-  functional induction (hsubst_elim ρ V).
+  functional induction (V · ρ).
   all: try discriminate.
   all: intros ? p.
   - constructor.
@@ -137,10 +140,10 @@ Qed.
 
 Lemma hsubst_intro_sound {ρ v}:
   ∀ {v'},
-  hsubst_intro ρ v = Some v' →
+  v ∘ ρ = Some v' →
   hsubstsv v ρ v'.
 Proof.
-  functional induction (hsubst_intro ρ v).
+  functional induction (v ∘ ρ).
   all: try discriminate.
   all: intros ? p.
   - inversion p.
@@ -156,10 +159,10 @@ Qed.
 
 Lemma hsubst_elim_dfl_sound {ρ V}:
   Bool.Is_true (hsubst_elim_valid ρ V) →
-  hsubst_elim ρ V = Some (hsubst_elim_dfl ρ V).
+  V · ρ = Some (hsubst_elim_dfl ρ V).
 Proof.
   unfold hsubst_elim_valid.
-  functional induction (hsubst_elim ρ V).
+  functional induction (V · ρ).
   all: cbn.
   all: try contradiction.
   all: intros p.
@@ -178,10 +181,10 @@ Qed.
 
 Lemma hsubst_intro_dfl_sound {ρ v}:
   Bool.Is_true (hsubst_intro_valid ρ v) →
-  hsubst_intro ρ v = Some (hsubst_intro_dfl ρ v).
+  v ∘ ρ = Some (hsubst_intro_dfl ρ v).
 Proof.
   unfold hsubst_intro_valid.
-  functional induction (hsubst_intro ρ v).
+  functional induction (v ∘ ρ).
   all: cbn.
   all: try contradiction.
   all: intros p.
@@ -200,10 +203,10 @@ Qed.
 
 Lemma hsubst_elim_dfl_complete {ρ V}:
   ∀ {v},
-  hsubst_elim ρ V = Some v →
+  V · ρ = Some v →
   hsubst_elim_dfl ρ V = v.
 Proof.
-  functional induction (hsubst_elim ρ V).
+  functional induction (V · ρ).
   all: cbn.
   all: intros ? p.
   all: inversion p.
@@ -222,10 +225,10 @@ Qed.
 
 Lemma hsubst_intro_dfl_complete {ρ v}:
   ∀ {v'},
-  hsubst_intro ρ v = Some v' →
+  v ∘ ρ = Some v' →
   hsubst_intro_dfl ρ v = v'.
 Proof.
-  functional induction (hsubst_intro ρ v).
+  functional induction (v ∘ ρ).
   all: cbn.
   all: intros ? p.
   all: inversion p.
@@ -242,8 +245,8 @@ Lemma hsubst_elim_preserve {ρ V}:
   ∀ {Γ' Γ},
     Jp Γ' ρ Γ →
   ∀ {t'},
-    JV Γ V t' →
-    Γ' ⊢ hsubst_elim_dfl ρ V in t'.
+    Γ ⊢ V ⇒ t' →
+    Γ' ⊢ hsubst_elim_dfl ρ V ⇐ t'.
 Proof.
   functional induction (hsubst_elim_dfl ρ V).
   all: intros ? ? q ? p.
@@ -307,8 +310,8 @@ Lemma hsubst_preserve_intro {ρ v}:
   ∀ {Γ' Γ},
     Jp Γ' ρ Γ →
   ∀ {t'},
-    Γ ⊢ v in t' →
-    Γ' ⊢ hsubst_intro_dfl ρ v in t'.
+    Γ ⊢ v ⇐ t' →
+    Γ' ⊢ hsubst_intro_dfl ρ v ⇐ t'.
 Proof.
   functional induction (hsubst_intro_dfl ρ v).
   all: intros ? ? q ? p.
@@ -324,7 +327,7 @@ Qed.
 
 Lemma map_elim {Γ Γ'}:
   (∀ x t, mem x t Γ → mem x t Γ') →
-  ∀ {V t}, JV Γ V t → JV Γ' V t.
+  ∀ {V t}, Γ ⊢ V ⇒ t → Γ' ⊢ V ⇒ t.
 Proof using.
   intros ? ? ? p.
   induction p.
@@ -334,7 +337,7 @@ Qed.
 
 Lemma map_intro {Γ Γ'}:
   (∀ x t, mem x t Γ → mem x t Γ') →
-  ∀ {v t}, Γ ⊢ v in t → Γ' ⊢ v in t.
+  ∀ {v t}, Γ ⊢ v ⇐ t → Γ' ⊢ v ⇐ t.
 Proof.
   intros ? ? ? p.
   induction p.
@@ -367,7 +370,7 @@ Function typecheck Γ v t: bool :=
   | _, _ => false
   end %bool.
 
-Fixpoint typeinfer_sound {Γ V t}: typeinfer Γ V = Some t → JV Γ V t.
+Fixpoint typeinfer_sound {Γ V t}: typeinfer Γ V = Some t → Γ ⊢ V ⇒ t.
 Proof using .
   - intros p.
     destruct V.
@@ -399,7 +402,7 @@ Proof using .
 Qed.
 
 Fixpoint typecheck_sound {Γ v t}:
-  Bool.Is_true (typecheck Γ v t) → Γ ⊢ v in t.
+  Bool.Is_true (typecheck Γ v t) → Γ ⊢ v ⇐ t.
   - intros p.
     destruct v.
     all: cbn.
@@ -433,25 +436,26 @@ Fixpoint typecheck_sound {Γ v t}:
       auto.
 Qed.
 
-Fixpoint typeinfer_complete {Γ V t} (p: JV Γ V t): typeinfer Γ V = Some t.
+Definition typeinfer_complete {Γ V t} (p: Γ ⊢ V ⇒ t): typeinfer Γ V = Some t.
 Proof using .
-  - destruct p.
-    all: cbn in *.
-    + apply Environment.find_complete.
-      auto.
-    + rewrite (typeinfer_complete Γ V _ p).
-      auto.
-    + rewrite (typeinfer_complete Γ V _ p).
-      auto.
+  induction p.
+  all: cbn.
+  - apply Environment.find_complete.
+    auto.
+  - rewrite IHp.
+    auto.
+  - rewrite IHp.
+    auto.
 Qed.
 
-Fixpoint typecheck_complete {Γ v t} (p: Γ ⊢ v in t): typecheck Γ v t = true.
+Definition typecheck_complete {Γ v t} (p: Γ ⊢ v ⇐ t): typecheck Γ v t = true.
 Proof using .
-  destruct p.
+  induction p.
   all: cbn in *.
   all: auto.
-  all: try rewrite typecheck_complete.
-  all: try rewrite typecheck_complete.
+  all: try rewrite IHp.
+  all: try rewrite IHp1.
+  all: try rewrite IHp2.
   all: auto.
   rewrite (typeinfer_complete H).
   destruct eq_tyvar.
@@ -516,7 +520,7 @@ Qed.
 Definition idsubst: environment → subst := List.map (λ '(x, t), (x, η t (V_var x))).
 
 Lemma hsubst_elim_idsubst {Γ V t}:
-  JV Γ V t →
+  Γ ⊢ V ⇒ t →
   hsubst_elim_dfl (idsubst Γ) V = η t V.
 Proof.
   intros p.
@@ -538,7 +542,7 @@ Proof.
 Qed.
 
 Lemma hsubst_intro_idsubst {Γ v t}:
-  Γ ⊢ v in t →
+  Γ ⊢ v ⇐ t →
   hsubst_intro_dfl (idsubst Γ) v = v.
 Proof.
   intros p.
@@ -554,8 +558,8 @@ Qed.
 Lemma hsubst_elim_assoc {x y f}:
   ∀ {g h Γ B C D},
     JV [(x, C)] f D →
-    [(y, B)] ⊢ g in C →
-    Γ ⊢ h in B →
+    [(y, B)] ⊢ g ⇐ C →
+    Γ ⊢ h ⇐ B →
     hsubst_elim_dfl [(x, hsubst_intro_dfl [(y, h)] g)] f = hsubst_intro_dfl [(y, h)] (hsubst_elim_dfl [(x, g)] f).
 Proof.
   induction f.
@@ -607,9 +611,9 @@ Qed.
 #[local]
 Lemma hsubst_intro_assoc {x y f}:
   ∀ {g h Γ B C D},
-  [(x, C)] ⊢ f in D →
-  [(y, B)] ⊢ g in C →
-  Γ ⊢ h in B →
+  [(x, C)] ⊢ f ⇐ D →
+  [(y, B)] ⊢ g ⇐ C →
+  Γ ⊢ h ⇐ B →
   hsubst_intro_dfl [(x, hsubst_intro_dfl [(y, h)] g)] f = hsubst_intro_dfl [(y, h)] (hsubst_intro_dfl [(x, g)] f).
 Proof.
   induction f.
