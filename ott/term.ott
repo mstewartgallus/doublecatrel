@@ -1,3 +1,7 @@
+embed
+{{ coq-preamble
+Require Blech.Assoc.
+}}
 metavar var, x, y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[var]]} }}
 
 grammar
@@ -6,7 +10,6 @@ term, v :: 'v_' ::=
   | v , v'         ::   :: fanout
   | neu V          ::   :: neu {{ tex [ [[V]] ] }}
   | ( v )          :: S :: paren {{ icho ([[v]]) }}
-  | compare x y v  :: M :: compare {{ coq (match eq_var [[x]] [[y]] with | left _ => [[v]] | right _ => [[v]] end) }}
 
 expr, V :: 'V_' ::=
   | x              ::   :: var
@@ -21,19 +24,15 @@ normal, N :: 'N_' ::= {{ coq-equality }}
 
 grammar
 
-environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (list (var * type)) }}
+environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (Assoc.assoc type) }}
   | nil         ::   :: nil {{ coq nil }}
   | G , x : t   ::   :: add {{ coq (cons ([[x]], [[t]]) [[G]]) }}
   | ( G )       :: S :: paren {{ coq ([[G]]) }}
 
-subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (list (var * term)) }}
+subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (Assoc.assoc term) }}
   | nil                   :: M :: nil {{ coq nil }}
   | p , x := v            :: M :: add {{ coq (cons ([[x]], [[v]]) [[p]]) }}
   | ( p )                 :: S :: paren {{ coq ([[p]]) }}
-
-substitutions
-  single v x :: subst
-  single V x :: subst
 
 % subrules are awkward
 funs

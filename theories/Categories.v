@@ -167,10 +167,25 @@ Module Import Hor.
   (* Prove a strict terminal object *)
   Lemma compose_tt {A B} (f: Hor A B): compose (tt _) f == tt _.
   Proof.
-    cbn.
     destruct f as [f ?].
+    cbn.
+    unfold compose.
+    cbn.
     unfold Term.equiv.
     cbn.
+    auto.
+  Qed.
+
+  Lemma hsubst_expr_fst_fanout {Γ A B} {f g} {ρ}:
+    Γ ⊢ f in A →
+    Γ ⊢ g in B →
+    ∀ {x},
+    Term.lookup x ρ = Some (v_fanout f g) →
+    Term.hsubst_expr ρ (V_fst (V_var x)) = f.
+  Proof.
+    cbn.
+    intros.
+    rewrite H1.
     auto.
   Qed.
 

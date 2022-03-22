@@ -22,6 +22,8 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_type : ott_coq_equality.
+Require Blech.Assoc.
+
 Definition var : Set := nat.
 Lemma eq_var: forall (x y : var), {x = y} + {x <> y}.
 Proof.
@@ -38,35 +40,19 @@ Inductive expr : Set :=
  | V_fst (V:expr)
  | V_snd (V:expr).
 
-Definition environment : Set := (list (var * type)).
+Definition environment : Set := (Assoc.assoc type).
 
 Inductive term : Set := 
  | v_tt : term
  | v_fanout (v:term) (v':term)
  | v_neu (V:expr).
 
-Definition subst : Set := (list (var * term)).
+Definition subst : Set := (Assoc.assoc term).
 Lemma eq_normal: forall (x y : normal), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_normal : ott_coq_equality.
-
-(** substitutions *)
-Fixpoint subst_expr (V5:expr) (x5:var) (V_6:expr) {struct V_6} : expr :=
-  match V_6 with
-  | (V_var x) => (if eq_var x x5 then V5 else (V_var x))
-  | (V_fst V) => V_fst (subst_expr V5 x5 V)
-  | (V_snd V) => V_snd (subst_expr V5 x5 V)
-end.
-
-Fixpoint subst_term (V5:expr) (x5:var) (v5:term) {struct v5} : term :=
-  match v5 with
-  | v_tt => v_tt 
-  | (v_fanout v v') => v_fanout (subst_term V5 x5 v) (subst_term V5 x5 v')
-  | (v_neu V) => v_neu (subst_expr V5 x5 V)
-end.
-
 (** definitions *)
 
 (** funs toterm *)

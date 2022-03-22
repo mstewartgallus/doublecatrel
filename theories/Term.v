@@ -2,11 +2,13 @@ Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
 Require Import Blech.Opaque.
 Require Import Blech.OptionNotations.
-Require Import Blech.Environment.
+Require Import Blech.Assoc.
 Require Import Blech.Category.
+Require Blech.Environment.
 
 Require Import Coq.Unicode.Utf8.
 Require Import Coq.Classes.SetoidClass.
+Require Coq.Arith.PeanoNat Nat.
 Require Coq.Bool.Bool.
 Require Coq.Lists.List.
 
@@ -51,17 +53,9 @@ Proof.
       eauto.
 Qed.
 
-Function lookup x ρ: option term :=
-  if ρ is ((y, t) :: ρ')%list
-  then
-    if eq_var x y
-    then Some t
-    else lookup x ρ'
-  else None.
-
 Function hsubst_expr ρ V :=
   match V with
-  | V_var x => if lookup x ρ is Some v then v else v_tt
+  | V_var x => if find x ρ is Some v then v else v_tt
   | V_fst V =>
       if hsubst_expr ρ V is v_fanout v1 _
       then v1 else v_tt
@@ -97,7 +91,7 @@ Proof.
     all: cbn.
     all: intros ? p ? r.
     all: inversion p.
-    destruct eq_var.
+    destruct PeanoNat.Nat.eq_dec.
     all: subst.
     all: inversion H1.
     all: subst.
@@ -113,7 +107,7 @@ Proof.
     all: intros ? ? p.
     all: inversion p.
     all: subst.
-    all: destruct eq_var.
+    all: destruct PeanoNat.Nat.eq_dec.
     all: subst.
     all: try contradiction.
     eapply IHq.
@@ -215,7 +209,7 @@ Proof using .
     all: cbn.
     + cbn in p.
       constructor.
-      apply find_sound.
+      apply Environment.find_sound.
       auto.
     + cbn in p.
       destruct typeinfer eqn:q.
@@ -278,7 +272,7 @@ Fixpoint typeinfer_complete {Γ V t} (p: JV Γ V t): typeinfer Γ V = Some t.
 Proof using .
   - destruct p.
     all: cbn in *.
-    + apply find_complete.
+    + apply Environment.find_complete.
       auto.
     + rewrite (typeinfer_complete Γ V _ p).
       auto.
@@ -365,7 +359,7 @@ Proof.
   all: cbn.
   - induction H.
     all: cbn.
-    all: destruct eq_var.
+    all: destruct PeanoNat.Nat.eq_dec.
     all: subst.
     all: try contradiction.
     + auto.
@@ -397,7 +391,7 @@ Lemma hsubst_expr_assoc {x y f}:
     JV [(x, C)] f D →
     [(y, B)] ⊢ g in C →
     Γ ⊢ h in B →
-    hsubst_expr [(x, Term.hsubst_term [(y, h)] g)] f = hsubst_term [(y, h)] (Term.hsubst_expr [(x, g)] f).
+    hsubst_expr [(x, hsubst_term [(y, h)] g)] f = hsubst_term [(y, h)] (hsubst_expr [(x, g)] f).
 Proof.
   induction f.
   all: cbn.
@@ -408,7 +402,7 @@ Proof.
   - inversion H1.
     all: subst.
     2: inversion H6.
-    destruct eq_var.
+    destruct PeanoNat.Nat.eq_dec.
     2: contradiction.
     auto.
   - erewrite IHf.
@@ -422,8 +416,11 @@ Proof.
     }
     inversion H1'.
     subst.
-    cbn.
-    auto.
+    symmetry in H.
+    destruct hsubst_expr.
+    all: cbn.
+    all: auto.
+    discriminate.
   - erewrite IHf.
     all: eauto.
     eassert (H1' := hsubst_preserve_expr _ H1).
@@ -436,7 +433,10 @@ Proof.
     inversion H1'.
     subst.
     cbn.
-    auto.
+    symmetry in H.
+    destruct hsubst_expr.
+    all: auto.
+    discriminate.
 Qed.
 
 #[local]

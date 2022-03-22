@@ -2,15 +2,18 @@ Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
 Require Import Blech.Opaque.
 Require Blech.OptionNotations.
+Require Blech.Assoc.
 
 Require Import Coq.Unicode.Utf8.
 Require Coq.Bool.Bool.
 Require Coq.Lists.List.
+Require Coq.Arith.PeanoNat.
 
 Require Import FunInd.
 
 Import List.ListNotations.
 Import IfNotations.
+Import PeanoNat.Nat.
 
 Implicit Type Γ: environment.
 Implicit Type t: type.
@@ -38,33 +41,11 @@ Proof.
     contradiction.
 Defined.
 
-Function find x Γ :=
-  if Γ is ((y, t) :: T)%list
-  then
-    if eq_var x y
-    then
-      Some t
-    else
-      find x T
-  else
-    None.
-
-Fixpoint minus x Γ: environment :=
-  if Γ is ((y, t) :: T)%list
-  then
-    if eq_var x y
-    then
-      T
-    else
-      cons (y, t) (minus x T)
-  else
-    nil.
-
 Lemma find_sound:
-  ∀ {x Γ t}, find x Γ = Some t → mem x t Γ.
+  ∀ {x Γ t}, Assoc.find x Γ = Some t → mem x t Γ.
 Proof using .
   intros x Γ.
-  functional induction (find x Γ).
+  functional induction (Assoc.find x Γ).
   all: intros ? p.
   all: inversion p.
   all: subst.
@@ -73,36 +54,20 @@ Proof using .
 Qed.
 
 Lemma find_complete {x Γ t}:
-  mem x t Γ → find x Γ = Some t.
+  mem x t Γ → Assoc.find x Γ = Some t.
 Proof using .
   intro p.
   induction p.
   all: cbn.
-  - destruct eq_var.
+  - destruct eq_dec.
     2: contradiction.
     reflexivity.
-  - destruct eq_var.
+  - destruct eq_dec.
     1: contradiction.
     auto.
 Qed.
 
-Lemma find_minus {x y Γ}:
-  x ≠ y →
-  find x (minus y Γ) = find x Γ.
-Proof.
-  intros p.
-  induction Γ.
-  1: auto.
-  destruct a as [x' t].
-  cbn.
-  destruct eq_var, eq_var.
-  all: cbn.
-  all: subst.
-  all: try contradiction.
-  all: try destruct eq_var.
-  all: try contradiction.
-  all: auto.
-Qed.
+Definition find := @Assoc.find type.
 
 Lemma unshadow {y t0 t1 Γ}:
   ∀ x t,
