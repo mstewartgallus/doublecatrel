@@ -150,8 +150,8 @@
 \ottprodline{|}{ \mathbin{\textbf{let} } }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathbin{\textbf{in} } }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathrel{\in} }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \colon }{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \colon }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ \Rightarrow }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ \Leftarrow }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathrel{\in!} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathrel{\notin} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathrel{\cup} }{}{}{}{}\ottprodnewline
@@ -180,8 +180,8 @@
 
 \newcommand{\ottjudgeXXterm}{
 \ottrulehead{\ottnt{judge\_term}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\Gamma  \vdash{}  \ottnt{V}  \colon{}  \ottnt{t}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\Gamma  \vdash{}  \ottnt{v}  \colon{}  \ottnt{t}}{}{}{}{}}
+\ottfirstprodline{|}{\Gamma  \vdash{}  \ottnt{V}  \Rightarrow  \ottnt{t}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\Gamma  \vdash{}  \ottnt{v}  \Leftarrow  \ottnt{t}}{}{}{}{}}
 
 \newcommand{\ottjudgeXXsubst}{
 \ottrulehead{\ottnt{judge\_subst}}{::=}{}\ottprodnewline
@@ -205,8 +205,8 @@
 
 \newcommand{\ottjudgeXXcontext}{
 \ottrulehead{\ottnt{judge\_context}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\Gamma  \ottsym{;}  \Delta  \rightarrow  \Delta'  \vdash{}  \ottnt{e}  \colon  \ottnt{t}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\Gamma  \ottsym{;}  \Delta  \rightarrow  \Delta'  \vdash{}  \ottnt{E}  \colon  \ottnt{t}}{}{}{}{}}
+\ottfirstprodline{|}{\Gamma  \ottsym{;}  \Delta  \rightarrow  \Delta'  \vdash{}  \ottnt{e}  \Rightarrow  \ottnt{t}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\Gamma  \ottsym{;}  \Delta  \rightarrow  \Delta'  \vdash{}  \ottnt{E}  \Leftarrow  \ottnt{t}}{}{}{}{}}
 
 \newcommand{\ottsat}{
 \ottrulehead{\ottnt{sat}}{::=}{}\ottprodnewline
@@ -342,27 +342,27 @@
 \newcommand{\ottdruleJVXXvar}[1]{\ottdrule[#1]{%
 \ottpremise{\mathit{x}  \colon{}  \ottnt{t}  \mathrel{\in}  \Gamma}%
 }{
-\Gamma  \vdash{}  \mathit{x}  \colon{}  \ottnt{t}}{%
+\Gamma  \vdash{}  \mathit{x}  \Rightarrow  \ottnt{t}}{%
 {\ottdrulename{JV\_var}}{}%
 }}
 
 
 \newcommand{\ottdruleJVXXfst}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \vdash{}  \ottnt{V}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\Gamma  \vdash{}  \ottnt{V}  \Rightarrow  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}%
 }{
-\Gamma  \vdash{}  \pi{}_1 \, \ottnt{V}  \colon{}  \ottnt{t_{{\mathrm{1}}}}}{%
+\Gamma  \vdash{}  \pi{}_1 \, \ottnt{V}  \Rightarrow  \ottnt{t_{{\mathrm{1}}}}}{%
 {\ottdrulename{JV\_fst}}{}%
 }}
 
 
 \newcommand{\ottdruleJVXXsnd}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \vdash{}  \ottnt{V}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\Gamma  \vdash{}  \ottnt{V}  \Rightarrow  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}%
 }{
-\Gamma  \vdash{}  \pi{}_2 \, \ottnt{V}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}{%
+\Gamma  \vdash{}  \pi{}_2 \, \ottnt{V}  \Rightarrow  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{JV\_snd}}{}%
 }}
 
-\newcommand{\ottdefnJV}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \vdash{}  \ottnt{V}  \colon{}  \ottnt{t}$}{}
+\newcommand{\ottdefnJV}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \vdash{}  \ottnt{V}  \Rightarrow  \ottnt{t}$}{}
 \ottusedrule{\ottdruleJVXXvar{}}
 \ottusedrule{\ottdruleJVXXfst{}}
 \ottusedrule{\ottdruleJVXXsnd{}}
@@ -371,28 +371,28 @@
 %% defn v
 \newcommand{\ottdruleJvXXtt}[1]{\ottdrule[#1]{%
 }{
-\Gamma  \vdash{}  \mathop{ \textbf ! }  \colon{}  \textbf{I}}{%
+\Gamma  \vdash{}  \mathop{ \textbf ! }  \Leftarrow  \textbf{I}}{%
 {\ottdrulename{Jv\_tt}}{}%
 }}
 
 
 \newcommand{\ottdruleJvXXfanout}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \vdash{}  \ottnt{v_{{\mathrm{1}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}}%
-\ottpremise{\Gamma  \vdash{}  \ottnt{v_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\Gamma  \vdash{}  \ottnt{v_{{\mathrm{1}}}}  \Leftarrow  \ottnt{t_{{\mathrm{1}}}}}%
+\ottpremise{\Gamma  \vdash{}  \ottnt{v_{{\mathrm{2}}}}  \Leftarrow  \ottnt{t_{{\mathrm{2}}}}}%
 }{
-\Gamma  \vdash{}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}{%
+\Gamma  \vdash{}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \Leftarrow  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{Jv\_fanout}}{}%
 }}
 
 
 \newcommand{\ottdruleJvXXneu}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \vdash{}  \ottnt{V}  \colon{}  \mathit{A}}%
+\ottpremise{\Gamma  \vdash{}  \ottnt{V}  \Rightarrow  \mathit{A}}%
 }{
-\Gamma  \vdash{}   [  \ottnt{V}  ]   \colon{}  \mathit{A}}{%
+\Gamma  \vdash{}   [  \ottnt{V}  ]   \Leftarrow  \mathit{A}}{%
 {\ottdrulename{Jv\_neu}}{}%
 }}
 
-\newcommand{\ottdefnJv}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \vdash{}  \ottnt{v}  \colon{}  \ottnt{t}$}{}
+\newcommand{\ottdefnJv}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \vdash{}  \ottnt{v}  \Leftarrow  \ottnt{t}$}{}
 \ottusedrule{\ottdruleJvXXtt{}}
 \ottusedrule{\ottdruleJvXXfanout{}}
 \ottusedrule{\ottdruleJvXXneu{}}
@@ -412,7 +412,7 @@
 
 
 \newcommand{\ottdruleJpXXcons}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma'  \vdash{}  \ottnt{v}  \colon{}  \ottnt{t}}%
+\ottpremise{\Gamma'  \vdash{}  \ottnt{v}  \Leftarrow  \ottnt{t}}%
 \ottpremise{\Gamma'  \vdash{}  \rho  \colon{}  \Gamma}%
 }{
 \Gamma'  \vdash{}  \rho  \ottsym{,}  \mathit{x}  \mathbin{:=}  \ottnt{v}  \colon{}  \Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t}}{%
@@ -543,46 +543,46 @@
 \ottpremise{\mathit{x}  \colon{}  \ottnt{t}  \mathrel{\in}  \Gamma}%
 \ottpremise{\mathit{x}  \mathrel{\in}  \ottkw{xsof} \, \Gamma  \ottsym{;}  \Delta  \rightarrow  \Delta'}%
 }{
-\Gamma  \ottsym{;}  \Delta  \rightarrow  \Delta'  \vdash{}  \mathit{x}  \colon  \ottnt{t}}{%
+\Gamma  \ottsym{;}  \Delta  \rightarrow  \Delta'  \vdash{}  \mathit{x}  \Rightarrow  \ottnt{t}}{%
 {\ottdrulename{infer\_var}}{}%
 }}
 
 
 \newcommand{\ottdruleinferXXapp}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \ottsym{;}  \Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{e_{{\mathrm{1}}}}  \colon  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}%
-\ottpremise{\Gamma  \ottsym{;}  \Delta_{{\mathrm{2}}}  \rightarrow  \Delta_{{\mathrm{3}}}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \colon  \ottnt{t_{{\mathrm{1}}}}}%
+\ottpremise{\Gamma  \ottsym{;}  \Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{e_{{\mathrm{1}}}}  \Rightarrow  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\Gamma  \ottsym{;}  \Delta_{{\mathrm{2}}}  \rightarrow  \Delta_{{\mathrm{3}}}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \Leftarrow  \ottnt{t_{{\mathrm{1}}}}}%
 }{
-\Gamma  \ottsym{;}  \Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{3}}}  \vdash{}  \ottnt{e_{{\mathrm{1}}}} \, \ottnt{E_{{\mathrm{2}}}}  \colon  \ottnt{t_{{\mathrm{2}}}}}{%
+\Gamma  \ottsym{;}  \Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{3}}}  \vdash{}  \ottnt{e_{{\mathrm{1}}}} \, \ottnt{E_{{\mathrm{2}}}}  \Rightarrow  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{infer\_app}}{}%
 }}
 
 
 \newcommand{\ottdruleinferXXstep}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \ottsym{;}  \Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{e_{{\mathrm{1}}}}  \colon  \textbf{I}}%
-\ottpremise{\Gamma  \ottsym{;}  \Delta_{{\mathrm{2}}}  \rightarrow  \Delta_{{\mathrm{3}}}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \colon  \ottnt{t}}%
+\ottpremise{\Gamma  \ottsym{;}  \Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{e_{{\mathrm{1}}}}  \Rightarrow  \textbf{I}}%
+\ottpremise{\Gamma  \ottsym{;}  \Delta_{{\mathrm{2}}}  \rightarrow  \Delta_{{\mathrm{3}}}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \Leftarrow  \ottnt{t}}%
 }{
-\Gamma  \ottsym{;}  \Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{3}}}  \vdash{}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{;}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t}  \colon  \ottnt{t}}{%
+\Gamma  \ottsym{;}  \Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{3}}}  \vdash{}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{;}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t}  \Rightarrow  \ottnt{t}}{%
 {\ottdrulename{infer\_step}}{}%
 }}
 
 
 \newcommand{\ottdruleinferXXlet}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \ottsym{;}  \Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{e_{{\mathrm{1}}}}  \colon  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}%
-\ottpremise{\Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \ottsym{,}  \mathit{y}  \colon{}  \ottnt{t_{{\mathrm{2}}}}  \ottsym{;}  \Delta_{{\mathrm{2}}}  \ottsym{,}  \textbf{f}  \ottsym{,}  \textbf{f}  \rightarrow  \Delta_{{\mathrm{3}}}  \ottsym{,}  \textbf{s}  \ottsym{,}  \textbf{s}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \colon  \ottnt{t_{{\mathrm{3}}}}}%
+\ottpremise{\Gamma  \ottsym{;}  \Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{e_{{\mathrm{1}}}}  \Rightarrow  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \ottsym{,}  \mathit{y}  \colon{}  \ottnt{t_{{\mathrm{2}}}}  \ottsym{;}  \Delta_{{\mathrm{2}}}  \ottsym{,}  \textbf{f}  \ottsym{,}  \textbf{f}  \rightarrow  \Delta_{{\mathrm{3}}}  \ottsym{,}  \textbf{s}  \ottsym{,}  \textbf{s}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \Leftarrow  \ottnt{t_{{\mathrm{3}}}}}%
 }{
-\Gamma  \ottsym{;}  \Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{3}}}  \vdash{}  \mathbin{\textbf{let} } \, \mathit{x}  \ottsym{,}  \mathit{y}  \ottsym{=}  \ottnt{e_{{\mathrm{1}}}} \, \mathbin{\textbf{in} } \, \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{3}}}}  \colon  \ottnt{t_{{\mathrm{3}}}}}{%
+\Gamma  \ottsym{;}  \Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{3}}}  \vdash{}  \mathbin{\textbf{let} } \, \mathit{x}  \ottsym{,}  \mathit{y}  \ottsym{=}  \ottnt{e_{{\mathrm{1}}}} \, \mathbin{\textbf{in} } \, \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{3}}}}  \Rightarrow  \ottnt{t_{{\mathrm{3}}}}}{%
 {\ottdrulename{infer\_let}}{}%
 }}
 
 
 \newcommand{\ottdruleinferXXcut}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \ottsym{;}  \Delta  \rightarrow  \Delta'  \vdash{}  \ottnt{E}  \colon  \ottnt{t}}%
+\ottpremise{\Gamma  \ottsym{;}  \Delta  \rightarrow  \Delta'  \vdash{}  \ottnt{E}  \Leftarrow  \ottnt{t}}%
 }{
-\Gamma  \ottsym{;}  \Delta  \rightarrow  \Delta'  \vdash{}   \ottnt{E}  \colon  \ottnt{t}   \colon  \ottnt{t}}{%
+\Gamma  \ottsym{;}  \Delta  \rightarrow  \Delta'  \vdash{}   \ottnt{E}  \colon  \ottnt{t}   \Rightarrow  \ottnt{t}}{%
 {\ottdrulename{infer\_cut}}{}%
 }}
 
-\newcommand{\ottdefninfer}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \ottsym{;}  \Delta  \rightarrow  \Delta'  \vdash{}  \ottnt{e}  \colon  \ottnt{t}$}{}
+\newcommand{\ottdefninfer}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \ottsym{;}  \Delta  \rightarrow  \Delta'  \vdash{}  \ottnt{e}  \Rightarrow  \ottnt{t}$}{}
 \ottusedrule{\ottdruleinferXXvar{}}
 \ottusedrule{\ottdruleinferXXapp{}}
 \ottusedrule{\ottdruleinferXXstep{}}
@@ -592,9 +592,9 @@
 
 %% defn check
 \newcommand{\ottdrulecheckXXlam}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \ottsym{;}  \Delta  \ottsym{,}  \textbf{f}  \rightarrow  \Delta'  \ottsym{,}  \textbf{s}  \vdash{}  \ottnt{E}  \colon  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \ottsym{;}  \Delta  \ottsym{,}  \textbf{f}  \rightarrow  \Delta'  \ottsym{,}  \textbf{s}  \vdash{}  \ottnt{E}  \Leftarrow  \ottnt{t_{{\mathrm{2}}}}}%
 }{
-\Gamma  \ottsym{;}  \Delta  \rightarrow  \Delta'  \vdash{}  \lambda{} \, \mathit{x}  \ottsym{.}  \ottnt{E}  \colon  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}{%
+\Gamma  \ottsym{;}  \Delta  \rightarrow  \Delta'  \vdash{}  \lambda{} \, \mathit{x}  \ottsym{.}  \ottnt{E}  \Leftarrow  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{check\_lam}}{}%
 }}
 
@@ -602,28 +602,28 @@
 \newcommand{\ottdrulecheckXXtt}[1]{\ottdrule[#1]{%
 \ottpremise{\ottkw{len} \, \Gamma  \ottsym{=}  \ottkw{len} \, \Delta}%
 }{
-\Gamma  \ottsym{;}  \Delta  \rightarrow  \Delta  \vdash{}  \mathop{ \textbf ! }  \colon  \textbf{I}}{%
+\Gamma  \ottsym{;}  \Delta  \rightarrow  \Delta  \vdash{}  \mathop{ \textbf ! }  \Leftarrow  \textbf{I}}{%
 {\ottdrulename{check\_tt}}{}%
 }}
 
 
 \newcommand{\ottdrulecheckXXfanout}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \ottsym{;}  \Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \colon  \ottnt{t_{{\mathrm{1}}}}}%
-\ottpremise{\Gamma  \ottsym{;}  \Delta_{{\mathrm{2}}}  \rightarrow  \Delta_{{\mathrm{3}}}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \colon  \ottnt{t_{{\mathrm{2}}}}}%
+\ottpremise{\Gamma  \ottsym{;}  \Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \Leftarrow  \ottnt{t_{{\mathrm{1}}}}}%
+\ottpremise{\Gamma  \ottsym{;}  \Delta_{{\mathrm{2}}}  \rightarrow  \Delta_{{\mathrm{3}}}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \Leftarrow  \ottnt{t_{{\mathrm{2}}}}}%
 }{
-\Gamma  \ottsym{;}  \Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{3}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{E_{{\mathrm{2}}}}  \colon  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}{%
+\Gamma  \ottsym{;}  \Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{3}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{E_{{\mathrm{2}}}}  \Leftarrow  \ottnt{t_{{\mathrm{1}}}}  \otimes{}  \ottnt{t_{{\mathrm{2}}}}}{%
 {\ottdrulename{check\_fanout}}{}%
 }}
 
 
 \newcommand{\ottdrulecheckXXneu}[1]{\ottdrule[#1]{%
-\ottpremise{\Gamma  \ottsym{;}  \Delta  \rightarrow  \Delta'  \vdash{}  \ottnt{e}  \colon  \ottnt{t}}%
+\ottpremise{\Gamma  \ottsym{;}  \Delta  \rightarrow  \Delta'  \vdash{}  \ottnt{e}  \Rightarrow  \ottnt{t}}%
 }{
-\Gamma  \ottsym{;}  \Delta  \rightarrow  \Delta'  \vdash{}   [  \ottnt{e}  ]   \colon  \ottnt{t}}{%
+\Gamma  \ottsym{;}  \Delta  \rightarrow  \Delta'  \vdash{}   [  \ottnt{e}  ]   \Leftarrow  \ottnt{t}}{%
 {\ottdrulename{check\_neu}}{}%
 }}
 
-\newcommand{\ottdefncheck}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \ottsym{;}  \Delta  \rightarrow  \Delta'  \vdash{}  \ottnt{E}  \colon  \ottnt{t}$}{}
+\newcommand{\ottdefncheck}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \ottsym{;}  \Delta  \rightarrow  \Delta'  \vdash{}  \ottnt{E}  \Leftarrow  \ottnt{t}$}{}
 \ottusedrule{\ottdrulecheckXXlam{}}
 \ottusedrule{\ottdrulecheckXXtt{}}
 \ottusedrule{\ottdrulecheckXXfanout{}}

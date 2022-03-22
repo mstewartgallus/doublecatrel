@@ -66,36 +66,36 @@ defns
 judge_term :: 'J' ::=
 
 defn
-G |- V : t ::   :: V :: 'V_'
+G |- V \infer t ::   :: V :: 'V_'
 by
 
 x: t \in G
 ------------ :: var
-G |- x: t
+G |- x \infer t
 
-G |- V: t1 * t2
+G |- V \infer t1 * t2
 ------------------ :: fst
-G |- fst V: t1
+G |- fst V \infer t1
 
-G |- V: t1 * t2
+G |- V \infer t1 * t2
 ------------------ :: snd
-G |- snd V: t2
+G |- snd V \infer t2
 
 defn
-G |- v : t ::   :: v :: 'v_'
+G |- v \check t ::   :: v :: 'v_'
 by
 
 --------------- :: tt
-G |- tt: unit
+G |- tt \check unit
 
-G |- v1: t1
-G |- v2: t2
------------------- :: fanout
-G |- v1, v2: t1 * t2
+G |- v1 \check t1
+G |- v2 \check t2
+------------------------- :: fanout
+G |- v1, v2 \check t1 * t2
 
-G |- V: A
+G |- V \infer A
 ----------------- :: neu
-G |- neu ( V) : A
+G |- neu ( V) \check A
 
 defns
 
@@ -108,7 +108,7 @@ by
 -------------- :: nil
 G |- nil: nil
 
-G' |- v : t
+G' |- v \check t
 G' |- p: G
 ------------------------- :: cons
 G' |- p, x := v: G, x: t

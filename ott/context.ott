@@ -77,8 +77,8 @@ terminals :: 'terminals_' ::=
   | let          ::   :: let  {{ tex \mathbin{\textbf{let} } }}
   | in           ::   :: letin  {{ tex \mathbin{\textbf{in} } }}
   | \in          ::   :: member  {{ tex \mathrel{\in} }}
-  | \infer       ::   :: infer  {{ tex \colon }}
-  | \check       ::   :: check  {{ tex \colon }}
+  | \infer       ::   :: infer  {{ tex \Rightarrow }}
+  | \check       ::   :: check  {{ tex \Leftarrow }}
   | once         ::   :: once  {{ tex \mathrel{\in!} }}
   | never        ::   :: never  {{ tex \mathrel{\notin} }}
   | ++            ::   :: merge  {{ tex \mathrel{\cup} }}
