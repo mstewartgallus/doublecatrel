@@ -39,14 +39,6 @@ by
 
 defns
 
-dummy :: '' ::=
-
-defn
-jdummy ::   :: jdum :: 'jdum_'
-by
-
-defns
-
 find :: '' ::=
 
 defn
