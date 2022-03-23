@@ -78,7 +78,7 @@ Section Typecheck.
           else
             None
         else
-          do (Δ'', t)  ← lookup x Γ' Δ' ;
+          do ' (Δ'', t)  ← lookup x Γ' Δ' ;
           Some (cons u Δ'', t)
     | _, _ => None
     end.
@@ -86,7 +86,7 @@ Section Typecheck.
   Function typecheck Γ Δ E t: option usage :=
     match E, t with
     | E_lam x E, t1 * t2 =>
-        do (u_used :: Δ') ← typecheck ((x, t1) :: Γ) (u_unused :: Δ) E t2 ;
+        do ' (u_used :: Δ') ← typecheck ((x, t1) :: Γ) (u_unused :: Δ) E t2 ;
         Some Δ'
 
     | E_tt, t_unit =>
@@ -102,7 +102,7 @@ Section Typecheck.
         Some Δ2
 
     | E_neu e, _ =>
-        do (Δ, t') ← typeinfer Γ Δ e ;
+        do ' (Δ, t') ← typeinfer Γ Δ e ;
         if eq_type t t' then Some Δ else None
 
     | _, _ => None
@@ -113,18 +113,18 @@ Section Typecheck.
     | e_var x => lookup x Γ Δ
 
     | e_app e E' =>
-        do (Δ1, t1 * t2) ← typeinfer Γ Δ e ;
+        do ' (Δ1, t1 * t2) ← typeinfer Γ Δ e ;
         do Δ2 ← typecheck Γ Δ1 E' t1 ;
         Some (Δ2, t2)
 
     | e_step e E' t =>
-        do (Δ1, t_unit) ← typeinfer Γ Δ e ;
+        do ' (Δ1, t_unit) ← typeinfer Γ Δ e ;
         do Δ2 ← typecheck Γ Δ1 E' t ;
         Some (Δ2, t)
 
     | e_let x y e E' t3 =>
-        do (Δ1, t1 * t2) ← typeinfer Γ Δ e ;
-        do (u_used :: u_used :: Δ2) ← typecheck ((y, t2) :: (x, t1) :: Γ) (u_unused :: u_unused :: Δ1) E' t3 ;
+        do ' (Δ1, t1 * t2) ← typeinfer Γ Δ e ;
+        do ' (u_used :: u_used :: Δ2) ← typecheck ((y, t2) :: (x, t1) :: Γ) (u_unused :: u_unused :: Δ1) E' t3 ;
         Some (Δ2, t3)
 
     | e_cut E t =>

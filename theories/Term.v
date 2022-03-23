@@ -49,10 +49,10 @@ Function hsubst_elim ρ V :=
   match V with
   | V_var x => find x ρ
   | V_fst V =>
-      do v_fanout v1 _ ← hsubst_elim ρ V ;
+      do ' v_fanout v1 _ ← hsubst_elim ρ V ;
       Some v1
   | V_snd V =>
-      do v_fanout _ v2 ← hsubst_elim ρ V ;
+      do ' v_fanout _ v2 ← hsubst_elim ρ V ;
       Some v2
   end.
 
@@ -351,10 +351,10 @@ Function typeinfer Γ V :=
   match V with
   | V_var x => find x Γ
   | V_fst V =>
-      do t0 * _ ← typeinfer Γ V ;
+      do ' t0 * _ ← typeinfer Γ V ;
       Some t0
   | V_snd V =>
-      do _ * t1 ← typeinfer Γ V ;
+      do ' _ * t1 ← typeinfer Γ V ;
       Some t1
   end.
 
