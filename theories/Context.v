@@ -1,4 +1,3 @@
-Require Blech.Map.
 Require Import Blech.Opaque.
 Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
@@ -23,10 +22,8 @@ Implicit Type E: context.
 Implicit Type t: type.
 Implicit Types x y: var.
 Implicit Type xs: vars.
-Implicit Type σ: store.
+Implicit Type ρ: subst.
 Implicit Type v: intro.
-
-Import Map.MapNotations.
 
 Definition eq_usage Δ Δ': {Δ = Δ'} + {Δ ≠ Δ'}.
 Proof.
@@ -40,16 +37,6 @@ Proof.
   all: inversion p.
   all: auto.
 Defined.
-
-Lemma length_xsof {Γ}: length (xsof Γ) = length Γ.
-Proof.
-  induction Γ.
-  1: auto.
-  destruct a.
-  cbn.
-  rewrite IHΓ.
-  auto.
-Qed.
 
 Section Typecheck.
   Import OptionNotations.
@@ -435,279 +422,412 @@ Fixpoint generate t: list intro :=
       [v_fanout v v']
   end%list.
 
-Fixpoint verify σ E v: list store :=
+Function take x ρ :=
+  if ρ is cons (y, v) ρ'
+  then
+    if eq_var x y
+    then
+      Some (v, cons (y, v_tt) ρ')
+    else
+      if take x ρ' is Some (v', ρ'')
+      then
+        Some (v', cons (y, v) ρ'')
+      else
+        None
+  else
+    None.
+
+Fixpoint verify ρ E v: list subst :=
   match E, v with
   | E_lam x E, v_fanout v1 v2 =>
-      do σ' ← verify (x ↦ v1 ∪ σ) E v2 ;
-      if Map.find x σ' is Some v1'
+      do ρ' ← verify ((x, v1) :: ρ) E v2 ;
+      if ρ' is (y, _) :: ρ''
       then
-        if eq_intro v1 v1'
-        then [σ' \ x]
+        if eq_var x y
+        then [ρ'']
         else []
       else
         []
 
-  | E_tt, v_tt => [∅]
+  | E_tt, v_tt => [ρ]
 
   | E_fanout E E', v_fanout v1 v2 =>
-      do σ1 ← verify σ E v1 ;
-      do σ2 ← verify σ E' v2 ;
-      [σ1 ∪ σ2]
+      do ρ1 ← verify ρ E v1 ;
+      verify ρ1 E' v2
 
   | E_neu e, _ =>
-      do (σ' |- v') ← search σ e ;
+      do (ρ' |- v') ← search ρ e ;
       if eq_intro v v'
-      then [σ']
+      then [ρ']
       else []
   | _, _ => []
   end%list %map
-with search σ e: list span :=
+with search ρ e: list span :=
   match e with
-  | e_var x => if Map.find x σ is Some v then [x ↦ v |- v] else []
+  | e_var x => if take x ρ is Some (v, ρ') then [ρ' |- v] else []
 
   | e_app e E' =>
-      do (σ1 |- v) ← search σ e ;
+      do (ρ1 |- v) ← search ρ e ;
       if v is v_fanout v0 v1
       then
-          do σ2 ← verify σ E' v0 ;
-          [σ1 ∪ σ2 |- v1]
+          do ρ2 ← verify ρ1 E' v0 ;
+          [ρ2 |- v1]
       else []
 
   | e_step e E' t2 =>
-      do (σ1 |- v) ← search σ e ;
       do v' ← generate t2 ;
-      do σ2 ← verify σ E' v' ;
+      do (ρ1 |- v) ← search ρ e ;
       if v is v_tt
-      then [σ1 ∪ σ2 |- v']
-      else []
+      then
+        do ρ2 ← verify ρ1 E' v' ;
+        [ρ2 |- v']
+      else
+        []
 
   | e_let x y e E' t3 =>
-      do (σ1 |- v) ← search σ e ;
-      do (a, b) ← (if v is v_fanout a b then [(a, b)] else []) ;
       do v' ← generate t3 ;
-      do σ2 ← verify ((x ↦ a) ∪ (y ↦ b) ∪ σ) E' v' ;
-      match Map.find x (σ2 \ y), Map.find y σ2 with
-      | Some a', Some b' =>
-          match eq_intro a a', eq_intro b b' with
-          | left _, left _ =>
-              [(σ1 ∪ ((σ2 \ y) \ x) |- v')]
-          | _, _ => []
-          end
-      | _, _ => []
-      end
+      do (ρ1 |- v) ← search ρ e ;
+      do (a, b) ← (if v is v_fanout a b then [(a, b)] else []) ;
+      do ρ2 ← verify ((y, b) :: (x , a) :: ρ1) E' v' ;
+      if ρ2 is (y', _) :: (x', _) :: ρ2'
+      then
+        match eq_var x x', eq_var y y' with
+        | left _, left _ =>
+            [ρ2' |- v']
+        | _, _ => []
+        end
+      else
+        []
 
   | e_cut E t =>
       do v ← generate t ;
-      do σ ← verify σ E v ;
-      [σ |- v]
+      do ρ' ← verify ρ E v ;
+      [ρ' |- v]
   end%list %map.
 
-Lemma sound_pure:
-  ∀ {σ E v}, accepts σ E v → sound E [σ] v.
-Proof.
-  repeat constructor.
-  auto.
-Defined.
-
-Lemma sound_mon {E p p' v}:
-  sound E p v → sound E p' v →
-  sound E (p ++ p') v.
+Lemma Forall_mon {A} {p: A → _} {l r}:
+  List.Forall p l → List.Forall p r →
+  List.Forall p (l ++ r).
 Proof.
   intros.
-  induction p.
-  1: auto.
-  cbn.
-  inversion H.
-  econstructor.
-  all: eauto.
-Defined.
-
-Lemma sounde_mon {e p p'}:
-  sounde e p → sounde e p' →
-  sounde e (p ++ p')%list.
-Proof.
-  intros.
-  induction p.
+  induction l.
   1: auto.
   cbn.
   inversion H.
   constructor.
   all: auto.
-Defined.
+Qed.
 
-Theorem verify_sound:
-  ∀ σ E v, sound E (verify σ E v) v
- with
- search_sound:
-   ∀ σ e, sounde e (search σ e).
-Proof using.
-  Open Scope map.
-  - intros σ E.
-    generalize dependent σ.
-    destruct E.
-    all: intros.
-    + cbn.
-      destruct v.
-      1: constructor.
-      induction (verify_sound (x ↦ v1 ∪ σ) E v2).
-      1,3: constructor.
-      cbn.
-      destruct Map.find eqn:q.
-      2: auto.
-      destruct eq_intro.
-      2: auto.
-      subst.
-      cbn.
-      econstructor.
-      1: auto.
-      constructor.
-      rewrite Map.add_minus.
-      all: eauto.
-    + cbn.
-      destruct v.
-      all: try econstructor.
-      all: constructor.
-    + cbn.
-      destruct v.
-      1: constructor.
-      induction (verify_sound σ E1 v1).
-      1: constructor.
-      cbn.
-      apply sound_mon.
-      2: auto.
-      clear IHs.
-      induction (verify_sound σ E2 v2).
-      1,3: constructor.
-      cbn.
-      econstructor.
-      1: auto.
-      constructor.
-      all: eauto.
-    + cbn.
-      induction (search_sound σ e).
-      1: constructor.
-      cbn.
-      destruct eq_intro.
-      2: auto.
-      cbn.
-      subst.
-      cbn.
-      econstructor.
-      1: auto.
-      constructor.
-      eauto.
-  - intros σ e.
-    generalize dependent σ.
-    destruct e.
-    all: intros.
-    + cbn.
-      destruct Map.find eqn:q.
-      2: constructor.
-      constructor.
-      1: constructor.
-      constructor.
-    + cbn.
-      induction (search_sound σ e).
-      1: constructor.
-      cbn.
-      destruct v.
-      all: cbn.
-      all: auto.
-      apply sounde_mon.
-      all: cbn.
-      2: auto.
-      clear IHs.
-      induction (verify_sound σ E' v1).
-      all: cbn.
-      1: constructor.
-      cbn.
-      econstructor.
-      1: auto.
-      econstructor.
-      all: eauto.
-    + cbn.
-      induction (search_sound σ e).
-      1: constructor.
-      cbn.
-      apply sounde_mon.
-      all: cbn.
-      2: auto.
-      clear IHs.
-      induction (generate t).
-      all: cbn.
-      1: constructor.
-      induction (verify_sound σ E' a).
-      all: cbn.
-      1: auto.
-      cbn.
-      destruct v.
-      all: cbn.
-      all: auto.
-      econstructor.
-      1: auto.
-      constructor.
-      all: auto.
-    + cbn.
-      induction (search_sound σ e).
-      1: constructor.
-      cbn.
-      apply sounde_mon.
-      2: auto.
-      clear IHs.
-      destruct v.
-      1: constructor.
-      cbn.
-      repeat rewrite List.app_nil_r.
-      induction (generate t).
-      cbn.
-      1: constructor.
-      cbn.
-      apply sounde_mon.
-      all: cbn.
-      2: auto.
-      induction (verify_sound (((x ↦ v1 ∪ y ↦ v2) ∪ σ)) E' a).
-      1: constructor.
-      cbn.
-      apply sounde_mon.
-      all: auto.
-      all: cbn.
-      destruct (Map.find x (σ1 \ y)) eqn:q.
-      2: constructor.
-      destruct (Map.find y σ1) eqn:q'.
-      2: constructor.
-      destruct eq_intro.
-      2: constructor.
-      subst.
-      destruct eq_intro.
-      2: constructor.
-      subst.
-      constructor.
-      constructor.
-      econstructor.
-      all: repeat rewrite Map.add_minus.
-      all: eauto.
-      constructor.
-    + cbn.
-      induction (generate t).
-      1: constructor.
-      cbn.
-      apply sounde_mon.
-      2: auto.
-      induction (verify_sound σ E a).
-      1: constructor.
-      cbn.
-      constructor.
-      1: auto.
-      constructor.
+Lemma In_mon {A} {a: A} {l r}:
+  List.In a (l ++ r) →
+  List.In a l ∨ List.In a r.
+Proof.
+  intros.
+  induction l.
+  1: auto.
+  cbn in *.
+  destruct H.
+  - subst.
+    left.
+    left.
+    auto.
+  - destruct (IHl H).
+    + left.
+      right.
+      auto.
+    + right.
       auto.
 Qed.
 
-(* FIXME type check *)
-Record span := {
-  s: Set ;
-  π1: s → store ;
-  π2: s → intro ;
-}.
+Lemma In_inl {A} {a: A} {l r}:
+  List.In a l →
+  List.In a (l ++ r).
+Proof.
+  intros.
+  induction l.
+  1: contradiction.
+  cbn in *.
+  destruct H.
+  - left.
+    auto.
+  - right.
+    auto.
+Qed.
+
+Lemma In_inr {A} {a: A} {l r}:
+  List.In a r →
+  List.In a (l ++ r).
+Proof.
+  intros.
+  induction l.
+  1: auto.
+  cbn in *.
+  right.
+  auto.
+Qed.
+
+Theorem verify_complete {ρ E v p'}:
+  accepts ρ E v p' →
+  List.In p' (verify ρ E v)
+with search_complete {ρ e v ρ'}:
+  produces ρ e v ρ' →
+  List.In ((ρ' |- v)) (search ρ e).
+Proof using.
+  Open Scope list.
+  - intro q.
+    destruct q.
+    all: cbn.
+    + left.
+      auto.
+    + assert (q1' := verify_complete _ _ _ _ q1).
+      assert (q2' := verify_complete _ _ _ _ q2).
+      clear q1 q2.
+      induction (verify ρ1 E v).
+      1: inversion q1'.
+      cbn in *.
+      destruct q1'.
+      2: apply In_inr.
+      2: auto.
+      apply In_inl.
+      subst.
+      auto.
+    + assert (q' := verify_complete _ _ _ _ q).
+      clear q.
+      induction (verify ((x, v1) :: ρ1) E v2).
+      1: inversion q'.
+      cbn in *.
+      destruct q'.
+      2: apply In_inr.
+      2: auto.
+      apply In_inl.
+      clear IHl.
+      destruct a.
+      1: discriminate.
+      inversion H.
+      subst.
+      destruct eq_var.
+      2: contradiction.
+      cbn.
+      auto.
+    + assert (H' := search_complete _ _ _ _ H).
+      clear H.
+      induction (search ρ1 e).
+      1: contradiction.
+      cbn in *.
+      destruct H'.
+      2: apply In_inr.
+      2: auto.
+      apply In_inl.
+      clear IHl.
+      destruct a.
+      inversion H.
+      subst.
+      destruct eq_intro.
+      2: contradiction.
+      cbn.
+      auto.
+  - intro q.
+    destruct q.
+    all: cbn.
+    + replace (take x ρ) with (Some (v, ρ')).
+      1: cbv; auto.
+      induction H.
+      * cbn.
+        destruct eq_var.
+        2:contradiction.
+        auto.
+      * cbn.
+        destruct eq_var.
+        1: subst; contradiction.
+        rewrite <- IHpmem.
+        auto.
+    + assert (q' := search_complete _ _ _ _ q).
+      assert (H' := verify_complete _ _ _ _ H).
+      clear q H.
+      admit.
+    + admit.
+    + admit.
+    + admit.
+Admitted.
+
+Theorem verify_sound {ρ E v}:
+  List.Forall (accepts ρ E v) (verify ρ E v)
+with search_sound {ρ e}:
+  List.Forall (λ '(p' |- v), produces ρ e v p') (search ρ e).
+Proof using.
+  Open Scope list.
+  - destruct E.
+    all: cbn.
+    + destruct v.
+      1,3: constructor.
+      induction (verify_sound ((x, v1) :: ρ) E v2).
+      all: cbn.
+      1: constructor.
+      apply Forall_mon.
+      2: auto.
+      clear IHf.
+      destruct x0.
+      1: auto.
+      destruct p as [y v].
+      destruct eq_var.
+      all: cbn.
+      2: auto.
+      constructor.
+      2: auto.
+      subst.
+      econstructor.
+      eauto.
+    + destruct v.
+      2,3: constructor.
+      constructor.
+      2: constructor.
+      constructor.
+    + destruct v.
+      1,3: constructor.
+      induction (verify_sound ρ E1 v1).
+      1: constructor.
+      cbn.
+      apply Forall_mon.
+      2: auto.
+      clear IHf.
+      induction (verify_sound x E2 v2).
+      all: cbn.
+      all: auto.
+      constructor.
+      2: auto.
+      econstructor.
+      all: eauto.
+    + induction (search_sound ρ e).
+      all: cbn.
+      1: constructor.
+      apply Forall_mon.
+      2: auto.
+      clear IHf.
+      destruct x.
+      destruct eq_intro.
+      all: cbn.
+      all: auto.
+      constructor.
+      2: auto.
+      constructor.
+      subst.
+      auto.
+  - destruct e.
+    all: cbn.
+    + destruct (take x ρ) eqn:q.
+      2: constructor.
+      destruct p.
+      constructor.
+      2: constructor.
+      constructor.
+      clear verify_sound search_sound.
+      generalize dependent i.
+      generalize dependent l.
+      functional induction (take x ρ).
+      all: try discriminate.
+      all: intros ? ? q.
+      all: inversion q.
+      all: subst.
+      all: clear q.
+      * constructor.
+      * constructor.
+        all: eauto.
+    + induction (search_sound ρ e).
+      1: constructor.
+      cbn.
+      apply Forall_mon.
+      2: auto.
+      clear IHf.
+      destruct x.
+      destruct v.
+      all: cbn.
+      all: auto.
+      induction (verify_sound ρ0 E' v1).
+      all: cbn.
+      all: auto.
+      constructor.
+      2: auto.
+      econstructor.
+      all: eauto.
+    + induction (generate t).
+      all: cbn in *.
+      1: constructor.
+      apply Forall_mon.
+      all: auto.
+      clear IHl.
+      induction (search_sound ρ e).
+      1: constructor.
+      cbn.
+      apply Forall_mon.
+      2: auto.
+      clear IHf.
+      destruct x.
+      destruct v.
+      all: cbn.
+      all: auto.
+      all: auto.
+      induction (verify_sound ρ0 E' a).
+      all: auto.
+      all: cbn.
+      1: constructor.
+      constructor.
+      all: auto.
+      econstructor.
+      all: eauto.
+    + induction (generate t).
+      all: cbn in *.
+      1: constructor.
+      apply Forall_mon.
+      all: auto.
+      clear IHl.
+      induction (search_sound  ρ e).
+      1: constructor.
+      cbn in *.
+      apply Forall_mon.
+      2: auto.
+      destruct x0.
+      destruct v.
+      all: cbn.
+      1,3: constructor.
+      clear IHf.
+      clear f.
+      rewrite List.app_nil_r in *.
+      cbn.
+      induction (verify_sound ((y, v2) :: (x, v1) :: ρ0) E' a).
+      all: cbn.
+      1: constructor.
+      apply Forall_mon.
+      all: auto.
+      destruct x0.
+      1: constructor.
+      destruct p.
+      clear IHf.
+      destruct x0.
+      1: constructor.
+      destruct p.
+      destruct eq_var.
+      2: constructor.
+      destruct eq_var.
+      2: constructor.
+      constructor.
+      2: constructor.
+      subst.
+      econstructor.
+      all: eauto.
+    + induction (generate t).
+      1: constructor.
+      cbn.
+      apply Forall_mon.
+      2: auto.
+      clear IHl.
+      induction (verify_sound ρ E a).
+      1: constructor.
+      cbn.
+      constructor.
+      all: auto.
+      constructor.
+      auto.
+Qed.
 
 Definition useonce Γ u: usage := List.map (λ '(x, t), (x, u)) Γ.
 
@@ -732,5 +852,3 @@ Arguments to {A B}.
 Arguments from {A B}.
 Arguments to_from {A B}.
 Arguments from_to {A B}.
-
-Inductive tr A: Prop := | tr_intro (a: A).

@@ -5,7 +5,6 @@ Bind Scope list_scope with subst.
 Bind Scope list_scope with vars.
 Bind Scope list_scope with usage.
 Bind Scope list_scope with spans.
-Bind Scope list_scope with stores.
 
 Infix "*" := t_prod.
 

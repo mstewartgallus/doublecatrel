@@ -35,22 +35,12 @@ nat, n :: 'n_' ::= {{ coq nat }}
   | len D      :: M :: lenD {{ coq (length [[D]]) }}
   | ( n )      :: S :: paren {{ icho ([[n]]) }}
 
-store, S {{ tex \sigma }} {{ coq σ }} :: 'S_'  ::= {{ coq (Map.map intro) }}
-  | nil                   :: M :: empty {{ coq (Map.empty) }}
-  | x := v            :: M :: one {{ coq (Map.one [[x]] [[v]]) }}
-  | S , S'                :: M :: add {{ coq (Map.merge [[S']] [[S]]) }}
-  | S ++ S'               :: M :: merge {{ coq (Map.merge [[S]] [[S']]) }}
-
 span, P :: 'P_' ::=
-  | S |- v  ::   :: with
+  | p |- v  ::   :: with
 
 spans, Ps {{ tex P^* }} :: 'Ps_' ::= {{ coq (list span) }}
   | nil          ::   :: nil {{ coq nil }}
   | Ps , P       ::   :: cons {{ coq (cons [[P]] [[Ps]]) }}
-
-stores, Ss {{ tex S^* }} :: 'Ss_' ::= {{ coq (list store) }}
-  | nil          ::   :: nil {{ coq nil }}
-  | Ss , S       ::   :: cons {{ coq (cons [[S]] [[Ss]]) }}
 
 vars, xs {{ tex x^* }} :: 'xs_' ::= {{ coq (list var) }}
   | nil          ::   :: nil {{ coq nil }}
@@ -60,7 +50,6 @@ vars, xs {{ tex x^* }} :: 'xs_' ::= {{ coq (list var) }}
 terminals :: 'terminals_' ::=
   | :            ::   :: in     {{ tex \colon{} }}
   | |-           ::   :: turnstile   {{ tex \vdash{} }}
-  | ===          ::   :: eequiv   {{ tex \equiv{} }}
   | :=           ::   :: update  {{ tex \mathbin{:=} }}
   | ->           ::   :: to  {{ tex \rightarrow }}
   | &            ::   :: act  {{ tex \cdot }}
@@ -69,7 +58,7 @@ terminals :: 'terminals_' ::=
   | *            ::   :: prod  {{ tex \otimes{} }}
   | used         ::   :: used  {{ tex \textbf{s} }}
   | unused       ::   :: unused  {{ tex \textbf{f} }}
-  | #            ::   :: xbox  {{ tex \mathrel{\boxtimes} }}
+  | #            ::   :: leaves  {{ tex \mathrel{\boxtimes} }}
   | tt           ::   :: tt   {{ tex \mathop{ \textbf ! } }}
   | fst          ::   :: fst  {{ tex \pi{}_1 }}
   | snd          ::   :: snd  {{ tex \pi{}_2 }}
@@ -87,9 +76,6 @@ terminals :: 'terminals_' ::=
   | !=           ::   :: ne     {{ tex \mathrel{\ne} }}
   | ==           ::   :: equiv   {{ tex \mathrel{\sim} }}
 
-parsing
-  S_add left S_add
-
 substitutions
   single E x :: subst
   single e x :: subst
@@ -104,14 +90,6 @@ formula :: formula_ ::=
  | x != y                           :: M :: neqx {{ icho ([[x]] <> [[y]]) }}
  | x = y                            :: M :: eqx {{ icho ([[x]] = [[y]]) }}
  | n = n'                           :: M :: eqn {{ icho ([[n]] = [[n']]) }}
-
-funs
-  xsofG ::=
-fun
-  xsof G :: xs :: xsof
-by
-  xsof nil === nil
-  xsof (G , x : t) === xsof G , x
 
 defns
 
@@ -233,79 +211,113 @@ G |- neu e \check t
 
 defns
 
-sat :: '' ::= {{ coq-universe Type }}
+pfind :: '' ::=
 
 defn
-S |- e [ v ] ::   :: produces :: 'produces_' {{ tex [[S]] \mathrel{\vdash} [[e]] [ [[v]] ] }}
+x := v \in p # p' ::   :: pmem :: 'pmem_'
 by
 
--------------------------- :: var
-x := v |- x [ v ]
+----------------------------- :: eq
+x := v \in p, x := v # p, x := tt
 
-S |- e [ tt ]
-S' |- E' [ v ]
-------------------------------- :: step
-S ++ S' |- (e; E': t) [ v ]
+x != y
+x := v \in p # p'
+------------------------------------- :: ne
+x := v \in p, y := v' # p', y := v'
 
-S |- e [v0, v1]
-S', x := v0, y := v1 |- E' [ v2 ]
------------------------------------------------- :: let
-S ++ S' |- (let x, y = e in E' : t) [ v2 ]
-
-S |- e [ v, v' ]
-S' |- E' [v]
------------------------------ :: app
-S ++ S' |- (e E') [ v' ]
-
-S |- E [ v ]
-------------------------- :: cut
-S |- (cut E t) [ v ]
-
-defn
-S |- E [ v ] ::   :: accepts :: 'accepts_' {{ tex [[S]] \mathrel{\vdash} [[E]] [ [[v]] ] }}
-by
-
---------------- :: tt
-nil |- tt [tt]
-
-S |- E [v]
-S' |- E' [v']
---------------------------- :: fanout
-S ++ S' |- (E, E') [v, v']
-
-S, x := v |- E [ v' ]
------------------------------------- :: lam
-S |- (lam x. E) [ v, v' ]
-
-S |- e [ v ]
---------------------------- :: neu
-S |- (neu e) [ v ]
 
 defns
 
-sound :: '' ::= {{ coq-universe Type }}
+sat :: '' ::=
 
 defn
-E [ Ss ; v ] ::   :: sound :: 'sound_'
+  p |- e [ v ] # p' ::   :: produces :: 'produces_'
 by
 
-------------- :: nil
-E [ nil ; v ]
+x := v \in p # p'
+-------------------- :: var
+p |- x [ v ] # p'
 
-E [ Ss ; v ]
-S |- E [v]
------------------ :: cons
-E [ Ss, S ; v ]
+p1 |- e [ tt ] # p2
+p2 |- E' [ v ] # p3
+------------------------------- :: step
+p1 |- (e; E': t) [ v ] # p3
 
+p1 |- e [v0, v1] # p2
+p2, x := v0, y := v1 |- E' [ v2 ] # p3, x := v0', y := v1'
+----------------------------------------------------------- :: let
+p1 |- (let x, y = e in E' : t) [ v2 ] # p3
+
+p1 |- e [ v, v' ] # p2
+p2 |- E' [v] # p3
+----------------------------- :: app
+p1 |- (e E') [ v' ] # p3
+
+p1 |- E [ v ] # p2
+----------------------------- :: cut
+p1 |- (cut E t) [ v ] # p2
 
 defn
-e [ Ps ] ::   :: sounde :: 'sounde_'
+  p |- E [ v ] # p' ::   :: accepts :: 'accepts_'
 by
 
--------------- :: nil
-e [ nil ]
+--------------- :: tt
+p |- tt [tt] # p
 
-e [ Ps ]
-S |- e [v]
--------------------- :: cons
-e [ Ps , S |- v ]
+p1 |- E [v] # p2
+p2 |- E' [v'] # p3
+--------------------------- :: fanout
+p1 |- (E, E') [v, v'] # p3
+
+p1, x := v1 |- E [ v2 ] # p2, x := v1'
+-------------------------------------- :: lam
+p1 |- (lam x. E) [ v1, v2 ] # p2
+
+p1 |- e [ v ] # p2
+--------------------------- :: neu
+p1 |- (neu e) [ v ] # p2
+
+defns
+
+dummy :: '' ::=
+
+defn
+dumdum ::   :: sound :: 'sound_'
+by
+
+defns
+
+jdummy :: '' ::=
+
+defn
+jdumdum ::   :: jsound :: 'jsound_'
+by
+
+% defns
+
+% sound :: '' ::= {{ coq-universe Type }}
+
+% defn
+% E [ Ss ; v ] ::   :: sound :: 'sound_'
+% by
+
+% ------------- :: nil
+% E [ nil ; v ]
+
+% E [ Ss ; v ]
+% p |- E [v] # p'
+% ----------------- :: cons
+% E [ Ss, p ; v ]
+
+
+% defn
+% e [ Ps ] ::   :: sounde :: 'sounde_'
+% by
+
+% -------------- :: nil
+% e [ nil ]
+
+% e [ Ps ]
+% S |- e [v]
+% -------------------- :: cons
+% e [ Ps , S |- v ]

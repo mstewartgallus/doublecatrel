@@ -36,14 +36,14 @@ Inductive elim : Set :=
  | V_fst (V:elim)
  | V_snd (V:elim).
 
+Definition environment : Set := (Assoc.assoc type).
+
 Inductive intro : Set := 
  | v_tt : intro
  | v_fanout (v:intro) (v':intro)
  | v_neu (V:elim).
-
 Definition subst : Set := (Assoc.assoc intro).
 
-Definition environment : Set := (Assoc.assoc type).
 Lemma eq_elim: forall (x y : elim), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -136,14 +136,9 @@ Inductive bigv : subst -> intro -> intro -> Prop :=    (* defn bigv *)
 Require Blech.Map.
 
 
-Definition store : Set := (Map.map intro).
-
 Inductive use : Set := 
  | u_used : use
  | u_unused : use.
-
-Inductive span : Set := 
- | P_with (σ:store) (v:intro).
 
 Definition usage : Set := (Assoc.assoc use).
 
@@ -159,13 +154,14 @@ with redex : Set :=
  | e_let (x:var) (y:var) (e:redex) (E':context) (t:type)
  | e_cut (E:context) (t:type).
 
-Definition spans : Set := (list span).
-
-Definition stores : Set := (list store).
+Inductive span : Set := 
+ | P_with (ρ:subst) (v:intro).
 
 Definition nat : Set := nat.
 
 Definition vars : Set := (list var).
+
+Definition spans : Set := (list span).
 Lemma eq_use: forall (x y : use), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -213,16 +209,7 @@ end.
 
 Definition subst_span (V5:elim) (x5:var) (P5:span) : span :=
   match P5 with
-  | (P_with σ v) => P_with σ (subst_intro V5 x5 v)
-end.
-
-(** definitions *)
-
-(** funs xsofG *)
-Fixpoint xsof (x1:environment) : vars:=
-  match x1 with
-  |  nil  =>  nil 
-  |  (  (cons ( x ,  t )  Γ )  )  =>  (cons  x    (xsof Γ )  ) 
+  | (P_with ρ v) => P_with ρ (subst_intro V5 x5 v)
 end.
 
 (** definitions *)
@@ -307,54 +294,56 @@ with check : environment -> context -> type -> Prop :=    (* defn check *)
      check Γ (E_neu e) t.
 (** definitions *)
 
-(* defns sat *)
-Inductive produces : store -> redex -> intro -> Type :=    (* defn produces *)
- | produces_var : forall (x:var) (v:intro),
-     produces  (Map.one  x   v )  (e_var x) v
- | produces_step : forall (σ σ':store) (e:redex) (E':context) (t:type) (v:intro),
-     produces σ e v_tt ->
-     accepts σ' E' v ->
-     produces  (Map.merge  σ   σ' )   ( (e_step e E' t) )  v
- | produces_let : forall (σ σ':store) (x y:var) (e:redex) (E':context) (t:type) (v2 v0 v1:intro),
-     produces σ e (v_fanout v0 v1) ->
-     accepts  (Map.merge   (Map.one  y   v1 )     (Map.merge   (Map.one  x   v0 )    σ' )  )  E' v2 ->
-     produces  (Map.merge  σ   σ' )   ( (e_let x y e E' t) )  v2
- | produces_app : forall (σ σ':store) (e:redex) (E':context) (v' v:intro),
-     produces σ e (v_fanout v v') ->
-     accepts σ' E' v ->
-     produces  (Map.merge  σ   σ' )   ( (e_app e E') )  v'
- | produces_cut : forall (σ:store) (E:context) (t:type) (v:intro),
-     accepts σ E v ->
-     produces σ  ( (e_cut E t) )  v
-with accepts : store -> context -> intro -> Type :=    (* defn accepts *)
- | accepts_tt : 
-     accepts  (Map.empty)  E_tt v_tt
- | accepts_fanout : forall (σ σ':store) (E E':context) (v v':intro),
-     accepts σ E v ->
-     accepts σ' E' v' ->
-     accepts  (Map.merge  σ   σ' )   ( (E_fanout E E') )  (v_fanout v v')
- | accepts_lam : forall (σ:store) (x:var) (E:context) (v v':intro),
-     accepts  (Map.merge   (Map.one  x   v )    σ )  E v' ->
-     accepts σ  ( (E_lam x E) )  (v_fanout v v')
- | accepts_neu : forall (σ:store) (e:redex) (v:intro),
-     produces σ e v ->
-     accepts σ  ( (E_neu e) )  v.
+(* defns pfind *)
+Inductive pmem : var -> intro -> subst -> subst -> Prop :=    (* defn pmem *)
+ | pmem_eq : forall (x:var) (v:intro) (ρ:subst),
+     pmem x v  (cons ( x ,  v )  ρ )   (cons ( x ,  v_tt )  ρ ) 
+ | pmem_ne : forall (x:var) (v:intro) (ρ:subst) (y:var) (v':intro) (ρ':subst),
+      ( x  <>  y )  ->
+     pmem x v ρ ρ' ->
+     pmem x v  (cons ( y ,  v' )  ρ )   (cons ( y ,  v' )  ρ' ) .
 (** definitions *)
 
-(* defns sound *)
-Inductive sound : context -> stores -> intro -> Type :=    (* defn sound *)
- | sound_nil : forall (E:context) (v:intro),
-     sound E  nil  v
- | sound_cons : forall (E:context) (Ss:stores) (σ:store) (v:intro),
-     sound E Ss v ->
-     accepts σ E v ->
-     sound E  (cons  σ   Ss )  v
-with sounde : redex -> spans -> Type :=    (* defn sounde *)
- | sounde_nil : forall (e:redex),
-     sounde e  nil 
- | sounde_cons : forall (e:redex) (Ps:spans) (σ:store) (v:intro),
-     sounde e Ps ->
-     produces σ e v ->
-     sounde e  (cons  (P_with σ v)   Ps ) .
+(* defns sat *)
+Inductive produces : subst -> redex -> intro -> subst -> Prop :=    (* defn produces *)
+ | produces_var : forall (ρ:subst) (x:var) (v:intro) (ρ':subst),
+     pmem x v ρ ρ' ->
+     produces ρ (e_var x) v ρ'
+ | produces_step : forall (ρ1:subst) (e:redex) (E':context) (t:type) (v:intro) (ρ3 ρ2:subst),
+     produces ρ1 e v_tt ρ2 ->
+     accepts ρ2 E' v ρ3 ->
+     produces ρ1  ( (e_step e E' t) )  v ρ3
+ | produces_let : forall (ρ1:subst) (x y:var) (e:redex) (E':context) (t:type) (v2:intro) (ρ3:subst) (v0 v1:intro) (ρ2:subst) (v0' v1':intro),
+     produces ρ1 e (v_fanout v0 v1) ρ2 ->
+     accepts  (cons ( y ,  v1 )   (cons ( x ,  v0 )  ρ2 )  )  E' v2  (cons ( y ,  v1' )   (cons ( x ,  v0' )  ρ3 )  )  ->
+     produces ρ1  ( (e_let x y e E' t) )  v2 ρ3
+ | produces_app : forall (ρ1:subst) (e:redex) (E':context) (v':intro) (ρ3:subst) (v:intro) (ρ2:subst),
+     produces ρ1 e (v_fanout v v') ρ2 ->
+     accepts ρ2 E' v ρ3 ->
+     produces ρ1  ( (e_app e E') )  v' ρ3
+ | produces_cut : forall (ρ1:subst) (E:context) (t:type) (v:intro) (ρ2:subst),
+     accepts ρ1 E v ρ2 ->
+     produces ρ1  ( (e_cut E t) )  v ρ2
+with accepts : subst -> context -> intro -> subst -> Prop :=    (* defn accepts *)
+ | accepts_tt : forall (ρ:subst),
+     accepts ρ E_tt v_tt ρ
+ | accepts_fanout : forall (ρ1:subst) (E E':context) (v v':intro) (ρ3 ρ2:subst),
+     accepts ρ1 E v ρ2 ->
+     accepts ρ2 E' v' ρ3 ->
+     accepts ρ1  ( (E_fanout E E') )  (v_fanout v v') ρ3
+ | accepts_lam : forall (ρ1:subst) (x:var) (E:context) (v1 v2:intro) (ρ2:subst) (v1':intro),
+     accepts  (cons ( x ,  v1 )  ρ1 )  E v2  (cons ( x ,  v1' )  ρ2 )  ->
+     accepts ρ1  ( (E_lam x E) )  (v_fanout v1 v2) ρ2
+ | accepts_neu : forall (ρ1:subst) (e:redex) (v:intro) (ρ2:subst),
+     produces ρ1 e v ρ2 ->
+     accepts ρ1  ( (E_neu e) )  v ρ2.
+(** definitions *)
+
+(* defns dummy *)
+Inductive sound : Prop :=    (* defn sound *).
+(** definitions *)
+
+(* defns jdummy *)
+Inductive jsound : Prop :=    (* defn jsound *).
 
 
