@@ -133,14 +133,10 @@ Inductive bigv : subst -> intro -> intro -> Prop :=    (* defn bigv *)
  | bigv_neu : forall (ρ:subst) (V:elim) (v:intro),
      bigV ρ V v ->
      bigv ρ (v_neu V) v.
-Require Blech.Map.
-
 
 Inductive use : Set := 
  | u_used : use
  | u_unused : use.
-
-Definition usage : Set := (Assoc.assoc use).
 
 Inductive context : Set := 
  | E_lam (x:var) (E:context)
@@ -154,12 +150,10 @@ with redex : Set :=
  | e_let (x:var) (y:var) (e:redex) (E':context) (t:type)
  | e_cut (E:context) (t:type).
 
+Definition usage : Set := (Assoc.assoc use).
+
 Inductive span : Set := 
  | P_with (ρ:subst) (v:intro).
-
-Definition nat : Set := nat.
-
-Definition vars : Set := (list var).
 
 Definition spans : Set := (list span).
 Lemma eq_use: forall (x y : use), {x = y} + {x <> y}.
@@ -337,13 +331,5 @@ with accepts : subst -> context -> intro -> subst -> Prop :=    (* defn accepts 
  | accepts_neu : forall (ρ1:subst) (e:redex) (v:intro) (ρ2:subst),
      produces ρ1 e v ρ2 ->
      accepts ρ1  ( (E_neu e) )  v ρ2.
-(** definitions *)
-
-(* defns dummy *)
-Inductive sound : Prop :=    (* defn sound *).
-(** definitions *)
-
-(* defns jdummy *)
-Inductive jsound : Prop :=    (* defn jsound *).
 
 

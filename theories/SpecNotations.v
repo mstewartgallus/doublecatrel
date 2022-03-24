@@ -2,7 +2,6 @@ Require Import Blech.Spec.
 
 Bind Scope list_scope with environment.
 Bind Scope list_scope with subst.
-Bind Scope list_scope with vars.
 Bind Scope list_scope with usage.
 Bind Scope list_scope with spans.
 

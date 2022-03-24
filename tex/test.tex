@@ -92,15 +92,6 @@
 \ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\Delta  \ottsym{,}  \mathit{x}  \ottsym{[}  \ottnt{u}  \ottsym{]}}{}{}{}{}}
 
-\newcommand{\ottnat}{
-\ottrulehead{\ottnt{nat}  ,\ \ottnt{n}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\ottsym{0}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{ \ottnt{n}  + 1 }{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottkw{len} \, x^*} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottkw{len} \, \Gamma} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottkw{len} \, \Delta} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottsym{(}  \ottnt{n}  \ottsym{)}} {\textsf{S}}{}{}{}}
-
 \newcommand{\ottspan}{
 \ottrulehead{\ottnt{span}  ,\ \ottnt{P}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\rho  \vdash{}  \ottnt{v}}{}{}{}{}}
@@ -109,12 +100,6 @@
 \ottrulehead{\ottnt{spans}  ,\ P^*}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{P^*  \ottsym{,}  \ottnt{P}}{}{}{}{}}
-
-\newcommand{\ottvars}{
-\ottrulehead{\ottnt{vars}  ,\ x^*}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{x^*  \ottsym{,}  \mathit{x}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottsym{(}  x^*  \ottsym{)}} {\textsf{S}}{}{}{}}
 
 \newcommand{\ottterminals}{
 \ottrulehead{\ottnt{terminals}}{::=}{}\ottprodnewline
@@ -151,7 +136,7 @@
 \ottfirstprodline{|}{\ottnt{judgement}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\mathit{x}  \mathrel{\ne}  \mathit{y}} {\textsf{M}}{}{}{}\ottprodnewline
 \ottprodline{|}{\mathit{x}  \ottsym{=}  \mathit{y}} {\textsf{M}}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{n}  \ottsym{=}  \ottnt{n'}} {\textsf{M}}{}{}{}}
+\ottprodline{|}{\ottkw{n} \, \ottsym{=}  \ottsym{n'}} {\textsf{M}}{}{}{}}
 
 \newcommand{\ottetaXXexpand}{
 \ottrulehead{\ottnt{eta\_expand}}{::=}{}\ottprodnewline
@@ -201,14 +186,6 @@
 \ottfirstprodline{|}{\rho  \vdash{}  \ottnt{e}  \ottsym{[}  \ottnt{v}  \ottsym{]}  \mathrel{\boxtimes}  \rho'}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\rho  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{v}  \ottsym{]}  \mathrel{\boxtimes}  \rho'}{}{}{}{}}
 
-\newcommand{\ottdummy}{
-\ottrulehead{\ottnt{dummy}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\ottkw{dumdum}}{}{}{}{}}
-
-\newcommand{\ottjdummy}{
-\ottrulehead{\ottnt{jdummy}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\ottkw{jdumdum}}{}{}{}{}}
-
 \newcommand{\ottjudgement}{
 \ottrulehead{\ottnt{judgement}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottnt{find}}{}{}{}{}\ottprodnewline
@@ -220,9 +197,7 @@
 \ottprodline{|}{\ottnt{scope}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{judge\_context}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{pfind}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{sat}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{dummy}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{jdummy}}{}{}{}{}}
+\ottprodline{|}{\ottnt{sat}}{}{}{}{}}
 
 \newcommand{\ottuserXXsyntax}{
 \ottrulehead{\ottnt{user\_syntax}}{::=}{}\ottprodnewline
@@ -237,10 +212,8 @@
 \ottprodline{|}{\ottnt{redex}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{use}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{usage}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{nat}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{span}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{spans}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{vars}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{terminals}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{formula}}{}{}{}{}}
 
@@ -254,10 +227,8 @@
 \ottredex\ottinterrule
 \ottuse\ottinterrule
 \ottusage\ottinterrule
-\ottnat\ottinterrule
 \ottspan\ottinterrule
 \ottspans\ottinterrule
-\ottvars\ottinterrule
 \ottterminals\ottinterrule
 \ottformula\ottinterrule
 \ottetaXXexpand\ottinterrule
@@ -271,8 +242,6 @@
 \ottjudgeXXcontext\ottinterrule
 \ottpfind\ottinterrule
 \ottsat\ottinterrule
-\ottdummy\ottinterrule
-\ottjdummy\ottinterrule
 \ottjudgement\ottinterrule
 \ottuserXXsyntax\ottafterlastrule
 }}
@@ -815,26 +784,6 @@
 \newcommand{\ottdefnssat}{
 \ottdefnproduces{}\ottdefnaccepts{}}
 
-% defns dummy
-%% defn sound
-
-\newcommand{\ottdefnsound}[1]{\begin{ottdefnblock}[#1]{$\ottkw{dumdum}$}{}
-\end{ottdefnblock}}
-
-
-\newcommand{\ottdefnsdummy}{
-\ottdefnsound{}}
-
-% defns jdummy
-%% defn jsound
-
-\newcommand{\ottdefnjsound}[1]{\begin{ottdefnblock}[#1]{$\ottkw{jdumdum}$}{}
-\end{ottdefnblock}}
-
-
-\newcommand{\ottdefnsjdummy}{
-\ottdefnjsound{}}
-
 \newcommand{\ottdefnss}{
 \ottfundefnsetaXXexpand
 \ottdefnsfind
@@ -847,8 +796,6 @@
 \ottdefnsjudgeXXcontext
 \ottdefnspfind
 \ottdefnssat
-\ottdefnsdummy
-\ottdefnsjdummy
 }
 
 \newcommand{\ottall}{\ottmetavars\\[0pt]

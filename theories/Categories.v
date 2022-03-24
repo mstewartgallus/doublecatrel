@@ -4,7 +4,6 @@ Require Import Blech.SpecNotations.
 Require Blech.Environment.
 Require Blech.Term.
 Require Blech.Context.
-Require Blech.Map.
 Require Blech.Assoc.
 
 Require Import Coq.Unicode.Utf8.
@@ -13,7 +12,6 @@ Require Import Coq.Program.Tactics.
 Require Import Coq.Lists.List.
 
 Import IfNotations.
-Import Map.MapNotations.
 Import List.ListNotations.
 
 Require Import FunInd.
@@ -25,7 +23,7 @@ Implicit Type t: type.
 Implicit Type v: intro.
 Implicit Type V: elim.
 Implicit Types x y: var.
-Implicit Type σ: store.
+Implicit Type ρ: subst.
 
 Module Import Hor.
   #[local]
@@ -49,14 +47,14 @@ Module Import Hor.
 
   #[program]
    Definition compose {A B C} (f: Hor B C) (g: Hor A B): Hor A C :=
-    Term.hsubst_intro_dfl [(X, proj1_sig g)] (proj1_sig f).
+    Term.eval_intro_dfl [(X, proj1_sig g)] (proj1_sig f).
 
   Next Obligation.
   Proof.
     rewrite Term.typecheck_complete.
     1: cbv.
     1: auto.
-    eapply Term.hsubst_preserve_intro.
+    eapply Term.eval_preserve_intro.
     - constructor.
       2:constructor.
       apply (Term.typecheck_sound (proj2_sig g)).
@@ -78,7 +76,7 @@ Module Import Hor.
     unfold Term.equiv, compose, id.
     destruct f as [f ?].
     cbn.
-    apply (Term.hsubst_intro_idsubst (Term.typecheck_sound i)).
+    apply (Term.eval_intro_idsubst (Term.typecheck_sound i)).
   Qed.
 
   Lemma compose_assoc {A B C D} (f: Hor C D) (g: Hor B C) (h: Hor A B):
@@ -88,7 +86,7 @@ Module Import Hor.
     cbn.
     unfold Term.equiv, compose.
     cbn.
-    eapply Term.hsubst_intro_assoc.
+    eapply Term.eval_intro_assoc.
     all: apply Term.typecheck_sound.
     all: eauto.
   Qed.

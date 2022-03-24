@@ -1,7 +1,3 @@
-embed
-{{ coq-preamble
-Require Blech.Map.
-}}
 grammar
 
 context, E :: 'E_' ::=
@@ -27,25 +23,12 @@ usage, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (Assoc.assoc use) }}
   | nil                  ::   :: nil {{ coq nil }}
   | D , x [ u ]          ::   :: cons {{ coq (cons ([[x]], [[u]]) [[D]]) }}
 
-nat, n :: 'n_' ::= {{ coq nat }}
-  | 0          ::  :: zero {{ coq 0 }}
-  | S n        ::  :: succ {{ coq (S [[n]]) }} {{ tex [[n]] + 1 }}
-  | len xs     :: M :: lenxs {{ coq (length [[xs]]) }}
-  | len G      :: M :: lenG {{ coq (length [[G]]) }}
-  | len D      :: M :: lenD {{ coq (length [[D]]) }}
-  | ( n )      :: S :: paren {{ icho ([[n]]) }}
-
 span, P :: 'P_' ::=
   | p |- v  ::   :: with
 
 spans, Ps {{ tex P^* }} :: 'Ps_' ::= {{ coq (list span) }}
   | nil          ::   :: nil {{ coq nil }}
   | Ps , P       ::   :: cons {{ coq (cons [[P]] [[Ps]]) }}
-
-vars, xs {{ tex x^* }} :: 'xs_' ::= {{ coq (list var) }}
-  | nil          ::   :: nil {{ coq nil }}
-  | xs , x       ::   :: cons {{ coq (cons [[x]] [[xs]]) }}
-  | ( xs )       :: S :: paren {{ coq ([[xs]]) }}
 
 terminals :: 'terminals_' ::=
   | :            ::   :: in     {{ tex \colon{} }}
@@ -217,7 +200,7 @@ defn
 x := v \in p # p' ::   :: pmem :: 'pmem_'
 by
 
------------------------------ :: eq
+--------------------------------- :: eq
 x := v \in p, x := v # p, x := tt
 
 x != y
@@ -276,48 +259,3 @@ p1 |- (lam x. E) [ v1, v2 ] # p2
 p1 |- e [ v ] # p2
 --------------------------- :: neu
 p1 |- (neu e) [ v ] # p2
-
-defns
-
-dummy :: '' ::=
-
-defn
-dumdum ::   :: sound :: 'sound_'
-by
-
-defns
-
-jdummy :: '' ::=
-
-defn
-jdumdum ::   :: jsound :: 'jsound_'
-by
-
-% defns
-
-% sound :: '' ::= {{ coq-universe Type }}
-
-% defn
-% E [ Ss ; v ] ::   :: sound :: 'sound_'
-% by
-
-% ------------- :: nil
-% E [ nil ; v ]
-
-% E [ Ss ; v ]
-% p |- E [v] # p'
-% ----------------- :: cons
-% E [ Ss, p ; v ]
-
-
-% defn
-% e [ Ps ] ::   :: sounde :: 'sounde_'
-% by
-
-% -------------- :: nil
-% e [ nil ]
-
-% e [ Ps ]
-% S |- e [v]
-% -------------------- :: cons
-% e [ Ps , S |- v ]

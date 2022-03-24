@@ -5,13 +5,10 @@
 theories/Assoc.v
 theories/OptionNotations.v
 theories/Opaque.v
-theories/Map.v
-theories/Multiset.v
 theories/Spec.v
 theories/SpecNotations.v
 theories/Environment.v
 theories/Category.v
 theories/Term.v
 theories/Context.v
-theories/Hoare.v
 theories/Categories.v

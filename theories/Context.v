@@ -21,7 +21,6 @@ Implicit Type Δ: usage.
 Implicit Type E: context.
 Implicit Type t: type.
 Implicit Types x y: var.
-Implicit Type xs: vars.
 Implicit Type ρ: subst.
 Implicit Type v: intro.
 
@@ -461,7 +460,7 @@ Fixpoint verify ρ E v: list subst :=
       then [ρ']
       else []
   | _, _ => []
-  end%list %map
+  end%list
 with search ρ e: list span :=
   match e with
   | e_var x => if take x ρ is Some (v, ρ') then [ρ' |- v] else []
@@ -503,7 +502,7 @@ with search ρ e: list span :=
       do v ← generate t ;
       do ρ' ← verify ρ E v ;
       [ρ' |- v]
-  end%list %map.
+  end%list.
 
 Lemma Forall_mon {A} {p: A → _} {l r}:
   List.Forall p l → List.Forall p r →
