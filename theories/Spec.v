@@ -145,9 +145,7 @@ Inductive use : Set :=
 Inductive span : Set := 
  | P_with (σ:store) (v:intro).
 
-Definition usage : Set := (list use).
-
-Definition vars : Set := (list var).
+Definition usage : Set := (Assoc.assoc use).
 
 Inductive context : Set := 
  | E_lam (x:var) (E:context)
@@ -166,6 +164,8 @@ Definition spans : Set := (list span).
 Definition stores : Set := (list store).
 
 Definition nat : Set := nat.
+
+Definition vars : Set := (list var).
 Lemma eq_use: forall (x y : use), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -181,6 +181,20 @@ Arguments list_mem [A] _ _ _.
 
 
 (** substitutions *)
+Fixpoint subst_elim (V5:elim) (x5:var) (V_6:elim) {struct V_6} : elim :=
+  match V_6 with
+  | (V_var x) => (if eq_var x x5 then V5 else (V_var x))
+  | (V_fst V) => V_fst (subst_elim V5 x5 V)
+  | (V_snd V) => V_snd (subst_elim V5 x5 V)
+end.
+
+Fixpoint subst_intro (V5:elim) (x5:var) (v5:intro) {struct v5} : intro :=
+  match v5 with
+  | v_tt => v_tt 
+  | (v_fanout v v') => v_fanout (subst_intro V5 x5 v) (subst_intro V5 x5 v')
+  | (v_neu V) => v_neu (subst_elim V5 x5 V)
+end.
+
 Fixpoint subst_redex (e5:redex) (x5:var) (e_6:redex) {struct e_6} : redex :=
   match e_6 with
   | (e_var x) => (if eq_var x x5 then e5 else (e_var x))
@@ -197,6 +211,11 @@ with subst_context (e5:redex) (x5:var) (E5:context) {struct E5} : context :=
   | (E_neu e) => E_neu (subst_redex e5 x5 e)
 end.
 
+Definition subst_span (V5:elim) (x5:var) (P5:span) : span :=
+  match P5 with
+  | (P_with σ v) => P_with σ (subst_intro V5 x5 v)
+end.
+
 (** definitions *)
 
 (** funs xsofG *)
@@ -209,51 +228,83 @@ end.
 (** definitions *)
 
 (* defns lfind *)
-Inductive lmem : var -> vars -> usage -> usage -> Prop :=    (* defn lmem *)
- | lmem_eq : forall (xs:vars) (x:var) (Δ:usage),
-      (  (length  xs )   =   (length  Δ )  )  ->
-     lmem x  (cons  x   xs )   (cons  u_unused   Δ )   (cons  u_used   Δ ) 
- | lmem_ne : forall (xs:vars) (x y:var) (Δ:usage) (u:use) (Δ':usage),
+Inductive lmem : var -> usage -> usage -> Prop :=    (* defn lmem *)
+ | lmem_eq : forall (x:var) (Δ:usage),
+     lmem x  (cons ( x ,  u_unused )  Δ )   (cons ( x ,  u_used )  Δ ) 
+ | lmem_ne : forall (x:var) (Δ:usage) (y:var) (u:use) (Δ':usage),
       ( x  <>  y )  ->
-     lmem x xs Δ Δ' ->
-     lmem x  (cons  y   xs )   (cons  u   Δ )   (cons  u   Δ' ) .
+     lmem x Δ Δ' ->
+     lmem x  (cons ( y ,  u )  Δ )   (cons ( y ,  u )  Δ' ) .
+(** definitions *)
+
+(* defns scope *)
+Inductive se : usage -> usage -> redex -> Prop :=    (* defn se *)
+ | se_var : forall (Δ Δ':usage) (x:var),
+     lmem x Δ Δ' ->
+     se Δ Δ' (e_var x)
+ | se_app : forall (Δ1 Δ3:usage) (e1:redex) (E2:context) (Δ2:usage),
+     se Δ1 Δ2 e1 ->
+     sE Δ2 Δ3 E2 ->
+     se Δ1 Δ3 (e_app e1 E2)
+ | se_step : forall (Δ1 Δ3:usage) (e1:redex) (E2:context) (t:type) (Δ2:usage),
+     se Δ1 Δ2 e1 ->
+     sE Δ2 Δ3 E2 ->
+     se Δ1 Δ3 (e_step e1 E2 t)
+ | se_let : forall (Δ1 Δ3:usage) (x y:var) (e1:redex) (E2:context) (t3:type) (Δ2:usage),
+     se Δ1 Δ2 e1 ->
+     sE  (cons ( y ,  u_unused )   (cons ( x ,  u_unused )  Δ2 )  )   (cons ( y ,  u_used )   (cons ( x ,  u_used )  Δ3 )  )  E2 ->
+     se Δ1 Δ3 (e_let x y e1 E2 t3)
+ | se_cut : forall (Δ Δ':usage) (E:context) (t:type),
+     sE Δ Δ' E ->
+     se Δ Δ' (e_cut E t)
+with sE : usage -> usage -> context -> Prop :=    (* defn sE *)
+ | sE_lam : forall (Δ Δ':usage) (x:var) (E:context),
+     sE  (cons ( x ,  u_unused )  Δ )   (cons ( x ,  u_used )  Δ' )  E ->
+     sE Δ Δ' (E_lam x E)
+ | sE_tt : forall (Δ:usage),
+     sE Δ Δ E_tt
+ | sE_fanout : forall (Δ1 Δ3:usage) (E1 E2:context) (Δ2:usage),
+     sE Δ1 Δ2 E1 ->
+     sE Δ2 Δ3 E2 ->
+     sE Δ1 Δ3 (E_fanout E1 E2)
+ | sE_neu : forall (Δ Δ':usage) (e:redex),
+     se Δ Δ' e ->
+     sE Δ Δ' (E_neu e).
 (** definitions *)
 
 (* defns judge_context *)
-Inductive infer : environment -> usage -> usage -> redex -> type -> Prop :=    (* defn infer *)
- | infer_var : forall (Γ:environment) (Δ Δ':usage) (x:var) (t:type),
+Inductive infer : environment -> redex -> type -> Prop :=    (* defn infer *)
+ | infer_var : forall (Γ:environment) (x:var) (t:type),
      mem x t Γ ->
-     lmem x  (xsof Γ )  Δ Δ' ->
-     infer Γ Δ Δ' (e_var x) t
- | infer_app : forall (Γ:environment) (Δ1 Δ3:usage) (e1:redex) (E2:context) (t2:type) (Δ2:usage) (t1:type),
-     infer Γ Δ1 Δ2 e1 (t_prod t1 t2) ->
-     check Γ Δ2 Δ3 E2 t1 ->
-     infer Γ Δ1 Δ3 (e_app e1 E2) t2
- | infer_step : forall (Γ:environment) (Δ1 Δ3:usage) (e1:redex) (E2:context) (t:type) (Δ2:usage),
-     infer Γ Δ1 Δ2 e1 t_unit ->
-     check Γ Δ2 Δ3 E2 t ->
-     infer Γ Δ1 Δ3 (e_step e1 E2 t) t
- | infer_let : forall (Γ:environment) (Δ1 Δ3:usage) (x y:var) (e1:redex) (E2:context) (t3:type) (Δ2:usage) (t1 t2:type),
-     infer Γ Δ1 Δ2 e1 (t_prod t1 t2) ->
-     check  (cons ( y ,  t2 )   (cons ( x ,  t1 )  Γ )  )   (cons  u_unused    (cons  u_unused   Δ2 )  )   (cons  u_used    (cons  u_used   Δ3 )  )  E2 t3 ->
-     infer Γ Δ1 Δ3 (e_let x y e1 E2 t3) t3
- | infer_cut : forall (Γ:environment) (Δ Δ':usage) (E:context) (t:type),
-     check Γ Δ Δ' E t ->
-     infer Γ Δ Δ' (e_cut E t) t
-with check : environment -> usage -> usage -> context -> type -> Prop :=    (* defn check *)
- | check_lam : forall (Γ:environment) (Δ Δ':usage) (x:var) (E:context) (t1 t2:type),
-     check  (cons ( x ,  t1 )  Γ )   (cons  u_unused   Δ )   (cons  u_used   Δ' )  E t2 ->
-     check Γ Δ Δ' (E_lam x E) (t_prod t1 t2)
- | check_tt : forall (Γ:environment) (Δ:usage),
-      (  (length  Γ )   =   (length  Δ )  )  ->
-     check Γ Δ Δ E_tt t_unit
- | check_fanout : forall (Γ:environment) (Δ1 Δ3:usage) (E1 E2:context) (t1 t2:type) (Δ2:usage),
-     check Γ Δ1 Δ2 E1 t1 ->
-     check Γ Δ2 Δ3 E2 t2 ->
-     check Γ Δ1 Δ3 (E_fanout E1 E2) (t_prod t1 t2)
- | check_neu : forall (Γ:environment) (Δ Δ':usage) (e:redex) (t:type),
-     infer Γ Δ Δ' e t ->
-     check Γ Δ Δ' (E_neu e) t.
+     infer Γ (e_var x) t
+ | infer_app : forall (Γ:environment) (e1:redex) (E2:context) (t2 t1:type),
+     infer Γ e1 (t_prod t1 t2) ->
+     check Γ E2 t1 ->
+     infer Γ (e_app e1 E2) t2
+ | infer_step : forall (Γ:environment) (e1:redex) (E2:context) (t:type),
+     infer Γ e1 t_unit ->
+     check Γ E2 t ->
+     infer Γ (e_step e1 E2 t) t
+ | infer_let : forall (Γ:environment) (x y:var) (e1:redex) (E2:context) (t3 t1 t2:type),
+     infer Γ e1 (t_prod t1 t2) ->
+     check  (cons ( y ,  t2 )   (cons ( x ,  t1 )  Γ )  )  E2 t3 ->
+     infer Γ (e_let x y e1 E2 t3) t3
+ | infer_cut : forall (Γ:environment) (E:context) (t:type),
+     check Γ E t ->
+     infer Γ (e_cut E t) t
+with check : environment -> context -> type -> Prop :=    (* defn check *)
+ | check_lam : forall (Γ:environment) (x:var) (E:context) (t1 t2:type),
+     check  (cons ( x ,  t1 )  Γ )  E t2 ->
+     check Γ (E_lam x E) (t_prod t1 t2)
+ | check_tt : forall (Γ:environment),
+     check Γ E_tt t_unit
+ | check_fanout : forall (Γ:environment) (E1 E2:context) (t1 t2:type),
+     check Γ E1 t1 ->
+     check Γ E2 t2 ->
+     check Γ (E_fanout E1 E2) (t_prod t1 t2)
+ | check_neu : forall (Γ:environment) (e:redex) (t:type),
+     infer Γ e t ->
+     check Γ (E_neu e) t.
 (** definitions *)
 
 (* defns sat *)

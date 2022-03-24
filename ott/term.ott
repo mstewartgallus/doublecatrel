@@ -10,13 +10,11 @@ elim, V :: 'V_' ::= {{ coq-equality }}
   | fst V          ::   :: fst
   | snd V          ::   :: snd
   | ( V )          :: S :: paren {{ icho ([[V]]) }}
-
 intro, v :: 'v_' ::= {{ coq-equality }}
   | tt             ::   :: tt
   | v , v'         ::   :: fanout
   | neu ( V )      ::   :: neu {{ tex [ [[V]] ] }}
   | ( v )          :: S :: paren {{ icho ([[v]]) }}
-grammar
 
 environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (Assoc.assoc type) }}
   | nil         ::   :: nil {{ coq nil }}

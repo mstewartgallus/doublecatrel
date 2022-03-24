@@ -23,9 +23,9 @@ use, u :: 'u_' ::= {{ coq-equality }}
   | used   ::  :: used
   | unused ::  :: unused
 
-usage, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (list use) }}
+usage, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (Assoc.assoc use) }}
   | nil                  ::   :: nil {{ coq nil }}
-  | D , u                ::   :: cons {{ coq (cons [[u]] [[D]]) }}
+  | D , x [ u ]          ::   :: cons {{ coq (cons ([[x]], [[u]]) [[D]]) }}
 
 nat, n :: 'n_' ::= {{ coq nat }}
   | 0          ::  :: zero {{ coq 0 }}
@@ -92,6 +92,10 @@ parsing
 substitutions
   single E x :: subst
   single e x :: subst
+  single V x :: subst
+  single v x :: subst
+  single P x :: subst
+
 
 grammar
 formula :: formula_ ::=  
@@ -113,70 +117,118 @@ defns
 lfind :: '' ::=
 
 defn
-x \in xs ; D -> D' ::   :: lmem :: 'lmem_'
+x \in D -> D' ::   :: lmem :: 'lmem_'
 by
 
-len xs = len D
----------------------------- :: eq
-x \in xs, x ; D, unused -> D, used
+-------------------------------------- :: eq
+x \in D, x [ unused ] -> D, x [ used ]
 
 x != y
-x \in xs ; D -> D'
----------------------------- :: ne
-x \in xs, y ; D, u -> D', u
+x \in D -> D'
+-------------------------------- :: ne
+x \in D, y [ u ] -> D', y [ u ]
+
+defns
+
+scope :: '' ::=
+
+defn
+  D -> D' |- e ::   :: se :: 'se_'
+by
+
+x \in D -> D'
+------------- :: var
+D -> D' |- x
+
+D1 -> D2 |- e1
+D2 -> D3 |- E2
+------------------ :: app
+D1 -> D3 |- e1 E2
+
+D1 -> D2 |- e1
+D2 -> D3 |- E2
+----------------------- :: step
+D1 -> D3 |- e1; E2 : t
+
+D1 -> D2 |- e1
+D2, x [unused], y[unused] -> D3, x[used], y[used] |- E2
+------------------------------------------------------ :: let
+D1 -> D3 |- let x, y = e1 in E2 : t3
+
+D -> D' |- E
+------------------- :: cut
+D -> D' |- cut E t
+
+defn
+  D -> D' |- E ::   :: sE :: 'sE_'
+by
+
+D, x[unused] -> D', x[used] |- E
+------------------------------ :: lam
+D -> D' |- lam x . E
+
+-------------- :: tt
+D -> D |- tt
+
+D1 -> D2 |- E1
+D2 -> D3 |- E2
+-------------------- :: fanout
+D1 -> D3 |- E1, E2
+
+D -> D' |- e
+------------------- :: neu
+D -> D' |- neu e
 
 defns
 
 judge_context :: '' ::=
 
 defn
-G ; D -> D' |- e \infer t ::   :: infer :: 'infer_'
+G  |- e \infer t ::   :: infer :: 'infer_'
 by
 
 x: t \in G
-x \in xsof G ; D -> D'
--------------------------- :: var
-G ; D -> D' |- x \infer t
+----------------------- :: var
+G |- x \infer t
 
-G ; D1 -> D2 |- e1 \infer t1 * t2
-G ; D2 -> D3 |- E2 \check t1
+G |- e1 \infer t1 * t2
+G |- E2 \check t1
 --------------------------------- :: app
-G ; D1 -> D3 |- e1 E2 \infer t2
+G |- e1 E2 \infer t2
 
-G ; D1 -> D2 |- e1 \infer unit
-G ; D2 -> D3 |- E2 \check t
+G |- e1 \infer unit
+G |- E2 \check t
 ---------------------------------- :: step
-G ; D1 -> D3 |- e1; E2 : t \infer t
+G |- e1; E2 : t \infer t
 
-G ; D1 -> D2 |- e1 \infer t1 * t2
-G, x: t1, y: t2 ; D2, unused, unused -> D3, used, used |- E2 \check t3
+G |- e1 \infer t1 * t2
+G, x: t1, y: t2 |- E2 \check t3
 ------------------------------------------------- :: let
-G ; D1 -> D3 |- let x, y = e1 in E2 : t3 \infer t3
+G |- let x, y = e1 in E2 : t3 \infer t3
 
-G ; D -> D' |- E \check t
+G |- E \check t
 ---------------------------------- :: cut
-G ; D -> D' |- cut E t \infer t
+G |- cut E t \infer t
 
 defn
-G ; D -> D' |- E \check t ::   :: check :: 'check_'
+G |- E \check t ::   :: check :: 'check_'
 by
 
-G, x: t1 ; D, unused -> D', used |- E \check t2
+G, x: t1 |- E \check t2
 ---------------------------------------- :: lam
-G ; D -> D' |- lam x . E \check t1 * t2
+G |- lam x . E \check t1 * t2
 
-len G = len D
--------------------------------- :: tt
-G ; D -> D |- tt \check unit
+-------------------- :: tt
+G |- tt \check unit
 
-G ; D1 -> D2 |- E1 \check t1
-G ; D2 -> D3 |- E2 \check t2
------------------------------------ :: fanout
-G ; D1 -> D3 |- E1, E2 \check t1 * t2
+G |- E1 \check t1
+G |- E2 \check t2
+---------------------------- :: fanout
+G |- E1, E2 \check t1 * t2
 
-G ; D -> D' |- e \infer t
----------------------------------- :: neu
-G ; D -> D' |- neu e \check t
+G |- e \infer t
+---------------------- :: neu
+G |- neu e \check t
 
 defns
 

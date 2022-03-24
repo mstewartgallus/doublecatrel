@@ -196,32 +196,14 @@ Module Import Vert.
 
   Definition Vert t t' := Context.oftype [(x, t)] t'.
 
-  Instance Vert_Equivalence t t': Equivalence (λ (x y: Vert t t'), proj1_sig x == proj1_sig y).
-  Proof.
-    exists.
-    - intro.
-      reflexivity.
-    - intro.
-      symmetry.
-      auto.
-    - intros ? ? ? p.
-      rewrite p.
-      auto.
-  Qed.
-
-  Instance Vert_Setoid t t': Setoid (Vert t t') := {
-      equiv a b := proj1_sig a == proj1_sig b ;
-    }.
-
   #[program]
-  Definition id t: Vert t t := E_var x.
+  Definition id t: Vert t t := E_neu (e_var x).
 
   Next Obligation.
   Proof using.
-    constructor.
-    1:constructor.
-    cbn.
-    constructor.
+    destruct eq_type.
+    2: contradiction.
+    cbv.
     auto.
   Qed.
 
