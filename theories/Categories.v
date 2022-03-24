@@ -239,4 +239,3 @@ Module Import Vert.
     reflexivity.
   Qed.
 End Vert.
-

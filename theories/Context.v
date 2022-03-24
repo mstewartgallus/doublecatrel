@@ -84,8 +84,7 @@ Section Typecheck.
 
     | E_fanout E E' =>
         do Δ1 ← usecheck Δ E ;
-        do Δ2 ← usecheck Δ1 E' ;
-        Some Δ2
+        usecheck Δ1 E'
 
     | E_neu e =>
         useinfer Δ e
@@ -98,13 +97,11 @@ Section Typecheck.
 
     | e_app e E' =>
         do Δ1 ← useinfer Δ e ;
-        do Δ2 ← usecheck Δ1 E' ;
-        Some Δ2
+        usecheck Δ1 E'
 
     | e_step e E' t =>
         do Δ1 ← useinfer Δ e ;
-        do Δ2 ← usecheck Δ1 E' ;
-        Some Δ2
+        usecheck Δ1 E'
 
     | e_let x y e E' t3 =>
         do Δ1 ← useinfer Δ e ;
@@ -114,9 +111,7 @@ Section Typecheck.
         | _, _ => None
         end
 
-    | e_cut E t =>
-        do Δ ← usecheck Δ E ;
-        Some Δ
+    | e_cut E t => usecheck Δ E
     end
       %list.
 
@@ -154,9 +149,9 @@ Section Typecheck.
           None
 
     | e_step e E' t =>
-        do ' t_unit ← typeinfer Γ e ;
         if typecheck Γ E' t
         then
+          do ' t_unit ← typeinfer Γ e ;
           Some t
         else
           None
@@ -209,15 +204,11 @@ Proof using.
     + constructor.
     + destruct usecheck eqn:q1.
       2: discriminate.
-      destruct usecheck eqn:q2 in H0.
-      2: discriminate.
-      inversion H0.
-      subst.
       econstructor.
       all: eauto.
     + constructor.
       apply useinfer_sound.
-      all: auto.
+      auto.
   - destruct e.
     all: cbn.
     all: intros ? ? p.
@@ -235,18 +226,10 @@ Proof using.
       all: eauto.
     + destruct useinfer eqn:q1.
       2: discriminate.
-      destruct usecheck eqn:q2.
-      2: discriminate.
-      inversion H0.
-      subst.
       econstructor.
       all: eauto.
     + destruct useinfer eqn:q1.
       2: discriminate.
-      destruct usecheck eqn:q2.
-      2: discriminate.
-      inversion H0.
-      subst.
       econstructor.
       all: eauto.
     + destruct useinfer eqn:q1.
@@ -271,11 +254,7 @@ Proof using.
       subst.
       econstructor.
       all: eauto.
-    + destruct usecheck eqn:q.
-      2: discriminate.
-      inversion H0.
-      subst.
-      constructor.
+    + constructor.
       eauto.
 Qed.
 
@@ -344,12 +323,12 @@ Proof using.
       rewrite q2.
       cbv.
       auto.
-    + destruct typeinfer eqn:q1.
+    + destruct typecheck eqn:q2.
+      2: discriminate.
+      destruct typeinfer eqn:q1.
       2: discriminate.
       destruct t1.
       all: try discriminate.
-      destruct typecheck eqn:q2.
-      2: discriminate.
       inversion H0.
       subst.
       econstructor.
