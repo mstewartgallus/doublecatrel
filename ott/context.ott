@@ -69,6 +69,7 @@ terminals :: 'terminals_' ::=
   | *            ::   :: prod  {{ tex \otimes{} }}
   | used         ::   :: used  {{ tex \textbf{s} }}
   | unused       ::   :: unused  {{ tex \textbf{f} }}
+  | #            ::   :: xbox  {{ tex \mathrel{\boxtimes} }}
   | tt           ::   :: tt   {{ tex \mathop{ \textbf ! } }}
   | fst          ::   :: fst  {{ tex \pi{}_1 }}
   | snd          ::   :: snd  {{ tex \pi{}_2 }}
@@ -117,67 +118,67 @@ defns
 lfind :: '' ::=
 
 defn
-x \in D -> D' ::   :: lmem :: 'lmem_'
+x \in D # D' ::   :: lmem :: 'lmem_'
 by
 
 -------------------------------------- :: eq
-x \in D, x [ unused ] -> D, x [ used ]
+x \in D, x [ unused ] # D, x [ used ]
 
 x != y
-x \in D -> D'
+x \in D # D'
 -------------------------------- :: ne
-x \in D, y [ u ] -> D', y [ u ]
+x \in D, y [ u ] # D', y [ u ]
 
 defns
 
 scope :: '' ::=
 
 defn
-  D -> D' |- e ::   :: se :: 'se_'
+  D |- e # D' ::   :: se :: 'se_'
 by
 
-x \in D -> D'
-------------- :: var
-D -> D' |- x
+x \in D # D'
+----------- :: var
+D |- x # D'
 
-D1 -> D2 |- e1
-D2 -> D3 |- E2
+D1 |- e1 # D2
+D2 |- E2 # D3
 ------------------ :: app
-D1 -> D3 |- e1 E2
+D1 |- e1 E2 # D3
 
-D1 -> D2 |- e1
-D2 -> D3 |- E2
+D1 |- e1 # D2
+D2 |- E2 # D3
 ----------------------- :: step
-D1 -> D3 |- e1; E2 : t
+D1 |- e1; E2 : t # D3
 
-D1 -> D2 |- e1
-D2, x [unused], y[unused] -> D3, x[used], y[used] |- E2
+D1 |- e1 # D2
+D2, x [unused], y[unused] |- E2 # D3, x[used], y[used]
 ------------------------------------------------------ :: let
-D1 -> D3 |- let x, y = e1 in E2 : t3
+D1 |- let x, y = e1 in E2 : t3 # D3
 
-D -> D' |- E
+D |- E # D'
 ------------------- :: cut
-D -> D' |- cut E t
+D |- cut E t # D'
 
 defn
-  D -> D' |- E ::   :: sE :: 'sE_'
+  D |- E # D' ::   :: sE :: 'sE_'
 by
 
-D, x[unused] -> D', x[used] |- E
------------------------------- :: lam
-D -> D' |- lam x . E
+D, x[unused] |- E #  D', x[used]
+---------------------------------- :: lam
+D |- lam x . E # D'
 
--------------- :: tt
-D -> D |- tt
+------------ :: tt
+D |- tt # D
 
-D1 -> D2 |- E1
-D2 -> D3 |- E2
+D1 |- E1 # D2
+D2 |- E2 # D3
 -------------------- :: fanout
-D1 -> D3 |- E1, E2
+D1 |- E1, E2 # D3
 
-D -> D' |- e
+D |- e # D'
 ------------------- :: neu
-D -> D' |- neu e
+D |- neu e # D'
 
 defns
 

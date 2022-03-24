@@ -17,6 +17,8 @@ Notation "G ⊢ V ⇒ t" := (JV G V t) (at level 90).
 Notation "ρ ⊢ v ⇓ v'" := (bigv ρ v v') (at level 90).
 (* Notation "ρ ⊢ V ⇓ v'" := (bigv ρ V v') (at level 90). *)
 
+Notation "D ⊢ E ⊠ D'" := (sE D E D') (at level 90).
+
 Infix "|-" := P_with (at level 30).
 
 Module RelNotations.

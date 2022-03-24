@@ -176,10 +176,10 @@ End Typecheck.
 
 Fixpoint
   usecheck_sound {E} {struct E}:
-  ∀ {Δ Δ'}, usecheck Δ E = Some Δ' → sE Δ Δ' E
+  ∀ {Δ Δ'}, usecheck Δ E = Some Δ' → Δ ⊢ E ⊠ Δ'
     with
   useinfer_sound {e} {struct e}:
-  ∀ {Δ Δ'}, useinfer Δ e = Some Δ' → se Δ Δ' e
+  ∀ {Δ Δ'}, useinfer Δ e = Some Δ' → se Δ e Δ'
 .
 Proof using.
   - destruct E.
@@ -361,9 +361,9 @@ Proof using.
       apply I.
 Qed.
 
-Fixpoint usecheck_complete {E Δ Δ'} (p: sE Δ Δ' E):
+Fixpoint usecheck_complete {E Δ Δ'} (p: Δ ⊢ E ⊠ Δ'):
   usecheck Δ E = Some Δ'
-with useinfer_complete {e Δ Δ'} (p: se Δ Δ' e):
+with useinfer_complete {e Δ Δ'} (p: se Δ e Δ'):
   useinfer Δ e = Some Δ'.
 Proof using.
   - destruct p.

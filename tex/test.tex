@@ -142,6 +142,7 @@
 \ottprodline{|}{ \otimes{} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \textbf{s} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \textbf{f} }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ \mathrel{\boxtimes} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathop{ \textbf ! } }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \pi{}_1 }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \pi{}_2 }{}{}{}{}\ottprodnewline
@@ -197,12 +198,12 @@
 
 \newcommand{\ottlfind}{
 \ottrulehead{\ottnt{lfind}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\mathit{x}  \mathrel{\in}  \Delta  \rightarrow  \Delta'}{}{}{}{}}
+\ottfirstprodline{|}{\mathit{x}  \mathrel{\in}  \Delta  \mathrel{\boxtimes}  \Delta'}{}{}{}{}}
 
 \newcommand{\ottscope}{
 \ottrulehead{\ottnt{scope}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\Delta  \rightarrow  \Delta'  \vdash{}  \ottnt{e}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\Delta  \rightarrow  \Delta'  \vdash{}  \ottnt{E}}{}{}{}{}}
+\ottfirstprodline{|}{\Delta  \vdash{}  \ottnt{e}  \mathrel{\boxtimes}  \Delta'}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\Delta  \vdash{}  \ottnt{E}  \mathrel{\boxtimes}  \Delta'}{}{}{}{}}
 
 \newcommand{\ottjudgeXXcontext}{
 \ottrulehead{\ottnt{judge\_context}}{::=}{}\ottprodnewline
@@ -505,20 +506,20 @@
 %% defn lmem
 \newcommand{\ottdrulelmemXXeq}[1]{\ottdrule[#1]{%
 }{
-\mathit{x}  \mathrel{\in}  \Delta  \ottsym{,}  \mathit{x}  \ottsym{[}  \textbf{f}  \ottsym{]}  \rightarrow  \Delta  \ottsym{,}  \mathit{x}  \ottsym{[}  \textbf{s}  \ottsym{]}}{%
+\mathit{x}  \mathrel{\in}  \Delta  \ottsym{,}  \mathit{x}  \ottsym{[}  \textbf{f}  \ottsym{]}  \mathrel{\boxtimes}  \Delta  \ottsym{,}  \mathit{x}  \ottsym{[}  \textbf{s}  \ottsym{]}}{%
 {\ottdrulename{lmem\_eq}}{}%
 }}
 
 
 \newcommand{\ottdrulelmemXXne}[1]{\ottdrule[#1]{%
 \ottpremise{\mathit{x}  \mathrel{\ne}  \mathit{y}}%
-\ottpremise{\mathit{x}  \mathrel{\in}  \Delta  \rightarrow  \Delta'}%
+\ottpremise{\mathit{x}  \mathrel{\in}  \Delta  \mathrel{\boxtimes}  \Delta'}%
 }{
-\mathit{x}  \mathrel{\in}  \Delta  \ottsym{,}  \mathit{y}  \ottsym{[}  \ottnt{u}  \ottsym{]}  \rightarrow  \Delta'  \ottsym{,}  \mathit{y}  \ottsym{[}  \ottnt{u}  \ottsym{]}}{%
+\mathit{x}  \mathrel{\in}  \Delta  \ottsym{,}  \mathit{y}  \ottsym{[}  \ottnt{u}  \ottsym{]}  \mathrel{\boxtimes}  \Delta'  \ottsym{,}  \mathit{y}  \ottsym{[}  \ottnt{u}  \ottsym{]}}{%
 {\ottdrulename{lmem\_ne}}{}%
 }}
 
-\newcommand{\ottdefnlmem}[1]{\begin{ottdefnblock}[#1]{$\mathit{x}  \mathrel{\in}  \Delta  \rightarrow  \Delta'$}{}
+\newcommand{\ottdefnlmem}[1]{\begin{ottdefnblock}[#1]{$\mathit{x}  \mathrel{\in}  \Delta  \mathrel{\boxtimes}  \Delta'$}{}
 \ottusedrule{\ottdrulelmemXXeq{}}
 \ottusedrule{\ottdrulelmemXXne{}}
 \end{ottdefnblock}}
@@ -530,48 +531,48 @@
 % defns scope
 %% defn se
 \newcommand{\ottdruleseXXvar}[1]{\ottdrule[#1]{%
-\ottpremise{\mathit{x}  \mathrel{\in}  \Delta  \rightarrow  \Delta'}%
+\ottpremise{\mathit{x}  \mathrel{\in}  \Delta  \mathrel{\boxtimes}  \Delta'}%
 }{
-\Delta  \rightarrow  \Delta'  \vdash{}  \mathit{x}}{%
+\Delta  \vdash{}  \mathit{x}  \mathrel{\boxtimes}  \Delta'}{%
 {\ottdrulename{se\_var}}{}%
 }}
 
 
 \newcommand{\ottdruleseXXapp}[1]{\ottdrule[#1]{%
-\ottpremise{\Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{e_{{\mathrm{1}}}}}%
-\ottpremise{\Delta_{{\mathrm{2}}}  \rightarrow  \Delta_{{\mathrm{3}}}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}}%
+\ottpremise{\Delta_{{\mathrm{1}}}  \vdash{}  \ottnt{e_{{\mathrm{1}}}}  \mathrel{\boxtimes}  \Delta_{{\mathrm{2}}}}%
+\ottpremise{\Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \mathrel{\boxtimes}  \Delta_{{\mathrm{3}}}}%
 }{
-\Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{3}}}  \vdash{}  \ottnt{e_{{\mathrm{1}}}} \, \ottnt{E_{{\mathrm{2}}}}}{%
+\Delta_{{\mathrm{1}}}  \vdash{}  \ottnt{e_{{\mathrm{1}}}} \, \ottnt{E_{{\mathrm{2}}}}  \mathrel{\boxtimes}  \Delta_{{\mathrm{3}}}}{%
 {\ottdrulename{se\_app}}{}%
 }}
 
 
 \newcommand{\ottdruleseXXstep}[1]{\ottdrule[#1]{%
-\ottpremise{\Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{e_{{\mathrm{1}}}}}%
-\ottpremise{\Delta_{{\mathrm{2}}}  \rightarrow  \Delta_{{\mathrm{3}}}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}}%
+\ottpremise{\Delta_{{\mathrm{1}}}  \vdash{}  \ottnt{e_{{\mathrm{1}}}}  \mathrel{\boxtimes}  \Delta_{{\mathrm{2}}}}%
+\ottpremise{\Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \mathrel{\boxtimes}  \Delta_{{\mathrm{3}}}}%
 }{
-\Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{3}}}  \vdash{}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{;}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t}}{%
+\Delta_{{\mathrm{1}}}  \vdash{}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{;}  \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t}  \mathrel{\boxtimes}  \Delta_{{\mathrm{3}}}}{%
 {\ottdrulename{se\_step}}{}%
 }}
 
 
 \newcommand{\ottdruleseXXlet}[1]{\ottdrule[#1]{%
-\ottpremise{\Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{e_{{\mathrm{1}}}}}%
-\ottpremise{\Delta_{{\mathrm{2}}}  \ottsym{,}  \mathit{x}  \ottsym{[}  \textbf{f}  \ottsym{]}  \ottsym{,}  \mathit{y}  \ottsym{[}  \textbf{f}  \ottsym{]}  \rightarrow  \Delta_{{\mathrm{3}}}  \ottsym{,}  \mathit{x}  \ottsym{[}  \textbf{s}  \ottsym{]}  \ottsym{,}  \mathit{y}  \ottsym{[}  \textbf{s}  \ottsym{]}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}}%
+\ottpremise{\Delta_{{\mathrm{1}}}  \vdash{}  \ottnt{e_{{\mathrm{1}}}}  \mathrel{\boxtimes}  \Delta_{{\mathrm{2}}}}%
+\ottpremise{\Delta_{{\mathrm{2}}}  \ottsym{,}  \mathit{x}  \ottsym{[}  \textbf{f}  \ottsym{]}  \ottsym{,}  \mathit{y}  \ottsym{[}  \textbf{f}  \ottsym{]}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \mathrel{\boxtimes}  \Delta_{{\mathrm{3}}}  \ottsym{,}  \mathit{x}  \ottsym{[}  \textbf{s}  \ottsym{]}  \ottsym{,}  \mathit{y}  \ottsym{[}  \textbf{s}  \ottsym{]}}%
 }{
-\Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{3}}}  \vdash{}  \mathbin{\textbf{let} } \, \mathit{x}  \ottsym{,}  \mathit{y}  \ottsym{=}  \ottnt{e_{{\mathrm{1}}}} \, \mathbin{\textbf{in} } \, \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{3}}}}}{%
+\Delta_{{\mathrm{1}}}  \vdash{}  \mathbin{\textbf{let} } \, \mathit{x}  \ottsym{,}  \mathit{y}  \ottsym{=}  \ottnt{e_{{\mathrm{1}}}} \, \mathbin{\textbf{in} } \, \ottnt{E_{{\mathrm{2}}}}  \colon{}  \ottnt{t_{{\mathrm{3}}}}  \mathrel{\boxtimes}  \Delta_{{\mathrm{3}}}}{%
 {\ottdrulename{se\_let}}{}%
 }}
 
 
 \newcommand{\ottdruleseXXcut}[1]{\ottdrule[#1]{%
-\ottpremise{\Delta  \rightarrow  \Delta'  \vdash{}  \ottnt{E}}%
+\ottpremise{\Delta  \vdash{}  \ottnt{E}  \mathrel{\boxtimes}  \Delta'}%
 }{
-\Delta  \rightarrow  \Delta'  \vdash{}   \ottnt{E}  \colon  \ottnt{t} }{%
+\Delta  \vdash{}   \ottnt{E}  \colon  \ottnt{t}   \mathrel{\boxtimes}  \Delta'}{%
 {\ottdrulename{se\_cut}}{}%
 }}
 
-\newcommand{\ottdefnse}[1]{\begin{ottdefnblock}[#1]{$\Delta  \rightarrow  \Delta'  \vdash{}  \ottnt{e}$}{}
+\newcommand{\ottdefnse}[1]{\begin{ottdefnblock}[#1]{$\Delta  \vdash{}  \ottnt{e}  \mathrel{\boxtimes}  \Delta'$}{}
 \ottusedrule{\ottdruleseXXvar{}}
 \ottusedrule{\ottdruleseXXapp{}}
 \ottusedrule{\ottdruleseXXstep{}}
@@ -581,37 +582,37 @@
 
 %% defn sE
 \newcommand{\ottdrulesEXXlam}[1]{\ottdrule[#1]{%
-\ottpremise{\Delta  \ottsym{,}  \mathit{x}  \ottsym{[}  \textbf{f}  \ottsym{]}  \rightarrow  \Delta'  \ottsym{,}  \mathit{x}  \ottsym{[}  \textbf{s}  \ottsym{]}  \vdash{}  \ottnt{E}}%
+\ottpremise{\Delta  \ottsym{,}  \mathit{x}  \ottsym{[}  \textbf{f}  \ottsym{]}  \vdash{}  \ottnt{E}  \mathrel{\boxtimes}  \Delta'  \ottsym{,}  \mathit{x}  \ottsym{[}  \textbf{s}  \ottsym{]}}%
 }{
-\Delta  \rightarrow  \Delta'  \vdash{}  \lambda{} \, \mathit{x}  \ottsym{.}  \ottnt{E}}{%
+\Delta  \vdash{}  \lambda{} \, \mathit{x}  \ottsym{.}  \ottnt{E}  \mathrel{\boxtimes}  \Delta'}{%
 {\ottdrulename{sE\_lam}}{}%
 }}
 
 
 \newcommand{\ottdrulesEXXtt}[1]{\ottdrule[#1]{%
 }{
-\Delta  \rightarrow  \Delta  \vdash{}  \mathop{ \textbf ! }}{%
+\Delta  \vdash{}  \mathop{ \textbf ! }  \mathrel{\boxtimes}  \Delta}{%
 {\ottdrulename{sE\_tt}}{}%
 }}
 
 
 \newcommand{\ottdrulesEXXfanout}[1]{\ottdrule[#1]{%
-\ottpremise{\Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}}%
-\ottpremise{\Delta_{{\mathrm{2}}}  \rightarrow  \Delta_{{\mathrm{3}}}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}}%
+\ottpremise{\Delta_{{\mathrm{1}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \mathrel{\boxtimes}  \Delta_{{\mathrm{2}}}}%
+\ottpremise{\Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{E_{{\mathrm{2}}}}  \mathrel{\boxtimes}  \Delta_{{\mathrm{3}}}}%
 }{
-\Delta_{{\mathrm{1}}}  \rightarrow  \Delta_{{\mathrm{3}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{E_{{\mathrm{2}}}}}{%
+\Delta_{{\mathrm{1}}}  \vdash{}  \ottnt{E_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{E_{{\mathrm{2}}}}  \mathrel{\boxtimes}  \Delta_{{\mathrm{3}}}}{%
 {\ottdrulename{sE\_fanout}}{}%
 }}
 
 
 \newcommand{\ottdrulesEXXneu}[1]{\ottdrule[#1]{%
-\ottpremise{\Delta  \rightarrow  \Delta'  \vdash{}  \ottnt{e}}%
+\ottpremise{\Delta  \vdash{}  \ottnt{e}  \mathrel{\boxtimes}  \Delta'}%
 }{
-\Delta  \rightarrow  \Delta'  \vdash{}   [  \ottnt{e}  ] }{%
+\Delta  \vdash{}   [  \ottnt{e}  ]   \mathrel{\boxtimes}  \Delta'}{%
 {\ottdrulename{sE\_neu}}{}%
 }}
 
-\newcommand{\ottdefnsE}[1]{\begin{ottdefnblock}[#1]{$\Delta  \rightarrow  \Delta'  \vdash{}  \ottnt{E}$}{}
+\newcommand{\ottdefnsE}[1]{\begin{ottdefnblock}[#1]{$\Delta  \vdash{}  \ottnt{E}  \mathrel{\boxtimes}  \Delta'$}{}
 \ottusedrule{\ottdrulesEXXlam{}}
 \ottusedrule{\ottdrulesEXXtt{}}
 \ottusedrule{\ottdrulesEXXfanout{}}

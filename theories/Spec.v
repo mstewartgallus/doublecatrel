@@ -238,38 +238,38 @@ Inductive lmem : var -> usage -> usage -> Prop :=    (* defn lmem *)
 (** definitions *)
 
 (* defns scope *)
-Inductive se : usage -> usage -> redex -> Prop :=    (* defn se *)
- | se_var : forall (Δ Δ':usage) (x:var),
+Inductive se : usage -> redex -> usage -> Prop :=    (* defn se *)
+ | se_var : forall (Δ:usage) (x:var) (Δ':usage),
      lmem x Δ Δ' ->
-     se Δ Δ' (e_var x)
- | se_app : forall (Δ1 Δ3:usage) (e1:redex) (E2:context) (Δ2:usage),
-     se Δ1 Δ2 e1 ->
-     sE Δ2 Δ3 E2 ->
-     se Δ1 Δ3 (e_app e1 E2)
- | se_step : forall (Δ1 Δ3:usage) (e1:redex) (E2:context) (t:type) (Δ2:usage),
-     se Δ1 Δ2 e1 ->
-     sE Δ2 Δ3 E2 ->
-     se Δ1 Δ3 (e_step e1 E2 t)
- | se_let : forall (Δ1 Δ3:usage) (x y:var) (e1:redex) (E2:context) (t3:type) (Δ2:usage),
-     se Δ1 Δ2 e1 ->
-     sE  (cons ( y ,  u_unused )   (cons ( x ,  u_unused )  Δ2 )  )   (cons ( y ,  u_used )   (cons ( x ,  u_used )  Δ3 )  )  E2 ->
-     se Δ1 Δ3 (e_let x y e1 E2 t3)
- | se_cut : forall (Δ Δ':usage) (E:context) (t:type),
-     sE Δ Δ' E ->
-     se Δ Δ' (e_cut E t)
-with sE : usage -> usage -> context -> Prop :=    (* defn sE *)
- | sE_lam : forall (Δ Δ':usage) (x:var) (E:context),
-     sE  (cons ( x ,  u_unused )  Δ )   (cons ( x ,  u_used )  Δ' )  E ->
-     sE Δ Δ' (E_lam x E)
+     se Δ (e_var x) Δ'
+ | se_app : forall (Δ1:usage) (e1:redex) (E2:context) (Δ3 Δ2:usage),
+     se Δ1 e1 Δ2 ->
+     sE Δ2 E2 Δ3 ->
+     se Δ1 (e_app e1 E2) Δ3
+ | se_step : forall (Δ1:usage) (e1:redex) (E2:context) (t:type) (Δ3 Δ2:usage),
+     se Δ1 e1 Δ2 ->
+     sE Δ2 E2 Δ3 ->
+     se Δ1 (e_step e1 E2 t) Δ3
+ | se_let : forall (Δ1:usage) (x y:var) (e1:redex) (E2:context) (t3:type) (Δ3 Δ2:usage),
+     se Δ1 e1 Δ2 ->
+     sE  (cons ( y ,  u_unused )   (cons ( x ,  u_unused )  Δ2 )  )  E2  (cons ( y ,  u_used )   (cons ( x ,  u_used )  Δ3 )  )  ->
+     se Δ1 (e_let x y e1 E2 t3) Δ3
+ | se_cut : forall (Δ:usage) (E:context) (t:type) (Δ':usage),
+     sE Δ E Δ' ->
+     se Δ (e_cut E t) Δ'
+with sE : usage -> context -> usage -> Prop :=    (* defn sE *)
+ | sE_lam : forall (Δ:usage) (x:var) (E:context) (Δ':usage),
+     sE  (cons ( x ,  u_unused )  Δ )  E  (cons ( x ,  u_used )  Δ' )  ->
+     sE Δ (E_lam x E) Δ'
  | sE_tt : forall (Δ:usage),
-     sE Δ Δ E_tt
- | sE_fanout : forall (Δ1 Δ3:usage) (E1 E2:context) (Δ2:usage),
-     sE Δ1 Δ2 E1 ->
-     sE Δ2 Δ3 E2 ->
-     sE Δ1 Δ3 (E_fanout E1 E2)
- | sE_neu : forall (Δ Δ':usage) (e:redex),
-     se Δ Δ' e ->
-     sE Δ Δ' (E_neu e).
+     sE Δ E_tt Δ
+ | sE_fanout : forall (Δ1:usage) (E1 E2:context) (Δ3 Δ2:usage),
+     sE Δ1 E1 Δ2 ->
+     sE Δ2 E2 Δ3 ->
+     sE Δ1 (E_fanout E1 E2) Δ3
+ | sE_neu : forall (Δ:usage) (e:redex) (Δ':usage),
+     se Δ e Δ' ->
+     sE Δ (E_neu e) Δ'.
 (** definitions *)
 
 (* defns judge_context *)
