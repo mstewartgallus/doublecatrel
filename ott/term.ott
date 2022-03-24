@@ -105,40 +105,40 @@ G' |- p, x := v: G, x: t
 
 defns
 
-hsubstsV :: '' ::=
+bigV :: '' ::=
 
 defn
-V & p === v' ::   :: hsubstsV :: 'hsubstsV_'
+p |- V ! v' ::   :: bigV :: 'bigV_'
 by
 
 {{ Assoc.find [[x]] [[p]] = Some [[v]] }}
 ------------------------------------------ :: var
-x & p === v
+p |- x ! v
 
-V & p === v1, v2
+p |- V ! v1, v2
 ----------------- :: fst
-fst V & p === v1
+p |- fst V ! v1
 
-V & p === v1, v2
+p |- V ! v1, v2
 ----------------- :: snd
-snd V & p === v2
+p |- snd V ! v2
 
 defns
 
-hsubstsv :: '' ::=
+bigv :: '' ::=
 
 defn
-v @ p === v' ::   :: hsubstsv :: 'hsubstsv_'
+p |- v ! v' ::   :: bigv :: 'bigv_'
 by
 
 ------------- :: tt
-tt @ p === tt
+p |- tt ! tt
 
-v1 @ p === v1'
-v2 @ p === v2'
+p |- v1 ! v1'
+p |- v2 ! v2'
 ----------------------- :: fanout
-v1, v2 @ p === v1', v2'
+p |- v1, v2 ! v1', v2'
 
-V & p === v
+p |- V ! v
 -------------------- :: neu
-neu( V ) @ p === v
+p |- neu( V ) ! v

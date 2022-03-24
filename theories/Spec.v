@@ -109,30 +109,30 @@ Inductive Jp : environment -> subst -> environment -> Prop :=    (* defn p *)
      Jp Γ'  (cons ( x ,  v )  ρ )   (cons ( x ,  t )  Γ ) .
 (** definitions *)
 
-(* defns hsubstsV *)
-Inductive hsubstsV : elim -> subst -> intro -> Prop :=    (* defn hsubstsV *)
- | hsubstsV_var : forall (x:var) (ρ:subst) (v:intro),
+(* defns bigV *)
+Inductive bigV : subst -> elim -> intro -> Prop :=    (* defn bigV *)
+ | bigV_var : forall (ρ:subst) (x:var) (v:intro),
      Assoc.find x ρ = Some v  ->
-     hsubstsV (V_var x) ρ v
- | hsubstsV_fst : forall (V:elim) (ρ:subst) (v1 v2:intro),
-     hsubstsV V ρ (v_fanout v1 v2) ->
-     hsubstsV (V_fst V) ρ v1
- | hsubstsV_snd : forall (V:elim) (ρ:subst) (v2 v1:intro),
-     hsubstsV V ρ (v_fanout v1 v2) ->
-     hsubstsV (V_snd V) ρ v2.
+     bigV ρ (V_var x) v
+ | bigV_fst : forall (ρ:subst) (V:elim) (v1 v2:intro),
+     bigV ρ V (v_fanout v1 v2) ->
+     bigV ρ (V_fst V) v1
+ | bigV_snd : forall (ρ:subst) (V:elim) (v2 v1:intro),
+     bigV ρ V (v_fanout v1 v2) ->
+     bigV ρ (V_snd V) v2.
 (** definitions *)
 
-(* defns hsubstsv *)
-Inductive hsubstsv : intro -> subst -> intro -> Prop :=    (* defn hsubstsv *)
- | hsubstsv_tt : forall (ρ:subst),
-     hsubstsv v_tt ρ v_tt
- | hsubstsv_fanout : forall (v1 v2:intro) (ρ:subst) (v1' v2':intro),
-     hsubstsv v1 ρ v1' ->
-     hsubstsv v2 ρ v2' ->
-     hsubstsv (v_fanout v1 v2) ρ (v_fanout v1' v2')
- | hsubstsv_neu : forall (V:elim) (ρ:subst) (v:intro),
-     hsubstsV V ρ v ->
-     hsubstsv (v_neu V) ρ v.
+(* defns bigv *)
+Inductive bigv : subst -> intro -> intro -> Prop :=    (* defn bigv *)
+ | bigv_tt : forall (ρ:subst),
+     bigv ρ v_tt v_tt
+ | bigv_fanout : forall (ρ:subst) (v1 v2 v1' v2':intro),
+     bigv ρ v1 v1' ->
+     bigv ρ v2 v2' ->
+     bigv ρ (v_fanout v1 v2) (v_fanout v1' v2')
+ | bigv_neu : forall (ρ:subst) (V:elim) (v:intro),
+     bigV ρ V v ->
+     bigv ρ (v_neu V) v.
 Require Blech.Map.
 
 

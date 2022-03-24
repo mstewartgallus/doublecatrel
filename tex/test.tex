@@ -183,13 +183,13 @@
 \ottrulehead{\ottnt{judge\_subst}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\Gamma  \vdash{}  \rho  \colon{}  \Gamma'}{}{}{}{}}
 
-\newcommand{\otthsubstsV}{
-\ottrulehead{\ottnt{hsubstsV}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\ottnt{V}  \cdot  \rho  \equiv{}  \ottnt{v'}}{}{}{}{}}
+\newcommand{\ottbigV}{
+\ottrulehead{\ottnt{bigV}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\rho  \vdash{}  \ottnt{V}  \mathrel{\Downarrow}  \ottnt{v'}}{}{}{}{}}
 
-\newcommand{\otthsubstsv}{
-\ottrulehead{\ottnt{hsubstsv}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\ottnt{v}  \circ  \rho  \equiv{}  \ottnt{v'}}{}{}{}{}}
+\newcommand{\ottbigv}{
+\ottrulehead{\ottnt{bigv}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\rho  \vdash{}  \ottnt{v}  \mathrel{\Downarrow}  \ottnt{v'}}{}{}{}{}}
 
 \newcommand{\ottxsofG}{
 \ottrulehead{\ottnt{xsofG}}{::=}{}\ottprodnewline
@@ -224,8 +224,8 @@
 \ottfirstprodline{|}{\ottnt{find}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{judge\_term}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{judge\_subst}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{hsubstsV}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{hsubstsv}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{bigV}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{bigv}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{lfind}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{scope}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{judge\_context}}{}{}{}{}\ottprodnewline
@@ -276,8 +276,8 @@
 \ottfind\ottinterrule
 \ottjudgeXXterm\ottinterrule
 \ottjudgeXXsubst\ottinterrule
-\otthsubstsV\ottinterrule
-\otthsubstsv\ottinterrule
+\ottbigV\ottinterrule
+\ottbigv\ottinterrule
 \ottxsofG\ottinterrule
 \ottlfind\ottinterrule
 \ottscope\ottinterrule
@@ -419,75 +419,75 @@
 \newcommand{\ottdefnsjudgeXXsubst}{
 \ottdefnJp{}}
 
-% defns hsubstsV
-%% defn hsubstsV
-\newcommand{\ottdrulehsubstsVXXvar}[1]{\ottdrule[#1]{%
+% defns bigV
+%% defn bigV
+\newcommand{\ottdrulebigVXXvar}[1]{\ottdrule[#1]{%
 \ottpremise{\texttt{Assoc.find }\mathit{x}\texttt{ }\rho\texttt{ = Some }\ottnt{v}\texttt{ }}%
 }{
-\mathit{x}  \cdot  \rho  \equiv{}  \ottnt{v}}{%
-{\ottdrulename{hsubstsV\_var}}{}%
+\rho  \vdash{}  \mathit{x}  \mathrel{\Downarrow}  \ottnt{v}}{%
+{\ottdrulename{bigV\_var}}{}%
 }}
 
 
-\newcommand{\ottdrulehsubstsVXXfst}[1]{\ottdrule[#1]{%
-\ottpremise{\ottnt{V}  \cdot  \rho  \equiv{}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}}%
+\newcommand{\ottdrulebigVXXfst}[1]{\ottdrule[#1]{%
+\ottpremise{\rho  \vdash{}  \ottnt{V}  \mathrel{\Downarrow}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}}%
 }{
-\pi{}_1 \, \ottnt{V}  \cdot  \rho  \equiv{}  \ottnt{v_{{\mathrm{1}}}}}{%
-{\ottdrulename{hsubstsV\_fst}}{}%
+\rho  \vdash{}  \pi{}_1 \, \ottnt{V}  \mathrel{\Downarrow}  \ottnt{v_{{\mathrm{1}}}}}{%
+{\ottdrulename{bigV\_fst}}{}%
 }}
 
 
-\newcommand{\ottdrulehsubstsVXXsnd}[1]{\ottdrule[#1]{%
-\ottpremise{\ottnt{V}  \cdot  \rho  \equiv{}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}}%
+\newcommand{\ottdrulebigVXXsnd}[1]{\ottdrule[#1]{%
+\ottpremise{\rho  \vdash{}  \ottnt{V}  \mathrel{\Downarrow}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}}%
 }{
-\pi{}_2 \, \ottnt{V}  \cdot  \rho  \equiv{}  \ottnt{v_{{\mathrm{2}}}}}{%
-{\ottdrulename{hsubstsV\_snd}}{}%
+\rho  \vdash{}  \pi{}_2 \, \ottnt{V}  \mathrel{\Downarrow}  \ottnt{v_{{\mathrm{2}}}}}{%
+{\ottdrulename{bigV\_snd}}{}%
 }}
 
-\newcommand{\ottdefnhsubstsV}[1]{\begin{ottdefnblock}[#1]{$\ottnt{V}  \cdot  \rho  \equiv{}  \ottnt{v'}$}{}
-\ottusedrule{\ottdrulehsubstsVXXvar{}}
-\ottusedrule{\ottdrulehsubstsVXXfst{}}
-\ottusedrule{\ottdrulehsubstsVXXsnd{}}
+\newcommand{\ottdefnbigV}[1]{\begin{ottdefnblock}[#1]{$\rho  \vdash{}  \ottnt{V}  \mathrel{\Downarrow}  \ottnt{v'}$}{}
+\ottusedrule{\ottdrulebigVXXvar{}}
+\ottusedrule{\ottdrulebigVXXfst{}}
+\ottusedrule{\ottdrulebigVXXsnd{}}
 \end{ottdefnblock}}
 
 
-\newcommand{\ottdefnshsubstsV}{
-\ottdefnhsubstsV{}}
+\newcommand{\ottdefnsbigV}{
+\ottdefnbigV{}}
 
-% defns hsubstsv
-%% defn hsubstsv
-\newcommand{\ottdrulehsubstsvXXtt}[1]{\ottdrule[#1]{%
+% defns bigv
+%% defn bigv
+\newcommand{\ottdrulebigvXXtt}[1]{\ottdrule[#1]{%
 }{
-\mathop{ \textbf ! }  \circ  \rho  \equiv{}  \mathop{ \textbf ! }}{%
-{\ottdrulename{hsubstsv\_tt}}{}%
+\rho  \vdash{}  \mathop{ \textbf ! }  \mathrel{\Downarrow}  \mathop{ \textbf ! }}{%
+{\ottdrulename{bigv\_tt}}{}%
 }}
 
 
-\newcommand{\ottdrulehsubstsvXXfanout}[1]{\ottdrule[#1]{%
-\ottpremise{\ottnt{v_{{\mathrm{1}}}}  \circ  \rho  \equiv{}  \ottnt{v'_{{\mathrm{1}}}}}%
-\ottpremise{\ottnt{v_{{\mathrm{2}}}}  \circ  \rho  \equiv{}  \ottnt{v'_{{\mathrm{2}}}}}%
+\newcommand{\ottdrulebigvXXfanout}[1]{\ottdrule[#1]{%
+\ottpremise{\rho  \vdash{}  \ottnt{v_{{\mathrm{1}}}}  \mathrel{\Downarrow}  \ottnt{v'_{{\mathrm{1}}}}}%
+\ottpremise{\rho  \vdash{}  \ottnt{v_{{\mathrm{2}}}}  \mathrel{\Downarrow}  \ottnt{v'_{{\mathrm{2}}}}}%
 }{
-\ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \circ  \rho  \equiv{}  \ottnt{v'_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v'_{{\mathrm{2}}}}}{%
-{\ottdrulename{hsubstsv\_fanout}}{}%
+\rho  \vdash{}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{2}}}}  \mathrel{\Downarrow}  \ottnt{v'_{{\mathrm{1}}}}  \ottsym{,}  \ottnt{v'_{{\mathrm{2}}}}}{%
+{\ottdrulename{bigv\_fanout}}{}%
 }}
 
 
-\newcommand{\ottdrulehsubstsvXXneu}[1]{\ottdrule[#1]{%
-\ottpremise{\ottnt{V}  \cdot  \rho  \equiv{}  \ottnt{v}}%
+\newcommand{\ottdrulebigvXXneu}[1]{\ottdrule[#1]{%
+\ottpremise{\rho  \vdash{}  \ottnt{V}  \mathrel{\Downarrow}  \ottnt{v}}%
 }{
- [  \ottnt{V}  ]   \circ  \rho  \equiv{}  \ottnt{v}}{%
-{\ottdrulename{hsubstsv\_neu}}{}%
+\rho  \vdash{}   [  \ottnt{V}  ]   \mathrel{\Downarrow}  \ottnt{v}}{%
+{\ottdrulename{bigv\_neu}}{}%
 }}
 
-\newcommand{\ottdefnhsubstsv}[1]{\begin{ottdefnblock}[#1]{$\ottnt{v}  \circ  \rho  \equiv{}  \ottnt{v'}$}{}
-\ottusedrule{\ottdrulehsubstsvXXtt{}}
-\ottusedrule{\ottdrulehsubstsvXXfanout{}}
-\ottusedrule{\ottdrulehsubstsvXXneu{}}
+\newcommand{\ottdefnbigv}[1]{\begin{ottdefnblock}[#1]{$\rho  \vdash{}  \ottnt{v}  \mathrel{\Downarrow}  \ottnt{v'}$}{}
+\ottusedrule{\ottdrulebigvXXtt{}}
+\ottusedrule{\ottdrulebigvXXfanout{}}
+\ottusedrule{\ottdrulebigvXXneu{}}
 \end{ottdefnblock}}
 
 
-\newcommand{\ottdefnshsubstsv}{
-\ottdefnhsubstsv{}}
+\newcommand{\ottdefnsbigv}{
+\ottdefnbigv{}}
 
 % fundefns xsofG
 % fundefn xsof
@@ -863,8 +863,8 @@
 \ottdefnsfind
 \ottdefnsjudgeXXterm
 \ottdefnsjudgeXXsubst
-\ottdefnshsubstsV
-\ottdefnshsubstsv
+\ottdefnsbigV
+\ottdefnsbigv
 \ottfundefnsxsofG
 \ottdefnslfind
 \ottdefnsscope
