@@ -26,166 +26,64 @@ Implicit Types x y: var.
 Implicit Type ρ: subst.
 
 Module Import Hor.
-  #[local]
-  Definition X: var := 0.
-
-  Definition Hor t t' := Term.oftype [(X, t)] t'.
+  Definition Hor Γ Γ' := { ρ | Jp ρ Γ Γ' }.
 
   #[program]
-  Definition id t: Hor t t := η t (V_var X).
+  Definition id A: Hor A A := [].
 
   Next Obligation.
   Proof.
-    erewrite (Term.typecheck_complete (Term.η_preserve _)).
-    cbv.
-    auto.
-    Unshelve.
     constructor.
-    apply Environment.find_sound.
-    auto.
   Qed.
 
   #[program]
-   Definition compose {A B C} (f: Hor B C) (g: Hor A B): Hor A C :=
-    Term.eval_intro_dfl [(X, proj1_sig g)] (proj1_sig f).
+  Definition compose {A B C} (f: Hor B C) (g: Hor A B): Hor A C := g ++ f.
 
   Next Obligation.
   Proof.
-    rewrite Term.typecheck_complete.
-    1: cbv.
-    1: auto.
-    eapply Term.eval_preserve_intro.
-    - constructor.
-      2:constructor.
-      apply (Term.typecheck_sound (proj2_sig g)).
-    - apply (Term.typecheck_sound (proj2_sig f)).
-  Defined.
-
-  Lemma compose_id_left {A B} (f: Hor A B): compose (id _) f == f.
-  Proof.
-    destruct f as [f ?].
+    destruct g as [g gp].
+    destruct f as [f fp].
     cbn.
-    unfold Term.equiv.
-    cbn.
-    admit.
-  Admitted.
-
-  Lemma compose_id_right {A B} (f: Hor A B): compose f (id _) == f.
-  Proof.
-    cbn.
-    unfold Term.equiv, compose, id.
-    destruct f as [f ?].
-    cbn.
-    apply (Term.eval_intro_idsubst (Term.typecheck_sound i)).
-  Qed.
-
-  Lemma compose_assoc {A B C D} (f: Hor C D) (g: Hor B C) (h: Hor A B):
-    compose f (compose g h) == compose (compose f g) h.
-  Proof.
-    destruct f as [f ?], g as [g ?], h as [h ?].
-    cbn.
-    unfold Term.equiv, compose.
-    cbn.
-    eapply Term.eval_intro_assoc.
-    all: apply Term.typecheck_sound.
-    all: eauto.
-  Qed.
-
-  #[program]
-  Definition tt A: Hor A t_unit := v_tt.
-
-  #[program]
-  Definition fanout {A B C} (f: Hor C A) (g: Hor C B): Hor C (A * B) := v_fanout f g.
-
-  Next Obligation.
-  Proof.
-    assert (f' := proj2_sig f).
-    assert (g' := proj2_sig g).
-    cbn in *.
-    destruct Term.typecheck.
-    2: contradiction.
-    destruct Term.typecheck.
-    2: contradiction.
-    cbv.
-    auto.
-  Qed.
-
-  #[program]
-  Definition fst {A B}: Hor (A * B) A := η A (V_fst (V_var X)).
-
-  Next Obligation.
-  Proof.
-    erewrite (Term.typecheck_complete (Term.η_preserve _)).
-    cbv.
-    auto.
-    Unshelve.
-    apply Term.typeinfer_sound.
-    cbv.
-    auto.
-  Qed.
-
-  #[program]
-  Definition snd {A B}: Hor (A * B) B := η B (V_snd (V_var X)).
-
-  Next Obligation.
-  Proof.
-    erewrite (Term.typecheck_complete (Term.η_preserve _)).
-    cbv.
-    auto.
-    Unshelve.
-    apply Term.typeinfer_sound.
-    cbv.
-    auto.
-  Qed.
-
-  (* Prove a strict terminal object *)
-  Lemma compose_tt {A B} (f: Hor A B): compose (tt _) f == tt _.
-  Proof.
-    destruct f as [f ?].
-    cbn.
-    unfold compose.
-    cbn.
-    unfold Term.equiv.
-    cbn.
-    auto.
-  Qed.
-
-  Lemma fst_fanout {C A B} (f: Hor C A) (g: Hor C B): compose fst (fanout f g) == f.
-  Proof.
-    destruct f as [f qf], g as [g qg].
-    cbn.
-    unfold Term.equiv, compose, fst, fanout.
-    cbn.
-    assert (qf' := Term.typecheck_sound qf).
-    clear qf.
-    assert (qg' := Term.typecheck_sound qg).
-    clear qg.
+    generalize dependent C.
+    generalize dependent B.
+    generalize dependent A.
     generalize dependent f.
     generalize dependent g.
-    generalize dependent B.
-    generalize dependent C.
-    generalize dependent A.
-    intro A.
-    induction A.
+    intro g.
+    induction g.
     all: cbn.
-    all: intros ? ? g qg ? fg.
-    all: inversion fg.
-    all: subst.
-    all: clear fg.
-    all: auto.
-    assert (H3' := IHA1 _ _ _ qg _ H3).
-    assert (H4' := IHA2 _ _ _ qg _ H4).
-    admit.
-  Admitted.
+    all: intros.
+    - inversion gp.
+      auto.
+    - inversion gp.
+      subst.
+      econstructor.
+      1: apply H1.
+      eauto.
+  Qed.
 
-  Lemma snd_fanout {C A B} (f: Hor C A) (g: Hor C B): compose snd (fanout f g) == g.
+  Infix "∘" := compose (at level 30).
+
+  #[program]
+  Definition pure {x Γ t} (p: { v | Γ ⊢ v ⇐ t}): Hor Γ [(x, t)] := [(x, proj1_sig p)].
+
+  Next Obligation.
   Proof.
-    destruct f as [f ?], g as [g ?].
-    cbn.
-    unfold Term.equiv, compose, fst, fanout.
-    cbn.
-    admit.
-  Admitted.
+    apply (Jp_cut _ _ _ _ _ _ _ H (Jp_id [_])).
+  Qed.
+
+  #[program]
+  Definition fanout {Γ} {x y z A B}: x ≠ y → Hor ((x, A) :: (y, B) :: Γ) [(z, A * B)] := λ _,
+    pure (v_fanout (η A (V_var x)) (η B (V_var y))).
+
+  Next Obligation.
+  Proof.
+    econstructor.
+    all: apply Term.η_preserve.
+    all: constructor.
+    all: repeat constructor.
+    auto.
+  Qed.
 End Hor.
 
 Module Import Vert.

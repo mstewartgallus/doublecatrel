@@ -100,13 +100,13 @@ with Jv : environment -> intro -> type -> Prop :=    (* defn v *)
 (** definitions *)
 
 (* defns judge_subst *)
-Inductive Jp : environment -> subst -> environment -> Prop :=    (* defn p *)
- | Jp_nil : forall (Γ:environment),
-     Jp Γ  nil   nil 
- | Jp_cons : forall (Γ':environment) (ρ:subst) (x:var) (v:intro) (Γ:environment) (t:type),
-     Jv Γ' v t ->
-     Jp Γ' ρ Γ ->
-     Jp Γ'  (cons ( x ,  v )  ρ )   (cons ( x ,  t )  Γ ) .
+Inductive Jp : subst -> environment -> environment -> Prop :=    (* defn p *)
+ | Jp_id : forall (Γ:environment),
+     Jp  nil  Γ Γ
+ | Jp_cut : forall (ρ:subst) (x:var) (v:intro) (Γ2 Γ1 Γ3:environment) (t:type),
+     Jv Γ1 v t ->
+     Jp ρ  (cons ( x ,  t )  Γ2 )  Γ3 ->
+     Jp  (cons ( x ,  v )  ρ )   ( Γ2  ++  Γ1 )  Γ3.
 (** definitions *)
 
 (* defns bigV *)

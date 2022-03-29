@@ -20,6 +20,7 @@ environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (Assoc.assoc typ
   | nil         ::   :: nil {{ coq nil }}
   | G , x : t   ::   :: add {{ coq (cons ([[x]], [[t]]) [[G]]) }}
   | ( G )       :: S :: paren {{ coq ([[G]]) }}
+  | G ++ G'     :: M :: app {{ coq ([[G]] ++ [[G']]) }}
 
 subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (Assoc.assoc intro) }}
   | nil                   :: M :: nil {{ coq nil }}
@@ -92,16 +93,16 @@ defns
 judge_subst :: 'J' ::=
 
 defn
-G |- p : G' ::   :: p :: 'p_'
+|- p : G -> G' ::   :: p :: 'p_'
 by
 
--------------- :: nil
-G |- nil: nil
+-------------- :: id
+|- nil: G -> G
 
-G' |- v \check t
-G' |- p: G
-------------------------- :: cons
-G' |- p, x := v: G, x: t
+G1 |- v \check t
+|- p : G2, x: t -> G3
+---------------------------- :: cut
+|- p, x := v : G2 ++ G1 -> G3
 
 defns
 
