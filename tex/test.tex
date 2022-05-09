@@ -29,6 +29,7 @@
 \ottmetavartabular{
  $ \mathit{tyvar} ,\, \mathit{A} $ &  \\
  $ \mathit{var} ,\, \mathit{x} ,\, \mathit{y} $ &  \\
+ $ \mathit{axiom} ,\, \mathit{K} $ &  \\
 }}
 
 \newcommand{\otttype}{
@@ -47,7 +48,8 @@
 
 \newcommand{\ottintro}{
 \ottrulehead{\ottnt{intro}  ,\ \ottnt{v}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\mathop{ \textbf ! }}{}{}{}{}\ottprodnewline
+\ottfirstprodline{|}{\ottsym{(}  \mathit{K}  \colon{}  \ottnt{t}  \rightarrow  \mathit{A}  \ottsym{)}  \ottnt{v}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\mathop{ \textbf ! }}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{v}  \ottsym{,}  \ottnt{v'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{ [  \ottnt{V}  ] }{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{(}  \ottnt{v}  \ottsym{)}} {\textsf{S}}{}{}{}\ottprodnewline
@@ -68,7 +70,8 @@
 
 \newcommand{\ottcontext}{
 \ottrulehead{\ottnt{context}  ,\ \ottnt{E}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\lambda{} \, \mathit{x}  \ottsym{.}  \ottnt{E}}{}{\textsf{bind}\; \mathit{x}\; \textsf{in}\; \ottnt{E}}{}{}\ottprodnewline
+\ottfirstprodline{|}{\ottkw{inj} \, \ottnt{v}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\lambda{} \, \mathit{x}  \ottsym{.}  \ottnt{E}}{}{\textsf{bind}\; \mathit{x}\; \textsf{in}\; \ottnt{E}}{}{}\ottprodnewline
 \ottprodline{|}{\mathop{ \textbf ! }}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{E}  \ottsym{,}  \ottnt{E'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{ [  \ottnt{e}  ] }{}{}{}{}\ottprodnewline
@@ -204,6 +207,7 @@
 \ottrulehead{\ottnt{user\_syntax}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\mathit{tyvar}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\mathit{var}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\mathit{axiom}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{type}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{elim}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{intro}}{}{}{}{}\ottprodnewline
@@ -319,6 +323,14 @@
 \end{ottdefnblock}}
 
 %% defn v
+\newcommand{\ottdruleJvXXaxiom}[1]{\ottdrule[#1]{%
+\ottpremise{\Gamma  \vdash{}  \ottnt{v}  \Leftarrow  \ottnt{t}}%
+}{
+\Gamma  \vdash{}  \ottsym{(}  \mathit{K}  \colon{}  \ottnt{t}  \rightarrow  \mathit{A}  \ottsym{)}  \ottnt{v}  \Leftarrow  \mathit{A}}{%
+{\ottdrulename{Jv\_axiom}}{}%
+}}
+
+
 \newcommand{\ottdruleJvXXtt}[1]{\ottdrule[#1]{%
 }{
 \Gamma  \vdash{}  \mathop{ \textbf ! }  \Leftarrow  \textbf{I}}{%
@@ -343,6 +355,7 @@
 }}
 
 \newcommand{\ottdefnJv}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \vdash{}  \ottnt{v}  \Leftarrow  \ottnt{t}$}{}
+\ottusedrule{\ottdruleJvXXaxiom{}}
 \ottusedrule{\ottdruleJvXXtt{}}
 \ottusedrule{\ottdruleJvXXfanout{}}
 \ottusedrule{\ottdruleJvXXneu{}}
@@ -354,23 +367,23 @@
 
 % defns judge_subst
 %% defn p
-\newcommand{\ottdruleJpXXid}[1]{\ottdrule[#1]{%
+\newcommand{\ottdruleJpXXbang}[1]{\ottdrule[#1]{%
 }{
-\vdash{}  \bullet{}  \colon{}  \Gamma  \rightarrow  \Gamma}{%
-{\ottdrulename{Jp\_id}}{}%
+\vdash{}  \bullet{}  \colon{}  \Gamma  \rightarrow  \bullet{}}{%
+{\ottdrulename{Jp\_bang}}{}%
 }}
 
 
 \newcommand{\ottdruleJpXXcut}[1]{\ottdrule[#1]{%
 \ottpremise{\Gamma_{{\mathrm{1}}}  \vdash{}  \ottnt{v}  \Leftarrow  \ottnt{t}}%
-\ottpremise{\vdash{}  \rho  \colon{}  \Gamma_{{\mathrm{2}}}  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t}  \rightarrow  \Gamma_{{\mathrm{3}}}}%
+\ottpremise{\vdash{}  \rho  \colon{}  \Gamma_{{\mathrm{1}}}  \rightarrow  \Gamma_{{\mathrm{2}}}}%
 }{
-\vdash{}  \rho  \ottsym{,}  \mathit{x}  \mathbin{:=}  \ottnt{v}  \colon{}  \Gamma_{{\mathrm{2}}}  \mathrel{\cup}  \Gamma_{{\mathrm{1}}}  \rightarrow  \Gamma_{{\mathrm{3}}}}{%
+\vdash{}  \rho  \ottsym{,}  \mathit{x}  \mathbin{:=}  \ottnt{v}  \colon{}  \Gamma_{{\mathrm{1}}}  \rightarrow  \Gamma_{{\mathrm{2}}}  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t}}{%
 {\ottdrulename{Jp\_cut}}{}%
 }}
 
 \newcommand{\ottdefnJp}[1]{\begin{ottdefnblock}[#1]{$\vdash{}  \rho  \colon{}  \Gamma  \rightarrow  \Gamma'$}{}
-\ottusedrule{\ottdruleJpXXid{}}
+\ottusedrule{\ottdruleJpXXbang{}}
 \ottusedrule{\ottdruleJpXXcut{}}
 \end{ottdefnblock}}
 
@@ -415,6 +428,14 @@
 
 % defns bigv
 %% defn bigv
+\newcommand{\ottdrulebigvXXaxiom}[1]{\ottdrule[#1]{%
+\ottpremise{\rho  \vdash{}  \ottnt{v}  \mathrel{\Downarrow}  \ottnt{v'}}%
+}{
+\rho  \vdash{}  \ottsym{(}  \mathit{K}  \colon{}  \ottnt{t}  \rightarrow  \mathit{A}  \ottsym{)}  \ottnt{v}  \mathrel{\Downarrow}  \ottsym{(}  \mathit{K}  \colon{}  \ottnt{t}  \rightarrow  \mathit{A}  \ottsym{)}  \ottnt{v'}}{%
+{\ottdrulename{bigv\_axiom}}{}%
+}}
+
+
 \newcommand{\ottdrulebigvXXtt}[1]{\ottdrule[#1]{%
 }{
 \rho  \vdash{}  \mathop{ \textbf ! }  \mathrel{\Downarrow}  \mathop{ \textbf ! }}{%
@@ -439,6 +460,7 @@
 }}
 
 \newcommand{\ottdefnbigv}[1]{\begin{ottdefnblock}[#1]{$\rho  \vdash{}  \ottnt{v}  \mathrel{\Downarrow}  \ottnt{v'}$}{}
+\ottusedrule{\ottdrulebigvXXaxiom{}}
 \ottusedrule{\ottdrulebigvXXtt{}}
 \ottusedrule{\ottdrulebigvXXfanout{}}
 \ottusedrule{\ottdrulebigvXXneu{}}
@@ -622,6 +644,14 @@
 \end{ottdefnblock}}
 
 %% defn check
+\newcommand{\ottdrulecheckXXinject}[1]{\ottdrule[#1]{%
+\ottpremise{\Gamma  \vdash{}  \ottnt{v}  \Leftarrow  \ottnt{t}}%
+}{
+\Gamma  \vdash{}  \ottkw{inj} \, \ottnt{v}  \Leftarrow  \ottnt{t}}{%
+{\ottdrulename{check\_inject}}{}%
+}}
+
+
 \newcommand{\ottdrulecheckXXlam}[1]{\ottdrule[#1]{%
 \ottpremise{\Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \vdash{}  \ottnt{E}  \Leftarrow  \ottnt{t_{{\mathrm{2}}}}}%
 }{
@@ -654,6 +684,7 @@
 }}
 
 \newcommand{\ottdefncheck}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \vdash{}  \ottnt{E}  \Leftarrow  \ottnt{t}$}{}
+\ottusedrule{\ottdrulecheckXXinject{}}
 \ottusedrule{\ottdrulecheckXXlam{}}
 \ottusedrule{\ottdrulecheckXXtt{}}
 \ottusedrule{\ottdrulecheckXXfanout{}}
@@ -743,6 +774,13 @@
 \end{ottdefnblock}}
 
 %% defn accepts
+\newcommand{\ottdruleacceptsXXinject}[1]{\ottdrule[#1]{%
+}{
+\rho  \vdash{}  \ottkw{inj} \, \ottnt{v}  \ottsym{[}  \ottnt{v}  \ottsym{]}  \mathrel{\boxtimes}  \rho}{%
+{\ottdrulename{accepts\_inject}}{}%
+}}
+
+
 \newcommand{\ottdruleacceptsXXtt}[1]{\ottdrule[#1]{%
 }{
 \rho  \vdash{}  \mathop{ \textbf ! }  \ottsym{[}  \mathop{ \textbf ! }  \ottsym{]}  \mathrel{\boxtimes}  \rho}{%
@@ -775,6 +813,7 @@
 }}
 
 \newcommand{\ottdefnaccepts}[1]{\begin{ottdefnblock}[#1]{$\rho  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{v}  \ottsym{]}  \mathrel{\boxtimes}  \rho'$}{}
+\ottusedrule{\ottdruleacceptsXXinject{}}
 \ottusedrule{\ottdruleacceptsXXtt{}}
 \ottusedrule{\ottdruleacceptsXXfanout{}}
 \ottusedrule{\ottdruleacceptsXXlam{}}

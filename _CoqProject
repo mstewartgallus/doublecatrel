@@ -12,3 +12,4 @@ theories/Category.v
 theories/Term.v
 theories/Context.v
 theories/Categories.v
+theories/IZf.v

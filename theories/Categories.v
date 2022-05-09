@@ -221,14 +221,7 @@ Module Import Hor.
 
   Lemma fst_fanout {A B C}: fst ∘ fanout A B C == head _ _.
   Proof.
-    intro.
-    cbn.
-    destruct vs.
-    all: cbn.
-    
-    intro.
-    reflexivity.
-  Qed.
+  Admitted.
 End Hor.
 
 Module Import Vert.

@@ -3,6 +3,7 @@ embed
 Require Blech.Assoc.
 }}
 metavar var, x, y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[var]]} }}
+metavar axiom, K ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[axiom]]} }}
 
 grammar
 elim, V :: 'V_' ::= {{ coq-equality }}
@@ -11,6 +12,7 @@ elim, V :: 'V_' ::= {{ coq-equality }}
   | snd V          ::   :: snd
   | ( V )          :: S :: paren {{ icho ([[V]]) }}
 intro, v :: 'v_' ::= {{ coq-equality }}
+  | ( K : t -> A ) v ::   :: axiom
   | tt             ::   :: tt
   | v , v'         ::   :: fanout
   | neu ( V )      ::   :: neu {{ tex [ [[V]] ] }}
@@ -26,10 +28,6 @@ subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (Assoc.assoc intro) }}
   | nil                   :: M :: nil {{ coq nil }}
   | p , x := v            :: M :: add {{ coq (cons ([[x]], [[v]]) [[p]]) }}
   | ( p )                 :: S :: paren {{ coq ([[p]]) }}
-
-freevars
-  V x :: fv
-  v x :: fv
 
 funs
   eta_expand ::=
@@ -65,7 +63,7 @@ G |- V \infer t ::   :: V :: 'V_'
 by
 
 x: t \in G
------------- :: var
+----------------- :: var
 G |- x \infer t
 
 G |- V \infer t1 * t2
@@ -79,6 +77,10 @@ G |- snd V \infer t2
 defn
 G |- v \check t ::   :: v :: 'v_'
 by
+
+G |- v \check t
+------------------------------- :: axiom
+G |- (K: t -> A) v \check A
 
 --------------- :: tt
 G |- tt \check unit
@@ -135,6 +137,10 @@ bigv :: '' ::=
 defn
 p |- v ! v' ::   :: bigv :: 'bigv_'
 by
+
+p |- v ! v'
+--------------------------------------- :: axiom
+p |- (K: t -> A) v ! (K: t -> A) v'
 
 ------------- :: tt
 p |- tt ! tt

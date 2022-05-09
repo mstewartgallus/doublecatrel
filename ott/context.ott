@@ -1,6 +1,7 @@
 grammar
 
 context, E :: 'E_' ::=
+  | inj v                    ::   :: inj
   | lam x . E                ::   :: lam (+ bind x in E +)
   | tt                       ::   :: tt
   | E , E'                   ::   :: fanout
@@ -58,15 +59,6 @@ terminals :: 'terminals_' ::=
   | !            ::   :: big     {{ tex \mathrel{\Downarrow} }}
   | !=           ::   :: ne     {{ tex \mathrel{\ne} }}
   | ==           ::   :: equiv   {{ tex \mathrel{\sim} }}
-
-substitutions
-  single E x :: subst
-  single e x :: subst
-  single V x :: subst
-  single v x :: subst
-  single P x :: subst
-
-
 grammar
 formula :: formula_ ::=  
  | judgement                        ::   :: judgement
@@ -176,6 +168,10 @@ defn
 G |- E \check t ::   :: check :: 'check_'
 by
 
+G |- v \check t
+---------------------------------------- :: inject
+G |- inj v \check t
+
 G, x: t1 |- E \check t2
 ---------------------------------------- :: lam
 G |- lam x . E \check t1 * t2
@@ -243,6 +239,9 @@ p1 |- (cut E t) [ v ] # p2
 defn
   p |- E [ v ] # p' ::   :: accepts :: 'accepts_'
 by
+
+-------------------- :: inject
+p |- inj v [v] # p
 
 --------------- :: tt
 p |- tt [tt] # p

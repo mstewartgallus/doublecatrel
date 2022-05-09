@@ -30,20 +30,27 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_var : ott_coq_equality.
+Definition axiom : Set := nat.
+Lemma eq_axiom: forall (x y : axiom), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_axiom : ott_coq_equality.
 
 Inductive elim : Set := 
  | V_var (x:var)
  | V_fst (V:elim)
  | V_snd (V:elim).
 
-Definition environment : Set := (Assoc.assoc type).
-
-
 Inductive intro : Set := 
+ | v_axiom (K:axiom) (t:type) (A:tyvar) (v:intro)
  | v_tt : intro
  | v_fanout (v:intro) (v':intro)
  | v_neu (V:elim).
+
 Definition subst : Set := (Assoc.assoc intro).
+
+Definition environment : Set := (Assoc.assoc type).
 Lemma eq_elim: forall (x y : elim), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -54,22 +61,6 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_intro : ott_coq_equality.
-
-(** free variables *)
-Fixpoint fv_elim (V5:elim) : list var :=
-  match V5 with
-  | (V_var x) => (cons x nil)
-  | (V_fst V) => ((fv_elim V))
-  | (V_snd V) => ((fv_elim V))
-end.
-
-Fixpoint fv_intro (v5:intro) : list var :=
-  match v5 with
-  | v_tt => nil
-  | (v_fanout v v') => (app (fv_intro v) (fv_intro v'))
-  | (v_neu V) => ((fv_elim V))
-end.
-
 (** definitions *)
 
 (** funs eta_expand *)
@@ -104,6 +95,9 @@ Inductive JV : environment -> elim -> type -> Prop :=    (* defn V *)
      JV Γ V (t_prod t1 t2) ->
      JV Γ (V_snd V) t2
 with Jv : environment -> intro -> type -> Prop :=    (* defn v *)
+ | Jv_axiom : forall (Γ:environment) (K:axiom) (t:type) (A:tyvar) (v:intro),
+     Jv Γ v t ->
+     Jv Γ (v_axiom K t A v) (t_var A)
  | Jv_tt : forall (Γ:environment),
      Jv Γ v_tt t_unit
  | Jv_fanout : forall (Γ:environment) (v1 v2:intro) (t1 t2:type),
@@ -140,6 +134,9 @@ Inductive bigV : subst -> elim -> intro -> Prop :=    (* defn bigV *)
 
 (* defns bigv *)
 Inductive bigv : subst -> intro -> intro -> Prop :=    (* defn bigv *)
+ | bigv_axiom : forall (ρ:subst) (K:axiom) (t:type) (A:tyvar) (v v':intro),
+     bigv ρ v v' ->
+     bigv ρ (v_axiom K t A v) (v_axiom K t A v')
  | bigv_tt : forall (ρ:subst),
      bigv ρ v_tt v_tt
  | bigv_fanout : forall (ρ:subst) (v1 v2 v1' v2':intro),
@@ -155,6 +152,7 @@ Inductive use : Set :=
  | u_unused : use.
 
 Inductive context : Set := 
+ | E_inj (v:intro)
  | E_lam (x:var) (E:context)
  | E_tt : context
  | E_fanout (E:context) (E':context)
@@ -177,51 +175,6 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_use : ott_coq_equality.
-(** library functions *)
-Fixpoint list_mem A (eq:forall a b:A,{a=b}+{a<>b}) (x:A) (l:list A) {struct l} : bool :=
-  match l with
-  | nil => false
-  | cons h t => if eq h x then true else list_mem A eq x t
-end.
-Arguments list_mem [A] _ _ _.
-
-
-(** substitutions *)
-Fixpoint subst_elim (V5:elim) (x5:var) (V_6:elim) {struct V_6} : elim :=
-  match V_6 with
-  | (V_var x) => (if eq_var x x5 then V5 else (V_var x))
-  | (V_fst V) => V_fst (subst_elim V5 x5 V)
-  | (V_snd V) => V_snd (subst_elim V5 x5 V)
-end.
-
-Fixpoint subst_intro (V5:elim) (x5:var) (v5:intro) {struct v5} : intro :=
-  match v5 with
-  | v_tt => v_tt 
-  | (v_fanout v v') => v_fanout (subst_intro V5 x5 v) (subst_intro V5 x5 v')
-  | (v_neu V) => v_neu (subst_elim V5 x5 V)
-end.
-
-Fixpoint subst_redex (e5:redex) (x5:var) (e_6:redex) {struct e_6} : redex :=
-  match e_6 with
-  | (e_var x) => (if eq_var x x5 then e5 else (e_var x))
-  | (e_app e E') => e_app (subst_redex e5 x5 e) (subst_context e5 x5 E')
-  | (e_step e E' t) => e_step (subst_redex e5 x5 e) (subst_context e5 x5 E') t
-  | (e_let x y e E' t) => e_let x y (subst_redex e5 x5 e) (if list_mem eq_var x5 (app (cons x nil) (cons y nil)) then E' else (subst_context e5 x5 E')) t
-  | (e_cut E t) => e_cut (subst_context e5 x5 E) t
-end
-with subst_context (e5:redex) (x5:var) (E5:context) {struct E5} : context :=
-  match E5 with
-  | (E_lam x E) => E_lam x (if list_mem eq_var x5 (cons x nil) then E else (subst_context e5 x5 E))
-  | E_tt => E_tt 
-  | (E_fanout E E') => E_fanout (subst_context e5 x5 E) (subst_context e5 x5 E')
-  | (E_neu e) => E_neu (subst_redex e5 x5 e)
-end.
-
-Definition subst_span (V5:elim) (x5:var) (P5:span) : span :=
-  match P5 with
-  | (P_with ρ v) => P_with ρ (subst_intro V5 x5 v)
-end.
-
 (** definitions *)
 
 (* defns lfind *)
@@ -290,6 +243,9 @@ Inductive infer : environment -> redex -> type -> Prop :=    (* defn infer *)
      check Γ E t ->
      infer Γ (e_cut E t) t
 with check : environment -> context -> type -> Prop :=    (* defn check *)
+ | check_inject : forall (Γ:environment) (v:intro) (t:type),
+     Jv Γ v t ->
+     check Γ (E_inj v) t
  | check_lam : forall (Γ:environment) (x:var) (E:context) (t1 t2:type),
      check  (cons ( x ,  t1 )  Γ )  E t2 ->
      check Γ (E_lam x E) (t_prod t1 t2)
@@ -335,6 +291,8 @@ Inductive produces : subst -> redex -> intro -> subst -> Prop :=    (* defn prod
      accepts ρ1 E v ρ2 ->
      produces ρ1  ( (e_cut E t) )  v ρ2
 with accepts : subst -> context -> intro -> subst -> Prop :=    (* defn accepts *)
+ | accepts_inject : forall (ρ:subst) (v:intro),
+     accepts ρ (E_inj v) v ρ
  | accepts_tt : forall (ρ:subst),
      accepts ρ E_tt v_tt ρ
  | accepts_fanout : forall (ρ1:subst) (E E':context) (v v':intro) (ρ3 ρ2:subst),

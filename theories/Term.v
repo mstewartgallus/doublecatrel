@@ -58,6 +58,9 @@ Function typeinfer Γ V :=
 
 Function typecheck Γ v t: bool :=
   match v, t with
+  | v_axiom K τ1 A v, t_var B =>
+      (if eq_var A B then true else false) &&
+      typecheck Γ v τ1
   | v_tt, t_unit => true
   | v_fanout v0 v1, t1 * t2 =>
       typecheck Γ v0 t1 && typecheck Γ v1 t2
@@ -104,6 +107,15 @@ Fixpoint typecheck_sound {Γ v t}:
   - intros p.
     destruct v.
     all: cbn.
+    + cbn in *.
+      destruct t eqn:q in p.
+      all: try contradiction.
+      destruct eq_var in p.
+      2: contradiction.
+      cbn in p.
+      subst.
+      constructor.
+      eauto.
     + destruct t.
       all: try contradiction.
       constructor.
@@ -155,10 +167,13 @@ Proof using .
   all: try rewrite IHp1.
   all: try rewrite IHp2.
   all: auto.
-  rewrite (typeinfer_complete H).
-  destruct eq_tyvar.
-  2: contradiction.
-  auto.
+  + destruct eq_var.
+    1: reflexivity.
+    contradiction.
+  + rewrite (typeinfer_complete H).
+    destruct eq_tyvar.
+    2: contradiction.
+    auto.
 Qed.
 
 Function eval_elim ρ V :=
@@ -172,6 +187,7 @@ Function eval_elim ρ V :=
 
 Function eval ρ v :=
   match v with
+  | v_axiom K τ1 τ2 v' => v_axiom K τ1 τ2 (eval ρ v')
   | v_tt => v_tt
   | v_fanout v1 v2 =>
       v_fanout (eval ρ v1) (eval ρ v2)
@@ -203,7 +219,7 @@ Proof.
       auto.
   - assert (IHp' := IHp _ _ q).
     inversion IHp'.
-    auto.
+    all: eauto.
   - assert (IHp' := IHp _ _ q).
     inversion IHp'.
     auto.
@@ -220,6 +236,9 @@ Proof.
   all: cbn.
   all: intros ? ? q.
   - constructor.
+    eauto.
+  - constructor.
+    all: eauto.
   - constructor.
     all: eauto.
   - eapply eval_elim_preserves.

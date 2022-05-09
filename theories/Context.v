@@ -3,6 +3,7 @@ Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
 Require Import Blech.Environment.
 Require Import Blech.Category.
+Require Blech.Term.
 Require Blech.OptionNotations.
 
 Require Import Coq.Unicode.Utf8.
@@ -75,6 +76,7 @@ Section Typecheck.
     | E_neu e =>
         useinfer Δ e
 
+    | E_inj _ => None
     end
       %list
   with useinfer Δ e: option usage :=
@@ -118,6 +120,8 @@ Section Typecheck.
           if eq_type t t' then true else false
         else
           false
+
+    | E_inj v, _ => Term.typecheck Γ v t
 
     | _, _ => false
     end
@@ -255,6 +259,9 @@ Proof using.
     all: cbn.
     all: intros ? ? p.
     all: try contradiction.
+    + constructor.
+      apply Term.typecheck_sound.
+      auto.
     + destruct t.
       all: try contradiction.
       destruct typecheck eqn:q.
@@ -395,9 +402,12 @@ Proof using.
     all: try rewrite (typecheck_complete _ _ _ p2).
     all: try rewrite (typeinfer_complete _ _ _ H).
     all: auto.
-    destruct eq_type.
-    2: contradiction.
-    auto.
+    + rewrite Term.typecheck_complete.
+      1: reflexivity.
+      auto.
+    + destruct eq_type.
+      2: contradiction.
+      auto.
   - destruct p.
     all: cbn.
     all: try rewrite (typeinfer_complete _ _ _ p).
@@ -438,6 +448,7 @@ Function take x ρ :=
 
 Fixpoint verify ρ E v: list subst :=
   match E, v with
+  | E_inj v', _ => if eq_intro v v' then [ρ] else []
   | E_lam x E, v_fanout v1 v2 =>
       do ρ' ← verify ((x, v1) :: ρ) E v2 ;
       if ρ' is (y, _) :: ρ''
@@ -576,6 +587,10 @@ Proof using.
   - intro q.
     destruct q.
     all: cbn.
+    + destruct eq_intro.
+      2: contradiction.
+      constructor.
+      reflexivity.
     + left.
       auto.
     + assert (q1' := verify_complete _ _ _ _ q1).
@@ -657,8 +672,14 @@ Proof using.
   Open Scope list.
   - destruct E.
     all: cbn.
+    + destruct eq_intro.
+      2: constructor.
+      constructor.
+      2: constructor.
+      destruct e.
+      constructor.
     + destruct v.
-      1,3: constructor.
+      all: try left.
       induction (verify_sound ((x, v1) :: ρ) E v2).
       all: cbn.
       1: constructor.
@@ -677,12 +698,12 @@ Proof using.
       econstructor.
       eauto.
     + destruct v.
-      2,3: constructor.
+      all: try left.
       constructor.
       2: constructor.
       constructor.
     + destruct v.
-      1,3: constructor.
+      all: try left.
       induction (verify_sound ρ E1 v1).
       1: constructor.
       cbn.
@@ -787,7 +808,7 @@ Proof using.
       destruct x0.
       destruct v.
       all: cbn.
-      1,3: constructor.
+      all: try left.
       clear IHf.
       clear f.
       rewrite List.app_nil_r in *.
