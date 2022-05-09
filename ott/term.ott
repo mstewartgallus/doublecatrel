@@ -27,6 +27,10 @@ subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (Assoc.assoc intro) }}
   | p , x := v            :: M :: add {{ coq (cons ([[x]], [[v]]) [[p]]) }}
   | ( p )                 :: S :: paren {{ coq ([[p]]) }}
 
+freevars
+  V x :: fv
+  v x :: fv
+
 funs
   eta_expand ::=
 fun
@@ -96,13 +100,13 @@ defn
 |- p : G -> G' ::   :: p :: 'p_'
 by
 
--------------- :: id
-|- nil: G -> G
+--------------- :: bang
+|- nil: G -> nil
 
 G1 |- v \check t
-|- p : G2, x: t -> G3
----------------------------- :: cut
-|- p, x := v : G2 ++ G1 -> G3
+|- p : G1 -> G2
+----------------------------------- :: cut
+|- p, x := v : G1 -> G2, x: t
 
 defns
 

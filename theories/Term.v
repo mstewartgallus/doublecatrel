@@ -160,3 +160,68 @@ Proof using .
   2: contradiction.
   auto.
 Qed.
+
+Function eval_elim ρ V :=
+  match V with
+  | V_var x => if Assoc.find x ρ is Some v then v else v_tt
+  | V_fst V =>
+      if eval_elim ρ V is v_fanout v1 _ then v1 else v_tt
+  | V_snd V =>
+      if eval_elim ρ V is v_fanout _ v2 then v2 else v_tt
+  end.
+
+Function eval ρ v :=
+  match v with
+  | v_tt => v_tt
+  | v_fanout v1 v2 =>
+      v_fanout (eval ρ v1) (eval ρ v2)
+  | v_neu V => eval_elim ρ V
+  end.
+
+Lemma eval_elim_preserves {Γ V t}:
+  Γ ⊢ V ⇒ t →
+   ∀ {ρ Γ'},
+     Jp ρ Γ' Γ →
+  Γ' ⊢ eval_elim ρ V ⇐ t.
+Proof.
+  intros p.
+  induction p.
+  all: cbn.
+  all: intros ? ? q.
+  - generalize dependent H.
+    induction q.
+    all: intros.
+    1: inversion H.
+    cbn in *.
+    inversion H0.
+    all: subst.
+    + destruct PeanoNat.Nat.eq_dec.
+      2: contradiction.
+      auto.
+    + destruct PeanoNat.Nat.eq_dec.
+      1: subst; contradiction.
+      auto.
+  - assert (IHp' := IHp _ _ q).
+    inversion IHp'.
+    auto.
+  - assert (IHp' := IHp _ _ q).
+    inversion IHp'.
+    auto.
+Qed.
+
+Lemma eval_preserves {Γ v t}:
+  Γ ⊢ v ⇐ t →
+   ∀ {ρ Γ'},
+     Jp ρ Γ' Γ →
+  Γ' ⊢ eval ρ v ⇐ t.
+Proof.
+  intros p.
+  induction p.
+  all: cbn.
+  all: intros ? ? q.
+  - constructor.
+  - constructor.
+    all: eauto.
+  - eapply eval_elim_preserves.
+    all: eauto.
+Qed.

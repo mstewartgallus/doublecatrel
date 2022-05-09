@@ -38,12 +38,12 @@ Inductive elim : Set :=
 
 Definition environment : Set := (Assoc.assoc type).
 
+
 Inductive intro : Set := 
  | v_tt : intro
  | v_fanout (v:intro) (v':intro)
  | v_neu (V:elim).
 Definition subst : Set := (Assoc.assoc intro).
-
 Lemma eq_elim: forall (x y : elim), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -54,6 +54,22 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_intro : ott_coq_equality.
+
+(** free variables *)
+Fixpoint fv_elim (V5:elim) : list var :=
+  match V5 with
+  | (V_var x) => (cons x nil)
+  | (V_fst V) => ((fv_elim V))
+  | (V_snd V) => ((fv_elim V))
+end.
+
+Fixpoint fv_intro (v5:intro) : list var :=
+  match v5 with
+  | v_tt => nil
+  | (v_fanout v v') => (app (fv_intro v) (fv_intro v'))
+  | (v_neu V) => ((fv_elim V))
+end.
+
 (** definitions *)
 
 (** funs eta_expand *)
@@ -101,12 +117,12 @@ with Jv : environment -> intro -> type -> Prop :=    (* defn v *)
 
 (* defns judge_subst *)
 Inductive Jp : subst -> environment -> environment -> Prop :=    (* defn p *)
- | Jp_id : forall (Γ:environment),
-     Jp  nil  Γ Γ
- | Jp_cut : forall (ρ:subst) (x:var) (v:intro) (Γ2 Γ1 Γ3:environment) (t:type),
+ | Jp_bang : forall (Γ:environment),
+     Jp  nil  Γ  nil 
+ | Jp_cut : forall (ρ:subst) (x:var) (v:intro) (Γ1 Γ2:environment) (t:type),
      Jv Γ1 v t ->
-     Jp ρ  (cons ( x ,  t )  Γ2 )  Γ3 ->
-     Jp  (cons ( x ,  v )  ρ )   ( Γ2  ++  Γ1 )  Γ3.
+     Jp ρ Γ1 Γ2 ->
+     Jp  (cons ( x ,  v )  ρ )  Γ1  (cons ( x ,  t )  Γ2 ) .
 (** definitions *)
 
 (* defns bigV *)
