@@ -42,6 +42,8 @@ Inductive context : Set :=
  | E_inj (v:intro)
  | E_true : context
  | E_false : context
+ | E_and (E:context) (E':context)
+ | E_or (E:context) (E':context)
  | E_lam (x:var) (E:context)
  | E_tt : context
  | E_fanout (E:context) (E':context)
@@ -228,6 +230,14 @@ with sE : usage -> context -> usage -> Prop :=    (* defn sE *)
      sE Δ E_true Δ
  | sE_false : forall (Δ:usage),
      sE Δ E_false Δ
+ | sE_and : forall (Δ:usage) (E E':context) (Δ':usage),
+     sE Δ E Δ' ->
+     sE Δ E' Δ' ->
+     sE Δ (E_and E E') Δ'
+ | sE_or : forall (Δ:usage) (E E':context) (Δ':usage),
+     sE Δ E Δ' ->
+     sE Δ E' Δ' ->
+     sE Δ (E_or E E') Δ'
  | sE_tt : forall (Δ:usage),
      sE Δ E_tt Δ
  | sE_fanout : forall (Δ1:usage) (E1 E2:context) (Δ3 Δ2:usage),
@@ -271,6 +281,14 @@ with check : signature -> environment -> context -> type -> Prop :=    (* defn c
      check Σ Γ E_true t
  | check_false : forall (Σ:signature) (Γ:environment) (t:type),
      check Σ Γ E_false t
+ | check_and : forall (Σ:signature) (Γ:environment) (E E':context) (t:type),
+     check Σ Γ E t ->
+     check Σ Γ E' t ->
+     check Σ Γ (E_and E E') t
+ | check_or : forall (Σ:signature) (Γ:environment) (E E':context) (t:type),
+     check Σ Γ E t ->
+     check Σ Γ E' t ->
+     check Σ Γ (E_or E E') t
  | check_lam : forall (Σ:signature) (Γ:environment) (x:var) (E:context) (t1 t2:type),
      check Σ  (cons ( x ,  t1 )  Γ )  E t2 ->
      check Σ Γ (E_lam x E) (t_prod t1 t2)
@@ -320,6 +338,16 @@ with accepts : theory -> subst -> context -> intro -> subst -> Prop :=    (* def
      accepts T ρ (E_inj v) v ρ
  | accepts_true : forall (T:theory) (ρ:subst) (v:intro),
      accepts T ρ E_true v ρ
+ | accepts_and : forall (T:theory) (ρ:subst) (E E':context) (v:intro) (ρ':subst),
+     accepts T ρ E v ρ' ->
+     accepts T ρ E' v ρ' ->
+     accepts T ρ (E_and E E') v ρ'
+ | accepts_or_inl : forall (T:theory) (ρ:subst) (E E':context) (v:intro) (ρ':subst),
+     accepts T ρ E v ρ' ->
+     accepts T ρ (E_or E E') v ρ'
+ | accepts_or_inr : forall (T:theory) (ρ:subst) (E E':context) (v:intro) (ρ':subst),
+     accepts T ρ E' v ρ' ->
+     accepts T ρ (E_or E E') v ρ'
  | accepts_tt : forall (T:theory) (ρ:subst),
      accepts T ρ E_tt v_tt ρ
  | accepts_fanout : forall (T:theory) (ρ1:subst) (E E':context) (v v':intro) (ρ3 ρ2:subst),

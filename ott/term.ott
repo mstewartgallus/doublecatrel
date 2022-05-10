@@ -61,6 +61,8 @@ context, E :: 'E_' ::=
 
   | true                     ::   :: true
   | false                    ::   :: false
+  | E /\ E'                  ::   :: and
+  | E \/ E'                  ::   :: or
 
   | lam x . E                ::   :: lam (+ bind x in E +)
   | tt                       ::   :: tt
@@ -112,6 +114,8 @@ terminals :: 'terminals_' ::=
   | snd          ::   :: snd  {{ tex \pi{}_2 }}
   | true         ::   :: true  {{ tex \top }}
   | false        ::   :: false  {{ tex \bot }}
+  | /\          ::   :: and  {{ tex \wedge }}
+  | \/           ::   :: or  {{ tex \vee }}
   | lam          ::   :: lam  {{ tex \lambda{} }}
   | nil          ::   :: nil   {{ tex \bullet{} }}
   | let          ::   :: let  {{ tex \mathbin{\textbf{let} } }}
@@ -317,6 +321,17 @@ D |- true # D
 -------------- :: false
 D |- false # D
 
+% FIXME I think and and or should be nonlinear?
+D |- E # D'
+D |- E' # D'
+------------------- :: and
+D |- E /\ E' # D'
+
+D |- E # D'
+D |- E' # D'
+------------------- :: or
+D |- E \/ E' # D'
+
 ------------ :: tt
 D |- tt # D
 
@@ -378,6 +393,16 @@ S[G] |- true \check t
 
 ---------------------- :: false
 S[G] |- false \check t
+
+S[G] |- E \check t
+S[G] |- E' \check t
+------------------------ :: and
+S[G] |- E /\ E' \check t
+
+S[G] |- E \check t
+S[G] |- E' \check t
+------------------------ :: or
+S[G] |- E \/ E' \check t
 
 S[G, x: t1] |- E \check t2
 ---------------------------------------- :: lam
@@ -457,6 +482,19 @@ T ; p |- inj v [v] # p
 
 --------------------- :: true
 T ; p |- true [v] # p
+
+T ; p |- E [v] # p'
+T ; p |- E' [v] # p'
+-------------------------- :: and
+T ; p |- E /\ E' [v] # p'
+
+T ; p |- E [v] # p'
+-------------------------- :: or_inl
+T ; p |- E \/ E' [v] # p'
+
+T ; p |- E' [v] # p'
+-------------------------- :: or_inr
+T ; p |- E \/ E' [v] # p'
 
 --------------------- :: tt
 T ; p |- tt [tt] # p

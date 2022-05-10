@@ -97,6 +97,8 @@
 \ottprodline{|}{\ottkw{inj} \, \ottnt{v}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\top}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\bot}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{E}  \wedge  \ottnt{E'}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{E}  \vee  \ottnt{E'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\lambda{} \, \mathit{x}  \ottsym{.}  \ottnt{E}}{}{\textsf{bind}\; \mathit{x}\; \textsf{in}\; \ottnt{E}}{}{}\ottprodnewline
 \ottprodline{|}{\mathop{ \textbf ! }}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{E}  \ottsym{,}  \ottnt{E'}}{}{}{}{}\ottprodnewline
@@ -154,6 +156,8 @@
 \ottprodline{|}{ \pi{}_2 }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \top }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \bot }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ \wedge }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ \vee }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \lambda{} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \bullet{} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathbin{\textbf{let} } }{}{}{}{}\ottprodnewline
@@ -613,6 +617,24 @@
 }}
 
 
+\newcommand{\ottdrulesEXXand}[1]{\ottdrule[#1]{%
+\ottpremise{\Delta  \vdash{}  \ottnt{E}  \mathrel{\boxtimes}  \Delta'}%
+\ottpremise{\Delta  \vdash{}  \ottnt{E'}  \mathrel{\boxtimes}  \Delta'}%
+}{
+\Delta  \vdash{}  \ottnt{E}  \wedge  \ottnt{E'}  \mathrel{\boxtimes}  \Delta'}{%
+{\ottdrulename{sE\_and}}{}%
+}}
+
+
+\newcommand{\ottdrulesEXXor}[1]{\ottdrule[#1]{%
+\ottpremise{\Delta  \vdash{}  \ottnt{E}  \mathrel{\boxtimes}  \Delta'}%
+\ottpremise{\Delta  \vdash{}  \ottnt{E'}  \mathrel{\boxtimes}  \Delta'}%
+}{
+\Delta  \vdash{}  \ottnt{E}  \vee  \ottnt{E'}  \mathrel{\boxtimes}  \Delta'}{%
+{\ottdrulename{sE\_or}}{}%
+}}
+
+
 \newcommand{\ottdrulesEXXtt}[1]{\ottdrule[#1]{%
 }{
 \Delta  \vdash{}  \mathop{ \textbf ! }  \mathrel{\boxtimes}  \Delta}{%
@@ -641,6 +663,8 @@
 \ottusedrule{\ottdrulesEXXlam{}}
 \ottusedrule{\ottdrulesEXXtrue{}}
 \ottusedrule{\ottdrulesEXXfalse{}}
+\ottusedrule{\ottdrulesEXXand{}}
+\ottusedrule{\ottdrulesEXXor{}}
 \ottusedrule{\ottdrulesEXXtt{}}
 \ottusedrule{\ottdrulesEXXfanout{}}
 \ottusedrule{\ottdrulesEXXneu{}}
@@ -734,6 +758,24 @@
 }}
 
 
+\newcommand{\ottdrulecheckXXand}[1]{\ottdrule[#1]{%
+\ottpremise{\Sigma  \ottsym{[}  \Gamma  \ottsym{]}  \vdash{}  \ottnt{E}  \Leftarrow  \ottnt{t}}%
+\ottpremise{\Sigma  \ottsym{[}  \Gamma  \ottsym{]}  \vdash{}  \ottnt{E'}  \Leftarrow  \ottnt{t}}%
+}{
+\Sigma  \ottsym{[}  \Gamma  \ottsym{]}  \vdash{}  \ottnt{E}  \wedge  \ottnt{E'}  \Leftarrow  \ottnt{t}}{%
+{\ottdrulename{check\_and}}{}%
+}}
+
+
+\newcommand{\ottdrulecheckXXor}[1]{\ottdrule[#1]{%
+\ottpremise{\Sigma  \ottsym{[}  \Gamma  \ottsym{]}  \vdash{}  \ottnt{E}  \Leftarrow  \ottnt{t}}%
+\ottpremise{\Sigma  \ottsym{[}  \Gamma  \ottsym{]}  \vdash{}  \ottnt{E'}  \Leftarrow  \ottnt{t}}%
+}{
+\Sigma  \ottsym{[}  \Gamma  \ottsym{]}  \vdash{}  \ottnt{E}  \vee  \ottnt{E'}  \Leftarrow  \ottnt{t}}{%
+{\ottdrulename{check\_or}}{}%
+}}
+
+
 \newcommand{\ottdrulecheckXXlam}[1]{\ottdrule[#1]{%
 \ottpremise{\Sigma  \ottsym{[}  \Gamma  \ottsym{,}  \mathit{x}  \colon{}  \ottnt{t_{{\mathrm{1}}}}  \ottsym{]}  \vdash{}  \ottnt{E}  \Leftarrow  \ottnt{t_{{\mathrm{2}}}}}%
 }{
@@ -770,6 +812,8 @@
 \ottusedrule{\ottdrulecheckXXinject{}}
 \ottusedrule{\ottdrulecheckXXtrue{}}
 \ottusedrule{\ottdrulecheckXXfalse{}}
+\ottusedrule{\ottdrulecheckXXand{}}
+\ottusedrule{\ottdrulecheckXXor{}}
 \ottusedrule{\ottdrulecheckXXlam{}}
 \ottusedrule{\ottdrulecheckXXtt{}}
 \ottusedrule{\ottdrulecheckXXfanout{}}
@@ -873,6 +917,31 @@
 }}
 
 
+\newcommand{\ottdruleacceptsXXand}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{T}  \ottsym{;}  \rho  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{v}  \ottsym{]}  \mathrel{\boxtimes}  \rho'}%
+\ottpremise{\ottnt{T}  \ottsym{;}  \rho  \vdash{}  \ottnt{E'}  \ottsym{[}  \ottnt{v}  \ottsym{]}  \mathrel{\boxtimes}  \rho'}%
+}{
+\ottnt{T}  \ottsym{;}  \rho  \vdash{}  \ottnt{E}  \wedge  \ottnt{E'}  \ottsym{[}  \ottnt{v}  \ottsym{]}  \mathrel{\boxtimes}  \rho'}{%
+{\ottdrulename{accepts\_and}}{}%
+}}
+
+
+\newcommand{\ottdruleacceptsXXorXXinl}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{T}  \ottsym{;}  \rho  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{v}  \ottsym{]}  \mathrel{\boxtimes}  \rho'}%
+}{
+\ottnt{T}  \ottsym{;}  \rho  \vdash{}  \ottnt{E}  \vee  \ottnt{E'}  \ottsym{[}  \ottnt{v}  \ottsym{]}  \mathrel{\boxtimes}  \rho'}{%
+{\ottdrulename{accepts\_or\_inl}}{}%
+}}
+
+
+\newcommand{\ottdruleacceptsXXorXXinr}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{T}  \ottsym{;}  \rho  \vdash{}  \ottnt{E'}  \ottsym{[}  \ottnt{v}  \ottsym{]}  \mathrel{\boxtimes}  \rho'}%
+}{
+\ottnt{T}  \ottsym{;}  \rho  \vdash{}  \ottnt{E}  \vee  \ottnt{E'}  \ottsym{[}  \ottnt{v}  \ottsym{]}  \mathrel{\boxtimes}  \rho'}{%
+{\ottdrulename{accepts\_or\_inr}}{}%
+}}
+
+
 \newcommand{\ottdruleacceptsXXtt}[1]{\ottdrule[#1]{%
 }{
 \ottnt{T}  \ottsym{;}  \rho  \vdash{}  \mathop{ \textbf ! }  \ottsym{[}  \mathop{ \textbf ! }  \ottsym{]}  \mathrel{\boxtimes}  \rho}{%
@@ -907,6 +976,9 @@
 \newcommand{\ottdefnaccepts}[1]{\begin{ottdefnblock}[#1]{$\ottnt{T}  \ottsym{;}  \rho  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{v}  \ottsym{]}  \mathrel{\boxtimes}  \rho'$}{}
 \ottusedrule{\ottdruleacceptsXXinject{}}
 \ottusedrule{\ottdruleacceptsXXtrue{}}
+\ottusedrule{\ottdruleacceptsXXand{}}
+\ottusedrule{\ottdruleacceptsXXorXXinl{}}
+\ottusedrule{\ottdruleacceptsXXorXXinr{}}
 \ottusedrule{\ottdruleacceptsXXtt{}}
 \ottusedrule{\ottdruleacceptsXXfanout{}}
 \ottusedrule{\ottdruleacceptsXXlam{}}

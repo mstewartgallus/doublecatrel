@@ -72,6 +72,24 @@ Section Typecheck.
     | E_true => Some Δ
     | E_false => Some Δ
 
+    | E_and E E' =>
+        do Δ1 ← usecheck Δ E ;
+        do Δ2 ← usecheck Δ E' ;
+        if eq_usage Δ1 Δ2
+        then
+          Some Δ1
+        else
+          None
+
+    | E_or E E' =>
+        do Δ1 ← usecheck Δ E ;
+        do Δ2 ← usecheck Δ E' ;
+        if eq_usage Δ1 Δ2
+        then
+          Some Δ1
+        else
+          None
+
     | E_tt => Some Δ
 
     | E_fanout E E' =>
@@ -120,6 +138,9 @@ Section Typecheck.
 
     | E_true, _ => true
     | E_false, _ => true
+
+    | E_and E E', _ => typecheck X Γ E t && typecheck X Γ E' t
+    | E_or E E', _ => typecheck X Γ E t && typecheck X Γ E' t
 
     | E_lam x E, t1 * t2 =>
         typecheck X ((x, t1) :: Γ) E t2
@@ -198,6 +219,26 @@ Proof using.
       auto.
     + constructor.
     + constructor.
+    + destruct usecheck eqn:q.
+      2: discriminate.
+      destruct usecheck eqn:q' in H0.
+      2: discriminate.
+      destruct eq_usage.
+      2: discriminate.
+      inversion H0.
+      subst.
+      constructor.
+      all: eauto.
+    + destruct usecheck eqn:q.
+      2: discriminate.
+      destruct usecheck eqn:q' in H0.
+      2: discriminate.
+      destruct eq_usage.
+      2: discriminate.
+      inversion H0.
+      subst.
+      constructor.
+      all: eauto.
     + destruct usecheck eqn:q.
       2: discriminate.
       destruct u.
@@ -296,6 +337,22 @@ Proof using.
       auto.
     + constructor.
     + constructor.
+    + destruct typecheck eqn:q in p.
+      2: contradiction.
+      destruct typecheck eqn:q' in p.
+      2: contradiction.
+      constructor.
+      all: eapply typecheck_sound.
+      all: try rewrite q; try rewrite q'.
+      all: auto.
+    + destruct typecheck eqn:q in p.
+      2: contradiction.
+      destruct typecheck eqn:q' in p.
+      2: contradiction.
+      constructor.
+      all: eapply typecheck_sound.
+      all: try rewrite q; try rewrite q'.
+      all: auto.
     + destruct t.
       all: try contradiction.
       destruct typecheck eqn:q.
@@ -403,6 +460,9 @@ Proof using.
     destruct eq_var.
     2: contradiction.
     auto.
+    all: try destruct eq_usage.
+    all: try contradiction.
+    all: reflexivity.
   - destruct p.
     all: cbn.
     all: try rewrite (useinfer_complete _ _ _ p).
@@ -485,11 +545,25 @@ Function take x ρ :=
   else
     None.
 
+Definition eq_subst (x y: subst): {x = y} + {x ≠ y}.
+Proof.
+Admitted.
+
 Fixpoint verify (T: theory) ρ E v: list subst :=
   match E, v with
   | E_axiom K E1, _ => []
 
   | E_true, _ => [ρ]
+  | E_and E E', _ =>
+      do ρ1 ← verify T ρ E v ;
+      do ρ2 ← verify T ρ E' v ;
+      if eq_subst ρ1 ρ2
+      then
+        [ρ1]
+      else
+        []
+  | E_or E E', _ =>
+      verify T ρ E v ++ verify T ρ E' v
 
   | E_inj v', _ => if eq_intro v v' then [ρ] else []
   | E_lam x E, v_fanout v1 v2 =>
@@ -636,6 +710,25 @@ Proof using.
       reflexivity.
     + left.
       reflexivity.
+    + assert (q1' := verify_complete _ _ _ _ _ q1).
+      assert (q2' := verify_complete _ _ _ _ _ q2).
+      clear q1 q2.
+      induction (verify _ ρ E v).
+      1: inversion q1'.
+      destruct q1'.
+      2: apply In_inr.
+      2: auto.
+      cbn.
+      apply In_inl.
+      clear IHl.
+      induction (verify _ ρ E' v).
+      1: inversion q2'.
+      cbn.
+      admit.
+    + apply In_inl.
+      auto.
+    + apply In_inr.
+      auto.
     + left.
       reflexivity.
     + assert (q1' := verify_complete _ _ _ _ _ q1).
@@ -728,6 +821,38 @@ Proof using.
       2:left.
       constructor.
     + left.
+    + induction (verify_sound T ρ E1 v).
+      1: left.
+      cbn.
+      apply Forall_mon.
+      2: auto.
+      clear IHf.
+      induction (verify_sound T ρ E2 v).
+      1: cbn.
+      1: left.
+      cbn.
+      apply Forall_mon.
+      2: eauto.
+      destruct eq_subst.
+      2: left.
+      constructor.
+      2: left.
+      subst.
+      constructor.
+      all: eauto.
+    + apply Forall_mon.
+      * induction (verify_sound T ρ E1 v).
+        1: left.
+        constructor.
+        all: eauto.
+        apply accepts_or_inl.
+        auto.
+      * induction (verify_sound T ρ E2 v).
+        1: left.
+        constructor.
+        all: eauto.
+        apply accepts_or_inr.
+        auto.
     + destruct v.
       all: try left.
       induction (verify_sound T ((x, v1) :: ρ) E v2).
