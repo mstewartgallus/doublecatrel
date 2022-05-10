@@ -69,6 +69,9 @@ Section Typecheck.
         else
           None
 
+    | E_true => Some Δ
+    | E_false => Some Δ
+
     | E_tt => Some Δ
 
     | E_fanout E E' =>
@@ -114,6 +117,10 @@ Section Typecheck.
           typecheck X Γ E t
         else
           false
+
+    | E_true, _ => true
+    | E_false, _ => true
+
     | E_lam x E, t1 * t2 =>
         typecheck X ((x, t1) :: Γ) E t2
 
@@ -189,6 +196,8 @@ Proof using.
     all: clear p.
     + constructor.
       auto.
+    + constructor.
+    + constructor.
     + destruct usecheck eqn:q.
       2: discriminate.
       destruct u.
@@ -285,6 +294,8 @@ Proof using.
     + constructor.
       apply Term.typecheck_sound.
       auto.
+    + constructor.
+    + constructor.
     + destruct t.
       all: try contradiction.
       destruct typecheck eqn:q.
@@ -474,11 +485,15 @@ Function take x ρ :=
   else
     None.
 
-Fixpoint verify ρ E v: list subst :=
+Fixpoint verify (T: theory) ρ E v: list subst :=
   match E, v with
+  | E_axiom K E1, _ => []
+
+  | E_true, _ => [ρ]
+
   | E_inj v', _ => if eq_intro v v' then [ρ] else []
   | E_lam x E, v_fanout v1 v2 =>
-      do ρ' ← verify ((x, v1) :: ρ) E v2 ;
+      do ρ' ← verify T ((x, v1) :: ρ) E v2 ;
       if ρ' is (y, _) :: ρ''
       then
         if eq_var x y
@@ -490,43 +505,43 @@ Fixpoint verify ρ E v: list subst :=
   | E_tt, v_tt => [ρ]
 
   | E_fanout E E', v_fanout v1 v2 =>
-      do ρ1 ← verify ρ E v1 ;
-      verify ρ1 E' v2
+      do ρ1 ← verify T ρ E v1 ;
+      verify T ρ1 E' v2
 
   | E_neu e, _ =>
-      do (ρ' |- v') ← search ρ e ;
+      do (ρ' |- v') ← search T ρ e ;
       if eq_intro v v'
       then [ρ']
       else []
   | _, _ => []
   end%list
-with search ρ e: list span :=
+with search T ρ e: list span :=
   match e with
   | e_var x => if take x ρ is Some (v, ρ') then [ρ' |- v] else []
 
   | e_app e E' =>
-      do (ρ1 |- v) ← search ρ e ;
+      do (ρ1 |- v) ← search T ρ e ;
       if v is v_fanout v0 v1
       then
-          do ρ2 ← verify ρ1 E' v0 ;
+          do ρ2 ← verify T ρ1 E' v0 ;
           [ρ2 |- v1]
       else []
 
   | e_step e E' t2 =>
       do v' ← generate t2 ;
-      do (ρ1 |- v) ← search ρ e ;
+      do (ρ1 |- v) ← search T ρ e ;
       if v is v_tt
       then
-        do ρ2 ← verify ρ1 E' v' ;
+        do ρ2 ← verify T ρ1 E' v' ;
         [ρ2 |- v']
       else
         []
 
   | e_let x y e E' t3 =>
       do v' ← generate t3 ;
-      do (ρ1 |- v) ← search ρ e ;
+      do (ρ1 |- v) ← search T ρ e ;
       do (a, b) ← (if v is v_fanout a b then [(a, b)] else []) ;
-      do ρ2 ← verify ((y, b) :: (x , a) :: ρ1) E' v' ;
+      do ρ2 ← verify T ((y, b) :: (x , a) :: ρ1) E' v' ;
       if ρ2 is (y', _) :: (x', _) :: ρ2'
       then
         match eq_var x x', eq_var y y' with
@@ -539,7 +554,7 @@ with search ρ e: list span :=
 
   | e_cut E t =>
       do v ← generate t ;
-      do ρ' ← verify ρ E v ;
+      do ρ' ← verify T ρ E v ;
       [ρ' |- v]
   end%list.
 
@@ -604,12 +619,12 @@ Proof.
   auto.
 Qed.
 
-Theorem verify_complete {ρ E v p'}:
-  accepts ρ E v p' →
-  List.In p' (verify ρ E v)
-with search_complete {ρ e v ρ'}:
-  produces ρ e v ρ' →
-  List.In ((ρ' |- v)) (search ρ e).
+Theorem verify_complete {T ρ E v p'}:
+  accepts T ρ E v p' →
+  List.In p' (verify T ρ E v)
+with search_complete {T ρ e v ρ'}:
+  produces T ρ e v ρ' →
+  List.In ((ρ' |- v)) (search T ρ e).
 Proof using.
   Open Scope list.
   - intro q.
@@ -620,11 +635,13 @@ Proof using.
       constructor.
       reflexivity.
     + left.
-      auto.
-    + assert (q1' := verify_complete _ _ _ _ q1).
-      assert (q2' := verify_complete _ _ _ _ q2).
+      reflexivity.
+    + left.
+      reflexivity.
+    + assert (q1' := verify_complete _ _ _ _ _ q1).
+      assert (q2' := verify_complete _ _ _ _ _ q2).
       clear q1 q2.
-      induction (verify ρ1 E v).
+      induction (verify _ ρ1 E v).
       1: inversion q1'.
       cbn in *.
       destruct q1'.
@@ -633,9 +650,9 @@ Proof using.
       apply In_inl.
       subst.
       auto.
-    + assert (q' := verify_complete _ _ _ _ q).
+    + assert (q' := verify_complete _ _ _ _ _ q).
       clear q.
-      induction (verify ((x, v1) :: ρ1) E v2).
+      induction (verify _ ((x, v1) :: ρ1) E v2).
       1: inversion q'.
       cbn in *.
       destruct q'.
@@ -651,9 +668,9 @@ Proof using.
       2: contradiction.
       cbn.
       auto.
-    + assert (H' := search_complete _ _ _ _ H).
+    + assert (H' := search_complete _ _ _ _ _ H).
       clear H.
-      induction (search ρ1 e).
+      induction (search _ ρ1 e).
       1: contradiction.
       cbn in *.
       destruct H'.
@@ -683,8 +700,8 @@ Proof using.
         1: subst; contradiction.
         rewrite <- IHpmem.
         auto.
-    + assert (q' := search_complete _ _ _ _ q).
-      assert (H' := verify_complete _ _ _ _ H).
+    + assert (q' := search_complete _ _ _ _ _ q).
+      assert (H' := verify_complete _ _ _ _ _ H).
       clear q H.
       admit.
     + admit.
@@ -692,10 +709,10 @@ Proof using.
     + admit.
 Admitted.
 
-Theorem verify_sound {ρ E v}:
-  List.Forall (accepts ρ E v) (verify ρ E v)
-with search_sound {ρ e}:
-  List.Forall (λ '(p' |- v), produces ρ e v p') (search ρ e).
+Theorem verify_sound {T ρ E v}:
+  List.Forall (accepts T ρ E v) (verify T ρ E v)
+with search_sound {T ρ e}:
+  List.Forall (λ '(p' |- v), produces T ρ e v p') (search T ρ e).
 Proof using.
   Open Scope list.
   - destruct E.
@@ -707,9 +724,13 @@ Proof using.
       2: constructor.
       destruct e.
       constructor.
+    + constructor.
+      2:left.
+      constructor.
+    + left.
     + destruct v.
       all: try left.
-      induction (verify_sound ((x, v1) :: ρ) E v2).
+      induction (verify_sound T ((x, v1) :: ρ) E v2).
       all: cbn.
       1: constructor.
       apply Forall_mon.
@@ -733,20 +754,20 @@ Proof using.
       constructor.
     + destruct v.
       all: try left.
-      induction (verify_sound ρ E1 v1).
+      induction (verify_sound T ρ E1 v1).
       1: constructor.
       cbn.
       apply Forall_mon.
       2: auto.
       clear IHf.
-      induction (verify_sound x E2 v2).
+      induction (verify_sound T x E2 v2).
       all: cbn.
       all: auto.
       constructor.
       2: auto.
       econstructor.
       all: eauto.
-    + induction (search_sound ρ e).
+    + induction (search_sound T ρ e).
       all: cbn.
       1: constructor.
       apply Forall_mon.
@@ -781,7 +802,7 @@ Proof using.
       * constructor.
       * constructor.
         all: eauto.
-    + induction (search_sound ρ e).
+    + induction (search_sound T ρ e).
       1: constructor.
       cbn.
       apply Forall_mon.
@@ -791,7 +812,7 @@ Proof using.
       destruct v.
       all: cbn.
       all: auto.
-      induction (verify_sound ρ0 E' v1).
+      induction (verify_sound T ρ0 E' v1).
       all: cbn.
       all: auto.
       constructor.
@@ -804,7 +825,7 @@ Proof using.
       apply Forall_mon.
       all: auto.
       clear IHl.
-      induction (search_sound ρ e).
+      induction (search_sound T ρ e).
       1: constructor.
       cbn.
       apply Forall_mon.
@@ -815,7 +836,7 @@ Proof using.
       all: cbn.
       all: auto.
       all: auto.
-      induction (verify_sound ρ0 E' a).
+      induction (verify_sound T ρ0 E' a).
       all: auto.
       all: cbn.
       1: constructor.
@@ -829,7 +850,7 @@ Proof using.
       apply Forall_mon.
       all: auto.
       clear IHl.
-      induction (search_sound  ρ e).
+      induction (search_sound T ρ e).
       1: constructor.
       cbn in *.
       apply Forall_mon.
@@ -842,7 +863,7 @@ Proof using.
       clear f.
       rewrite List.app_nil_r in *.
       cbn.
-      induction (verify_sound ((y, v2) :: (x, v1) :: ρ0) E' a).
+      induction (verify_sound T ((y, v2) :: (x, v1) :: ρ0) E' a).
       all: cbn.
       1: constructor.
       apply Forall_mon.
@@ -869,7 +890,7 @@ Proof using.
       apply Forall_mon.
       2: auto.
       clear IHl.
-      induction (verify_sound ρ E a).
+      induction (verify_sound T ρ E a).
       1: constructor.
       cbn.
       constructor.

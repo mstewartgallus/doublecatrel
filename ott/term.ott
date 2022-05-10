@@ -21,14 +21,21 @@ usage, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (Assoc.assoc use) }}
   | D , x [ u ]          ::   :: cons {{ coq (cons ([[x]], [[u]]) [[D]]) }}
 
 global, g :: 'g_' ::=
-  | sort     ::   :: sort
-  | t -> A   ::   :: function
-  | t -/> A  ::   :: relation
-  | E => E'  ::   :: sequent
+  | sort              ::   :: sort
+  | t -> A            ::   :: function
+  | t -/> A           ::   :: relation
 
-theory, T :: 'T_' ::= {{ coq (Assoc.assoc global) }}
+signature, S {{ tex \Sigma }} {{ coq Σ }} :: 'S_' ::= {{ coq (Assoc.assoc global) }}
   | nil         ::   :: nil {{ coq nil }}
-  | T , K : g       ::   :: add {{ coq (cons ([[K]], [[g]]) [[T]]) }}
+  | S , K : g       ::   :: add {{ coq (cons ([[K]], [[g]]) [[S]]) }}
+
+% FIXME put sequents here
+sequent, H :: 'H_' ::=
+  | E [ v ] => E' [ v' ] ::  :: seq
+
+theory, T :: 'T_' ::= {{ coq (list sequent) }}
+  | nil         ::   :: nil {{ coq nil }}
+  | T , H       ::   :: add {{ coq (cons [[H]] [[T]]) }}
 
 environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (Assoc.assoc type) }}
   | nil         ::   :: nil {{ coq nil }}
@@ -51,6 +58,10 @@ intro, v :: 'v_' ::= {{ coq-equality }}
 context, E :: 'E_' ::=
   | K E                      ::   :: axiom
   | inj v                    ::   :: inj
+
+  | true                     ::   :: true
+  | false                    ::   :: false
+
   | lam x . E                ::   :: lam (+ bind x in E +)
   | tt                       ::   :: tt
   | E , E'                   ::   :: fanout
@@ -99,6 +110,8 @@ terminals :: 'terminals_' ::=
   | tt           ::   :: tt   {{ tex \mathop{ \textbf ! } }}
   | fst          ::   :: fst  {{ tex \pi{}_1 }}
   | snd          ::   :: snd  {{ tex \pi{}_2 }}
+  | true         ::   :: true  {{ tex \top }}
+  | false        ::   :: false  {{ tex \bot }}
   | lam          ::   :: lam  {{ tex \lambda{} }}
   | nil          ::   :: nil   {{ tex \bullet{} }}
   | let          ::   :: let  {{ tex \mathbin{\textbf{let} } }}
@@ -108,7 +121,7 @@ terminals :: 'terminals_' ::=
   | \check       ::   :: check  {{ tex \Leftarrow }}
   | once         ::   :: once  {{ tex \mathrel{\in!} }}
   | never        ::   :: never  {{ tex \mathrel{\notin} }}
-  | ++            ::   :: merge  {{ tex \mathrel{\cup} }}
+  | ++           ::   :: merge  {{ tex \mathrel{\cup} }}
   | !            ::   :: big     {{ tex \mathrel{\Downarrow} }}
   | !=           ::   :: ne     {{ tex \mathrel{\ne} }}
   | ==           ::   :: equiv   {{ tex \mathrel{\sim} }}
@@ -143,57 +156,57 @@ defns
 judge_term :: 'J' ::=
 
 defn
-T [ G ] |- V \infer t ::   :: V :: 'V_'
+S [ G ] |- V \infer t ::   :: V :: 'V_'
 by
 
 x: t \in G
 ----------------- :: var
-T[G] |- x \infer t
+S[G] |- x \infer t
 
-T[G] |- V \infer t1 * t2
+S[G] |- V \infer t1 * t2
 ------------------ :: fst
-T[G] |- fst V \infer t1
+S[G] |- fst V \infer t1
 
-T[G] |- V \infer t1 * t2
+S[G] |- V \infer t1 * t2
 ------------------ :: snd
-T[G] |- snd V \infer t2
+S[G] |- snd V \infer t2
 
 defn
-T [ G ] |- v \check t ::   :: v :: 'v_'
+S [ G ] |- v \check t ::   :: v :: 'v_'
 by
 
-{{ Assoc.find [[K]] [[T]] = Some [[t -> A]] }}
-T[G] |- v \check t
+{{ Assoc.find [[K]] [[S]] = Some [[t -> A]] }}
+S[G] |- v \check t
 ------------------------------- :: axiom
-T[G] |- K v \check A
+S[G] |- K v \check A
 
---------------- :: tt
-T[G] |- tt \check unit
+----------------------- :: tt
+S[G] |- tt \check unit
 
-T[G] |- v1 \check t1
-T[G] |- v2 \check t2
+S[G] |- v1 \check t1
+S[G] |- v2 \check t2
 ------------------------------ :: fanout
-T[G] |- v1, v2 \check t1 * t2
+S[G] |- v1, v2 \check t1 * t2
 
-T[G] |- V \infer A
+S[G] |- V \infer A
 ----------------- :: neu
-T[G] |- neu ( V) \check A
+S[G] |- neu ( V) \check A
 
 defns
 
 judge_subst :: 'J' ::=
 
 defn
-T |- p : G -> G' ::   :: p :: 'p_'
+S |- p : G -> G' ::   :: p :: 'p_'
 by
 
 --------------- :: bang
-T |- nil: G -> nil
+S |- nil: G -> nil
 
-T[G1] |- v \check t
-T |- p : G1 -> G2
+S[G1] |- v \check t
+S |- p : G1 -> G2
 ----------------------------------- :: cut
-T |- p, x := v : G1 -> G2, x: t
+S |- p, x := v : G1 -> G2, x: t
 
 defns
 
@@ -224,7 +237,7 @@ p |- v ! v' ::   :: bigv :: 'bigv_'
 by
 
 p |- v ! v'
---------------------------------------- :: axiom
+------------------------ :: axiom
 p |- K v ! K v'
 
 ------------- :: tt
@@ -298,6 +311,12 @@ D, x[unused] |- E #  D', x[used]
 ---------------------------------- :: lam
 D |- lam x . E # D'
 
+-------------- :: true
+D |- true # D
+
+-------------- :: false
+D |- false # D
+
 ------------ :: tt
 D |- tt # D
 
@@ -315,60 +334,66 @@ defns
 judge_context :: '' ::=
 
 defn
-T [ G ]  |- e \infer t ::   :: infer :: 'infer_'
+S [ G ]  |- e \infer t ::   :: infer :: 'infer_'
 by
 
 x: t \in G
 ----------------------- :: var
-T[G] |- x \infer t
+S[G] |- x \infer t
 
-T[G] |- e1 \infer t1 * t2
-T[G] |- E2 \check t1
+S[G] |- e1 \infer t1 * t2
+S[G] |- E2 \check t1
 --------------------------------- :: app
-T[G] |- e1 E2 \infer t2
+S[G] |- e1 E2 \infer t2
 
-T[G] |- e1 \infer unit
-T[G] |- E2 \check t
+S[G] |- e1 \infer unit
+S[G] |- E2 \check t
 ---------------------------------- :: step
-T[G] |- e1; E2 : t \infer t
+S[G] |- e1; E2 : t \infer t
 
-T[G] |- e1 \infer t1 * t2
-T[G, x: t1, y: t2] |- E2 \check t3
+S[G] |- e1 \infer t1 * t2
+S[G, x: t1, y: t2] |- E2 \check t3
 ------------------------------------------------- :: let
-T[G] |- let x, y = e1 in E2 : t3 \infer t3
+S[G] |- let x, y = e1 in E2 : t3 \infer t3
 
-T[G] |- E \check t
+S[G] |- E \check t
 ---------------------------------- :: cut
-T[G] |- cut E t \infer t
+S[G] |- cut E t \infer t
 
 defn
-T [ G ] |- E \check t ::   :: check :: 'check_'
+S [ G ] |- E \check t ::   :: check :: 'check_'
 by
 
-{{ Assoc.find [[K]] [[T]] = Some [[t -/> A]] }}
-T[G] |- E \check t
+{{ Assoc.find [[K]] [[S]] = Some [[t -/> A]] }}
+S[G] |- E \check t
 ------------------------------- :: axiom
-T[G] |- K E \check A
+S[G] |- K E \check A
 
-T[G] |- v \check t
----------------------------------------- :: inject
-T[G] |- inj v \check t
+S[G] |- v \check t
+------------------------ :: inject
+S[G] |- inj v \check t
 
-T[G, x: t1] |- E \check t2
+---------------------- :: true
+S[G] |- true \check t
+
+---------------------- :: false
+S[G] |- false \check t
+
+S[G, x: t1] |- E \check t2
 ---------------------------------------- :: lam
-T[G] |- lam x . E \check t1 * t2
+S[G] |- lam x . E \check t1 * t2
 
 -------------------- :: tt
-T[G] |- tt \check unit
+S[G] |- tt \check unit
 
-T[G] |- E1 \check t1
-T[G] |- E2 \check t2
+S[G] |- E1 \check t1
+S[G] |- E2 \check t2
 ---------------------------- :: fanout
-T[G] |- E1, E2 \check t1 * t2
+S[G] |- E1, E2 \check t1 * t2
 
-T[G] |- e \infer t
+S[G] |- e \infer t
 ---------------------- :: neu
-T[G] |- neu e \check t
+S[G] |- neu e \check t
 
 defns
 
@@ -392,51 +417,59 @@ defns
 sat :: '' ::=
 
 defn
-  p |- e [ v ] # p' ::   :: produces :: 'produces_'
+  T ; p |- e [ v ] # p' ::   :: produces :: 'produces_'
 by
 
 x := v \in p # p'
 -------------------- :: var
-p |- x [ v ] # p'
+T ; p |- x [ v ] # p'
 
-p1 |- e [ tt ] # p2
-p2 |- E' [ v ] # p3
+T ; p1 |- e [ tt ] # p2
+T ; p2 |- E' [ v ] # p3
 ------------------------------- :: step
-p1 |- (e; E': t) [ v ] # p3
+T ; p1 |- (e; E': t) [ v ] # p3
 
-p1 |- e [v0, v1] # p2
-p2, x := v0, y := v1 |- E' [ v2 ] # p3, x := v0', y := v1'
------------------------------------------------------------ :: let
-p1 |- (let x, y = e in E' : t) [ v2 ] # p3
+T ; p1 |- e [v0, v1] # p2
+T ; p2, x := v0, y := v1 |- E' [ v2 ] # p3, x := v0', y := v1'
+-------------------------------------------------------------- :: let
+T ; p1 |- (let x, y = e in E' : t) [ v2 ] # p3
 
-p1 |- e [ v, v' ] # p2
-p2 |- E' [v] # p3
+T ; p1 |- e [ v, v' ] # p2
+T ; p2 |- E' [v] # p3
 ----------------------------- :: app
-p1 |- (e E') [ v' ] # p3
+T ; p1 |- (e E') [ v' ] # p3
 
-p1 |- E [ v ] # p2
+T ; p1 |- E [ v ] # p2
 ----------------------------- :: cut
-p1 |- (cut E t) [ v ] # p2
+T ; p1 |- (cut E t) [ v ] # p2
 
 defn
-  p |- E [ v ] # p' ::   :: accepts :: 'accepts_'
+  T ; p |- E [ v ] # p' ::   :: accepts :: 'accepts_'
 by
 
--------------------- :: inject
-p |- inj v [v] # p
+% {{ Assoc.find [[K]] [[T]] = Some [[E;v => E';v']] }}
+% T ; p |- E [v] # p'
+% ----------------------- :: axiom
+% T ; p |- K E' [v'] # p'
 
---------------- :: tt
-p |- tt [tt] # p
+----------------------- :: inject
+T ; p |- inj v [v] # p
 
-p1 |- E [v] # p2
-p2 |- E' [v'] # p3
---------------------------- :: fanout
-p1 |- (E, E') [v, v'] # p3
+--------------------- :: true
+T ; p |- true [v] # p
 
-p1, x := v1 |- E [ v2 ] # p2, x := v1'
--------------------------------------- :: lam
-p1 |- (lam x. E) [ v1, v2 ] # p2
+--------------------- :: tt
+T ; p |- tt [tt] # p
 
-p1 |- e [ v ] # p2
+T ; p1 |- E [v] # p2
+T ; p2 |- E' [v'] # p3
+------------------------------- :: fanout
+T ; p1 |- (E, E') [v, v'] # p3
+
+T ; p1, x := v1 |- E [ v2 ] # p2, x := v1'
+------------------------------------------- :: lam
+T ; p1 |- (lam x. E) [ v1, v2 ] # p2
+
+T ; p1 |- e [ v ] # p2
 --------------------------- :: neu
-p1 |- (neu e) [ v ] # p2
+T ; p1 |- (neu e) [ v ] # p2

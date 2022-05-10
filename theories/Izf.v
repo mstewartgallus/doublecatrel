@@ -31,9 +31,6 @@ Definition union_ax: axiom := 4.
 Definition infinity_ax: axiom := 5.
 Definition powerset_ax: axiom := 6.
 
-Definition pair_inl_ax: axiom := 7.
-Definition pair_inr_ax: axiom := 8.
-
 Definition set := t_var set_x.
 
 Definition mem := E_axiom mem_ax.
@@ -54,22 +51,30 @@ Definition powerset := v_axiom powerset_ax.
 
 Infix "→" := g_function.
 Infix "↛" := g_relation (at level 90).
-Infix "⇒" := g_sequent (at level 90).
 
-Definition IZF: theory := [
+Notation "P ⇒ Q" := (H_seq (fst P) (snd P) (fst Q) (snd Q)) (at level 90).
+
+Definition IZF: signature := [
     (mem_ax, set ↛ set_x) ;
 
     (empty_ax, t_unit → set_x) ;
     (pair_ax, set * set → set_x) ;
     (union_ax, set → set_x) ;
     (infinity_ax, t_unit → set_x) ;
-    (powerset_ax, set → set_x) ;
-
-    (* fixme quantify over *)
-    (pair_inl_ax, ∈ (E_inj (pair ∅ ∅)) ⇒ ∈ (E_inj ∅)) ;
-    (pair_inr_ax, ∈ (E_inj (pair ∅ ∅)) ⇒ ∈ (E_inj ∅))
+    (powerset_ax, set → set_x)
 ].
 
+(* Definition pair_inl_ax: axiom := 7. *)
+(* Definition pair_inr_ax: axiom := 8. *)
+
+(* fixme quantify over *)
+Definition IZF_axioms: theory := [
+    (∈ E_true, ∅) ⇒ (E_false, ∅) ;
+
+    (* FIXME pi1/pi2 *)
+    (∈ E_true, pair ∅ ∅) ⇒ (∈ E_true, ∅) ;
+    (∈ E_true, pair ∅ ∅) ⇒ (∈ E_true, ∅)
+  ].
 
 Lemma mem_use {Δ1 Δ2 E}:
     sE Δ1 E Δ2 →

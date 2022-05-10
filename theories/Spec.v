@@ -26,20 +26,22 @@ Inductive elim : Set :=
  | V_fst (V:elim)
  | V_snd (V:elim).
 
+Inductive type : Set := 
+ | t_var (A:axiom)
+ | t_unit : type
+ | t_prod (t:type) (t':type).
+
 Inductive intro : Set := 
  | v_axiom (K:axiom) (v:intro)
  | v_tt : intro
  | v_fanout (v:intro) (v':intro)
  | v_neu (V:elim).
 
-Inductive type : Set := 
- | t_var (A:axiom)
- | t_unit : type
- | t_prod (t:type) (t':type).
-
 Inductive context : Set := 
  | E_axiom (K:axiom) (E:context)
  | E_inj (v:intro)
+ | E_true : context
+ | E_false : context
  | E_lam (x:var) (E:context)
  | E_tt : context
  | E_fanout (E:context) (E':context)
@@ -58,16 +60,20 @@ Inductive use : Set :=
 Inductive global : Set := 
  | g_sort : global
  | g_function (t:type) (A:axiom)
- | g_relation (t:type) (A:axiom)
- | g_sequent (E:context) (E':context).
+ | g_relation (t:type) (A:axiom).
 
-Definition usage : Set := (Assoc.assoc use).
+Inductive sequent : Set := 
+ | H_seq (E:context) (v:intro) (E':context) (v':intro).
 
 Definition subst : Set := (Assoc.assoc intro).
 
+Definition usage : Set := (Assoc.assoc use).
+
+Definition signature : Set := (Assoc.assoc global).
+
 Definition environment : Set := (Assoc.assoc type).
 
-Definition theory : Set := (Assoc.assoc global).
+Definition theory : Set := (list sequent).
 
 Inductive span : Set := 
  | P_with (ρ:subst) (v:intro).
@@ -78,16 +84,16 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_elim : ott_coq_equality.
-Lemma eq_intro: forall (x y : intro), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-Hint Resolve eq_intro : ott_coq_equality.
 Lemma eq_type: forall (x y : type), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_type : ott_coq_equality.
+Lemma eq_intro: forall (x y : intro), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_intro : ott_coq_equality.
 Lemma eq_use: forall (x y : use), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -116,40 +122,40 @@ Inductive mem : var -> type -> environment -> Prop :=    (* defn mem *)
 (** definitions *)
 
 (* defns judge_term *)
-Inductive JV : theory -> environment -> elim -> type -> Prop :=    (* defn V *)
- | JV_var : forall (T:theory) (Γ:environment) (x:var) (t:type),
+Inductive JV : signature -> environment -> elim -> type -> Prop :=    (* defn V *)
+ | JV_var : forall (Σ:signature) (Γ:environment) (x:var) (t:type),
      mem x t Γ ->
-     JV T Γ (V_var x) t
- | JV_fst : forall (T:theory) (Γ:environment) (V:elim) (t1 t2:type),
-     JV T Γ V (t_prod t1 t2) ->
-     JV T Γ (V_fst V) t1
- | JV_snd : forall (T:theory) (Γ:environment) (V:elim) (t2 t1:type),
-     JV T Γ V (t_prod t1 t2) ->
-     JV T Γ (V_snd V) t2
-with Jv : theory -> environment -> intro -> type -> Prop :=    (* defn v *)
- | Jv_axiom : forall (T:theory) (Γ:environment) (K:axiom) (v:intro) (A:axiom) (t:type),
-     Assoc.find K T = Some (g_function t A)  ->
-     Jv T Γ v t ->
-     Jv T Γ (v_axiom K v) (t_var A)
- | Jv_tt : forall (T:theory) (Γ:environment),
-     Jv T Γ v_tt t_unit
- | Jv_fanout : forall (T:theory) (Γ:environment) (v1 v2:intro) (t1 t2:type),
-     Jv T Γ v1 t1 ->
-     Jv T Γ v2 t2 ->
-     Jv T Γ (v_fanout v1 v2) (t_prod t1 t2)
- | Jv_neu : forall (T:theory) (Γ:environment) (V:elim) (A:axiom),
-     JV T Γ V (t_var A) ->
-     Jv T Γ (v_neu V) (t_var A).
+     JV Σ Γ (V_var x) t
+ | JV_fst : forall (Σ:signature) (Γ:environment) (V:elim) (t1 t2:type),
+     JV Σ Γ V (t_prod t1 t2) ->
+     JV Σ Γ (V_fst V) t1
+ | JV_snd : forall (Σ:signature) (Γ:environment) (V:elim) (t2 t1:type),
+     JV Σ Γ V (t_prod t1 t2) ->
+     JV Σ Γ (V_snd V) t2
+with Jv : signature -> environment -> intro -> type -> Prop :=    (* defn v *)
+ | Jv_axiom : forall (Σ:signature) (Γ:environment) (K:axiom) (v:intro) (A:axiom) (t:type),
+     Assoc.find K Σ = Some (g_function t A)  ->
+     Jv Σ Γ v t ->
+     Jv Σ Γ (v_axiom K v) (t_var A)
+ | Jv_tt : forall (Σ:signature) (Γ:environment),
+     Jv Σ Γ v_tt t_unit
+ | Jv_fanout : forall (Σ:signature) (Γ:environment) (v1 v2:intro) (t1 t2:type),
+     Jv Σ Γ v1 t1 ->
+     Jv Σ Γ v2 t2 ->
+     Jv Σ Γ (v_fanout v1 v2) (t_prod t1 t2)
+ | Jv_neu : forall (Σ:signature) (Γ:environment) (V:elim) (A:axiom),
+     JV Σ Γ V (t_var A) ->
+     Jv Σ Γ (v_neu V) (t_var A).
 (** definitions *)
 
 (* defns judge_subst *)
-Inductive Jp : theory -> subst -> environment -> environment -> Prop :=    (* defn p *)
- | Jp_bang : forall (T:theory) (Γ:environment),
-     Jp T  nil  Γ  nil 
- | Jp_cut : forall (T:theory) (ρ:subst) (x:var) (v:intro) (Γ1 Γ2:environment) (t:type),
-     Jv T Γ1 v t ->
-     Jp T ρ Γ1 Γ2 ->
-     Jp T  (cons ( x ,  v )  ρ )  Γ1  (cons ( x ,  t )  Γ2 ) .
+Inductive Jp : signature -> subst -> environment -> environment -> Prop :=    (* defn p *)
+ | Jp_bang : forall (Σ:signature) (Γ:environment),
+     Jp Σ  nil  Γ  nil 
+ | Jp_cut : forall (Σ:signature) (ρ:subst) (x:var) (v:intro) (Γ1 Γ2:environment) (t:type),
+     Jv Σ Γ1 v t ->
+     Jp Σ ρ Γ1 Γ2 ->
+     Jp Σ  (cons ( x ,  v )  ρ )  Γ1  (cons ( x ,  t )  Γ2 ) .
 (** definitions *)
 
 (* defns bigV *)
@@ -218,6 +224,10 @@ with sE : usage -> context -> usage -> Prop :=    (* defn sE *)
  | sE_lam : forall (Δ:usage) (x:var) (E:context) (Δ':usage),
      sE  (cons ( x ,  u_unused )  Δ )  E  (cons ( x ,  u_used )  Δ' )  ->
      sE Δ (E_lam x E) Δ'
+ | sE_true : forall (Δ:usage),
+     sE Δ E_true Δ
+ | sE_false : forall (Δ:usage),
+     sE Δ E_false Δ
  | sE_tt : forall (Δ:usage),
      sE Δ E_tt Δ
  | sE_fanout : forall (Δ1:usage) (E1 E2:context) (Δ3 Δ2:usage),
@@ -230,45 +240,49 @@ with sE : usage -> context -> usage -> Prop :=    (* defn sE *)
 (** definitions *)
 
 (* defns judge_context *)
-Inductive infer : theory -> environment -> redex -> type -> Prop :=    (* defn infer *)
- | infer_var : forall (T:theory) (Γ:environment) (x:var) (t:type),
+Inductive infer : signature -> environment -> redex -> type -> Prop :=    (* defn infer *)
+ | infer_var : forall (Σ:signature) (Γ:environment) (x:var) (t:type),
      mem x t Γ ->
-     infer T Γ (e_var x) t
- | infer_app : forall (T:theory) (Γ:environment) (e1:redex) (E2:context) (t2 t1:type),
-     infer T Γ e1 (t_prod t1 t2) ->
-     check T Γ E2 t1 ->
-     infer T Γ (e_app e1 E2) t2
- | infer_step : forall (T:theory) (Γ:environment) (e1:redex) (E2:context) (t:type),
-     infer T Γ e1 t_unit ->
-     check T Γ E2 t ->
-     infer T Γ (e_step e1 E2 t) t
- | infer_let : forall (T:theory) (Γ:environment) (x y:var) (e1:redex) (E2:context) (t3 t1 t2:type),
-     infer T Γ e1 (t_prod t1 t2) ->
-     check T  (cons ( y ,  t2 )   (cons ( x ,  t1 )  Γ )  )  E2 t3 ->
-     infer T Γ (e_let x y e1 E2 t3) t3
- | infer_cut : forall (T:theory) (Γ:environment) (E:context) (t:type),
-     check T Γ E t ->
-     infer T Γ (e_cut E t) t
-with check : theory -> environment -> context -> type -> Prop :=    (* defn check *)
- | check_axiom : forall (T:theory) (Γ:environment) (K:axiom) (E:context) (A:axiom) (t:type),
-     Assoc.find K T = Some (g_relation t A)  ->
-     check T Γ E t ->
-     check T Γ (E_axiom K E) (t_var A)
- | check_inject : forall (T:theory) (Γ:environment) (v:intro) (t:type),
-     Jv T Γ v t ->
-     check T Γ (E_inj v) t
- | check_lam : forall (T:theory) (Γ:environment) (x:var) (E:context) (t1 t2:type),
-     check T  (cons ( x ,  t1 )  Γ )  E t2 ->
-     check T Γ (E_lam x E) (t_prod t1 t2)
- | check_tt : forall (T:theory) (Γ:environment),
-     check T Γ E_tt t_unit
- | check_fanout : forall (T:theory) (Γ:environment) (E1 E2:context) (t1 t2:type),
-     check T Γ E1 t1 ->
-     check T Γ E2 t2 ->
-     check T Γ (E_fanout E1 E2) (t_prod t1 t2)
- | check_neu : forall (T:theory) (Γ:environment) (e:redex) (t:type),
-     infer T Γ e t ->
-     check T Γ (E_neu e) t.
+     infer Σ Γ (e_var x) t
+ | infer_app : forall (Σ:signature) (Γ:environment) (e1:redex) (E2:context) (t2 t1:type),
+     infer Σ Γ e1 (t_prod t1 t2) ->
+     check Σ Γ E2 t1 ->
+     infer Σ Γ (e_app e1 E2) t2
+ | infer_step : forall (Σ:signature) (Γ:environment) (e1:redex) (E2:context) (t:type),
+     infer Σ Γ e1 t_unit ->
+     check Σ Γ E2 t ->
+     infer Σ Γ (e_step e1 E2 t) t
+ | infer_let : forall (Σ:signature) (Γ:environment) (x y:var) (e1:redex) (E2:context) (t3 t1 t2:type),
+     infer Σ Γ e1 (t_prod t1 t2) ->
+     check Σ  (cons ( y ,  t2 )   (cons ( x ,  t1 )  Γ )  )  E2 t3 ->
+     infer Σ Γ (e_let x y e1 E2 t3) t3
+ | infer_cut : forall (Σ:signature) (Γ:environment) (E:context) (t:type),
+     check Σ Γ E t ->
+     infer Σ Γ (e_cut E t) t
+with check : signature -> environment -> context -> type -> Prop :=    (* defn check *)
+ | check_axiom : forall (Σ:signature) (Γ:environment) (K:axiom) (E:context) (A:axiom) (t:type),
+     Assoc.find K Σ = Some (g_relation t A)  ->
+     check Σ Γ E t ->
+     check Σ Γ (E_axiom K E) (t_var A)
+ | check_inject : forall (Σ:signature) (Γ:environment) (v:intro) (t:type),
+     Jv Σ Γ v t ->
+     check Σ Γ (E_inj v) t
+ | check_true : forall (Σ:signature) (Γ:environment) (t:type),
+     check Σ Γ E_true t
+ | check_false : forall (Σ:signature) (Γ:environment) (t:type),
+     check Σ Γ E_false t
+ | check_lam : forall (Σ:signature) (Γ:environment) (x:var) (E:context) (t1 t2:type),
+     check Σ  (cons ( x ,  t1 )  Γ )  E t2 ->
+     check Σ Γ (E_lam x E) (t_prod t1 t2)
+ | check_tt : forall (Σ:signature) (Γ:environment),
+     check Σ Γ E_tt t_unit
+ | check_fanout : forall (Σ:signature) (Γ:environment) (E1 E2:context) (t1 t2:type),
+     check Σ Γ E1 t1 ->
+     check Σ Γ E2 t2 ->
+     check Σ Γ (E_fanout E1 E2) (t_prod t1 t2)
+ | check_neu : forall (Σ:signature) (Γ:environment) (e:redex) (t:type),
+     infer Σ Γ e t ->
+     check Σ Γ (E_neu e) t.
 (** definitions *)
 
 (* defns pfind *)
@@ -282,39 +296,41 @@ Inductive pmem : var -> intro -> subst -> subst -> Prop :=    (* defn pmem *)
 (** definitions *)
 
 (* defns sat *)
-Inductive produces : subst -> redex -> intro -> subst -> Prop :=    (* defn produces *)
- | produces_var : forall (ρ:subst) (x:var) (v:intro) (ρ':subst),
+Inductive produces : theory -> subst -> redex -> intro -> subst -> Prop :=    (* defn produces *)
+ | produces_var : forall (T:theory) (ρ:subst) (x:var) (v:intro) (ρ':subst),
      pmem x v ρ ρ' ->
-     produces ρ (e_var x) v ρ'
- | produces_step : forall (ρ1:subst) (e:redex) (E':context) (t:type) (v:intro) (ρ3 ρ2:subst),
-     produces ρ1 e v_tt ρ2 ->
-     accepts ρ2 E' v ρ3 ->
-     produces ρ1  ( (e_step e E' t) )  v ρ3
- | produces_let : forall (ρ1:subst) (x y:var) (e:redex) (E':context) (t:type) (v2:intro) (ρ3:subst) (v0 v1:intro) (ρ2:subst) (v0' v1':intro),
-     produces ρ1 e (v_fanout v0 v1) ρ2 ->
-     accepts  (cons ( y ,  v1 )   (cons ( x ,  v0 )  ρ2 )  )  E' v2  (cons ( y ,  v1' )   (cons ( x ,  v0' )  ρ3 )  )  ->
-     produces ρ1  ( (e_let x y e E' t) )  v2 ρ3
- | produces_app : forall (ρ1:subst) (e:redex) (E':context) (v':intro) (ρ3:subst) (v:intro) (ρ2:subst),
-     produces ρ1 e (v_fanout v v') ρ2 ->
-     accepts ρ2 E' v ρ3 ->
-     produces ρ1  ( (e_app e E') )  v' ρ3
- | produces_cut : forall (ρ1:subst) (E:context) (t:type) (v:intro) (ρ2:subst),
-     accepts ρ1 E v ρ2 ->
-     produces ρ1  ( (e_cut E t) )  v ρ2
-with accepts : subst -> context -> intro -> subst -> Prop :=    (* defn accepts *)
- | accepts_inject : forall (ρ:subst) (v:intro),
-     accepts ρ (E_inj v) v ρ
- | accepts_tt : forall (ρ:subst),
-     accepts ρ E_tt v_tt ρ
- | accepts_fanout : forall (ρ1:subst) (E E':context) (v v':intro) (ρ3 ρ2:subst),
-     accepts ρ1 E v ρ2 ->
-     accepts ρ2 E' v' ρ3 ->
-     accepts ρ1  ( (E_fanout E E') )  (v_fanout v v') ρ3
- | accepts_lam : forall (ρ1:subst) (x:var) (E:context) (v1 v2:intro) (ρ2:subst) (v1':intro),
-     accepts  (cons ( x ,  v1 )  ρ1 )  E v2  (cons ( x ,  v1' )  ρ2 )  ->
-     accepts ρ1  ( (E_lam x E) )  (v_fanout v1 v2) ρ2
- | accepts_neu : forall (ρ1:subst) (e:redex) (v:intro) (ρ2:subst),
-     produces ρ1 e v ρ2 ->
-     accepts ρ1  ( (E_neu e) )  v ρ2.
+     produces T ρ (e_var x) v ρ'
+ | produces_step : forall (T:theory) (ρ1:subst) (e:redex) (E':context) (t:type) (v:intro) (ρ3 ρ2:subst),
+     produces T ρ1 e v_tt ρ2 ->
+     accepts T ρ2 E' v ρ3 ->
+     produces T ρ1  ( (e_step e E' t) )  v ρ3
+ | produces_let : forall (T:theory) (ρ1:subst) (x y:var) (e:redex) (E':context) (t:type) (v2:intro) (ρ3:subst) (v0 v1:intro) (ρ2:subst) (v0' v1':intro),
+     produces T ρ1 e (v_fanout v0 v1) ρ2 ->
+     accepts T  (cons ( y ,  v1 )   (cons ( x ,  v0 )  ρ2 )  )  E' v2  (cons ( y ,  v1' )   (cons ( x ,  v0' )  ρ3 )  )  ->
+     produces T ρ1  ( (e_let x y e E' t) )  v2 ρ3
+ | produces_app : forall (T:theory) (ρ1:subst) (e:redex) (E':context) (v':intro) (ρ3:subst) (v:intro) (ρ2:subst),
+     produces T ρ1 e (v_fanout v v') ρ2 ->
+     accepts T ρ2 E' v ρ3 ->
+     produces T ρ1  ( (e_app e E') )  v' ρ3
+ | produces_cut : forall (T:theory) (ρ1:subst) (E:context) (t:type) (v:intro) (ρ2:subst),
+     accepts T ρ1 E v ρ2 ->
+     produces T ρ1  ( (e_cut E t) )  v ρ2
+with accepts : theory -> subst -> context -> intro -> subst -> Prop :=    (* defn accepts *)
+ | accepts_inject : forall (T:theory) (ρ:subst) (v:intro),
+     accepts T ρ (E_inj v) v ρ
+ | accepts_true : forall (T:theory) (ρ:subst) (v:intro),
+     accepts T ρ E_true v ρ
+ | accepts_tt : forall (T:theory) (ρ:subst),
+     accepts T ρ E_tt v_tt ρ
+ | accepts_fanout : forall (T:theory) (ρ1:subst) (E E':context) (v v':intro) (ρ3 ρ2:subst),
+     accepts T ρ1 E v ρ2 ->
+     accepts T ρ2 E' v' ρ3 ->
+     accepts T ρ1  ( (E_fanout E E') )  (v_fanout v v') ρ3
+ | accepts_lam : forall (T:theory) (ρ1:subst) (x:var) (E:context) (v1 v2:intro) (ρ2:subst) (v1':intro),
+     accepts T  (cons ( x ,  v1 )  ρ1 )  E v2  (cons ( x ,  v1' )  ρ2 )  ->
+     accepts T ρ1  ( (E_lam x E) )  (v_fanout v1 v2) ρ2
+ | accepts_neu : forall (T:theory) (ρ1:subst) (e:redex) (v:intro) (ρ2:subst),
+     produces T ρ1 e v ρ2 ->
+     accepts T ρ1  ( (E_neu e) )  v ρ2.
 
 
