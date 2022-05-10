@@ -24,30 +24,45 @@ Implicit Type v: intro.
 Definition set_x: var := 0.
 Definition set := t_var set_x.
 
-Definition empty_ax: var := 0.
-Definition pair_ax: var := 1.
-Definition union_ax: var := 2.
-Definition infinity_ax: var := 3.
-Definition powerset_ax: var := 4.
+Definition mem_ax: axiom := 0.
 
-(* FIXME allow axiomizing relations *)
-Axiom mem: context → context.
-Notation "∈" := mem.
-
-Axiom mem_use: ∀ {Δ1 Δ2 E},
-    sE Δ1 E Δ2 →
-    sE Δ1 (∈ E) Δ2.
-Axiom mem_check: ∀ {X Γ E},
-  check X Γ E set →
-  check X Γ (∈ E) set.
+Definition empty_ax: axiom := 1.
+Definition pair_ax: axiom := 2.
+Definition union_ax: axiom := 3.
+Definition infinity_ax: axiom := 4.
+Definition powerset_ax: axiom := 5.
 
 Definition IZF: globals := [
+    (mem_ax, g_relation set set_x) ;
+
     (empty_ax, g_function t_unit set_x) ;
     (pair_ax, g_function (set * set) set_x) ;
     (union_ax, g_function set set_x) ;
     (infinity_ax, g_function t_unit set_x) ;
     (powerset_ax, g_function set set_x)
 ].
+
+Definition mem := E_axiom mem_ax.
+Notation "∈" := mem.
+
+Lemma mem_use {Δ1 Δ2 E}:
+    sE Δ1 E Δ2 →
+    sE Δ1 (∈ E) Δ2.
+Proof.
+  intros.
+  constructor.
+  auto.
+Qed.
+
+Lemma mem_check {Γ E}:
+  check IZF Γ E set →
+  check IZF Γ (∈ E) set.
+Proof.
+  intros.
+  econstructor.
+  1: reflexivity.
+  auto.
+Qed.
 
 Definition empty := v_axiom empty_ax v_tt.
 Notation "∅" := empty.
@@ -62,15 +77,14 @@ Notation "∞" := infinity.
 
 Definition powerset := v_axiom powerset_ax.
 
-Lemma empty_check: ∀ {Γ}, IZF @ Γ ⊢ ∅ ⇐ set.
+Lemma empty_check {Γ}: IZF @ Γ ⊢ ∅ ⇐ set.
 Proof.
-  intro.
   econstructor.
   1: reflexivity.
   constructor.
 Qed.
 
-Lemma pair_check: ∀ {Γ v v'},
+Lemma pair_check {Γ v v'}:
     IZF @ Γ ⊢ v ⇐ set →
     IZF @ Γ ⊢ v' ⇐ set →
     IZF @ Γ ⊢ pair v v' ⇐ set.
@@ -82,7 +96,7 @@ Proof.
   all: auto.
 Qed.
 
-Lemma union_check: ∀ {Γ v},
+Lemma union_check {Γ v}:
     IZF @ Γ ⊢ v ⇐ set →
     IZF @ Γ ⊢ ⋃ v ⇐ set.
 Proof.
@@ -92,16 +106,15 @@ Proof.
   auto.
 Qed.
 
-Lemma infinity_check: ∀ {Γ},
+Lemma infinity_check {Γ}:
     IZF @ Γ ⊢ ∞ ⇐ set.
 Proof.
-  intros.
   econstructor.
   1: reflexivity.
   constructor.
 Qed.
 
-Lemma powerset_check: ∀ {Γ v},
+Lemma powerset_check {Γ v}:
     IZF @ Γ ⊢ v ⇐ set →
     IZF @ Γ ⊢ powerset v ⇐ set.
 Proof.

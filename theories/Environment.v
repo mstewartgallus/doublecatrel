@@ -67,8 +67,6 @@ Proof using .
     auto.
 Qed.
 
-Definition find := @Assoc.find type.
-
 Lemma unshadow {y t0 t1 Γ}:
   ∀ x t,
   mem x t ((y, t0) :: (y, t1) :: Γ) →

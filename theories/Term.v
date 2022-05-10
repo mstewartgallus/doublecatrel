@@ -117,6 +117,7 @@ Fixpoint typecheck_sound {X Γ v t}:
       destruct find eqn:r in p.
       2: contradiction.
       destruct g eqn:s in p.
+      all: try contradiction.
       destruct eq_var in p.
       2: contradiction.
       cbn in p.

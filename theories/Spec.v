@@ -42,7 +42,8 @@ Inductive use : Set :=
  | u_unused : use.
 
 Inductive global : Set := 
- | g_function (t:type) (A:tyvar).
+ | g_function (t:type) (A:tyvar)
+ | g_relation (t:type) (A:tyvar).
 
 Inductive intro : Set := 
  | v_axiom (K:axiom) (v:intro)
@@ -55,6 +56,7 @@ Definition usage : Set := (Assoc.assoc use).
 Definition globals : Set := (Assoc.assoc global).
 
 Inductive context : Set := 
+ | E_axiom (K:axiom) (E:context)
  | E_inj (v:intro)
  | E_lam (x:var) (E:context)
  | E_tt : context
@@ -214,6 +216,9 @@ Inductive se : usage -> redex -> usage -> Prop :=    (* defn se *)
      sE Δ E Δ' ->
      se Δ (e_cut E t) Δ'
 with sE : usage -> context -> usage -> Prop :=    (* defn sE *)
+ | sE_axiom : forall (Δ:usage) (K:axiom) (E:context) (Δ':usage),
+     sE Δ E Δ' ->
+     sE Δ (E_axiom K E) Δ'
  | sE_lam : forall (Δ:usage) (x:var) (E:context) (Δ':usage),
      sE  (cons ( x ,  u_unused )  Δ )  E  (cons ( x ,  u_used )  Δ' )  ->
      sE Δ (E_lam x E) Δ'
@@ -249,6 +254,10 @@ Inductive infer : globals -> environment -> redex -> type -> Prop :=    (* defn 
      check X Γ E t ->
      infer X Γ (e_cut E t) t
 with check : globals -> environment -> context -> type -> Prop :=    (* defn check *)
+ | check_axiom : forall (X:globals) (Γ:environment) (K:axiom) (E:context) (A:tyvar) (t:type),
+     Assoc.find K X = Some (g_relation t A)  ->
+     check X Γ E t ->
+     check X Γ (E_axiom K E) (t_var A)
  | check_inject : forall (X:globals) (Γ:environment) (v:intro) (t:type),
      Jv X Γ v t ->
      check X Γ (E_inj v) t

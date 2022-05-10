@@ -59,6 +59,8 @@ Section Typecheck.
 
   Function usecheck Δ E: option usage :=
     match E with
+    | E_axiom K E => usecheck Δ E
+
     | E_lam x E =>
         do ' ((y, u_used) :: Δ') ← usecheck ((x, u_unused) :: Δ) E ;
         if eq_var x y
@@ -105,6 +107,13 @@ Section Typecheck.
 
   Function typecheck X Γ E t: bool :=
     match E, t with
+    | E_axiom K E, t_var A =>
+        if Assoc.find K X is Some (g_relation t A')
+        then
+          (if eq_var A A' then true else false) &&
+          typecheck X Γ E t
+        else
+          false
     | E_lam x E, t1 * t2 =>
         typecheck X ((x, t1) :: Γ) E t2
 
@@ -128,7 +137,7 @@ Section Typecheck.
      %bool %list
   with typeinfer X Γ e: option type :=
     match e with
-    | e_var x => find x Γ
+    | e_var x => Assoc.find x Γ
 
     | e_app e E' =>
         do ' (t1 * t2) ← typeinfer X Γ e ;
@@ -178,6 +187,8 @@ Proof using.
     all: inversion p.
     all: subst.
     all: clear p.
+    + constructor.
+      auto.
     + destruct usecheck eqn:q.
       2: discriminate.
       destruct u.
@@ -259,6 +270,18 @@ Proof using.
     all: cbn.
     all: intros ? ? ? p.
     all: try contradiction.
+    + destruct t.
+      all: try contradiction.
+      destruct Assoc.find eqn:q in p.
+      2: contradiction.
+      destruct g.
+      all: try contradiction.
+      destruct eq_var in p.
+      all: try contradiction.
+      cbn in p.
+      subst.
+      econstructor.
+      all: eauto.
     + constructor.
       apply Term.typecheck_sound.
       auto.
@@ -402,6 +425,11 @@ Proof using.
     all: try rewrite (typecheck_complete _ _ _ _ p2).
     all: try rewrite (typeinfer_complete _ _ _ _ H).
     all: auto.
+    + rewrite H.
+      destruct eq_var.
+      2: contradiction.
+      cbn.
+      eauto.
     + rewrite Term.typecheck_complete.
       1: reflexivity.
       auto.
@@ -672,6 +700,7 @@ Proof using.
   Open Scope list.
   - destruct E.
     all: cbn.
+    + constructor.
     + destruct eq_intro.
       2: constructor.
       constructor.

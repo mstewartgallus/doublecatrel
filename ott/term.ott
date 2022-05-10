@@ -22,7 +22,8 @@ usage, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (Assoc.assoc use) }}
   | D , x [ u ]          ::   :: cons {{ coq (cons ([[x]], [[u]]) [[D]]) }}
 
 global, g :: 'g_' ::=
-  | t -> A  ::   :: function
+  | t -> A   ::   :: function
+  | t -/> A  ::   :: relation
 
 globals, X :: 'X_' ::= {{ coq (Assoc.assoc global) }}
   | nil         ::   :: nil {{ coq nil }}
@@ -47,6 +48,7 @@ intro, v :: 'v_' ::= {{ coq-equality }}
   | ( v )         :: S :: paren {{ icho ([[v]]) }}
 
 context, E :: 'E_' ::=
+  | K E                      ::   :: axiom
   | inj v                    ::   :: inj
   | lam x . E                ::   :: lam (+ bind x in E +)
   | tt                       ::   :: tt
@@ -285,6 +287,10 @@ defn
   D |- E # D' ::   :: sE :: 'sE_'
 by
 
+D |- E # D'
+------------------------------- :: axiom
+D |- K E # D'
+
 D, x[unused] |- E #  D', x[used]
 ---------------------------------- :: lam
 D |- lam x . E # D'
@@ -335,6 +341,11 @@ X[G] |- cut E t \infer t
 defn
 X [ G ] |- E \check t ::   :: check :: 'check_'
 by
+
+{{ Assoc.find [[K]] [[X]] = Some [[t -/> A]] }}
+X[G] |- E \check t
+------------------------------- :: axiom
+X[G] |- K E \check A
 
 X[G] |- v \check t
 ---------------------------------------- :: inject
