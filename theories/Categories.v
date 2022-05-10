@@ -44,13 +44,13 @@ Module Import Hor.
     reflexivity.
   Qed.
 
-  Definition Hor A τ := {
+  Definition Hor X A τ := {
       f: list intro → intro |
-      ∀ Γ vs, List.Forall2 (λ v τ, Γ ⊢ v ⇐ τ) vs A → Γ ⊢ f vs ⇐ τ
+      ∀ Γ vs, List.Forall2 (λ v τ, X @ Γ ⊢ v ⇐ τ) vs A → X @ Γ ⊢ f vs ⇐ τ
     } .
 
   #[refine]
-  Instance Hor_Setoid τs τ: Setoid (Hor τs τ) := {
+  Instance Hor_Setoid X τs τ: Setoid (Hor X τs τ) := {
       equiv f g := ∀ vs, proj1_sig f vs = proj1_sig g vs
   }.
   Proof.
@@ -66,7 +66,7 @@ Module Import Hor.
   Defined.
 
   #[program]
-   Definition id τ: Hor [τ] τ := λ vs, match vs with
+   Definition id {X} τ: Hor X [τ] τ := λ vs, match vs with
                                        | [v] => v
                                        | _ => v_tt
                                        end.
@@ -82,7 +82,7 @@ Module Import Hor.
 
 
   #[program]
-   Definition cut {A B C} (f: Hor (C :: A) B) (g: Hor A C): Hor A B :=
+   Definition cut {X} {A B C} (f: Hor X (C :: A) B) (g: Hor X A C): Hor X A B :=
     λ vs, proj1_sig f (proj1_sig g vs :: vs).
 
   Next Obligation.
@@ -98,7 +98,7 @@ Module Import Hor.
   Infix "∘" := cut (at level 30).
 
   #[program]
-  Definition pure_elim A xs V τ: zip xs A ⊢ V ⇒ τ → Hor A τ := λ _ vs, Term.eval_elim (zip xs vs) V.
+  Definition pure_elim {X} A xs V τ: X @ zip xs A ⊢ V ⇒ τ → Hor X A τ := λ _ vs, Term.eval_elim (zip xs vs) V.
 
   Next Obligation.
   Proof.
@@ -117,7 +117,7 @@ Module Import Hor.
   Qed.
 
   #[program]
-  Definition pure A xs v τ: zip xs A ⊢ v ⇐ τ → Hor A τ := λ _ vs, Term.eval (zip xs vs) v.
+  Definition pure {X} A xs v τ: X @ zip xs A ⊢ v ⇐ τ → Hor X A τ := λ _ vs, Term.eval (zip xs vs) v.
 
   Next Obligation.
   Proof.
@@ -145,7 +145,7 @@ Module Import Hor.
   Defined.
 
   #[program]
-   Definition head τ A: Hor (τ :: A) τ :=
+   Definition head {X} τ A: Hor X (τ :: A) τ :=
     let x := 0 in
     pure_elim (τ :: A) (x :: mt (length A)) (V_var x) τ _.
 
@@ -156,7 +156,7 @@ Module Import Hor.
   Qed.
 
   #[program]
-  Definition tt A: Hor A t_unit := pure A (mt (length A)) v_tt t_unit _.
+  Definition tt {X} A: Hor X A t_unit := pure A (mt (length A)) v_tt t_unit _.
 
   Next Obligation.
   Proof.
@@ -164,7 +164,7 @@ Module Import Hor.
   Qed.
 
   #[program]
-  Definition fanout A B C: Hor (A :: B :: C) (A * B) :=
+  Definition fanout {X} A B C: Hor X (A :: B :: C) (A * B) :=
       let x: var := 0 in
       let y: var := 1 in
       pure (A :: B :: C)
@@ -183,7 +183,7 @@ Module Import Hor.
   Qed.
 
   #[program]
-   Definition fst {A B C}: Hor ((A * B) :: C) A :=
+   Definition fst {X} {A B C}: Hor X ((A * B) :: C) A :=
     let x: var := 0 in
     pure_elim (A * B :: C)
          (x :: mt (length C))
@@ -197,7 +197,7 @@ Module Import Hor.
   Qed.
 
   #[program]
-   Definition snd {A B C}: Hor ((A * B) :: C) B :=
+   Definition snd X {A B C}: Hor X ((A * B) :: C) B :=
     let x: var := 0 in
     pure (A * B :: C)
          (x :: mt (length C))
@@ -211,7 +211,7 @@ Module Import Hor.
     repeat econstructor.
   Qed.
 
-  Lemma tt_f {A B} {f: Hor A B}: tt _ ∘ f == tt _.
+  Lemma tt_f {X} {A B} {f: Hor X A B}: tt _ ∘ f == tt _.
   Proof.
     destruct f as [f fp].
     cbn.
@@ -219,7 +219,7 @@ Module Import Hor.
     reflexivity.
   Qed.
 
-  Lemma fst_fanout {A B C}: fst ∘ fanout A B C == head _ _.
+  Lemma fst_fanout {X} {A B C}: @fst X _ _ _ ∘ fanout A B C == head _ _.
   Proof.
   Admitted.
 End Hor.
@@ -228,10 +228,10 @@ Module Import Vert.
   #[local]
   Definition x: var := 0.
 
-  Definition Vert t t' := Context.oftype [(x, t)] t'.
+  Definition Vert X t t' := Context.oftype X [(x, t)] t'.
 
   #[program]
-  Definition id t: Vert t t := E_neu (e_var x).
+  Definition id {X} t: Vert X t t := E_neu (e_var x).
 
   Next Obligation.
   Proof using.
@@ -241,35 +241,4 @@ Module Import Vert.
     auto.
   Qed.
 
-  #[program]
-  Definition compose {A B C} (f: Vert B C) (g: Vert A B): Vert A C := subst_context g x f.
-
-  Next Obligation.
-  Proof.
-    admit.
-  Admitted.
-
-  Lemma compose_id_left {A B} (f: Vert A B): compose (id _) f == f.
-  Proof.
-    destruct f as [f ?].
-    cbn.
-    reflexivity.
-  Qed.
-
-  Lemma compose_id_right {A B} (f: Vert A B): compose f (id _) == f.
-  Proof.
-    destruct f as [f ?].
-    cbn.
-    rewrite Context.subst_var.
-    reflexivity.
-  Qed.
-
-  Lemma compose_assoc {A B C D} (f: Vert C D) (g: Vert B C) (h: Vert A B):
-    compose f (compose g h) == compose (compose f g) h.
-  Proof.
-    destruct f as [f ?], g as [g ?], h as [h ?].
-    cbn.
-    rewrite Context.subst_assoc.
-    reflexivity.
-  Qed.
 End Vert.

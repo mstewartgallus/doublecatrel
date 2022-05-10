@@ -25,9 +25,9 @@ Implicit Types x y: var.
 Implicit Type ρ: subst.
 
 Theorem η_preserve {t}:
-  ∀ {Γ V},
-  Γ ⊢ V ⇒ t →
-  Γ ⊢ η t V ⇐ t.
+  ∀ {X Γ V},
+  X @ Γ ⊢ V ⇒ t →
+  X @ Γ ⊢ η t V ⇐ t.
 Proof.
   induction t.
   all: cbn.
@@ -56,14 +56,18 @@ Function typeinfer Γ V :=
       Some t1
   end.
 
-Function typecheck Γ v t: bool :=
+Function typecheck X Γ v t: bool :=
   match v, t with
-  | v_axiom K τ1 A v, t_var B =>
-      (if eq_var A B then true else false) &&
-      typecheck Γ v τ1
+  | v_axiom K v, t_var B =>
+      if find K X is Some (g_function τ A)
+      then
+        (if eq_var A B then true else false) &&
+         typecheck X Γ v τ
+      else
+        false
   | v_tt, t_unit => true
   | v_fanout v0 v1, t1 * t2 =>
-      typecheck Γ v0 t1 && typecheck Γ v1 t2
+      typecheck X Γ v0 t1 && typecheck X Γ v1 t2
   | v_neu v, t_var _ =>
       if typeinfer Γ v is Some t'
       then if eq_type t t' then true else false
@@ -71,7 +75,7 @@ Function typecheck Γ v t: bool :=
   | _, _ => false
   end %bool.
 
-Fixpoint typeinfer_sound {Γ V t}: typeinfer Γ V = Some t → Γ ⊢ V ⇒ t.
+Fixpoint typeinfer_sound {X Γ V t}: typeinfer Γ V = Some t → X @ Γ ⊢ V ⇒ t.
 Proof using .
   - intros p.
     destruct V.
@@ -102,20 +106,23 @@ Proof using .
       eauto.
 Qed.
 
-Fixpoint typecheck_sound {Γ v t}:
-  Bool.Is_true (typecheck Γ v t) → Γ ⊢ v ⇐ t.
+Fixpoint typecheck_sound {X Γ v t}:
+  Bool.Is_true (typecheck X Γ v t) → X @ Γ ⊢ v ⇐ t.
   - intros p.
     destruct v.
     all: cbn.
     + cbn in *.
       destruct t eqn:q in p.
       all: try contradiction.
+      destruct find eqn:r in p.
+      2: contradiction.
+      destruct g eqn:s in p.
       destruct eq_var in p.
       2: contradiction.
       cbn in p.
       subst.
-      constructor.
-      eauto.
+      econstructor.
+      all: eauto.
     + destruct t.
       all: try contradiction.
       constructor.
@@ -146,7 +153,7 @@ Fixpoint typecheck_sound {Γ v t}:
       auto.
 Qed.
 
-Definition typeinfer_complete {Γ V t} (p: Γ ⊢ V ⇒ t): typeinfer Γ V = Some t.
+Definition typeinfer_complete {X Γ V t} (p: X @ Γ ⊢ V ⇒ t): typeinfer Γ V = Some t.
 Proof using .
   induction p.
   all: cbn.
@@ -158,7 +165,7 @@ Proof using .
     auto.
 Qed.
 
-Definition typecheck_complete {Γ v t} (p: Γ ⊢ v ⇐ t): typecheck Γ v t = true.
+Definition typecheck_complete {X Γ v t} (p: X @ Γ ⊢ v ⇐ t): typecheck X Γ v t = true.
 Proof using .
   induction p.
   all: cbn in *.
@@ -167,9 +174,11 @@ Proof using .
   all: try rewrite IHp1.
   all: try rewrite IHp2.
   all: auto.
-  + destruct eq_var.
-    1: reflexivity.
-    contradiction.
+  + rewrite H.
+    destruct eq_var.
+    2: contradiction.
+    cbn.
+    auto.
   + rewrite (typeinfer_complete H).
     destruct eq_tyvar.
     2: contradiction.
@@ -187,18 +196,18 @@ Function eval_elim ρ V :=
 
 Function eval ρ v :=
   match v with
-  | v_axiom K τ1 τ2 v' => v_axiom K τ1 τ2 (eval ρ v')
+  | v_axiom K v' => v_axiom K (eval ρ v')
   | v_tt => v_tt
   | v_fanout v1 v2 =>
       v_fanout (eval ρ v1) (eval ρ v2)
   | v_neu V => eval_elim ρ V
   end.
 
-Lemma eval_elim_preserves {Γ V t}:
-  Γ ⊢ V ⇒ t →
+Lemma eval_elim_preserves {X Γ V t}:
+  X @ Γ ⊢ V ⇒ t →
    ∀ {ρ Γ'},
-     Jp ρ Γ' Γ →
-  Γ' ⊢ eval_elim ρ V ⇐ t.
+     Jp X ρ Γ' Γ →
+  X @ Γ' ⊢ eval_elim ρ V ⇐ t.
 Proof.
   intros p.
   induction p.
@@ -225,18 +234,18 @@ Proof.
     auto.
 Qed.
 
-Lemma eval_preserves {Γ v t}:
-  Γ ⊢ v ⇐ t →
+Lemma eval_preserves {X Γ v t}:
+  X @ Γ ⊢ v ⇐ t →
    ∀ {ρ Γ'},
-     Jp ρ Γ' Γ →
-  Γ' ⊢ eval ρ v ⇐ t.
+     Jp X ρ Γ' Γ →
+  X @ Γ' ⊢ eval ρ v ⇐ t.
 Proof.
   intros p.
   induction p.
   all: cbn.
   all: intros ? ? q.
-  - constructor.
-    eauto.
+  - econstructor.
+    all: eauto.
   - constructor.
     all: eauto.
   - constructor.

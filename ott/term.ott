@@ -21,6 +21,13 @@ usage, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (Assoc.assoc use) }}
   | nil                  ::   :: nil {{ coq nil }}
   | D , x [ u ]          ::   :: cons {{ coq (cons ([[x]], [[u]]) [[D]]) }}
 
+global, g :: 'g_' ::=
+  | t -> A  ::   :: function
+
+globals, X :: 'X_' ::= {{ coq (Assoc.assoc global) }}
+  | nil         ::   :: nil {{ coq nil }}
+  | X , K : g       ::   :: add {{ coq (cons ([[K]], [[g]]) [[X]]) }}
+
 environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (Assoc.assoc type) }}
   | nil         ::   :: nil {{ coq nil }}
   | G , x : t   ::   :: add {{ coq (cons ([[x]], [[t]]) [[G]]) }}
@@ -33,11 +40,11 @@ elim, V :: 'V_' ::= {{ coq-equality }}
   | snd V          ::   :: snd
   | ( V )          :: S :: paren {{ icho ([[V]]) }}
 intro, v :: 'v_' ::= {{ coq-equality }}
-  | ( K : t -> A ) v ::   :: axiom
-  | tt             ::   :: tt
-  | v , v'         ::   :: fanout
-  | neu ( V )      ::   :: neu {{ tex [ [[V]] ] }}
-  | ( v )          :: S :: paren {{ icho ([[v]]) }}
+  | K v           ::   :: axiom
+  | tt            ::   :: tt
+  | v , v'        ::   :: fanout
+  | neu ( V )     ::   :: neu {{ tex [ [[V]] ] }}
+  | ( v )         :: S :: paren {{ icho ([[v]]) }}
 
 context, E :: 'E_' ::=
   | inj v                    ::   :: inj
@@ -131,56 +138,57 @@ defns
 judge_term :: 'J' ::=
 
 defn
-G |- V \infer t ::   :: V :: 'V_'
+X [ G ] |- V \infer t ::   :: V :: 'V_'
 by
 
 x: t \in G
 ----------------- :: var
-G |- x \infer t
+X[G] |- x \infer t
 
-G |- V \infer t1 * t2
+X[G] |- V \infer t1 * t2
 ------------------ :: fst
-G |- fst V \infer t1
+X[G] |- fst V \infer t1
 
-G |- V \infer t1 * t2
+X[G] |- V \infer t1 * t2
 ------------------ :: snd
-G |- snd V \infer t2
+X[G] |- snd V \infer t2
 
 defn
-G |- v \check t ::   :: v :: 'v_'
+X [ G ] |- v \check t ::   :: v :: 'v_'
 by
 
-G |- v \check t
+{{ Assoc.find [[K]] [[X]] = Some [[t -> A]] }}
+X[G] |- v \check t
 ------------------------------- :: axiom
-G |- (K: t -> A) v \check A
+X[G] |- K v \check A
 
 --------------- :: tt
-G |- tt \check unit
+X[G] |- tt \check unit
 
-G |- v1 \check t1
-G |- v2 \check t2
-------------------------- :: fanout
-G |- v1, v2 \check t1 * t2
+X[G] |- v1 \check t1
+X[G] |- v2 \check t2
+------------------------------ :: fanout
+X[G] |- v1, v2 \check t1 * t2
 
-G |- V \infer A
+X[G] |- V \infer A
 ----------------- :: neu
-G |- neu ( V) \check A
+X[G] |- neu ( V) \check A
 
 defns
 
 judge_subst :: 'J' ::=
 
 defn
-|- p : G -> G' ::   :: p :: 'p_'
+X |- p : G -> G' ::   :: p :: 'p_'
 by
 
 --------------- :: bang
-|- nil: G -> nil
+X |- nil: G -> nil
 
-G1 |- v \check t
-|- p : G1 -> G2
+X[G1] |- v \check t
+X |- p : G1 -> G2
 ----------------------------------- :: cut
-|- p, x := v : G1 -> G2, x: t
+X |- p, x := v : G1 -> G2, x: t
 
 defns
 
@@ -212,7 +220,7 @@ by
 
 p |- v ! v'
 --------------------------------------- :: axiom
-p |- (K: t -> A) v ! (K: t -> A) v'
+p |- K v ! K v'
 
 ------------- :: tt
 p |- tt ! tt
@@ -298,55 +306,55 @@ defns
 judge_context :: '' ::=
 
 defn
-G  |- e \infer t ::   :: infer :: 'infer_'
+X [ G ]  |- e \infer t ::   :: infer :: 'infer_'
 by
 
 x: t \in G
 ----------------------- :: var
-G |- x \infer t
+X[G] |- x \infer t
 
-G |- e1 \infer t1 * t2
-G |- E2 \check t1
+X[G] |- e1 \infer t1 * t2
+X[G] |- E2 \check t1
 --------------------------------- :: app
-G |- e1 E2 \infer t2
+X[G] |- e1 E2 \infer t2
 
-G |- e1 \infer unit
-G |- E2 \check t
+X[G] |- e1 \infer unit
+X[G] |- E2 \check t
 ---------------------------------- :: step
-G |- e1; E2 : t \infer t
+X[G] |- e1; E2 : t \infer t
 
-G |- e1 \infer t1 * t2
-G, x: t1, y: t2 |- E2 \check t3
+X[G] |- e1 \infer t1 * t2
+X[G, x: t1, y: t2] |- E2 \check t3
 ------------------------------------------------- :: let
-G |- let x, y = e1 in E2 : t3 \infer t3
+X[G] |- let x, y = e1 in E2 : t3 \infer t3
 
-G |- E \check t
+X[G] |- E \check t
 ---------------------------------- :: cut
-G |- cut E t \infer t
+X[G] |- cut E t \infer t
 
 defn
-G |- E \check t ::   :: check :: 'check_'
+X [ G ] |- E \check t ::   :: check :: 'check_'
 by
 
-G |- v \check t
+X[G] |- v \check t
 ---------------------------------------- :: inject
-G |- inj v \check t
+X[G] |- inj v \check t
 
-G, x: t1 |- E \check t2
+X[G, x: t1] |- E \check t2
 ---------------------------------------- :: lam
-G |- lam x . E \check t1 * t2
+X[G] |- lam x . E \check t1 * t2
 
 -------------------- :: tt
-G |- tt \check unit
+X[G] |- tt \check unit
 
-G |- E1 \check t1
-G |- E2 \check t2
+X[G] |- E1 \check t1
+X[G] |- E2 \check t2
 ---------------------------- :: fanout
-G |- E1, E2 \check t1 * t2
+X[G] |- E1, E2 \check t1 * t2
 
-G |- e \infer t
+X[G] |- e \infer t
 ---------------------- :: neu
-G |- neu e \check t
+X[G] |- neu e \check t
 
 defns
 

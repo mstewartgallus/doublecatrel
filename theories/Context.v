@@ -103,59 +103,59 @@ Section Typecheck.
     end
       %list.
 
-  Function typecheck Γ E t: bool :=
+  Function typecheck X Γ E t: bool :=
     match E, t with
     | E_lam x E, t1 * t2 =>
-        typecheck ((x, t1) :: Γ) E t2
+        typecheck X ((x, t1) :: Γ) E t2
 
     | E_tt, t_unit => true
 
     | E_fanout E E', t1 * t2 =>
-        typecheck Γ E t1
-        && typecheck Γ E' t2
+        typecheck X Γ E t1
+        && typecheck X Γ E' t2
 
     | E_neu e, _ =>
-        if typeinfer Γ e is Some t'
+        if typeinfer X Γ e is Some t'
         then
           if eq_type t t' then true else false
         else
           false
 
-    | E_inj v, _ => Term.typecheck Γ v t
+    | E_inj v, _ => Term.typecheck X Γ v t
 
     | _, _ => false
     end
      %bool %list
-  with typeinfer Γ e: option type :=
+  with typeinfer X Γ e: option type :=
     match e with
     | e_var x => find x Γ
 
     | e_app e E' =>
-        do ' (t1 * t2) ← typeinfer Γ e ;
-        if typecheck Γ E' t1
+        do ' (t1 * t2) ← typeinfer X Γ e ;
+        if typecheck X Γ E' t1
         then
           Some t2
         else
           None
 
     | e_step e E' t =>
-        if typecheck Γ E' t
+        if typecheck X Γ E' t
         then
-          do ' t_unit ← typeinfer Γ e ;
+          do ' t_unit ← typeinfer X Γ e ;
           Some t
         else
           None
 
     | e_let x y e E' t3 =>
-        do ' (t1 * t2) ← typeinfer Γ e ;
-        if typecheck ((y, t2) :: (x, t1) :: Γ) E' t3
+        do ' (t1 * t2) ← typeinfer X Γ e ;
+        if typecheck X ((y, t2) :: (x, t1) :: Γ) E' t3
         then
           Some t3
         else
           None
 
     | e_cut E t =>
-        if typecheck Γ E t
+        if typecheck X Γ E t
         then
           Some t
         else
@@ -166,7 +166,7 @@ End Typecheck.
 
 Fixpoint
   usecheck_sound {E} {struct E}:
-  ∀ {Δ Δ'}, usecheck Δ E = Some Δ' → Δ ⊢ E ⊠ Δ'
+  ∀ {Δ Δ'}, usecheck Δ E = Some Δ' → sE Δ E Δ'
     with
   useinfer_sound {e} {struct e}:
   ∀ {Δ Δ'}, useinfer Δ e = Some Δ' → se Δ e Δ'
@@ -250,14 +250,14 @@ Qed.
 
 Fixpoint
   typecheck_sound {E} {struct E}:
-  ∀ {Γ t}, Bool.Is_true (typecheck Γ E t) → check Γ E t
+  ∀ {X Γ t}, Bool.Is_true (typecheck X Γ E t) → check X Γ E t
     with
   typeinfer_sound {e} {struct e}:
-  ∀ {Γ t}, typeinfer Γ e = Some t → infer Γ e t.
+  ∀ {X Γ t}, typeinfer X Γ e = Some t → infer X Γ e t.
 Proof using.
   - destruct E.
     all: cbn.
-    all: intros ? ? p.
+    all: intros ? ? ? p.
     all: try contradiction.
     + constructor.
       apply Term.typecheck_sound.
@@ -295,7 +295,7 @@ Proof using.
       auto.
   - destruct e.
     all: cbn.
-    all: intros ? ? p.
+    all: intros ? ? ? p.
     all: inversion p.
     all: subst.
     all: clear p.
@@ -354,7 +354,7 @@ Proof using.
       apply I.
 Qed.
 
-Fixpoint usecheck_complete {E Δ Δ'} (p: Δ ⊢ E ⊠ Δ'):
+Fixpoint usecheck_complete {E Δ Δ'} (p: sE Δ E Δ'):
   usecheck Δ E = Some Δ'
 with useinfer_complete {e Δ Δ'} (p: se Δ e Δ'):
   useinfer Δ e = Some Δ'.
@@ -390,17 +390,17 @@ Proof using.
       auto.
 Qed.
 
-Fixpoint typecheck_complete {Γ E t} (p: check Γ E t):
-  typecheck Γ E t = true
-with typeinfer_complete {Γ e t} (p: infer Γ e t):
-  typeinfer Γ e = Some t.
+Fixpoint typecheck_complete {X Γ E t} (p: check X Γ E t):
+  typecheck X Γ E t = true
+with typeinfer_complete {X Γ e t} (p: infer X Γ e t):
+  typeinfer X Γ e = Some t.
 Proof using.
   - destruct p.
     all: cbn.
-    all: try rewrite (typecheck_complete _ _ _ p).
-    all: try rewrite (typecheck_complete _ _ _ p1).
-    all: try rewrite (typecheck_complete _ _ _ p2).
-    all: try rewrite (typeinfer_complete _ _ _ H).
+    all: try rewrite (typecheck_complete _ _ _ _ p).
+    all: try rewrite (typecheck_complete _ _ _ _ p1).
+    all: try rewrite (typecheck_complete _ _ _ _ p2).
+    all: try rewrite (typeinfer_complete _ _ _ _ H).
     all: auto.
     + rewrite Term.typecheck_complete.
       1: reflexivity.
@@ -410,8 +410,8 @@ Proof using.
       auto.
   - destruct p.
     all: cbn.
-    all: try rewrite (typeinfer_complete _ _ _ p).
-    all: try rewrite (typecheck_complete _ _ _ H).
+    all: try rewrite (typeinfer_complete _ _ _ _ p).
+    all: try rewrite (typecheck_complete _ _ _ _ H).
     all: auto.
     apply find_complete.
     auto.
@@ -851,10 +851,10 @@ Qed.
 
 Definition useonce Γ u: usage := List.map (λ '(x, t), (x, u)) Γ.
 
-Definition oftype Γ t :=
+Definition oftype X Γ t :=
   { E |
     Bool.Is_true (
-        typecheck Γ E t
+        typecheck X Γ E t
         && if usecheck (useonce Γ u_unused) E is Some Δ
            then
              if eq_usage Δ (useonce Γ u_used) then true else false
