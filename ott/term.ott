@@ -2,9 +2,8 @@ embed
 {{ coq-preamble
 Require Blech.Assoc.
 }}
-metavar tyvar, A ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[tyvar]]} }}
 metavar var, x, y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[var]]} }}
-metavar axiom, K ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[axiom]]} }}
+metavar axiom, K, A ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[axiom]]} }}
 
 grammar
 type, t :: 't_' ::= {{ coq-equality }}
@@ -22,12 +21,14 @@ usage, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (Assoc.assoc use) }}
   | D , x [ u ]          ::   :: cons {{ coq (cons ([[x]], [[u]]) [[D]]) }}
 
 global, g :: 'g_' ::=
+  | sort     ::   :: sort
   | t -> A   ::   :: function
   | t -/> A  ::   :: relation
+  | E => E'  ::   :: sequent
 
-globals, X :: 'X_' ::= {{ coq (Assoc.assoc global) }}
+theory, T :: 'T_' ::= {{ coq (Assoc.assoc global) }}
   | nil         ::   :: nil {{ coq nil }}
-  | X , K : g       ::   :: add {{ coq (cons ([[K]], [[g]]) [[X]]) }}
+  | T , K : g       ::   :: add {{ coq (cons ([[K]], [[g]]) [[T]]) }}
 
 environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (Assoc.assoc type) }}
   | nil         ::   :: nil {{ coq nil }}
@@ -86,9 +87,11 @@ terminals :: 'terminals_' ::=
   | |-           ::   :: turnstile   {{ tex \vdash{} }}
   | :=           ::   :: update  {{ tex \mathbin{:=} }}
   | ->           ::   :: to  {{ tex \rightarrow }}
+  | -/>          ::   :: rel  {{ tex \nrightarrow }}
   | &            ::   :: act  {{ tex \cdot }}
   | @            ::   :: compose  {{ tex \circ }}
   | unit         ::   :: unit  {{ tex \textbf{I} }}
+  | sort         ::   :: sort  {{ tex \Box }}
   | *            ::   :: prod  {{ tex \otimes{} }}
   | used         ::   :: used  {{ tex \textbf{s} }}
   | unused       ::   :: unused  {{ tex \textbf{f} }}
@@ -140,57 +143,57 @@ defns
 judge_term :: 'J' ::=
 
 defn
-X [ G ] |- V \infer t ::   :: V :: 'V_'
+T [ G ] |- V \infer t ::   :: V :: 'V_'
 by
 
 x: t \in G
 ----------------- :: var
-X[G] |- x \infer t
+T[G] |- x \infer t
 
-X[G] |- V \infer t1 * t2
+T[G] |- V \infer t1 * t2
 ------------------ :: fst
-X[G] |- fst V \infer t1
+T[G] |- fst V \infer t1
 
-X[G] |- V \infer t1 * t2
+T[G] |- V \infer t1 * t2
 ------------------ :: snd
-X[G] |- snd V \infer t2
+T[G] |- snd V \infer t2
 
 defn
-X [ G ] |- v \check t ::   :: v :: 'v_'
+T [ G ] |- v \check t ::   :: v :: 'v_'
 by
 
-{{ Assoc.find [[K]] [[X]] = Some [[t -> A]] }}
-X[G] |- v \check t
+{{ Assoc.find [[K]] [[T]] = Some [[t -> A]] }}
+T[G] |- v \check t
 ------------------------------- :: axiom
-X[G] |- K v \check A
+T[G] |- K v \check A
 
 --------------- :: tt
-X[G] |- tt \check unit
+T[G] |- tt \check unit
 
-X[G] |- v1 \check t1
-X[G] |- v2 \check t2
+T[G] |- v1 \check t1
+T[G] |- v2 \check t2
 ------------------------------ :: fanout
-X[G] |- v1, v2 \check t1 * t2
+T[G] |- v1, v2 \check t1 * t2
 
-X[G] |- V \infer A
+T[G] |- V \infer A
 ----------------- :: neu
-X[G] |- neu ( V) \check A
+T[G] |- neu ( V) \check A
 
 defns
 
 judge_subst :: 'J' ::=
 
 defn
-X |- p : G -> G' ::   :: p :: 'p_'
+T |- p : G -> G' ::   :: p :: 'p_'
 by
 
 --------------- :: bang
-X |- nil: G -> nil
+T |- nil: G -> nil
 
-X[G1] |- v \check t
-X |- p : G1 -> G2
+T[G1] |- v \check t
+T |- p : G1 -> G2
 ----------------------------------- :: cut
-X |- p, x := v : G1 -> G2, x: t
+T |- p, x := v : G1 -> G2, x: t
 
 defns
 
@@ -312,60 +315,60 @@ defns
 judge_context :: '' ::=
 
 defn
-X [ G ]  |- e \infer t ::   :: infer :: 'infer_'
+T [ G ]  |- e \infer t ::   :: infer :: 'infer_'
 by
 
 x: t \in G
 ----------------------- :: var
-X[G] |- x \infer t
+T[G] |- x \infer t
 
-X[G] |- e1 \infer t1 * t2
-X[G] |- E2 \check t1
+T[G] |- e1 \infer t1 * t2
+T[G] |- E2 \check t1
 --------------------------------- :: app
-X[G] |- e1 E2 \infer t2
+T[G] |- e1 E2 \infer t2
 
-X[G] |- e1 \infer unit
-X[G] |- E2 \check t
+T[G] |- e1 \infer unit
+T[G] |- E2 \check t
 ---------------------------------- :: step
-X[G] |- e1; E2 : t \infer t
+T[G] |- e1; E2 : t \infer t
 
-X[G] |- e1 \infer t1 * t2
-X[G, x: t1, y: t2] |- E2 \check t3
+T[G] |- e1 \infer t1 * t2
+T[G, x: t1, y: t2] |- E2 \check t3
 ------------------------------------------------- :: let
-X[G] |- let x, y = e1 in E2 : t3 \infer t3
+T[G] |- let x, y = e1 in E2 : t3 \infer t3
 
-X[G] |- E \check t
+T[G] |- E \check t
 ---------------------------------- :: cut
-X[G] |- cut E t \infer t
+T[G] |- cut E t \infer t
 
 defn
-X [ G ] |- E \check t ::   :: check :: 'check_'
+T [ G ] |- E \check t ::   :: check :: 'check_'
 by
 
-{{ Assoc.find [[K]] [[X]] = Some [[t -/> A]] }}
-X[G] |- E \check t
+{{ Assoc.find [[K]] [[T]] = Some [[t -/> A]] }}
+T[G] |- E \check t
 ------------------------------- :: axiom
-X[G] |- K E \check A
+T[G] |- K E \check A
 
-X[G] |- v \check t
+T[G] |- v \check t
 ---------------------------------------- :: inject
-X[G] |- inj v \check t
+T[G] |- inj v \check t
 
-X[G, x: t1] |- E \check t2
+T[G, x: t1] |- E \check t2
 ---------------------------------------- :: lam
-X[G] |- lam x . E \check t1 * t2
+T[G] |- lam x . E \check t1 * t2
 
 -------------------- :: tt
-X[G] |- tt \check unit
+T[G] |- tt \check unit
 
-X[G] |- E1 \check t1
-X[G] |- E2 \check t2
+T[G] |- E1 \check t1
+T[G] |- E2 \check t2
 ---------------------------- :: fanout
-X[G] |- E1, E2 \check t1 * t2
+T[G] |- E1, E2 \check t1 * t2
 
-X[G] |- e \infer t
+T[G] |- e \infer t
 ---------------------- :: neu
-X[G] |- neu e \check t
+T[G] |- neu e \check t
 
 defns
 

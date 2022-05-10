@@ -181,7 +181,7 @@ Proof using .
     cbn.
     auto.
   + rewrite (typeinfer_complete H).
-    destruct eq_tyvar.
+    destruct eq_axiom.
     2: contradiction.
     auto.
 Qed.

@@ -8,12 +8,6 @@ Require Import Ott.ott_list_core.
 
 Require Blech.Assoc.
 
-Definition tyvar : Set := nat.
-Lemma eq_tyvar: forall (x y : tyvar), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-Hint Resolve eq_tyvar : ott_coq_equality.
 Definition var : Set := nat.
 Lemma eq_var: forall (x y : var), {x = y} + {x <> y}.
 Proof.
@@ -27,23 +21,10 @@ Proof.
 Defined.
 Hint Resolve eq_axiom : ott_coq_equality.
 
-Inductive type : Set := 
- | t_var (A:tyvar)
- | t_unit : type
- | t_prod (t:type) (t':type).
-
 Inductive elim : Set := 
  | V_var (x:var)
  | V_fst (V:elim)
  | V_snd (V:elim).
-
-Inductive use : Set := 
- | u_used : use
- | u_unused : use.
-
-Inductive global : Set := 
- | g_function (t:type) (A:tyvar)
- | g_relation (t:type) (A:tyvar).
 
 Inductive intro : Set := 
  | v_axiom (K:axiom) (v:intro)
@@ -51,9 +32,10 @@ Inductive intro : Set :=
  | v_fanout (v:intro) (v':intro)
  | v_neu (V:elim).
 
-Definition usage : Set := (Assoc.assoc use).
-
-Definition globals : Set := (Assoc.assoc global).
+Inductive type : Set := 
+ | t_var (A:axiom)
+ | t_unit : type
+ | t_prod (t:type) (t':type).
 
 Inductive context : Set := 
  | E_axiom (K:axiom) (E:context)
@@ -69,34 +51,48 @@ with redex : Set :=
  | e_let (x:var) (y:var) (e:redex) (E':context) (t:type)
  | e_cut (E:context) (t:type).
 
-Definition environment : Set := (Assoc.assoc type).
+Inductive use : Set := 
+ | u_used : use
+ | u_unused : use.
+
+Inductive global : Set := 
+ | g_sort : global
+ | g_function (t:type) (A:axiom)
+ | g_relation (t:type) (A:axiom)
+ | g_sequent (E:context) (E':context).
+
+Definition usage : Set := (Assoc.assoc use).
 
 Definition subst : Set := (Assoc.assoc intro).
+
+Definition environment : Set := (Assoc.assoc type).
+
+Definition theory : Set := (Assoc.assoc global).
 
 Inductive span : Set := 
  | P_with (ρ:subst) (v:intro).
 
 Definition spans : Set := (list span).
-Lemma eq_type: forall (x y : type), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-Hint Resolve eq_type : ott_coq_equality.
 Lemma eq_elim: forall (x y : elim), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_elim : ott_coq_equality.
-Lemma eq_use: forall (x y : use), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-Hint Resolve eq_use : ott_coq_equality.
 Lemma eq_intro: forall (x y : intro), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_intro : ott_coq_equality.
+Lemma eq_type: forall (x y : type), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_type : ott_coq_equality.
+Lemma eq_use: forall (x y : use), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_use : ott_coq_equality.
 (** definitions *)
 
 (** funs eta_expand *)
@@ -120,40 +116,40 @@ Inductive mem : var -> type -> environment -> Prop :=    (* defn mem *)
 (** definitions *)
 
 (* defns judge_term *)
-Inductive JV : globals -> environment -> elim -> type -> Prop :=    (* defn V *)
- | JV_var : forall (X:globals) (Γ:environment) (x:var) (t:type),
+Inductive JV : theory -> environment -> elim -> type -> Prop :=    (* defn V *)
+ | JV_var : forall (T:theory) (Γ:environment) (x:var) (t:type),
      mem x t Γ ->
-     JV X Γ (V_var x) t
- | JV_fst : forall (X:globals) (Γ:environment) (V:elim) (t1 t2:type),
-     JV X Γ V (t_prod t1 t2) ->
-     JV X Γ (V_fst V) t1
- | JV_snd : forall (X:globals) (Γ:environment) (V:elim) (t2 t1:type),
-     JV X Γ V (t_prod t1 t2) ->
-     JV X Γ (V_snd V) t2
-with Jv : globals -> environment -> intro -> type -> Prop :=    (* defn v *)
- | Jv_axiom : forall (X:globals) (Γ:environment) (K:axiom) (v:intro) (A:tyvar) (t:type),
-     Assoc.find K X = Some (g_function t A)  ->
-     Jv X Γ v t ->
-     Jv X Γ (v_axiom K v) (t_var A)
- | Jv_tt : forall (X:globals) (Γ:environment),
-     Jv X Γ v_tt t_unit
- | Jv_fanout : forall (X:globals) (Γ:environment) (v1 v2:intro) (t1 t2:type),
-     Jv X Γ v1 t1 ->
-     Jv X Γ v2 t2 ->
-     Jv X Γ (v_fanout v1 v2) (t_prod t1 t2)
- | Jv_neu : forall (X:globals) (Γ:environment) (V:elim) (A:tyvar),
-     JV X Γ V (t_var A) ->
-     Jv X Γ (v_neu V) (t_var A).
+     JV T Γ (V_var x) t
+ | JV_fst : forall (T:theory) (Γ:environment) (V:elim) (t1 t2:type),
+     JV T Γ V (t_prod t1 t2) ->
+     JV T Γ (V_fst V) t1
+ | JV_snd : forall (T:theory) (Γ:environment) (V:elim) (t2 t1:type),
+     JV T Γ V (t_prod t1 t2) ->
+     JV T Γ (V_snd V) t2
+with Jv : theory -> environment -> intro -> type -> Prop :=    (* defn v *)
+ | Jv_axiom : forall (T:theory) (Γ:environment) (K:axiom) (v:intro) (A:axiom) (t:type),
+     Assoc.find K T = Some (g_function t A)  ->
+     Jv T Γ v t ->
+     Jv T Γ (v_axiom K v) (t_var A)
+ | Jv_tt : forall (T:theory) (Γ:environment),
+     Jv T Γ v_tt t_unit
+ | Jv_fanout : forall (T:theory) (Γ:environment) (v1 v2:intro) (t1 t2:type),
+     Jv T Γ v1 t1 ->
+     Jv T Γ v2 t2 ->
+     Jv T Γ (v_fanout v1 v2) (t_prod t1 t2)
+ | Jv_neu : forall (T:theory) (Γ:environment) (V:elim) (A:axiom),
+     JV T Γ V (t_var A) ->
+     Jv T Γ (v_neu V) (t_var A).
 (** definitions *)
 
 (* defns judge_subst *)
-Inductive Jp : globals -> subst -> environment -> environment -> Prop :=    (* defn p *)
- | Jp_bang : forall (X:globals) (Γ:environment),
-     Jp X  nil  Γ  nil 
- | Jp_cut : forall (X:globals) (ρ:subst) (x:var) (v:intro) (Γ1 Γ2:environment) (t:type),
-     Jv X Γ1 v t ->
-     Jp X ρ Γ1 Γ2 ->
-     Jp X  (cons ( x ,  v )  ρ )  Γ1  (cons ( x ,  t )  Γ2 ) .
+Inductive Jp : theory -> subst -> environment -> environment -> Prop :=    (* defn p *)
+ | Jp_bang : forall (T:theory) (Γ:environment),
+     Jp T  nil  Γ  nil 
+ | Jp_cut : forall (T:theory) (ρ:subst) (x:var) (v:intro) (Γ1 Γ2:environment) (t:type),
+     Jv T Γ1 v t ->
+     Jp T ρ Γ1 Γ2 ->
+     Jp T  (cons ( x ,  v )  ρ )  Γ1  (cons ( x ,  t )  Γ2 ) .
 (** definitions *)
 
 (* defns bigV *)
@@ -234,45 +230,45 @@ with sE : usage -> context -> usage -> Prop :=    (* defn sE *)
 (** definitions *)
 
 (* defns judge_context *)
-Inductive infer : globals -> environment -> redex -> type -> Prop :=    (* defn infer *)
- | infer_var : forall (X:globals) (Γ:environment) (x:var) (t:type),
+Inductive infer : theory -> environment -> redex -> type -> Prop :=    (* defn infer *)
+ | infer_var : forall (T:theory) (Γ:environment) (x:var) (t:type),
      mem x t Γ ->
-     infer X Γ (e_var x) t
- | infer_app : forall (X:globals) (Γ:environment) (e1:redex) (E2:context) (t2 t1:type),
-     infer X Γ e1 (t_prod t1 t2) ->
-     check X Γ E2 t1 ->
-     infer X Γ (e_app e1 E2) t2
- | infer_step : forall (X:globals) (Γ:environment) (e1:redex) (E2:context) (t:type),
-     infer X Γ e1 t_unit ->
-     check X Γ E2 t ->
-     infer X Γ (e_step e1 E2 t) t
- | infer_let : forall (X:globals) (Γ:environment) (x y:var) (e1:redex) (E2:context) (t3 t1 t2:type),
-     infer X Γ e1 (t_prod t1 t2) ->
-     check X  (cons ( y ,  t2 )   (cons ( x ,  t1 )  Γ )  )  E2 t3 ->
-     infer X Γ (e_let x y e1 E2 t3) t3
- | infer_cut : forall (X:globals) (Γ:environment) (E:context) (t:type),
-     check X Γ E t ->
-     infer X Γ (e_cut E t) t
-with check : globals -> environment -> context -> type -> Prop :=    (* defn check *)
- | check_axiom : forall (X:globals) (Γ:environment) (K:axiom) (E:context) (A:tyvar) (t:type),
-     Assoc.find K X = Some (g_relation t A)  ->
-     check X Γ E t ->
-     check X Γ (E_axiom K E) (t_var A)
- | check_inject : forall (X:globals) (Γ:environment) (v:intro) (t:type),
-     Jv X Γ v t ->
-     check X Γ (E_inj v) t
- | check_lam : forall (X:globals) (Γ:environment) (x:var) (E:context) (t1 t2:type),
-     check X  (cons ( x ,  t1 )  Γ )  E t2 ->
-     check X Γ (E_lam x E) (t_prod t1 t2)
- | check_tt : forall (X:globals) (Γ:environment),
-     check X Γ E_tt t_unit
- | check_fanout : forall (X:globals) (Γ:environment) (E1 E2:context) (t1 t2:type),
-     check X Γ E1 t1 ->
-     check X Γ E2 t2 ->
-     check X Γ (E_fanout E1 E2) (t_prod t1 t2)
- | check_neu : forall (X:globals) (Γ:environment) (e:redex) (t:type),
-     infer X Γ e t ->
-     check X Γ (E_neu e) t.
+     infer T Γ (e_var x) t
+ | infer_app : forall (T:theory) (Γ:environment) (e1:redex) (E2:context) (t2 t1:type),
+     infer T Γ e1 (t_prod t1 t2) ->
+     check T Γ E2 t1 ->
+     infer T Γ (e_app e1 E2) t2
+ | infer_step : forall (T:theory) (Γ:environment) (e1:redex) (E2:context) (t:type),
+     infer T Γ e1 t_unit ->
+     check T Γ E2 t ->
+     infer T Γ (e_step e1 E2 t) t
+ | infer_let : forall (T:theory) (Γ:environment) (x y:var) (e1:redex) (E2:context) (t3 t1 t2:type),
+     infer T Γ e1 (t_prod t1 t2) ->
+     check T  (cons ( y ,  t2 )   (cons ( x ,  t1 )  Γ )  )  E2 t3 ->
+     infer T Γ (e_let x y e1 E2 t3) t3
+ | infer_cut : forall (T:theory) (Γ:environment) (E:context) (t:type),
+     check T Γ E t ->
+     infer T Γ (e_cut E t) t
+with check : theory -> environment -> context -> type -> Prop :=    (* defn check *)
+ | check_axiom : forall (T:theory) (Γ:environment) (K:axiom) (E:context) (A:axiom) (t:type),
+     Assoc.find K T = Some (g_relation t A)  ->
+     check T Γ E t ->
+     check T Γ (E_axiom K E) (t_var A)
+ | check_inject : forall (T:theory) (Γ:environment) (v:intro) (t:type),
+     Jv T Γ v t ->
+     check T Γ (E_inj v) t
+ | check_lam : forall (T:theory) (Γ:environment) (x:var) (E:context) (t1 t2:type),
+     check T  (cons ( x ,  t1 )  Γ )  E t2 ->
+     check T Γ (E_lam x E) (t_prod t1 t2)
+ | check_tt : forall (T:theory) (Γ:environment),
+     check T Γ E_tt t_unit
+ | check_fanout : forall (T:theory) (Γ:environment) (E1 E2:context) (t1 t2:type),
+     check T Γ E1 t1 ->
+     check T Γ E2 t2 ->
+     check T Γ (E_fanout E1 E2) (t_prod t1 t2)
+ | check_neu : forall (T:theory) (Γ:environment) (e:redex) (t:type),
+     infer T Γ e t ->
+     check T Γ (E_neu e) t.
 (** definitions *)
 
 (* defns pfind *)
