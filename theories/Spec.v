@@ -14,37 +14,40 @@ Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_var : ott_coq_equality.
-Definition axiom : Set := nat.
-Lemma eq_axiom: forall (x y : axiom), {x = y} + {x <> y}.
+Definition sort : Set := nat.
+Lemma eq_sort: forall (x y : sort), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
-Hint Resolve eq_axiom : ott_coq_equality.
-
-Inductive elim : Set := 
- | V_var (x:var)
- | V_fst (V:elim)
- | V_snd (V:elim).
+Hint Resolve eq_sort : ott_coq_equality.
+Definition function : Set := nat.
+Lemma eq_function: forall (x y : function), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_function : ott_coq_equality.
+Definition relation : Set := nat.
+Lemma eq_relation: forall (x y : relation), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_relation : ott_coq_equality.
 
 Inductive type : Set := 
- | t_var (A:axiom)
+ | t_var (A:sort)
  | t_unit : type
  | t_prod (τ:type) (τ':type).
 
-Inductive intro : Set := 
- | v_axiom (K:axiom) (v:intro)
- | v_tt : intro
- | v_fanout (v:intro) (v':intro)
- | v_neu (V:elim).
-
 Inductive context : Set := 
  | E_var (x:var)
- | E_axiom (K:axiom) (E:context)
- | E_inj (v:intro)
+ | E_function (f:function) (E:context)
  | E_epsilon (x:var) (τ:type) (c:command)
  | E_tt : context
  | E_fanout (E:context) (E':context)
+ | E_dup (E:context)
+ | E_del (E:context)
 with command : Set := 
+ | c_relation (R:relation) (E:context)
  | c_unify (E:context) (E':context)
  | c_true : command
  | c_false : command
@@ -53,52 +56,64 @@ with command : Set :=
  | c_step (E:context) (c:command)
  | c_let (x:var) (y:var) (E:context) (c:command).
 
+Inductive global : Set := 
+ | g_sort (sort5:sort)
+ | g_function (τ:type) (A:sort)
+ | g_relation (τ:type).
+
+Inductive elim : Set := 
+ | V_var (x:var)
+ | V_fst (V:elim)
+ | V_snd (V:elim).
+
+Inductive sequent : Set := 
+ | H_seq (c:command) (c':command).
+
 Inductive use : Set := 
  | u_used : use
  | u_unused : use.
-
-Inductive global : Set := 
- | g_sort : global
- | g_function (τ:type) (A:axiom)
- | g_relation (τ:type) (A:axiom).
-
-Inductive sequent : Set := 
- | H_seq (E:context) (v:intro) (E':context) (v':intro).
-
-Definition subst : Set := (Assoc.assoc intro).
-
-Definition usage : Set := (Assoc.assoc use).
 
 Definition signature : Set := (Assoc.assoc global).
 
 Definition environment : Set := (Assoc.assoc type).
 
+
+Inductive intro : Set := 
+ | v_function (f:function) (v:intro)
+ | v_tt : intro
+ | v_fanout (v:intro) (v':intro)
+ | v_neu (V:elim).
+
+Definition subst : Set := (Assoc.assoc intro).
+
 Definition theory : Set := (list sequent).
+
+Definition usage : Set := (Assoc.assoc use).
 
 Inductive span : Set := 
  | P_with (ρ:subst) (v:intro).
 
 Definition spans : Set := (list span).
-Lemma eq_elim: forall (x y : elim), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-Hint Resolve eq_elim : ott_coq_equality.
 Lemma eq_type: forall (x y : type), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_type : ott_coq_equality.
-Lemma eq_intro: forall (x y : intro), {x = y} + {x <> y}.
+Lemma eq_elim: forall (x y : elim), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
-Hint Resolve eq_intro : ott_coq_equality.
+Hint Resolve eq_elim : ott_coq_equality.
 Lemma eq_use: forall (x y : use), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_use : ott_coq_equality.
+Lemma eq_intro: forall (x y : intro), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_intro : ott_coq_equality.
 (** definitions *)
 
 (** funs eta_expand *)
@@ -107,6 +122,18 @@ Fixpoint eta (x1:type) (x2:elim) : intro:=
   | (t_var A) , V => (v_neu V)
   | t_unit , V => v_tt
   | (t_prod τ1 τ2) , V => (v_fanout  (eta τ1  ( (V_fst V) )  )   (eta τ2  ( (V_snd V) )  ) )
+end.
+
+(** definitions *)
+
+(** funs inject_nf *)
+Fixpoint inject (x1:intro) : context:=
+  match x1 with
+  | (v_neu (V_var x)) => (E_var x)
+  | v_tt => E_tt
+  | (v_fanout v v') => (E_fanout  (inject v )   (inject v' ) )
+  | (v_function f v) => (E_function f  (inject v ) )
+  | v => E_tt
 end.
 
 (** definitions *)
@@ -133,17 +160,17 @@ Inductive JV : signature -> environment -> elim -> type -> Prop :=    (* defn V 
      JV Σ Γ V (t_prod τ1 τ2) ->
      JV Σ Γ (V_snd V) τ2
 with Jv : signature -> environment -> intro -> type -> Prop :=    (* defn v *)
- | Jv_axiom : forall (Σ:signature) (Γ:environment) (K:axiom) (v:intro) (A:axiom) (τ:type),
-     Assoc.find K Σ = Some (g_function τ A)  ->
+ | Jv_function : forall (Σ:signature) (Γ:environment) (f:function) (v:intro) (A:sort) (τ:type),
+     Assoc.find f Σ = Some (g_function τ A)  ->
      Jv Σ Γ v τ ->
-     Jv Σ Γ (v_axiom K v) (t_var A)
+     Jv Σ Γ (v_function f v) (t_var A)
  | Jv_tt : forall (Σ:signature) (Γ:environment),
      Jv Σ Γ v_tt t_unit
  | Jv_fanout : forall (Σ:signature) (Γ:environment) (v1 v2:intro) (τ1 τ2:type),
      Jv Σ Γ v1 τ1 ->
      Jv Σ Γ v2 τ2 ->
      Jv Σ Γ (v_fanout v1 v2) (t_prod τ1 τ2)
- | Jv_neu : forall (Σ:signature) (Γ:environment) (V:elim) (A:axiom),
+ | Jv_neu : forall (Σ:signature) (Γ:environment) (V:elim) (A:sort),
      JV Σ Γ V (t_var A) ->
      Jv Σ Γ (v_neu V) (t_var A).
 (** definitions *)
@@ -173,9 +200,9 @@ Inductive bigV : subst -> elim -> intro -> Prop :=    (* defn bigV *)
 
 (* defns bigv *)
 Inductive bigv : subst -> intro -> intro -> Prop :=    (* defn bigv *)
- | bigv_axiom : forall (ρ:subst) (K:axiom) (v v':intro),
+ | bigv_function : forall (ρ:subst) (f:function) (v v':intro),
      bigv ρ v v' ->
-     bigv ρ (v_axiom K v) (v_axiom K v')
+     bigv ρ (v_function f v) (v_function f v')
  | bigv_tt : forall (ρ:subst),
      bigv ρ v_tt v_tt
  | bigv_fanout : forall (ρ:subst) (v1 v2 v1' v2':intro),
@@ -199,6 +226,9 @@ Inductive lmem : var -> usage -> usage -> Prop :=    (* defn lmem *)
 
 (* defns scope *)
 Inductive se : usage -> command -> usage -> Prop :=    (* defn se *)
+ | se_relation : forall (Δ:usage) (R:relation) (E:context) (Δ':usage),
+     sE Δ E Δ' ->
+     se Δ (c_relation R E) Δ'
  | se_unify : forall (Δ1:usage) (E E':context) (Δ3 Δ2:usage),
      sE Δ1 E Δ2 ->
      sE Δ2 E' Δ3 ->
@@ -219,17 +249,17 @@ Inductive se : usage -> command -> usage -> Prop :=    (* defn se *)
      se Δ1 c Δ2 ->
      se Δ2 c' Δ3 ->
      se Δ1 (c_and c c') Δ3
- | se_or : forall (Δ1:usage) (c c':command) (Δ3 Δ2:usage),
+ | se_or : forall (Δ1:usage) (c c':command) (Δ2:usage),
      se Δ1 c Δ2 ->
-     se Δ2 c' Δ3 ->
-     se Δ1 (c_or c c') Δ3
+     se Δ1 c' Δ2 ->
+     se Δ1 (c_or c c') Δ2
 with sE : usage -> context -> usage -> Prop :=    (* defn sE *)
  | sE_var : forall (Δ:usage) (x:var) (Δ':usage),
      lmem x Δ Δ' ->
      sE Δ (E_var x) Δ'
- | sE_axiom : forall (Δ:usage) (K:axiom) (E:context) (Δ':usage),
+ | sE_function : forall (Δ:usage) (f:function) (E:context) (Δ':usage),
      sE Δ E Δ' ->
-     sE Δ (E_axiom K E) Δ'
+     sE Δ (E_function f E) Δ'
  | sE_epsilon : forall (Δ:usage) (x:var) (τ:type) (c:command) (Δ':usage),
      se  (cons ( x ,  u_unused )  Δ )  c  (cons ( x ,  u_used )  Δ' )  ->
      sE Δ (E_epsilon x τ c) Δ'
@@ -238,11 +268,21 @@ with sE : usage -> context -> usage -> Prop :=    (* defn sE *)
  | sE_fanout : forall (Δ1:usage) (E1 E2:context) (Δ3 Δ2:usage),
      sE Δ1 E1 Δ2 ->
      sE Δ2 E2 Δ3 ->
-     sE Δ1 (E_fanout E1 E2) Δ3.
+     sE Δ1 (E_fanout E1 E2) Δ3
+ | sE_dup : forall (Δ1:usage) (E:context) (Δ2:usage),
+     sE Δ1 E Δ2 ->
+     sE Δ1 (E_dup E) Δ2
+ | sE_del : forall (Δ1:usage) (E:context) (Δ2:usage),
+     sE Δ1 E Δ2 ->
+     sE Δ1 (E_del E) Δ2.
 (** definitions *)
 
 (* defns judge_context *)
 Inductive infer : signature -> environment -> command -> Prop :=    (* defn infer *)
+ | infer_relation : forall (Σ:signature) (Γ:environment) (R:relation) (E:context) (τ:type),
+     Assoc.find R Σ = Some (g_relation τ)  ->
+     check Σ Γ E τ ->
+     infer Σ Γ (c_relation R E)
  | infer_step : forall (Σ:signature) (Γ:environment) (E:context) (c:command),
      check Σ Γ E t_unit ->
      infer Σ Γ c ->
@@ -271,10 +311,10 @@ with check : signature -> environment -> context -> type -> Prop :=    (* defn c
  | check_var : forall (Σ:signature) (Γ:environment) (x:var) (τ:type),
      Assoc.find x Γ = Some τ  ->
      check Σ Γ (E_var x) τ
- | check_axiom : forall (Σ:signature) (Γ:environment) (K:axiom) (E:context) (A:axiom) (τ:type),
-     Assoc.find K Σ = Some (g_relation τ A)  ->
+ | check_function : forall (Σ:signature) (Γ:environment) (f:function) (E:context) (A:sort) (τ:type),
+     Assoc.find f Σ = Some (g_function τ A)  ->
      check Σ Γ E τ ->
-     check Σ Γ (E_axiom K E) (t_var A)
+     check Σ Γ (E_function f E) (t_var A)
  | check_epsilon : forall (Σ:signature) (Γ:environment) (x:var) (τ:type) (c:command),
      infer Σ  (cons ( x ,  τ )  Γ )  c ->
      check Σ Γ (E_epsilon x τ c) τ
@@ -283,7 +323,13 @@ with check : signature -> environment -> context -> type -> Prop :=    (* defn c
  | check_fanout : forall (Σ:signature) (Γ:environment) (E1 E2:context) (τ1 τ2:type),
      check Σ Γ E1 τ1 ->
      check Σ Γ E2 τ2 ->
-     check Σ Γ (E_fanout E1 E2) (t_prod τ1 τ2).
+     check Σ Γ (E_fanout E1 E2) (t_prod τ1 τ2)
+ | check_dup : forall (Σ:signature) (Γ:environment) (E:context) (τ:type),
+     check Σ Γ E τ ->
+     check Σ Γ (E_dup E) (t_prod τ τ)
+ | check_del : forall (Σ:signature) (Γ:environment) (E:context) (τ:type),
+     check Σ Γ E τ ->
+     check Σ Γ (E_del E) t_unit.
 (** definitions *)
 
 (* defns pfind *)
@@ -326,14 +372,21 @@ with accepts : theory -> subst -> context -> intro -> subst -> Prop :=    (* def
  | accepts_var : forall (T:theory) (ρ:subst) (x:var) (v:intro) (ρ':subst),
      pmem x v ρ ρ' ->
      accepts T ρ (E_var x) v ρ'
- | accepts_inject : forall (T:theory) (ρ:subst) (v:intro),
-     accepts T ρ (E_inj v) v ρ
+ | accepts_function : forall (T:theory) (ρ:subst) (f:function) (E:context) (v:intro) (ρ':subst),
+     accepts T ρ E v ρ' ->
+     accepts T ρ (E_function f E) (v_function f v) ρ'
  | accepts_tt : forall (T:theory) (ρ:subst),
      accepts T ρ E_tt v_tt ρ
  | accepts_fanout : forall (T:theory) (ρ1:subst) (E E':context) (v v':intro) (ρ3 ρ2:subst),
      accepts T ρ1 E v ρ2 ->
      accepts T ρ2 E' v' ρ3 ->
      accepts T ρ1  ( (E_fanout E E') )  (v_fanout v v') ρ3
+ | accepts_del : forall (T:theory) (ρ1:subst) (E:context) (ρ2:subst) (v:intro),
+     accepts T ρ1 E v ρ2 ->
+     accepts T ρ1 (E_del E) v_tt ρ2
+ | accepts_dup : forall (T:theory) (ρ1:subst) (E:context) (v:intro) (ρ2:subst),
+     accepts T ρ1 E v ρ2 ->
+     accepts T ρ1 (E_dup E) (v_fanout v v) ρ2
  | accepts_epsilon : forall (T:theory) (ρ1:subst) (x:var) (τ:type) (c:command) (v:intro) (ρ2:subst) (v':intro),
      produces T  (cons ( x ,  v )  ρ1 )  c  (cons ( x ,  v' )  ρ2 )  ->
      accepts T ρ1  ( (E_epsilon x τ c) )  v ρ2.

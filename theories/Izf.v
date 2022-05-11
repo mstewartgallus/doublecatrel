@@ -21,41 +21,40 @@ Implicit Types x y: var.
 Implicit Type ρ: subst.
 Implicit Type v: intro.
 
-Definition set_x: axiom := 0.
+Definition set_x: sort := 0.
 
-Definition mem_ax: axiom := 1.
+Definition mem_ax: relation := 1.
 
-Definition empty_ax: axiom := 2.
-Definition pair_ax: axiom := 3.
-Definition union_ax: axiom := 4.
-Definition infinity_ax: axiom := 5.
-Definition powerset_ax: axiom := 6.
+Definition empty_ax: function := 2.
+Definition pair_ax: function := 3.
+Definition union_ax: function := 4.
+Definition infinity_ax: function := 5.
+Definition powerset_ax: function := 6.
 
 Definition set := t_var set_x.
 
-Definition mem := E_axiom mem_ax.
-Notation "∈" := mem.
+Definition mem E E' := c_relation mem_ax (E_fanout E E').
+Infix "∈" := mem (at level 30).
 
-Definition empty := v_axiom empty_ax v_tt.
+Definition empty := v_function empty_ax v_tt.
 Notation "∅" := empty.
 
-Definition pair v v' := v_axiom pair_ax (v_fanout v v').
+Definition pair v v' := v_function pair_ax (v_fanout v v').
 
-Definition union := v_axiom union_ax.
+Definition union := v_function union_ax.
 Notation "⋃" := union.
 
-Definition infinity := v_axiom infinity_ax v_tt.
+Definition infinity := v_function infinity_ax v_tt.
 Notation "∞" := infinity.
 
-Definition powerset := v_axiom powerset_ax.
+Definition powerset := v_function powerset_ax.
 
 Infix "→" := g_function.
-Infix "↛" := g_relation (at level 90).
 
-Notation "P ⇒ Q" := (H_seq (fst P) (snd P) (fst Q) (snd Q)) (at level 90).
+Infix "⇒" := H_seq (at level 90).
 
 Definition IZF: signature := [
-    (mem_ax, set ↛ set_x) ;
+    (mem_ax, g_relation (set * set)) ;
 
     (empty_ax, t_unit → set_x) ;
     (pair_ax, set * set → set_x) ;
@@ -68,30 +67,37 @@ Definition IZF: signature := [
 (* Definition pair_inr_ax: axiom := 8. *)
 
 (* fixme quantify over *)
-Definition IZF_axioms: theory := [
-    (∈ E_true, ∅) ⇒ (E_false, ∅) ;
+Definition X: var := 0.
+Definition Y: var := 1.
+Definition Z: var := 2.
 
-    (* FIXME pi1/pi2 *)
-    (E_or (∈ E_true) (∈ E_true), pair ∅ ∅) ⇒ (∈ E_true, ∅)
-  ].
+Definition IZF_axioms: theory := Eval cbn in [
+    E_var X ∈ inject ∅ ⇒ c_false ;
 
-Lemma mem_use {Δ1 Δ2 E}:
+    c_or (c_unify (E_var Y) (E_var X)) (c_unify (E_var Z) (E_var X)) ⇒ E_var X ∈ inject (pair (v_neu (V_var Y)) (v_neu (V_var Z)))
+].
+
+Lemma mem_use {Δ1 Δ2 Δ3 E E'}:
     sE Δ1 E Δ2 →
-    sE Δ1 (∈ E) Δ2.
+    sE Δ2 E' Δ3 →
+    se Δ1 (E ∈ E') Δ3.
 Proof.
   intros.
   constructor.
-  auto.
+  econstructor.
+  all: eauto.
 Qed.
 
-Lemma mem_check {Γ E}:
+Lemma mem_check {Γ E E'}:
   check IZF Γ E set →
-  check IZF Γ (∈ E) set.
+  check IZF Γ E' set →
+  infer IZF Γ (E ∈ E').
 Proof.
   intros.
   econstructor.
   1: reflexivity.
-  auto.
+  constructor.
+  all: eauto.
 Qed.
 
 Lemma empty_check {Γ}: IZF @ Γ ⊢ ∅ ⇐ set.

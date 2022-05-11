@@ -58,8 +58,8 @@ Function typeinfer Γ V :=
 
 Function typecheck X Γ v t: bool :=
   match v, t with
-  | v_axiom K v, t_var B =>
-      if find K X is Some (g_function τ A)
+  | v_function f v, t_var B =>
+      if find f X is Some (g_function τ A)
       then
         (if eq_var A B then true else false) &&
          typecheck X Γ v τ
@@ -181,7 +181,7 @@ Proof using .
     cbn.
     auto.
   + rewrite (typeinfer_complete H).
-    destruct eq_axiom.
+    destruct eq_function.
     2: contradiction.
     auto.
 Qed.
@@ -197,7 +197,7 @@ Function eval_elim ρ V :=
 
 Function eval ρ v :=
   match v with
-  | v_axiom K v' => v_axiom K (eval ρ v')
+  | v_function K v' => v_function K (eval ρ v')
   | v_tt => v_tt
   | v_fanout v1 v2 =>
       v_fanout (eval ρ v1) (eval ρ v2)

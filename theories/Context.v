@@ -61,7 +61,7 @@ Section Typecheck.
     match E with
     | E_var x => lookup x Δ
 
-    | E_axiom K E => usecheck Δ E
+    | E_function _ E => usecheck Δ E
 
     | E_epsilon x _ c =>
         do ' ((y, u_used) :: Δ') ← useinfer ((x, u_unused) :: Δ) c ;
@@ -77,11 +77,14 @@ Section Typecheck.
         do Δ1 ← usecheck Δ E ;
         usecheck Δ1 E'
 
-    | E_inj _ => None
+    | E_dup E => usecheck Δ E
+    | E_del E => usecheck Δ E
     end
       %list
   with useinfer Δ c: option usage :=
     match c with
+    | c_relation _ E => usecheck Δ E
+
     | c_unify E E' =>
         do Δ1 ← usecheck Δ E ;
         usecheck Δ1 E'
@@ -95,7 +98,12 @@ Section Typecheck.
 
     | c_or c c' =>
         do Δ1 ← useinfer Δ c ;
-        useinfer Δ1 c'
+        do Δ2 ← useinfer Δ c' ;
+        if eq_usage Δ1 Δ2
+        then
+          Some Δ1
+        else
+          None
 
     | c_step E c =>
         do Δ1 ← usecheck Δ E ;
@@ -115,8 +123,8 @@ Section Typecheck.
     match E with
     | E_var x => Assoc.find x Γ
 
-    | E_axiom K E =>
-        do ' g_relation τ A ← Assoc.find K X ;
+    | E_function f E =>
+        do ' g_function τ A ← Assoc.find f X ;
         do τ' ← typecheck X Γ E ;
         if eq_type τ τ'
         then
@@ -131,17 +139,29 @@ Section Typecheck.
         do τ2 ← typecheck X Γ E' ;
         Some (τ1 * τ2)
 
+    | E_dup E =>
+        do τ ← typecheck X Γ E ;
+        Some (τ * τ)
+
+    | E_del E =>
+        do _ ← typecheck X Γ E ;
+        Some t_unit
+
     | E_epsilon x τ E =>
         if typeinfer X ((x, τ) :: Γ) E
         then
           Some τ
         else
           None
-
-    | _ => None
     end
   with typeinfer X Γ c: bool :=
     match c with
+    | c_relation R E =>
+        match Assoc.find R X, typecheck X Γ E with
+        | Some (g_relation τ), Some τ' => if eq_type τ τ' then true else false
+        | _, _ => false
+        end
+
     | c_unify E E' =>
         match typecheck X Γ E, typecheck X Γ E' with
         | Some τ1, Some τ2 => if eq_type τ1 τ2 then true else false
@@ -214,12 +234,22 @@ Proof using.
       2: discriminate.
       econstructor.
       all: eauto.
+    + constructor.
+      eauto.
+    + constructor.
+      eauto.
   - destruct e.
     all: cbn.
     all: intros ? ? p.
     all: inversion p.
     all: subst.
     all: clear p.
+    + destruct usecheck eqn:q1.
+      2: discriminate.
+      inversion H0.
+      subst.
+      constructor.
+      eauto.
     + destruct usecheck eqn:q1.
       2: discriminate.
       econstructor.
@@ -232,6 +262,12 @@ Proof using.
       all: eauto.
     + destruct useinfer eqn:q1.
       2: discriminate.
+      destruct useinfer eqn:q2 in H0.
+      2: discriminate.
+      destruct eq_usage.
+      2: discriminate.
+      inversion H0.
+      subst.
       econstructor.
       all: eauto.
     + destruct usecheck eqn:q1.
@@ -287,7 +323,6 @@ Proof using.
       subst.
       econstructor.
       all: eauto.
-    + discriminate.
     + destruct typeinfer eqn:q.
       2: discriminate.
       inversion p.
@@ -307,9 +342,30 @@ Proof using.
       constructor.
       all: eapply typecheck_sound.
       all: auto.
+    + destruct typecheck eqn:q1.
+      2: discriminate.
+      inversion p.
+      constructor.
+      auto.
+    + destruct typecheck eqn:q1.
+      2: discriminate.
+      inversion p.
+      econstructor.
+      eauto.
   - destruct c.
     all: cbn.
     all: intros ? ? p.
+    + destruct Assoc.find eqn:q1 in p.
+      all: try contradiction.
+      destruct g.
+      all: try contradiction.
+      destruct typecheck eqn:q2 in p.
+      2: contradiction.
+      destruct eq_type in p.
+      2: contradiction.
+      subst.
+      econstructor.
+      all: eauto.
     + destruct typecheck eqn:q1 in p.
       2: contradiction.
       destruct typecheck eqn:q2 in p.
@@ -382,10 +438,14 @@ Proof using.
     all: try rewrite (usecheck_complete _ _ _ H).
     all: try rewrite (useinfer_complete _ _ _ p).
     all: try rewrite (useinfer_complete _ _ _ p1).
+    all: try rewrite (useinfer_complete _ _ _ p2).
     all: auto.
     destruct eq_var.
     2: contradiction.
     destruct eq_var.
+    2: contradiction.
+    reflexivity.
+    destruct eq_usage.
     2: contradiction.
     reflexivity.
 Qed.
@@ -416,9 +476,13 @@ Proof using.
     all: try rewrite (typecheck_complete _ _ _ _ H).
     all: try rewrite (typecheck_complete _ _ _ _ H0).
     all: auto.
-    destruct eq_type.
-    2: contradiction.
-    reflexivity.
+    + rewrite H.
+      destruct eq_type.
+      2: contradiction.
+      reflexivity.
+    + destruct eq_type.
+      2: contradiction.
+      reflexivity.
 Qed.
 
 Notation "'do' n ← e0 ; e1" :=
@@ -456,6 +520,8 @@ Admitted.
 
 Fixpoint verify (T: theory) ρ c: list subst :=
   match c with
+  | c_relation _ _ => []
+
   | c_unify E E' =>
       do ρ1 |- v1 ← search T ρ E ;
       do ρ2 |- v2 ← search T ρ1 E' ;
@@ -466,6 +532,8 @@ Fixpoint verify (T: theory) ρ c: list subst :=
         []
 
   | c_true => [ρ]
+  | c_false => []
+
   | c_and c c' =>
       do ρ1 ← verify T ρ c ;
       verify T ρ1 c'
@@ -493,22 +561,28 @@ Fixpoint verify (T: theory) ρ c: list subst :=
         end
       else
         []
-
-  | _ => []
   end%list
 with search T ρ E: list span :=
   match E with
   | E_var x => if take x ρ is Some (v, ρ') then [ρ' |- v] else []
 
-  | E_axiom K E1 => []
-
-  | E_inj v => [ρ |- v]
+  | E_function f E =>
+      do ρ' |- v ← search T ρ E ;
+      [ρ' |- v_function f v]
 
   | E_tt => [ρ |- v_tt]
   | E_fanout E E' =>
       do ρ1 |- v1 ← search T ρ E ;
       do ρ2 |- v2 ← search T ρ1 E' ;
       [ρ2 |- v_fanout v1 v2]
+
+  | E_dup E =>
+      do ρ' |- v ← search T ρ E ;
+      [ρ' |- v_fanout v v]
+
+  | E_del E =>
+      do ρ' |- _ ← search T ρ E ;
+      [ρ' |- v_tt]
 
   | E_epsilon x τ c =>
       do v ← generate τ ;
@@ -658,6 +732,7 @@ Proof using.
   Open Scope list.
   - destruct c.
     all: cbn.
+    + left.
     + induction (search_sound T ρ E).
       1: left.
       cbn.
@@ -776,10 +851,17 @@ Proof using.
       * constructor.
       * constructor.
         all: eauto.
-    + left.
-    + constructor.
+    + induction (search_sound T ρ E).
+      1: left.
+      cbn.
+      apply Forall_mon.
+      2: eauto.
+      clear IHf0.
+      destruct x.
+      constructor.
       2: left.
       constructor.
+      auto.
     + induction (generate τ).
       1: left.
       cbn.
@@ -820,6 +902,26 @@ Proof using.
       2: left.
       econstructor.
       all: eauto.
+    + induction (search_sound T ρ E).
+      1: left.
+      cbn.
+      apply Forall_mon.
+      2: auto.
+      destruct x.
+      constructor.
+      2: left.
+      constructor.
+      auto.
+    + induction (search_sound T ρ E).
+      1: left.
+      cbn.
+      apply Forall_mon.
+      2: auto.
+      destruct x.
+      constructor.
+      2: left.
+      econstructor.
+      eauto.
 Qed.
 
 Definition useonce Γ u: usage := List.map (λ '(x, t), (x, u)) Γ.
