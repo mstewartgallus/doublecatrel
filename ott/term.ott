@@ -6,7 +6,7 @@ metavar var, x, y ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex 
 metavar axiom, K, A ::= {{ coq nat }} {{ coq-equality }} {{ lex alphanum}} {{ tex \mathit{[[axiom]]} }}
 
 grammar
-type, t :: 't_' ::= {{ coq-equality }}
+type, t {{ tex \tau }} {{ coq τ }} :: 't_' ::= {{ coq-equality }}
   | A            ::   :: var
   | unit         ::   :: unit
   | t * t'       ::   :: prod
@@ -56,26 +56,23 @@ intro, v :: 'v_' ::= {{ coq-equality }}
   | ( v )         :: S :: paren {{ icho ([[v]]) }}
 
 context, E :: 'E_' ::=
+  | x                        ::   :: var
   | K E                      ::   :: axiom
   | inj v                    ::   :: inj
-
-  | true                     ::   :: true
-  | false                    ::   :: false
-  | E /\ E'                  ::   :: and
-  | E \/ E'                  ::   :: or
-
-  | lam x . E                ::   :: lam (+ bind x in E +)
+  | epsilon x : t . c        ::   :: epsilon (+ bind x in c +)
   | tt                       ::   :: tt
   | E , E'                   ::   :: fanout
-  | neu e                    ::   :: neu {{ tex [ [[e]] ] }}
   | ( E )                    :: S :: paren {{ icho ([[E]]) }}
-redex, e :: 'e_' ::=
-  | x                        ::   :: var
-  | e E'                     ::   :: app
-  | e ; E' : t               ::   :: step
-  | let x , y = e in E' : t  ::   :: let (+ bind x union y in E' +)
-  | cut E t                  ::   :: cut {{ tex [[E]] \colon [[t]] }}
-  | ( e )                    :: S :: paren {{ icho ([[e]]) }}
+
+command, c :: 'c_' ::=
+  | < E | E' >               ::   :: unify {{ tex \langle [[E]] \mid [[E']] \rangle }}
+  | true                     ::   :: true
+  | false                    ::   :: false
+  | c /\ c'                  ::   :: and
+  | c \/ c'                  ::   :: or
+  | E ; c                    ::   :: step
+  | let x , y = E in c       ::   :: let (+ bind x union y in c +)
+  | ( c )                    :: S :: paren {{ icho ([[c]]) }}
 
 subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (Assoc.assoc intro) }}
   | nil                   :: M :: nil {{ coq nil }}
@@ -117,6 +114,7 @@ terminals :: 'terminals_' ::=
   | /\          ::   :: and  {{ tex \wedge }}
   | \/           ::   :: or  {{ tex \vee }}
   | lam          ::   :: lam  {{ tex \lambda{} }}
+  | epsilon           ::   :: epsilon  {{ tex \varepsilon{} }}
   | nil          ::   :: nil   {{ tex \bullet{} }}
   | let          ::   :: let  {{ tex \mathbin{\textbf{let} } }}
   | in           ::   :: letin  {{ tex \mathbin{\textbf{in} } }}
@@ -277,43 +275,23 @@ defns
 scope :: '' ::=
 
 defn
-  D |- e # D' ::   :: se :: 'se_'
+  D |- c # D' ::   :: se :: 'se_'
 by
 
-x \in D # D'
------------ :: var
-D |- x # D'
+D1 |- E # D2
+D2 |- E' # D3
+------------------ :: unify
+D1 |- < E | E' > # D3
 
-D1 |- e1 # D2
-D2 |- E2 # D3
------------------- :: app
-D1 |- e1 E2 # D3
+D1 |- E # D2
+D2 |- c # D3
+------------------ :: step
+D1 |- E; c # D3
 
-D1 |- e1 # D2
-D2 |- E2 # D3
------------------------ :: step
-D1 |- e1; E2 : t # D3
-
-D1 |- e1 # D2
-D2, x [unused], y[unused] |- E2 # D3, x[used], y[used]
+D1 |- E # D2
+D2, x [unused], y[unused] |- c # D3, x[used], y[used]
 ------------------------------------------------------ :: let
-D1 |- let x, y = e1 in E2 : t3 # D3
-
-D |- E # D'
-------------------- :: cut
-D |- cut E t # D'
-
-defn
-  D |- E # D' ::   :: sE :: 'sE_'
-by
-
-D |- E # D'
-------------------------------- :: axiom
-D |- K E # D'
-
-D, x[unused] |- E #  D', x[used]
----------------------------------- :: lam
-D |- lam x . E # D'
+D1 |- let x, y = E in c # D3
 
 -------------- :: true
 D |- true # D
@@ -321,16 +299,32 @@ D |- true # D
 -------------- :: false
 D |- false # D
 
-% FIXME I think and and or should be nonlinear?
-D |- E # D'
-D |- E' # D'
+% FIXME Not sure if and/or should be nonlinear?
+D1 |- c # D2
+D2 |- c' # D3
 ------------------- :: and
-D |- E /\ E' # D'
+D1 |- c /\ c' # D3
+
+D1 |- c # D2
+D2 |- c' # D3
+------------------- :: or
+D1 |- c \/ c' # D3
+
+defn
+  D |- E # D' ::   :: sE :: 'sE_'
+by
+
+x \in D # D'
+----------- :: var
+D |- x # D'
 
 D |- E # D'
-D |- E' # D'
-------------------- :: or
-D |- E \/ E' # D'
+---------------------- :: axiom
+D |- K E # D'
+
+D, x[unused] |- c #  D', x[used]
+---------------------------------- :: epsilon
+D |- epsilon x : t . c # D'
 
 ------------ :: tt
 D |- tt # D
@@ -340,73 +334,66 @@ D2 |- E2 # D3
 -------------------- :: fanout
 D1 |- E1, E2 # D3
 
-D |- e # D'
-------------------- :: neu
-D |- neu e # D'
-
 defns
 
 judge_context :: '' ::=
 
 defn
-S [ G ]  |- e \infer t ::   :: infer :: 'infer_'
+S [ G ] |- c ::   :: infer :: 'infer_'
 by
 
-x: t \in G
------------------------ :: var
-S[G] |- x \infer t
+S[G] |- E \check unit
+S[G] |- c
+-------------- :: step
+S[G] |- E; c
 
-S[G] |- e1 \infer t1 * t2
-S[G] |- E2 \check t1
---------------------------------- :: app
-S[G] |- e1 E2 \infer t2
-
-S[G] |- e1 \infer unit
-S[G] |- E2 \check t
----------------------------------- :: step
-S[G] |- e1; E2 : t \infer t
-
-S[G] |- e1 \infer t1 * t2
-S[G, x: t1, y: t2] |- E2 \check t3
-------------------------------------------------- :: let
-S[G] |- let x, y = e1 in E2 : t3 \infer t3
+S[G] |- E \check t1 * t2
+S[G, x: t1, y: t2] |- c
+----------------------------- :: let
+S[G] |- let x, y = E in c
 
 S[G] |- E \check t
----------------------------------- :: cut
-S[G] |- cut E t \infer t
+S[G] |- E' \check t
+-------------------- :: unify
+S[G] |- < E | E' >
+
+------------- :: true
+S[G] |- true
+
+-------------- :: false
+S[G] |- false
+
+S[G] |- c
+S[G] |- c'
+---------------- :: and
+S[G] |- c /\ c'
+
+S[G] |- c
+S[G] |- c'
+--------------- :: or
+S[G] |- c \/ c'
 
 defn
 S [ G ] |- E \check t ::   :: check :: 'check_'
 by
 
+{{ Assoc.find [[x]] [[G]] = Some [[t]] }}
+----------------------- :: var
+S[G] |- x \check t
+
 {{ Assoc.find [[K]] [[S]] = Some [[t -/> A]] }}
 S[G] |- E \check t
-------------------------------- :: axiom
+--------------------------- :: axiom
 S[G] |- K E \check A
 
-S[G] |- v \check t
------------------------- :: inject
-S[G] |- inj v \check t
+% S[G] |- v \check t
+% ------------------------ :: inject
+% S[G] |- inj v \check t
 
----------------------- :: true
-S[G] |- true \check t
 
----------------------- :: false
-S[G] |- false \check t
-
-S[G] |- E \check t
-S[G] |- E' \check t
------------------------- :: and
-S[G] |- E /\ E' \check t
-
-S[G] |- E \check t
-S[G] |- E' \check t
------------------------- :: or
-S[G] |- E \/ E' \check t
-
-S[G, x: t1] |- E \check t2
----------------------------------------- :: lam
-S[G] |- lam x . E \check t1 * t2
+S[G, x: t] |- c
+----------------------------------- :: epsilon
+S[G] |- epsilon x : t . c \check t
 
 -------------------- :: tt
 S[G] |- tt \check unit
@@ -415,10 +402,6 @@ S[G] |- E1 \check t1
 S[G] |- E2 \check t2
 ---------------------------- :: fanout
 S[G] |- E1, E2 \check t1 * t2
-
-S[G] |- e \infer t
----------------------- :: neu
-S[G] |- neu e \check t
 
 defns
 
@@ -442,35 +425,48 @@ defns
 sat :: '' ::=
 
 defn
-  T ; p |- e [ v ] # p' ::   :: produces :: 'produces_'
+  T ; p |- c # p' ::   :: produces :: 'produces_'
 by
 
-x := v \in p # p'
--------------------- :: var
-T ; p |- x [ v ] # p'
+T ; p1 |- E [ tt ] # p2
+T ; p2 |- c # p3
+---------------------------- :: step
+T ; p1 |- E; c # p3
 
-T ; p1 |- e [ tt ] # p2
-T ; p2 |- E' [ v ] # p3
-------------------------------- :: step
-T ; p1 |- (e; E': t) [ v ] # p3
-
-T ; p1 |- e [v0, v1] # p2
-T ; p2, x := v0, y := v1 |- E' [ v2 ] # p3, x := v0', y := v1'
+T ; p1 |- E [v0, v1] # p2
+T ; p2, x := v0, y := v1 |- c # p3, x := v0', y := v1'
 -------------------------------------------------------------- :: let
-T ; p1 |- (let x, y = e in E' : t) [ v2 ] # p3
+T ; p1 |- let x, y = E in c # p3
 
-T ; p1 |- e [ v, v' ] # p2
+T ; p1 |- E [v] # p2
 T ; p2 |- E' [v] # p3
------------------------------ :: app
-T ; p1 |- (e E') [ v' ] # p3
+----------------------------- :: unify
+T ; p1 |- < E | E' > # p3
 
-T ; p1 |- E [ v ] # p2
------------------------------ :: cut
-T ; p1 |- (cut E t) [ v ] # p2
+--------------------- :: true
+T ; p |- true # p
+
+T ; p1 |- c # p2
+T ; p2 |- c' # p3
+-------------------------- :: and
+T ; p1 |- c /\ c' # p3
+
+T ; p |- c # p'
+-------------------------- :: or_inl
+T ; p |- c \/ c' # p'
+
+T ; p |- c' # p'
+-------------------------- :: or_inr
+T ; p |- c \/ c' # p'
 
 defn
   T ; p |- E [ v ] # p' ::   :: accepts :: 'accepts_'
 by
+
+x := v \in p # p'
+---------------------- :: var
+T ; p |- x [ v ] # p'
+
 
 % {{ Assoc.find [[K]] [[T]] = Some [[E;v => E';v']] }}
 % T ; p |- E [v] # p'
@@ -480,22 +476,6 @@ by
 ----------------------- :: inject
 T ; p |- inj v [v] # p
 
---------------------- :: true
-T ; p |- true [v] # p
-
-T ; p |- E [v] # p'
-T ; p |- E' [v] # p'
--------------------------- :: and
-T ; p |- E /\ E' [v] # p'
-
-T ; p |- E [v] # p'
--------------------------- :: or_inl
-T ; p |- E \/ E' [v] # p'
-
-T ; p |- E' [v] # p'
--------------------------- :: or_inr
-T ; p |- E \/ E' [v] # p'
-
 --------------------- :: tt
 T ; p |- tt [tt] # p
 
@@ -504,10 +484,7 @@ T ; p2 |- E' [v'] # p3
 ------------------------------- :: fanout
 T ; p1 |- (E, E') [v, v'] # p3
 
-T ; p1, x := v1 |- E [ v2 ] # p2, x := v1'
-------------------------------------------- :: lam
-T ; p1 |- (lam x. E) [ v1, v2 ] # p2
+T ; p1, x := v |- c # p2, x := v'
+------------------------------------------- :: epsilon
+T ; p1 |- (epsilon x : t . c) [ v ] # p2
 
-T ; p1 |- e [ v ] # p2
---------------------------- :: neu
-T ; p1 |- (neu e) [ v ] # p2

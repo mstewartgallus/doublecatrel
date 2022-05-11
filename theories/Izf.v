@@ -72,8 +72,7 @@ Definition IZF_axioms: theory := [
     (∈ E_true, ∅) ⇒ (E_false, ∅) ;
 
     (* FIXME pi1/pi2 *)
-    (∈ E_true, pair ∅ ∅) ⇒ (∈ E_true, ∅) ;
-    (∈ E_true, pair ∅ ∅) ⇒ (∈ E_true, ∅)
+    (E_or (∈ E_true) (∈ E_true), pair ∅ ∅) ⇒ (∈ E_true, ∅)
   ].
 
 Lemma mem_use {Δ1 Δ2 E}:

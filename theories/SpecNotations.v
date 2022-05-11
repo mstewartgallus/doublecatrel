@@ -29,21 +29,20 @@ Module RelNotations.
   Notation "'I'" := t_unit (in custom rel at level 0).
   Notation "S ⊗ T" := (t_prod S T) (in custom rel at level 50, right associativity).
 
-  Notation "'λ' X , E" :=
-    (E_lam X E)
-      (in custom rel at level 200,
-          X constr at level 99,
-          E custom rel at level 99,
-          left associativity).
+  (* Notation "'λ' X , E" := *)
+  (*   (E_lam X E) *)
+  (*     (in custom rel at level 200, *)
+  (*         X constr at level 99, *)
+  (*         E custom rel at level 99, *)
+  (*         left associativity). *)
 
   Notation "( E , E' )" := (E_fanout E E') (in custom rel at level 30, right associativity).
   Notation "'let' ( X , Y ) := E 'in' E'" :=
-    (e_let X Y E E')
+    (c_let X Y E E')
       (in custom rel at level 90,
           X constr at level 99, Y constr at level 99,
           E custom rel at level 99, E' custom rel at level 99,
           left associativity).
 
-  Coercion e_app: redex >-> Funclass.
-  Coercion e_var: var >-> redex.
+  Coercion E_var: var >-> context.
 End RelNotations.
