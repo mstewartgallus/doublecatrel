@@ -61,27 +61,27 @@ intro, v :: 'v_' ::= {{ coq-equality }}
 context, E :: 'E_' ::=
   | x                        ::   :: var
   | f E                      ::   :: function
-  | epsilon x : t . c        ::   :: epsilon (+ bind x in c +)
+  | epsilon x . c        ::   :: epsilon (+ bind x in c +)
 
   | tt                       ::   :: tt
   | E , E'                   ::   :: fanout
 
   | epsilon. c               ::   :: match_tt
-  | epsilon x : t1 , y : t2 . c          ::   :: match_fanout (+ bind x union y in c +)
+  | epsilon x , y . c          ::   :: match_fanout (+ bind x union y in c +)
 
   | dup E                    ::   :: dup
-  | del E                    ::   :: del
+  | del E : t                ::   :: del
   | ( E )                    :: S :: paren {{ icho ([[E]]) }}
 
 command, c :: 'c_' ::=
   | R E                      ::   :: relation
-  | E = E'                   ::   :: unify
+  | E = E' : t               ::   :: unify
 
   | false                    ::   :: false
   | c \/ c'                  ::   :: or
 
-  | true                     :: M :: true {{ coq (c_unify E_tt E_tt) }}
-  | c /\ c'                  :: M :: and {{ coq (c_unify (E_match_tt [[c]]) (E_match_tt [[c']]]) }}
+  | true                     :: M :: true {{ coq (c_unify E_tt E_tt t_unit) }}
+  | c /\ c'                  :: M :: and {{ coq (c_unify (E_match_tt [[c]]) (E_match_tt [[c']]) t_unit) }}
 
   | ( c )                    :: S :: paren {{ icho ([[c]]) }}
 
@@ -305,8 +305,8 @@ D |- R E # D'
 
 D1 |- E # D2
 D2 |- E' # D3
--------------------- :: unify
-D1 |- E = E' # D3
+----------------------- :: unify
+D1 |- E = E' : t # D3
 
 -------------- :: false
 D |- false # D
@@ -332,7 +332,7 @@ D |- f E # D'
 
 D, x[unused] |- c #  D', x[used]
 ---------------------------------- :: epsilon
-D |- epsilon x : t . c # D'
+D |- epsilon x . c # D'
 
 ------------ :: tt
 D |- tt # D
@@ -348,7 +348,7 @@ D1 |- epsilon. c # D2
 
 D1, x [unused], y[unused] |- c # D2, x[used], y[used]
 ------------------------------------------------------ :: match_fanout
-D1 |- epsilon x : t1 , y : t2. c # D2
+D1 |- epsilon x , y . c # D2
 
 
 D1 |- E # D2
@@ -357,7 +357,7 @@ D1 |- dup E # D2
 
 D1 |- E # D2
 -------------------- :: del
-D1 |- del E # D2
+D1 |- del E : t # D2
 
 defns
 
@@ -375,7 +375,7 @@ S[G] |- R E
 S[G] |- E \check t
 S[G] |- E' \check t
 -------------------- :: unify
-S[G] |- E = E'
+S[G] |- E = E' : t
 
 -------------- :: false
 S[G] |- false
@@ -401,7 +401,7 @@ S[G] |- f E \check A
 
 S[G, x: t] |- c
 ----------------------------------- :: epsilon
-S[G] |- epsilon x : t . c \check t
+S[G] |- epsilon x . c \check t
 
 -------------------- :: tt
 S[G] |- tt \check unit
@@ -417,7 +417,7 @@ S[G] |- epsilon. c \check unit
 
 S[G, x: t1, y: t2] |- c
 ------------------------------------------------- :: match_fanout
-S[G] |- epsilon x : t1 , y : t2. c \check t1 * t2
+S[G] |- epsilon x , y . c \check t1 * t2
 
 S[G] |- E \check t
 ---------------------------- :: dup
@@ -425,7 +425,7 @@ S[G] |- dup E \check t * t
 
 S[G] |- E \check t
 ---------------------------- :: del
-S[G] |- del E \check unit
+S[G] |- del E : t \check unit
 
 defns
 
@@ -455,7 +455,7 @@ by
 T ; p1 |- E [v] # p2
 T ; p2 |- E' [v] # p3
 ----------------------------- :: unify
-T ; p1 |- E = E' # p3
+T ; p1 |- E = E' : t # p3
 
 T ; p |- c # p'
 -------------------------- :: or_inl
@@ -491,11 +491,11 @@ T ; p1 |- epsilon. c [ tt ] # p2
 
 T ; p1, x := v0, y := v1 |- c # p2, x := v0', y := v1'
 ---------------------------------------------------------- :: match_fanout
-T ; p1 |- epsilon x : t1 , y : t2. c [ v0, v1 ] # p2
+T ; p1 |- epsilon x , y . c [ v0, v1 ] # p2
 
 T ; p1 |- E [v] # p2
 ------------------------------- :: del
-T ; p1 |- del E [tt] # p2
+T ; p1 |- del E : t [tt] # p2
 
 T ; p1 |- E [v] # p2
 ------------------------------- :: dup
@@ -503,5 +503,5 @@ T ; p1 |- dup E [v, v] # p2
 
 T ; p1, x := v |- c # p2, x := v'
 ------------------------------------------- :: epsilon
-T ; p1 |- (epsilon x : t . c) [ v ] # p2
+T ; p1 |- (epsilon x . c) [ v ] # p2
 

@@ -103,7 +103,7 @@
 \ottprodline{|}{\mathop{ \textbf ! }}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{E}  \ottsym{,}  \ottnt{E'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{epsilon.}  \ottnt{c}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\varepsilon{} \, \mathit{x}  \colon{}  \tau_{{\mathrm{1}}}  \ottsym{,}  \mathit{y}  \colon{}  \tau_{{\mathrm{2}}}  \ottsym{.}  \ottnt{c}}{}{\textsf{bind}\; \mathit{x} \cup  \mathit{y}\; \textsf{in}\; \ottnt{c}}{}{}\ottprodnewline
+\ottprodline{|}{\varepsilon{} \, \mathit{x}  \ottsym{,}  \mathit{y}  \ottsym{.}  \ottnt{c}}{}{\textsf{bind}\; \mathit{x} \cup  \mathit{y}\; \textsf{in}\; \ottnt{c}}{}{}\ottprodnewline
 \ottprodline{|}{\ottkw{dup} \, \ottnt{E}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottkw{del} \, \ottnt{E}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{(}  \ottnt{E}  \ottsym{)}} {\textsf{S}}{}{}{}\ottprodnewline
@@ -112,7 +112,7 @@
 \newcommand{\ottcommand}{
 \ottrulehead{\ottnt{command}  ,\ \ottnt{c}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\mathit{R} \, \ottnt{E}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{E}  \ottsym{=}  \ottnt{E'}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{E}  \ottsym{=}  \ottnt{E'}  \colon{}  \tau}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\bot}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{c}  \vee  \ottnt{c'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\top} {\textsf{M}}{}{}{}\ottprodnewline
@@ -575,7 +575,7 @@
 \ottpremise{\Delta_{{\mathrm{1}}}  \vdash{}  \ottnt{E}  \mathrel{\boxtimes}  \Delta_{{\mathrm{2}}}}%
 \ottpremise{\Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{E'}  \mathrel{\boxtimes}  \Delta_{{\mathrm{3}}}}%
 }{
-\Delta_{{\mathrm{1}}}  \vdash{}  \ottnt{E}  \ottsym{=}  \ottnt{E'}  \mathrel{\boxtimes}  \Delta_{{\mathrm{3}}}}{%
+\Delta_{{\mathrm{1}}}  \vdash{}  \ottnt{E}  \ottsym{=}  \ottnt{E'}  \colon{}  \tau  \mathrel{\boxtimes}  \Delta_{{\mathrm{3}}}}{%
 {\ottdrulename{se\_unify}}{}%
 }}
 
@@ -654,7 +654,7 @@
 \newcommand{\ottdrulesEXXmatchXXfanout}[1]{\ottdrule[#1]{%
 \ottpremise{\Delta_{{\mathrm{1}}}  \ottsym{,}  \mathit{x}  \ottsym{[}  \textbf{f}  \ottsym{]}  \ottsym{,}  \mathit{y}  \ottsym{[}  \textbf{f}  \ottsym{]}  \vdash{}  \ottnt{c}  \mathrel{\boxtimes}  \Delta_{{\mathrm{2}}}  \ottsym{,}  \mathit{x}  \ottsym{[}  \textbf{s}  \ottsym{]}  \ottsym{,}  \mathit{y}  \ottsym{[}  \textbf{s}  \ottsym{]}}%
 }{
-\Delta_{{\mathrm{1}}}  \vdash{}  \varepsilon{} \, \mathit{x}  \colon{}  \tau_{{\mathrm{1}}}  \ottsym{,}  \mathit{y}  \colon{}  \tau_{{\mathrm{2}}}  \ottsym{.}  \ottnt{c}  \mathrel{\boxtimes}  \Delta_{{\mathrm{2}}}}{%
+\Delta_{{\mathrm{1}}}  \vdash{}  \varepsilon{} \, \mathit{x}  \ottsym{,}  \mathit{y}  \ottsym{.}  \ottnt{c}  \mathrel{\boxtimes}  \Delta_{{\mathrm{2}}}}{%
 {\ottdrulename{sE\_match\_fanout}}{}%
 }}
 
@@ -705,7 +705,7 @@
 \ottpremise{\Sigma  \ottsym{[}  \Gamma  \ottsym{]}  \vdash{}  \ottnt{E}  \Leftarrow  \tau}%
 \ottpremise{\Sigma  \ottsym{[}  \Gamma  \ottsym{]}  \vdash{}  \ottnt{E'}  \Leftarrow  \tau}%
 }{
-\Sigma  \ottsym{[}  \Gamma  \ottsym{]}  \vdash{}  \ottnt{E}  \ottsym{=}  \ottnt{E'}}{%
+\Sigma  \ottsym{[}  \Gamma  \ottsym{]}  \vdash{}  \ottnt{E}  \ottsym{=}  \ottnt{E'}  \colon{}  \tau}{%
 {\ottdrulename{infer\_unify}}{}%
 }}
 
@@ -785,7 +785,7 @@
 \newcommand{\ottdrulecheckXXmatchXXfanout}[1]{\ottdrule[#1]{%
 \ottpremise{\Sigma  \ottsym{[}  \Gamma  \ottsym{,}  \mathit{x}  \colon{}  \tau_{{\mathrm{1}}}  \ottsym{,}  \mathit{y}  \colon{}  \tau_{{\mathrm{2}}}  \ottsym{]}  \vdash{}  \ottnt{c}}%
 }{
-\Sigma  \ottsym{[}  \Gamma  \ottsym{]}  \vdash{}  \varepsilon{} \, \mathit{x}  \colon{}  \tau_{{\mathrm{1}}}  \ottsym{,}  \mathit{y}  \colon{}  \tau_{{\mathrm{2}}}  \ottsym{.}  \ottnt{c}  \Leftarrow  \tau_{{\mathrm{1}}}  \otimes{}  \tau_{{\mathrm{2}}}}{%
+\Sigma  \ottsym{[}  \Gamma  \ottsym{]}  \vdash{}  \varepsilon{} \, \mathit{x}  \ottsym{,}  \mathit{y}  \ottsym{.}  \ottnt{c}  \Leftarrow  \tau_{{\mathrm{1}}}  \otimes{}  \tau_{{\mathrm{2}}}}{%
 {\ottdrulename{check\_match\_fanout}}{}%
 }}
 
@@ -853,7 +853,7 @@
 \ottpremise{\ottnt{T}  \ottsym{;}  \rho_{{\mathrm{1}}}  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{v}  \ottsym{]}  \mathrel{\boxtimes}  \rho_{{\mathrm{2}}}}%
 \ottpremise{\ottnt{T}  \ottsym{;}  \rho_{{\mathrm{2}}}  \vdash{}  \ottnt{E'}  \ottsym{[}  \ottnt{v}  \ottsym{]}  \mathrel{\boxtimes}  \rho_{{\mathrm{3}}}}%
 }{
-\ottnt{T}  \ottsym{;}  \rho_{{\mathrm{1}}}  \vdash{}  \ottnt{E}  \ottsym{=}  \ottnt{E'}  \mathrel{\boxtimes}  \rho_{{\mathrm{3}}}}{%
+\ottnt{T}  \ottsym{;}  \rho_{{\mathrm{1}}}  \vdash{}  \ottnt{E}  \ottsym{=}  \ottnt{E'}  \colon{}  \tau  \mathrel{\boxtimes}  \rho_{{\mathrm{3}}}}{%
 {\ottdrulename{produces\_unify}}{}%
 }}
 
@@ -923,7 +923,7 @@
 \newcommand{\ottdruleacceptsXXmatchXXfanout}[1]{\ottdrule[#1]{%
 \ottpremise{\ottnt{T}  \ottsym{;}  \rho_{{\mathrm{1}}}  \ottsym{,}  \mathit{x}  \mathbin{:=}  \ottnt{v_{{\mathrm{0}}}}  \ottsym{,}  \mathit{y}  \mathbin{:=}  \ottnt{v_{{\mathrm{1}}}}  \vdash{}  \ottnt{c}  \mathrel{\boxtimes}  \rho_{{\mathrm{2}}}  \ottsym{,}  \mathit{x}  \mathbin{:=}  \ottnt{v'_{{\mathrm{0}}}}  \ottsym{,}  \mathit{y}  \mathbin{:=}  \ottnt{v'_{{\mathrm{1}}}}}%
 }{
-\ottnt{T}  \ottsym{;}  \rho_{{\mathrm{1}}}  \vdash{}  \varepsilon{} \, \mathit{x}  \colon{}  \tau_{{\mathrm{1}}}  \ottsym{,}  \mathit{y}  \colon{}  \tau_{{\mathrm{2}}}  \ottsym{.}  \ottnt{c}  \ottsym{[}  \ottnt{v_{{\mathrm{0}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{]}  \mathrel{\boxtimes}  \rho_{{\mathrm{2}}}}{%
+\ottnt{T}  \ottsym{;}  \rho_{{\mathrm{1}}}  \vdash{}  \varepsilon{} \, \mathit{x}  \ottsym{,}  \mathit{y}  \ottsym{.}  \ottnt{c}  \ottsym{[}  \ottnt{v_{{\mathrm{0}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{]}  \mathrel{\boxtimes}  \rho_{{\mathrm{2}}}}{%
 {\ottdrulename{accepts\_match\_fanout}}{}%
 }}
 

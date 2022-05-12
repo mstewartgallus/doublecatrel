@@ -21,8 +21,8 @@ Implicit Types x y: var.
 Implicit Type ρ: subst.
 Implicit Type v: intro.
 
-Definition c_true := c_unify E_tt E_tt.
-Definition c_and c c' := c_unify (E_match_tt c) (E_match_tt c').
+Definition c_true := c_unify E_tt E_tt t_unit.
+Definition c_and c c' := c_unify (E_match_tt c) (E_match_tt c') t_unit.
 
 Definition set_x: sort := 0.
 
@@ -77,7 +77,7 @@ Definition Z: var := 2.
 Definition IZF_axioms: theory := Eval cbn in [
     E_var X ∈ inject ∅ ⇒ c_false ;
 
-    c_or (c_unify (E_var Y) (E_var X)) (c_unify (E_var Z) (E_var X)) ⇒ E_var X ∈ inject (pair (v_neu (V_var Y)) (v_neu (V_var Z)))
+    c_or (c_unify (E_var Y) (E_var X) set) (c_unify (E_var Z) (E_var X) set) ⇒ E_var X ∈ inject (pair (v_neu (V_var Y)) (v_neu (V_var Z)))
 ].
 
 Lemma mem_use {Δ1 Δ2 Δ3 E E'}:
