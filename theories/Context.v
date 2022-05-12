@@ -77,6 +77,8 @@ Section Typecheck.
         do Δ1 ← usecheck Δ E ;
         usecheck Δ1 E'
 
+    | E_match_tt c => useinfer Δ c
+
     | E_match_fanout x _ y _ c =>
         do ' ((y', u_used) :: (x', u_used) :: Δ') ← useinfer ((y, u_unused) :: (x, u_unused) :: Δ) c ;
         match eq_var x x', eq_var y y' with
@@ -96,12 +98,7 @@ Section Typecheck.
         do Δ1 ← usecheck Δ E ;
         usecheck Δ1 E'
 
-    | c_true => Some Δ
     | c_false => Some Δ
-
-    | c_and c c' =>
-        do Δ1 ← useinfer Δ c ;
-        useinfer Δ1 c'
 
     | c_or c c' =>
         do Δ1 ← useinfer Δ c ;
@@ -133,6 +130,13 @@ Section Typecheck.
         do τ1 ← typecheck X Γ E ;
         do τ2 ← typecheck X Γ E' ;
         Some (τ1 * τ2)
+
+    | E_match_tt c =>
+        if typeinfer X Γ c
+        then
+          Some t_unit
+        else
+          None
 
     | E_match_fanout x t1 y t2 c =>
         if typeinfer X ((y, t2) :: (x, t1) :: Γ) c
@@ -170,10 +174,7 @@ Section Typecheck.
         | _, _ => false
         end
 
-    | c_true => true
     | c_false => true
-
-    | c_and c c' => typeinfer X Γ c && typeinfer X Γ c'
     | c_or c c' => typeinfer X Γ c && typeinfer X Γ c'
     end
       %bool.
@@ -222,6 +223,8 @@ Proof using.
       2: discriminate.
       econstructor.
       all: eauto.
+    + constructor.
+      eauto.
     + destruct useinfer eqn:q.
       2: discriminate.
       destruct u.
@@ -263,11 +266,6 @@ Proof using.
       econstructor.
       all: eauto.
     + constructor.
-    + constructor.
-    + destruct useinfer eqn:q1.
-      2: discriminate.
-      econstructor.
-      all: eauto.
     + destruct useinfer eqn:q1.
       2: discriminate.
       destruct useinfer eqn:q2 in H0.
@@ -332,6 +330,14 @@ Proof using.
       apply typeinfer_sound.
       rewrite q1.
       constructor.
+    + destruct typeinfer eqn:q1.
+      2: discriminate.
+      inversion p.
+      subst.
+      econstructor.
+      apply typeinfer_sound.
+      rewrite q1.
+      constructor.
     + destruct typecheck eqn:q1.
       2: discriminate.
       inversion p.
@@ -366,15 +372,6 @@ Proof using.
       econstructor.
       all: eauto.
     + constructor.
-    + constructor.
-    + destruct typeinfer eqn:q1 in p.
-      2: contradiction.
-      destruct typeinfer eqn:q2 in p.
-      2: contradiction.
-      constructor.
-      all: apply typeinfer_sound.
-      all: try rewrite q1; try rewrite q2.
-      all: constructor.
     + destruct typeinfer eqn:q1 in p.
       2: contradiction.
       destruct typeinfer eqn:q2 in p.
@@ -507,14 +504,8 @@ Fixpoint verify (T: theory) ρ c: list subst :=
       else
         []
 
-  | c_true => [ρ]
   | c_false => []
-
-  | c_and c c' =>
-      do ρ1 ← verify T ρ c ;
-      verify T ρ1 c'
-  | c_or c c' =>
-      verify T ρ c ++ verify T ρ c'
+  | c_or c c' => verify T ρ c ++ verify T ρ c'
   end%list
 with search T ρ E: list span :=
   match E with
@@ -529,6 +520,11 @@ with search T ρ E: list span :=
       do ρ1 |- v1 ← search T ρ E ;
       do ρ2 |- v2 ← search T ρ1 E' ;
       [ρ2 |- v_fanout v1 v2]
+
+
+  | E_match_tt c =>
+      do ρ' ← verify T ρ c ;
+      [ρ' |- v_tt]
 
   | E_match_fanout x t1 y t2 c =>
       do a ← generate t1 ;
@@ -639,9 +635,6 @@ Proof using.
     destruct q.
     all: cbn.
     + admit.
-    + left.
-      reflexivity.
-    + admit.
     + admit.
     + admit.
   - admit.
@@ -677,23 +670,7 @@ Proof using.
       subst.
       econstructor.
       all: eauto.
-    + constructor.
-      2: constructor.
-      constructor.
-    + constructor.
-    + induction (verify_sound T ρ c1).
-      1: left.
-      cbn.
-      apply Forall_mon.
-      2: auto.
-      clear IHf.
-      induction (verify_sound T x c2).
-      1: left.
-      cbn.
-      constructor.
-      2: eauto.
-      econstructor.
-      all: eauto.
+    + left.
     + apply Forall_mon.
       * induction (verify_sound T ρ c1).
         1: left.
@@ -778,6 +755,14 @@ Proof using.
       2: left.
       econstructor.
       all: eauto.
+    + induction (verify_sound T ρ c).
+      1: left.
+      cbn.
+      constructor.
+      2: eauto.
+      clear IHf.
+      constructor.
+      eauto.
     + induction (generate τ1).
       1: left.
       cbn.

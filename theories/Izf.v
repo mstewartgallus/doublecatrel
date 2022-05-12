@@ -21,6 +21,9 @@ Implicit Types x y: var.
 Implicit Type ρ: subst.
 Implicit Type v: intro.
 
+Definition c_true := c_unify E_tt E_tt.
+Definition c_and c c' := c_unify (E_match_tt c) (E_match_tt c').
+
 Definition set_x: sort := 0.
 
 Definition mem_ax: relation := 1.

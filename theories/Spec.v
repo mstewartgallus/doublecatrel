@@ -44,15 +44,14 @@ Inductive context : Set :=
  | E_epsilon (x:var) (τ:type) (c:command)
  | E_tt : context
  | E_fanout (E:context) (E':context)
+ | E_match_tt (c:command)
  | E_match_fanout (x:var) (τ1:type) (y:var) (τ2:type) (c:command)
  | E_dup (E:context)
  | E_del (E:context)
 with command : Set := 
  | c_relation (R:relation) (E:context)
  | c_unify (E:context) (E':context)
- | c_true : command
  | c_false : command
- | c_and (c:command) (c':command)
  | c_or (c:command) (c':command).
 
 Inductive global : Set := 
@@ -121,14 +120,6 @@ Fixpoint eta (x1:type) (x2:elim) : intro:=
   | (t_var A) , V => (v_neu V)
   | t_unit , V => v_tt
   | (t_prod τ1 τ2) , V => (v_fanout  (eta τ1  ( (V_fst V) )  )   (eta τ2  ( (V_snd V) )  ) )
-end.
-
-(** definitions *)
-
-(** funs step_elim *)
-Fixpoint step (x1:context) (x2:command) : command:=
-  match x1,x2 with
-  | E , c => (c_and (c_unify E E_tt) c)
 end.
 
 (** definitions *)
@@ -240,14 +231,8 @@ Inductive se : usage -> command -> usage -> Prop :=    (* defn se *)
      sE Δ1 E Δ2 ->
      sE Δ2 E' Δ3 ->
      se Δ1 (c_unify E E') Δ3
- | se_true : forall (Δ:usage),
-     se Δ c_true Δ
  | se_false : forall (Δ:usage),
      se Δ c_false Δ
- | se_and : forall (Δ1:usage) (c c':command) (Δ3 Δ2:usage),
-     se Δ1 c Δ2 ->
-     se Δ2 c' Δ3 ->
-     se Δ1 (c_and c c') Δ3
  | se_or : forall (Δ1:usage) (c c':command) (Δ2:usage),
      se Δ1 c Δ2 ->
      se Δ1 c' Δ2 ->
@@ -268,6 +253,9 @@ with sE : usage -> context -> usage -> Prop :=    (* defn sE *)
      sE Δ1 E1 Δ2 ->
      sE Δ2 E2 Δ3 ->
      sE Δ1 (E_fanout E1 E2) Δ3
+ | sE_match_tt : forall (Δ1:usage) (c:command) (Δ2:usage),
+     se Δ1 c Δ2 ->
+     sE Δ1 (E_match_tt c) Δ2
  | sE_match_fanout : forall (Δ1:usage) (x:var) (τ1:type) (y:var) (τ2:type) (c:command) (Δ2:usage),
      se  (cons ( y ,  u_unused )   (cons ( x ,  u_unused )  Δ1 )  )  c  (cons ( y ,  u_used )   (cons ( x ,  u_used )  Δ2 )  )  ->
      sE Δ1 (E_match_fanout x τ1 y τ2 c) Δ2
@@ -289,14 +277,8 @@ Inductive infer : signature -> environment -> command -> Prop :=    (* defn infe
      check Σ Γ E τ ->
      check Σ Γ E' τ ->
      infer Σ Γ (c_unify E E')
- | infer_true : forall (Σ:signature) (Γ:environment),
-     infer Σ Γ c_true
  | infer_false : forall (Σ:signature) (Γ:environment),
      infer Σ Γ c_false
- | infer_and : forall (Σ:signature) (Γ:environment) (c c':command),
-     infer Σ Γ c ->
-     infer Σ Γ c' ->
-     infer Σ Γ (c_and c c')
  | infer_or : forall (Σ:signature) (Γ:environment) (c c':command),
      infer Σ Γ c ->
      infer Σ Γ c' ->
@@ -318,6 +300,9 @@ with check : signature -> environment -> context -> type -> Prop :=    (* defn c
      check Σ Γ E1 τ1 ->
      check Σ Γ E2 τ2 ->
      check Σ Γ (E_fanout E1 E2) (t_prod τ1 τ2)
+ | check_match_tt : forall (Σ:signature) (Γ:environment) (c:command),
+     infer Σ Γ c ->
+     check Σ Γ (E_match_tt c) t_unit
  | check_match_fanout : forall (Σ:signature) (Γ:environment) (x:var) (τ1:type) (y:var) (τ2:type) (c:command),
      infer Σ  (cons ( y ,  τ2 )   (cons ( x ,  τ1 )  Γ )  )  c ->
      check Σ Γ (E_match_fanout x τ1 y τ2 c) (t_prod τ1 τ2)
@@ -345,12 +330,6 @@ Inductive produces : theory -> subst -> command -> subst -> Prop :=    (* defn p
      accepts T ρ1 E v ρ2 ->
      accepts T ρ2 E' v ρ3 ->
      produces T ρ1 (c_unify E E') ρ3
- | produces_true : forall (T:theory) (ρ:subst),
-     produces T ρ c_true ρ
- | produces_and : forall (T:theory) (ρ1:subst) (c c':command) (ρ3 ρ2:subst),
-     produces T ρ1 c ρ2 ->
-     produces T ρ2 c' ρ3 ->
-     produces T ρ1 (c_and c c') ρ3
  | produces_or_inl : forall (T:theory) (ρ:subst) (c c':command) (ρ':subst),
      produces T ρ c ρ' ->
      produces T ρ (c_or c c') ρ'
@@ -370,7 +349,10 @@ with accepts : theory -> subst -> context -> intro -> subst -> Prop :=    (* def
      accepts T ρ1 E v ρ2 ->
      accepts T ρ2 E' v' ρ3 ->
      accepts T ρ1  ( (E_fanout E E') )  (v_fanout v v') ρ3
- | accepts_match : forall (T:theory) (ρ1:subst) (x:var) (τ1:type) (y:var) (τ2:type) (c:command) (v0 v1:intro) (ρ2:subst) (v0' v1':intro),
+ | accepts_match_tt : forall (T:theory) (ρ1:subst) (c:command) (ρ2:subst),
+     produces T ρ1 c ρ2 ->
+     accepts T ρ1 (E_match_tt c) v_tt ρ2
+ | accepts_match_fanout : forall (T:theory) (ρ1:subst) (x:var) (τ1:type) (y:var) (τ2:type) (c:command) (v0 v1:intro) (ρ2:subst) (v0' v1':intro),
      produces T  (cons ( y ,  v1 )   (cons ( x ,  v0 )  ρ1 )  )  c  (cons ( y ,  v1' )   (cons ( x ,  v0' )  ρ2 )  )  ->
      accepts T ρ1 (E_match_fanout x τ1 y τ2 c) (v_fanout v0 v1) ρ2
  | accepts_del : forall (T:theory) (ρ1:subst) (E:context) (ρ2:subst) (v:intro),
