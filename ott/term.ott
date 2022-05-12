@@ -64,6 +64,7 @@ context, E :: 'E_' ::=
   | epsilon x : t . c        ::   :: epsilon (+ bind x in c +)
   | tt                       ::   :: tt
   | E , E'                   ::   :: fanout
+  | match x : t1 , y : t2 in c          ::   :: match_fanout (+ bind x union y in c +)
   | dup E                    ::   :: dup
   | del E                    ::   :: del
   | ( E )                    :: S :: paren {{ icho ([[E]]) }}
@@ -75,7 +76,6 @@ command, c :: 'c_' ::=
   | false                    ::   :: false
   | c /\ c'                  ::   :: and
   | c \/ c'                  ::   :: or
-  | let x , y = E in c       ::   :: let (+ bind x union y in c +)
   | ( c )                    :: S :: paren {{ icho ([[c]]) }}
 
 subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (Assoc.assoc intro) }}
@@ -308,11 +308,6 @@ D2 |- E' # D3
 -------------------- :: unify
 D1 |- E = E' # D3
 
-D1 |- E # D2
-D2, x [unused], y[unused] |- c # D3, x[used], y[used]
------------------------------------------------------- :: let
-D1 |- let x, y = E in c # D3
-
 -------------- :: true
 D |- true # D
 
@@ -354,6 +349,11 @@ D2 |- E2 # D3
 -------------------- :: fanout
 D1 |- E1, E2 # D3
 
+D1, x [unused], y[unused] |- c # D2, x[used], y[used]
+------------------------------------------------------ :: match_fanout
+D1 |- match x : t1 , y : t2 in c # D2
+
+
 D1 |- E # D2
 -------------------- :: dup
 D1 |- dup E # D2
@@ -374,11 +374,6 @@ by
 S[G] |- E \check t
 ---------------------- :: relation
 S[G] |- R E
-
-S[G] |- E \check t1 * t2
-S[G, x: t1, y: t2] |- c
------------------------------ :: let
-S[G] |- let x, y = E in c
 
 S[G] |- E \check t
 S[G] |- E' \check t
@@ -427,6 +422,10 @@ S[G] |- E2 \check t2
 ---------------------------- :: fanout
 S[G] |- E1, E2 \check t1 * t2
 
+S[G, x: t1, y: t2] |- c
+----------------------------------- :: match_fanout
+S[G] |- match x : t1 , y : t2 in c \check t1 * t2
+
 S[G] |- E \check t
 ---------------------------- :: dup
 S[G] |- dup E \check t * t
@@ -459,11 +458,6 @@ sat :: '' ::=
 defn
   T ; p |- c # p' ::   :: produces :: 'produces_'
 by
-
-T ; p1 |- E [v0, v1] # p2
-T ; p2, x := v0, y := v1 |- c # p3, x := v0', y := v1'
--------------------------------------------------------------- :: let
-T ; p1 |- let x, y = E in c # p3
 
 T ; p1 |- E [v] # p2
 T ; p2 |- E' [v] # p3
@@ -505,6 +499,10 @@ T ; p1 |- E [v] # p2
 T ; p2 |- E' [v'] # p3
 ------------------------------- :: fanout
 T ; p1 |- (E, E') [v, v'] # p3
+
+T ; p1, x := v0, y := v1 |- c # p2, x := v0', y := v1'
+-------------------------------------------------------------- :: match
+T ; p1 |- match x : t1 , y : t2 in c [ v0, v1 ] # p2
 
 T ; p1 |- E [v] # p2
 ------------------------------- :: del

@@ -44,6 +44,7 @@ Inductive context : Set :=
  | E_epsilon (x:var) (τ:type) (c:command)
  | E_tt : context
  | E_fanout (E:context) (E':context)
+ | E_match_fanout (x:var) (τ1:type) (y:var) (τ2:type) (c:command)
  | E_dup (E:context)
  | E_del (E:context)
 with command : Set := 
@@ -52,8 +53,7 @@ with command : Set :=
  | c_true : command
  | c_false : command
  | c_and (c:command) (c':command)
- | c_or (c:command) (c':command)
- | c_let (x:var) (y:var) (E:context) (c:command).
+ | c_or (c:command) (c':command).
 
 Inductive global : Set := 
  | g_sort (sort5:sort)
@@ -240,10 +240,6 @@ Inductive se : usage -> command -> usage -> Prop :=    (* defn se *)
      sE Δ1 E Δ2 ->
      sE Δ2 E' Δ3 ->
      se Δ1 (c_unify E E') Δ3
- | se_let : forall (Δ1:usage) (x y:var) (E:context) (c:command) (Δ3 Δ2:usage),
-     sE Δ1 E Δ2 ->
-     se  (cons ( y ,  u_unused )   (cons ( x ,  u_unused )  Δ2 )  )  c  (cons ( y ,  u_used )   (cons ( x ,  u_used )  Δ3 )  )  ->
-     se Δ1 (c_let x y E c) Δ3
  | se_true : forall (Δ:usage),
      se Δ c_true Δ
  | se_false : forall (Δ:usage),
@@ -272,6 +268,9 @@ with sE : usage -> context -> usage -> Prop :=    (* defn sE *)
      sE Δ1 E1 Δ2 ->
      sE Δ2 E2 Δ3 ->
      sE Δ1 (E_fanout E1 E2) Δ3
+ | sE_match_fanout : forall (Δ1:usage) (x:var) (τ1:type) (y:var) (τ2:type) (c:command) (Δ2:usage),
+     se  (cons ( y ,  u_unused )   (cons ( x ,  u_unused )  Δ1 )  )  c  (cons ( y ,  u_used )   (cons ( x ,  u_used )  Δ2 )  )  ->
+     sE Δ1 (E_match_fanout x τ1 y τ2 c) Δ2
  | sE_dup : forall (Δ1:usage) (E:context) (Δ2:usage),
      sE Δ1 E Δ2 ->
      sE Δ1 (E_dup E) Δ2
@@ -286,10 +285,6 @@ Inductive infer : signature -> environment -> command -> Prop :=    (* defn infe
      Assoc.find R Σ = Some (g_relation τ)  ->
      check Σ Γ E τ ->
      infer Σ Γ (c_relation R E)
- | infer_let : forall (Σ:signature) (Γ:environment) (x y:var) (E:context) (c:command) (τ1 τ2:type),
-     check Σ Γ E (t_prod τ1 τ2) ->
-     infer Σ  (cons ( y ,  τ2 )   (cons ( x ,  τ1 )  Γ )  )  c ->
-     infer Σ Γ (c_let x y E c)
  | infer_unify : forall (Σ:signature) (Γ:environment) (E E':context) (τ:type),
      check Σ Γ E τ ->
      check Σ Γ E' τ ->
@@ -323,6 +318,9 @@ with check : signature -> environment -> context -> type -> Prop :=    (* defn c
      check Σ Γ E1 τ1 ->
      check Σ Γ E2 τ2 ->
      check Σ Γ (E_fanout E1 E2) (t_prod τ1 τ2)
+ | check_match_fanout : forall (Σ:signature) (Γ:environment) (x:var) (τ1:type) (y:var) (τ2:type) (c:command),
+     infer Σ  (cons ( y ,  τ2 )   (cons ( x ,  τ1 )  Γ )  )  c ->
+     check Σ Γ (E_match_fanout x τ1 y τ2 c) (t_prod τ1 τ2)
  | check_dup : forall (Σ:signature) (Γ:environment) (E:context) (τ:type),
      check Σ Γ E τ ->
      check Σ Γ (E_dup E) (t_prod τ τ)
@@ -343,10 +341,6 @@ Inductive pmem : var -> intro -> subst -> subst -> Prop :=    (* defn pmem *)
 
 (* defns sat *)
 Inductive produces : theory -> subst -> command -> subst -> Prop :=    (* defn produces *)
- | produces_let : forall (T:theory) (ρ1:subst) (x y:var) (E:context) (c:command) (ρ3:subst) (v0 v1:intro) (ρ2:subst) (v0' v1':intro),
-     accepts T ρ1 E (v_fanout v0 v1) ρ2 ->
-     produces T  (cons ( y ,  v1 )   (cons ( x ,  v0 )  ρ2 )  )  c  (cons ( y ,  v1' )   (cons ( x ,  v0' )  ρ3 )  )  ->
-     produces T ρ1 (c_let x y E c) ρ3
  | produces_unify : forall (T:theory) (ρ1:subst) (E E':context) (ρ3:subst) (v:intro) (ρ2:subst),
      accepts T ρ1 E v ρ2 ->
      accepts T ρ2 E' v ρ3 ->
@@ -376,6 +370,9 @@ with accepts : theory -> subst -> context -> intro -> subst -> Prop :=    (* def
      accepts T ρ1 E v ρ2 ->
      accepts T ρ2 E' v' ρ3 ->
      accepts T ρ1  ( (E_fanout E E') )  (v_fanout v v') ρ3
+ | accepts_match : forall (T:theory) (ρ1:subst) (x:var) (τ1:type) (y:var) (τ2:type) (c:command) (v0 v1:intro) (ρ2:subst) (v0' v1':intro),
+     produces T  (cons ( y ,  v1 )   (cons ( x ,  v0 )  ρ1 )  )  c  (cons ( y ,  v1' )   (cons ( x ,  v0' )  ρ2 )  )  ->
+     accepts T ρ1 (E_match_fanout x τ1 y τ2 c) (v_fanout v0 v1) ρ2
  | accepts_del : forall (T:theory) (ρ1:subst) (E:context) (ρ2:subst) (v:intro),
      accepts T ρ1 E v ρ2 ->
      accepts T ρ1 (E_del E) v_tt ρ2

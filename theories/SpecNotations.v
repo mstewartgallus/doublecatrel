@@ -37,12 +37,6 @@ Module RelNotations.
   (*         left associativity). *)
 
   Notation "( E , E' )" := (E_fanout E E') (in custom rel at level 30, right associativity).
-  Notation "'let' ( X , Y ) := E 'in' E'" :=
-    (c_let X Y E E')
-      (in custom rel at level 90,
-          X constr at level 99, Y constr at level 99,
-          E custom rel at level 99, E' custom rel at level 99,
-          left associativity).
 
   Coercion E_var: var >-> context.
 End RelNotations.
