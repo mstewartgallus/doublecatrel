@@ -115,9 +115,9 @@
 \ottprodline{|}{\bot}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{c}  \wedge  \ottnt{c'}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{c}  \vee  \ottnt{c'}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{E}  \ottsym{;}  \ottnt{c}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\mathbin{\textbf{let} } \, \mathit{x}  \ottsym{,}  \mathit{y}  \ottsym{=}  \ottnt{E} \, \mathbin{\textbf{in} } \, \ottnt{c}}{}{\textsf{bind}\; \mathit{x} \cup  \mathit{y}\; \textsf{in}\; \ottnt{c}}{}{}\ottprodnewline
-\ottprodline{|}{\ottsym{(}  \ottnt{c}  \ottsym{)}} {\textsf{S}}{}{}{}}
+\ottprodline{|}{\ottsym{(}  \ottnt{c}  \ottsym{)}} {\textsf{S}}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{E}  \ottsym{;}  \ottnt{c'}} {\textsf{M}}{}{}{}}
 
 \newcommand{\ottsubst}{
 \ottrulehead{\ottnt{subst}  ,\ \rho}{::=}{}\ottprodnewline
@@ -180,6 +180,10 @@
 \newcommand{\ottetaXXexpand}{
 \ottrulehead{\ottnt{eta\_expand}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{ \eta_{ \tau }  \ottnt{V} }{}{}{}{}}
+
+\newcommand{\ottstepXXelim}{
+\ottrulehead{\ottnt{step\_elim}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\ottnt{E}  \ottsym{;}  \ottnt{c'}  \ottsym{===}  \ottnt{c}}{}{}{}{}}
 
 \newcommand{\ottinjectXXnf}{
 \ottrulehead{\ottnt{inject\_nf}}{::=}{}\ottprodnewline
@@ -285,6 +289,7 @@
 \ottformula\ottinterrule
 \ottterminals\ottinterrule
 \ottetaXXexpand\ottinterrule
+\ottstepXXelim\ottinterrule
 \ottinjectXXnf\ottinterrule
 \ottfind\ottinterrule
 \ottjudgeXXterm\ottinterrule
@@ -313,6 +318,17 @@
 
 \newcommand{\ottfundefnsetaXXexpand}{
 \ottfundefneta{}}
+
+% fundefns step_elim
+% fundefn step
+
+\newcommand{\ottfundefnstep}[1]{\begin{ottfundefnblock}[#1]{$\ottnt{E}  \ottsym{;}  \ottnt{c'}$}{}
+\ottfunclause{\ottnt{E}  \ottsym{;}  \ottnt{c}}{\ottnt{E}  \ottsym{=}  \mathop{ \textbf ! }  \wedge  \ottnt{c}}%
+\end{ottfundefnblock}}
+
+
+\newcommand{\ottfundefnsstepXXelim}{
+\ottfundefnstep{}}
 
 % fundefns inject_nf
 % fundefn inject
@@ -580,15 +596,6 @@
 }}
 
 
-\newcommand{\ottdruleseXXstep}[1]{\ottdrule[#1]{%
-\ottpremise{\Delta_{{\mathrm{1}}}  \vdash{}  \ottnt{E}  \mathrel{\boxtimes}  \Delta_{{\mathrm{2}}}}%
-\ottpremise{\Delta_{{\mathrm{2}}}  \vdash{}  \ottnt{c}  \mathrel{\boxtimes}  \Delta_{{\mathrm{3}}}}%
-}{
-\Delta_{{\mathrm{1}}}  \vdash{}  \ottnt{E}  \ottsym{;}  \ottnt{c}  \mathrel{\boxtimes}  \Delta_{{\mathrm{3}}}}{%
-{\ottdrulename{se\_step}}{}%
-}}
-
-
 \newcommand{\ottdruleseXXlet}[1]{\ottdrule[#1]{%
 \ottpremise{\Delta_{{\mathrm{1}}}  \vdash{}  \ottnt{E}  \mathrel{\boxtimes}  \Delta_{{\mathrm{2}}}}%
 \ottpremise{\Delta_{{\mathrm{2}}}  \ottsym{,}  \mathit{x}  \ottsym{[}  \textbf{f}  \ottsym{]}  \ottsym{,}  \mathit{y}  \ottsym{[}  \textbf{f}  \ottsym{]}  \vdash{}  \ottnt{c}  \mathrel{\boxtimes}  \Delta_{{\mathrm{3}}}  \ottsym{,}  \mathit{x}  \ottsym{[}  \textbf{s}  \ottsym{]}  \ottsym{,}  \mathit{y}  \ottsym{[}  \textbf{s}  \ottsym{]}}%
@@ -632,7 +639,6 @@
 \newcommand{\ottdefnse}[1]{\begin{ottdefnblock}[#1]{$\Delta  \vdash{}  \ottnt{c}  \mathrel{\boxtimes}  \Delta'$}{}
 \ottusedrule{\ottdruleseXXrelation{}}
 \ottusedrule{\ottdruleseXXunify{}}
-\ottusedrule{\ottdruleseXXstep{}}
 \ottusedrule{\ottdruleseXXlet{}}
 \ottusedrule{\ottdruleseXXtrue{}}
 \ottusedrule{\ottdruleseXXfalse{}}
@@ -721,15 +727,6 @@
 }}
 
 
-\newcommand{\ottdruleinferXXstep}[1]{\ottdrule[#1]{%
-\ottpremise{\Sigma  \ottsym{[}  \Gamma  \ottsym{]}  \vdash{}  \ottnt{E}  \Leftarrow  \textbf{I}}%
-\ottpremise{\Sigma  \ottsym{[}  \Gamma  \ottsym{]}  \vdash{}  \ottnt{c}}%
-}{
-\Sigma  \ottsym{[}  \Gamma  \ottsym{]}  \vdash{}  \ottnt{E}  \ottsym{;}  \ottnt{c}}{%
-{\ottdrulename{infer\_step}}{}%
-}}
-
-
 \newcommand{\ottdruleinferXXlet}[1]{\ottdrule[#1]{%
 \ottpremise{\Sigma  \ottsym{[}  \Gamma  \ottsym{]}  \vdash{}  \ottnt{E}  \Leftarrow  \tau_{{\mathrm{1}}}  \otimes{}  \tau_{{\mathrm{2}}}}%
 \ottpremise{\Sigma  \ottsym{[}  \Gamma  \ottsym{,}  \mathit{x}  \colon{}  \tau_{{\mathrm{1}}}  \ottsym{,}  \mathit{y}  \colon{}  \tau_{{\mathrm{2}}}  \ottsym{]}  \vdash{}  \ottnt{c}}%
@@ -781,7 +778,6 @@
 
 \newcommand{\ottdefninfer}[1]{\begin{ottdefnblock}[#1]{$\Sigma  \ottsym{[}  \Gamma  \ottsym{]}  \vdash{}  \ottnt{c}$}{}
 \ottusedrule{\ottdruleinferXXrelation{}}
-\ottusedrule{\ottdruleinferXXstep{}}
 \ottusedrule{\ottdruleinferXXlet{}}
 \ottusedrule{\ottdruleinferXXunify{}}
 \ottusedrule{\ottdruleinferXXtrue{}}
@@ -889,15 +885,6 @@
 
 % defns sat
 %% defn produces
-\newcommand{\ottdruleproducesXXstep}[1]{\ottdrule[#1]{%
-\ottpremise{\ottnt{T}  \ottsym{;}  \rho_{{\mathrm{1}}}  \vdash{}  \ottnt{E}  \ottsym{[}  \mathop{ \textbf ! }  \ottsym{]}  \mathrel{\boxtimes}  \rho_{{\mathrm{2}}}}%
-\ottpremise{\ottnt{T}  \ottsym{;}  \rho_{{\mathrm{2}}}  \vdash{}  \ottnt{c}  \mathrel{\boxtimes}  \rho_{{\mathrm{3}}}}%
-}{
-\ottnt{T}  \ottsym{;}  \rho_{{\mathrm{1}}}  \vdash{}  \ottnt{E}  \ottsym{;}  \ottnt{c}  \mathrel{\boxtimes}  \rho_{{\mathrm{3}}}}{%
-{\ottdrulename{produces\_step}}{}%
-}}
-
-
 \newcommand{\ottdruleproducesXXlet}[1]{\ottdrule[#1]{%
 \ottpremise{\ottnt{T}  \ottsym{;}  \rho_{{\mathrm{1}}}  \vdash{}  \ottnt{E}  \ottsym{[}  \ottnt{v_{{\mathrm{0}}}}  \ottsym{,}  \ottnt{v_{{\mathrm{1}}}}  \ottsym{]}  \mathrel{\boxtimes}  \rho_{{\mathrm{2}}}}%
 \ottpremise{\ottnt{T}  \ottsym{;}  \rho_{{\mathrm{2}}}  \ottsym{,}  \mathit{x}  \mathbin{:=}  \ottnt{v_{{\mathrm{0}}}}  \ottsym{,}  \mathit{y}  \mathbin{:=}  \ottnt{v_{{\mathrm{1}}}}  \vdash{}  \ottnt{c}  \mathrel{\boxtimes}  \rho_{{\mathrm{3}}}  \ottsym{,}  \mathit{x}  \mathbin{:=}  \ottnt{v'_{{\mathrm{0}}}}  \ottsym{,}  \mathit{y}  \mathbin{:=}  \ottnt{v'_{{\mathrm{1}}}}}%
@@ -948,7 +935,6 @@
 }}
 
 \newcommand{\ottdefnproduces}[1]{\begin{ottdefnblock}[#1]{$\ottnt{T}  \ottsym{;}  \rho  \vdash{}  \ottnt{c}  \mathrel{\boxtimes}  \rho'$}{}
-\ottusedrule{\ottdruleproducesXXstep{}}
 \ottusedrule{\ottdruleproducesXXlet{}}
 \ottusedrule{\ottdruleproducesXXunify{}}
 \ottusedrule{\ottdruleproducesXXtrue{}}
@@ -1029,6 +1015,7 @@
 
 \newcommand{\ottdefnss}{
 \ottfundefnsetaXXexpand
+\ottfundefnsstepXXelim
 \ottfundefnsinjectXXnf
 \ottdefnsfind
 \ottdefnsjudgeXXterm

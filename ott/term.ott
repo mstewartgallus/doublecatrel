@@ -75,7 +75,6 @@ command, c :: 'c_' ::=
   | false                    ::   :: false
   | c /\ c'                  ::   :: and
   | c \/ c'                  ::   :: or
-  | E ; c                    ::   :: step
   | let x , y = E in c       ::   :: let (+ bind x union y in c +)
   | ( c )                    :: S :: paren {{ icho ([[c]]) }}
 
@@ -140,6 +139,13 @@ by
   eta ( A , V ) === neu( V )
   eta ( unit , V ) === tt
   eta (t1 * t2 , V ) === eta ( t1 , (fst V)), eta ( t2 , (snd V))
+
+funs
+  step_elim ::=
+fun
+  E ; c' :: c :: step
+by
+  E ; c === E = tt /\ c
 
 funs
   inject_nf ::=
@@ -303,11 +309,6 @@ D2 |- E' # D3
 D1 |- E = E' # D3
 
 D1 |- E # D2
-D2 |- c # D3
------------------- :: step
-D1 |- E; c # D3
-
-D1 |- E # D2
 D2, x [unused], y[unused] |- c # D3, x[used], y[used]
 ------------------------------------------------------ :: let
 D1 |- let x, y = E in c # D3
@@ -373,11 +374,6 @@ by
 S[G] |- E \check t
 ---------------------- :: relation
 S[G] |- R E
-
-S[G] |- E \check unit
-S[G] |- c
--------------- :: step
-S[G] |- E; c
 
 S[G] |- E \check t1 * t2
 S[G, x: t1, y: t2] |- c
@@ -463,11 +459,6 @@ sat :: '' ::=
 defn
   T ; p |- c # p' ::   :: produces :: 'produces_'
 by
-
-T ; p1 |- E [ tt ] # p2
-T ; p2 |- c # p3
----------------------------- :: step
-T ; p1 |- E; c # p3
 
 T ; p1 |- E [v0, v1] # p2
 T ; p2, x := v0, y := v1 |- c # p3, x := v0', y := v1'

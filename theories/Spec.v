@@ -53,7 +53,6 @@ with command : Set :=
  | c_false : command
  | c_and (c:command) (c':command)
  | c_or (c:command) (c':command)
- | c_step (E:context) (c:command)
  | c_let (x:var) (y:var) (E:context) (c:command).
 
 Inductive global : Set := 
@@ -122,6 +121,14 @@ Fixpoint eta (x1:type) (x2:elim) : intro:=
   | (t_var A) , V => (v_neu V)
   | t_unit , V => v_tt
   | (t_prod τ1 τ2) , V => (v_fanout  (eta τ1  ( (V_fst V) )  )   (eta τ2  ( (V_snd V) )  ) )
+end.
+
+(** definitions *)
+
+(** funs step_elim *)
+Fixpoint step (x1:context) (x2:command) : command:=
+  match x1,x2 with
+  | E , c => (c_and (c_unify E E_tt) c)
 end.
 
 (** definitions *)
@@ -233,10 +240,6 @@ Inductive se : usage -> command -> usage -> Prop :=    (* defn se *)
      sE Δ1 E Δ2 ->
      sE Δ2 E' Δ3 ->
      se Δ1 (c_unify E E') Δ3
- | se_step : forall (Δ1:usage) (E:context) (c:command) (Δ3 Δ2:usage),
-     sE Δ1 E Δ2 ->
-     se Δ2 c Δ3 ->
-     se Δ1 (c_step E c) Δ3
  | se_let : forall (Δ1:usage) (x y:var) (E:context) (c:command) (Δ3 Δ2:usage),
      sE Δ1 E Δ2 ->
      se  (cons ( y ,  u_unused )   (cons ( x ,  u_unused )  Δ2 )  )  c  (cons ( y ,  u_used )   (cons ( x ,  u_used )  Δ3 )  )  ->
@@ -283,10 +286,6 @@ Inductive infer : signature -> environment -> command -> Prop :=    (* defn infe
      Assoc.find R Σ = Some (g_relation τ)  ->
      check Σ Γ E τ ->
      infer Σ Γ (c_relation R E)
- | infer_step : forall (Σ:signature) (Γ:environment) (E:context) (c:command),
-     check Σ Γ E t_unit ->
-     infer Σ Γ c ->
-     infer Σ Γ (c_step E c)
  | infer_let : forall (Σ:signature) (Γ:environment) (x y:var) (E:context) (c:command) (τ1 τ2:type),
      check Σ Γ E (t_prod τ1 τ2) ->
      infer Σ  (cons ( y ,  τ2 )   (cons ( x ,  τ1 )  Γ )  )  c ->
@@ -344,10 +343,6 @@ Inductive pmem : var -> intro -> subst -> subst -> Prop :=    (* defn pmem *)
 
 (* defns sat *)
 Inductive produces : theory -> subst -> command -> subst -> Prop :=    (* defn produces *)
- | produces_step : forall (T:theory) (ρ1:subst) (E:context) (c:command) (ρ3 ρ2:subst),
-     accepts T ρ1 E v_tt ρ2 ->
-     produces T ρ2 c ρ3 ->
-     produces T ρ1 (c_step E c) ρ3
  | produces_let : forall (T:theory) (ρ1:subst) (x y:var) (E:context) (c:command) (ρ3:subst) (v0 v1:intro) (ρ2:subst) (v0' v1':intro),
      accepts T ρ1 E (v_fanout v0 v1) ρ2 ->
      produces T  (cons ( y ,  v1 )   (cons ( x ,  v0 )  ρ2 )  )  c  (cons ( y ,  v1' )   (cons ( x ,  v0' )  ρ3 )  )  ->

@@ -105,10 +105,6 @@ Section Typecheck.
         else
           None
 
-    | c_step E c =>
-        do Δ1 ← usecheck Δ E ;
-        useinfer Δ1 c
-
     | c_let x y E c=>
         do Δ1 ← usecheck Δ E ;
         do ' ((y', u_used) :: (x', u_used) :: Δ2) ← useinfer ((y, u_unused) :: (x, u_unused) :: Δ1) c ;
@@ -173,13 +169,6 @@ Section Typecheck.
 
     | c_and c c' => typeinfer X Γ c && typeinfer X Γ c'
     | c_or c c' => typeinfer X Γ c && typeinfer X Γ c'
-
-    | c_step E c =>
-        if typecheck X Γ E is Some t_unit
-        then
-          typeinfer X Γ c
-        else
-          false
 
     | c_let x y E c =>
         if typecheck X Γ E is Some (t1 * t2)
@@ -268,10 +257,6 @@ Proof using.
       2: discriminate.
       inversion H0.
       subst.
-      econstructor.
-      all: eauto.
-    + destruct usecheck eqn:q1.
-      2: discriminate.
       econstructor.
       all: eauto.
     + destruct usecheck eqn:q1.
@@ -393,12 +378,6 @@ Proof using.
       all: apply typeinfer_sound.
       all: try rewrite q1; try rewrite q2.
       all: constructor.
-    + destruct typecheck eqn:q1.
-      2: contradiction.
-      destruct t.
-      all: try contradiction.
-      constructor.
-      all: eauto.
     + destruct typecheck eqn:q1.
       2: contradiction.
       destruct t.
@@ -540,14 +519,6 @@ Fixpoint verify (T: theory) ρ c: list subst :=
   | c_or c c' =>
       verify T ρ c ++ verify T ρ c'
 
-  | c_step E c =>
-      do (ρ1 |- v) ← search T ρ E ;
-      if v is v_tt
-      then
-        verify T ρ1 c
-      else
-        []
-
   | c_let x y E c =>
       do (ρ1 |- v) ← search T ρ E ;
       do (a, b) ← (if v is v_fanout a b then [(a, b)] else []) ;
@@ -678,19 +649,6 @@ Proof using.
       destruct q'.
       * cbn.
         subst.
-        apply In_inl.
-        eauto.
-      * cbn.
-        apply In_inr.
-        eauto.
-    + assert (q' := search_complete _ _ _ _ _ H).
-      induction (search _ ρ1 E).
-      1: inversion q'.
-      cbn.
-      cbn in q'.
-      destruct q'.
-      * cbn.
-        subst.
         cbn.
         apply In_inl.
         cbn.
@@ -784,21 +742,6 @@ Proof using.
         2: eauto.
         apply produces_or_inr.
         auto.
-    + induction (search_sound T ρ E).
-      1: left.
-      cbn.
-      apply Forall_mon.
-      2: eauto.
-      clear IHf.
-      destruct x.
-      destruct v.
-      all: try left.
-      induction (verify_sound T ρ0 c).
-      1: left.
-      constructor.
-      2: eauto.
-      econstructor.
-      all: eauto.
     + induction (search_sound T ρ E).
       1: left.
       cbn.
