@@ -67,7 +67,7 @@ context, E :: 'E_' ::=
   | tt                       ::   :: tt
   | E , E'                   ::   :: fanout
 
-  | epsilon. c               ::   :: match_tt
+  | epsilon . c               ::   :: match_tt
   | epsilon x , y . c          ::   :: match_fanout (+ bind x union y in c +)
 
   | dup E                    ::   :: dup

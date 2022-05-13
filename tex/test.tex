@@ -104,7 +104,7 @@
 \ottprodline{|}{\varepsilon{} \, \mathit{x}  \ottsym{.}  \ottnt{c}}{}{\textsf{bind}\; \mathit{x}\; \textsf{in}\; \ottnt{c}}{}{}\ottprodnewline
 \ottprodline{|}{\mathop{ \textbf ! }}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{E}  \ottsym{,}  \ottnt{E'}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottsym{epsilon.}  \ottnt{c}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\varepsilon{} \, \ottsym{.}  \ottnt{c}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\varepsilon{} \, \mathit{x}  \ottsym{,}  \mathit{y}  \ottsym{.}  \ottnt{c}}{}{\textsf{bind}\; \mathit{x} \cup  \mathit{y}\; \textsf{in}\; \ottnt{c}}{}{}\ottprodnewline
 \ottprodline{|}{\ottkw{dup} \, \ottnt{E}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottkw{del} \, \ottnt{E}  \colon{}  \tau}{}{}{}{}\ottprodnewline
@@ -650,7 +650,7 @@
 \newcommand{\ottdrulesEXXmatchXXtt}[1]{\ottdrule[#1]{%
 \ottpremise{\Delta_{{\mathrm{1}}}  \vdash{}  \ottnt{c}  \mathrel{\boxtimes}  \Delta_{{\mathrm{2}}}}%
 }{
-\Delta_{{\mathrm{1}}}  \vdash{}  \ottsym{epsilon.}  \ottnt{c}  \mathrel{\boxtimes}  \Delta_{{\mathrm{2}}}}{%
+\Delta_{{\mathrm{1}}}  \vdash{}  \varepsilon{} \, \ottsym{.}  \ottnt{c}  \mathrel{\boxtimes}  \Delta_{{\mathrm{2}}}}{%
 {\ottdrulename{sE\_match\_tt}}{}%
 }}
 
@@ -781,7 +781,7 @@
 \newcommand{\ottdrulecheckXXmatchXXtt}[1]{\ottdrule[#1]{%
 \ottpremise{\ottnt{S}  \ottsym{;}  f^*  \ottsym{;}  R^*  \ottsym{;}  \Gamma  \vdash{}  \ottnt{c}}%
 }{
-\ottnt{S}  \ottsym{;}  f^*  \ottsym{;}  R^*  \ottsym{;}  \Gamma  \vdash{}  \ottsym{epsilon.}  \ottnt{c}  \Leftarrow  \textbf{I}}{%
+\ottnt{S}  \ottsym{;}  f^*  \ottsym{;}  R^*  \ottsym{;}  \Gamma  \vdash{}  \varepsilon{} \, \ottsym{.}  \ottnt{c}  \Leftarrow  \textbf{I}}{%
 {\ottdrulename{check\_match\_tt}}{}%
 }}
 
@@ -919,7 +919,7 @@
 \newcommand{\ottdruleacceptsXXmatchXXtt}[1]{\ottdrule[#1]{%
 \ottpremise{\ottnt{T}  \ottsym{;}  \rho_{{\mathrm{1}}}  \vdash{}  \ottnt{c}  \mathrel{\boxtimes}  \rho_{{\mathrm{2}}}}%
 }{
-\ottnt{T}  \ottsym{;}  \rho_{{\mathrm{1}}}  \vdash{}  \ottsym{epsilon.}  \ottnt{c}  \ottsym{[}  \mathop{ \textbf ! }  \ottsym{]}  \mathrel{\boxtimes}  \rho_{{\mathrm{2}}}}{%
+\ottnt{T}  \ottsym{;}  \rho_{{\mathrm{1}}}  \vdash{}  \varepsilon{} \, \ottsym{.}  \ottnt{c}  \ottsym{[}  \mathop{ \textbf ! }  \ottsym{]}  \mathrel{\boxtimes}  \rho_{{\mathrm{2}}}}{%
 {\ottdrulename{accepts\_match\_tt}}{}%
 }}
 
