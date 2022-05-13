@@ -9,8 +9,8 @@ Infix "*" := t_prod.
 
 Notation "'η'" := (eta) (at level 0).
 
-Notation "X @ G ⊢ v ⇐ t" := (Jv X G v t) (at level 90).
-Notation "X @ G ⊢ V ⇒ t" := (JV X G V t) (at level 90).
+(* Notation "( X , F , G ) ⊢ v ⇐ t" := (Jv X F G v t) (at level 90). *)
+(* Notation "( X , F , G ) ⊢ V ⇒ t" := (JV X F G V t) (at level 90). *)
 
 (* Notation "ρ ⊢ v ⇓ v'" := (bigv ρ v v') (at level 90). *)
 (* Notation "ρ ⊢ V ⇓ v'" := (bigv ρ V v') (at level 90). *)

@@ -54,11 +54,6 @@ with command : Set :=
  | c_false : command
  | c_or (c:command) (c':command).
 
-Inductive global : Set := 
- | g_sort (sort5:sort)
- | g_function (τ:type) (A:sort)
- | g_relation (τ:type).
-
 Inductive elim : Set := 
  | V_var (x:var)
  | V_fst (V:elim)
@@ -71,19 +66,23 @@ Inductive use : Set :=
  | u_used : use
  | u_unused : use.
 
-Definition signature : Set := (Assoc.assoc global).
+Definition sorts : Set := (Assoc.assoc unit).
 
 Definition environment : Set := (Assoc.assoc type).
 
+Definition functions : Set := (Assoc.assoc (type * function)).
 
 Inductive intro : Set := 
  | v_function (f:function) (v:intro)
  | v_tt : intro
  | v_fanout (v:intro) (v':intro)
  | v_neu (V:elim).
+
 Definition subst : Set := (Assoc.assoc intro).
 
 Definition theory : Set := (list sequent).
+
+Definition relations : Set := (Assoc.assoc type).
 
 Definition usage : Set := (Assoc.assoc use).
 
@@ -146,40 +145,40 @@ Inductive mem : var -> type -> environment -> Prop :=    (* defn mem *)
 (** definitions *)
 
 (* defns judge_term *)
-Inductive JV : signature -> environment -> elim -> type -> Prop :=    (* defn V *)
- | JV_var : forall (Σ:signature) (Γ:environment) (x:var) (τ:type),
+Inductive JV : sorts -> functions -> environment -> elim -> type -> Prop :=    (* defn V *)
+ | JV_var : forall (S:sorts) (FS:functions) (Γ:environment) (x:var) (τ:type),
      mem x τ Γ ->
-     JV Σ Γ (V_var x) τ
- | JV_fst : forall (Σ:signature) (Γ:environment) (V:elim) (τ1 τ2:type),
-     JV Σ Γ V (t_prod τ1 τ2) ->
-     JV Σ Γ (V_fst V) τ1
- | JV_snd : forall (Σ:signature) (Γ:environment) (V:elim) (τ2 τ1:type),
-     JV Σ Γ V (t_prod τ1 τ2) ->
-     JV Σ Γ (V_snd V) τ2
-with Jv : signature -> environment -> intro -> type -> Prop :=    (* defn v *)
- | Jv_function : forall (Σ:signature) (Γ:environment) (f:function) (v:intro) (A:sort) (τ:type),
-     Assoc.find f Σ = Some (g_function τ A)  ->
-     Jv Σ Γ v τ ->
-     Jv Σ Γ (v_function f v) (t_var A)
- | Jv_tt : forall (Σ:signature) (Γ:environment),
-     Jv Σ Γ v_tt t_unit
- | Jv_fanout : forall (Σ:signature) (Γ:environment) (v1 v2:intro) (τ1 τ2:type),
-     Jv Σ Γ v1 τ1 ->
-     Jv Σ Γ v2 τ2 ->
-     Jv Σ Γ (v_fanout v1 v2) (t_prod τ1 τ2)
- | Jv_neu : forall (Σ:signature) (Γ:environment) (V:elim) (A:sort),
-     JV Σ Γ V (t_var A) ->
-     Jv Σ Γ (v_neu V) (t_var A).
+     JV S FS Γ (V_var x) τ
+ | JV_fst : forall (S:sorts) (FS:functions) (Γ:environment) (V:elim) (τ1 τ2:type),
+     JV S FS Γ V (t_prod τ1 τ2) ->
+     JV S FS Γ (V_fst V) τ1
+ | JV_snd : forall (S:sorts) (FS:functions) (Γ:environment) (V:elim) (τ2 τ1:type),
+     JV S FS Γ V (t_prod τ1 τ2) ->
+     JV S FS Γ (V_snd V) τ2
+with Jv : sorts -> functions -> environment -> intro -> type -> Prop :=    (* defn v *)
+ | Jv_function : forall (S:sorts) (FS:functions) (Γ:environment) (f:function) (v:intro) (A:sort) (τ:type),
+     Assoc.find f FS = Some (τ, A)  ->
+     Jv S FS Γ v τ ->
+     Jv S FS Γ (v_function f v) (t_var A)
+ | Jv_tt : forall (S:sorts) (FS:functions) (Γ:environment),
+     Jv S FS Γ v_tt t_unit
+ | Jv_fanout : forall (S:sorts) (FS:functions) (Γ:environment) (v1 v2:intro) (τ1 τ2:type),
+     Jv S FS Γ v1 τ1 ->
+     Jv S FS Γ v2 τ2 ->
+     Jv S FS Γ (v_fanout v1 v2) (t_prod τ1 τ2)
+ | Jv_neu : forall (S:sorts) (FS:functions) (Γ:environment) (V:elim) (A:sort),
+     JV S FS Γ V (t_var A) ->
+     Jv S FS Γ (v_neu V) (t_var A).
 (** definitions *)
 
 (* defns judge_subst *)
-Inductive Jp : signature -> subst -> environment -> environment -> Prop :=    (* defn p *)
- | Jp_bang : forall (Σ:signature) (Γ:environment),
-     Jp Σ  nil  Γ  nil 
- | Jp_cut : forall (Σ:signature) (ρ:subst) (x:var) (v:intro) (Γ1 Γ2:environment) (τ:type),
-     Jv Σ Γ1 v τ ->
-     Jp Σ ρ Γ1 Γ2 ->
-     Jp Σ  (cons ( x ,  v )  ρ )  Γ1  (cons ( x ,  τ )  Γ2 ) .
+Inductive Jp : sorts -> functions -> subst -> environment -> environment -> Prop :=    (* defn p *)
+ | Jp_bang : forall (S:sorts) (FS:functions) (Γ:environment),
+     Jp S FS  nil  Γ  nil 
+ | Jp_cut : forall (S:sorts) (FS:functions) (ρ:subst) (x:var) (v:intro) (Γ1 Γ2:environment) (τ:type),
+     Jv S FS Γ1 v τ ->
+     Jp S FS ρ Γ1 Γ2 ->
+     Jp S FS  (cons ( x ,  v )  ρ )  Γ1  (cons ( x ,  τ )  Γ2 ) .
 (** definitions *)
 
 (* defns bigV *)
@@ -267,50 +266,50 @@ with sE : usage -> context -> usage -> Prop :=    (* defn sE *)
 (** definitions *)
 
 (* defns judge_context *)
-Inductive infer : signature -> environment -> command -> Prop :=    (* defn infer *)
- | infer_relation : forall (Σ:signature) (Γ:environment) (R:relation) (E:context) (τ:type),
-     Assoc.find R Σ = Some (g_relation τ)  ->
-     check Σ Γ E τ ->
-     infer Σ Γ (c_relation R E)
- | infer_unify : forall (Σ:signature) (Γ:environment) (E E':context) (τ:type),
-     check Σ Γ E τ ->
-     check Σ Γ E' τ ->
-     infer Σ Γ (c_unify E E' τ)
- | infer_false : forall (Σ:signature) (Γ:environment),
-     infer Σ Γ c_false
- | infer_or : forall (Σ:signature) (Γ:environment) (c c':command),
-     infer Σ Γ c ->
-     infer Σ Γ c' ->
-     infer Σ Γ (c_or c c')
-with check : signature -> environment -> context -> type -> Prop :=    (* defn check *)
- | check_var : forall (Σ:signature) (Γ:environment) (x:var) (τ:type),
+Inductive infer : sorts -> functions -> relations -> environment -> command -> Prop :=    (* defn infer *)
+ | infer_relation : forall (S:sorts) (FS:functions) (RS:relations) (Γ:environment) (R:relation) (E:context) (τ:type),
+     Assoc.find R RS = Some τ  ->
+     check S FS RS Γ E τ ->
+     infer S FS RS Γ (c_relation R E)
+ | infer_unify : forall (S:sorts) (FS:functions) (RS:relations) (Γ:environment) (E E':context) (τ:type),
+     check S FS RS Γ E τ ->
+     check S FS RS Γ E' τ ->
+     infer S FS RS Γ (c_unify E E' τ)
+ | infer_false : forall (S:sorts) (FS:functions) (RS:relations) (Γ:environment),
+     infer S FS RS Γ c_false
+ | infer_or : forall (S:sorts) (FS:functions) (RS:relations) (Γ:environment) (c c':command),
+     infer S FS RS Γ c ->
+     infer S FS RS Γ c' ->
+     infer S FS RS Γ (c_or c c')
+with check : sorts -> functions -> relations -> environment -> context -> type -> Prop :=    (* defn check *)
+ | check_var : forall (S:sorts) (FS:functions) (RS:relations) (Γ:environment) (x:var) (τ:type),
      Assoc.find x Γ = Some τ  ->
-     check Σ Γ (E_var x) τ
- | check_function : forall (Σ:signature) (Γ:environment) (f:function) (E:context) (A:sort) (τ:type),
-     Assoc.find f Σ = Some (g_function τ A)  ->
-     check Σ Γ E τ ->
-     check Σ Γ (E_function f E) (t_var A)
- | check_epsilon : forall (Σ:signature) (Γ:environment) (x:var) (c:command) (τ:type),
-     infer Σ  (cons ( x ,  τ )  Γ )  c ->
-     check Σ Γ (E_epsilon x c) τ
- | check_tt : forall (Σ:signature) (Γ:environment),
-     check Σ Γ E_tt t_unit
- | check_fanout : forall (Σ:signature) (Γ:environment) (E1 E2:context) (τ1 τ2:type),
-     check Σ Γ E1 τ1 ->
-     check Σ Γ E2 τ2 ->
-     check Σ Γ (E_fanout E1 E2) (t_prod τ1 τ2)
- | check_match_tt : forall (Σ:signature) (Γ:environment) (c:command),
-     infer Σ Γ c ->
-     check Σ Γ (E_match_tt c) t_unit
- | check_match_fanout : forall (Σ:signature) (Γ:environment) (x y:var) (c:command) (τ1 τ2:type),
-     infer Σ  (cons ( y ,  τ2 )   (cons ( x ,  τ1 )  Γ )  )  c ->
-     check Σ Γ (E_match_fanout x y c) (t_prod τ1 τ2)
- | check_dup : forall (Σ:signature) (Γ:environment) (E:context) (τ:type),
-     check Σ Γ E τ ->
-     check Σ Γ (E_dup E) (t_prod τ τ)
- | check_del : forall (Σ:signature) (Γ:environment) (E:context) (τ:type),
-     check Σ Γ E τ ->
-     check Σ Γ (E_del E τ) t_unit.
+     check S FS RS Γ (E_var x) τ
+ | check_function : forall (S:sorts) (FS:functions) (RS:relations) (Γ:environment) (f:function) (E:context) (A:sort) (τ:type),
+     Assoc.find f FS = Some (τ, A)  ->
+     check S FS RS Γ E τ ->
+     check S FS RS Γ (E_function f E) (t_var A)
+ | check_epsilon : forall (S:sorts) (FS:functions) (RS:relations) (Γ:environment) (x:var) (c:command) (τ:type),
+     infer S FS RS  (cons ( x ,  τ )  Γ )  c ->
+     check S FS RS Γ (E_epsilon x c) τ
+ | check_tt : forall (S:sorts) (FS:functions) (RS:relations) (Γ:environment),
+     check S FS RS Γ E_tt t_unit
+ | check_fanout : forall (S:sorts) (FS:functions) (RS:relations) (Γ:environment) (E1 E2:context) (τ1 τ2:type),
+     check S FS RS Γ E1 τ1 ->
+     check S FS RS Γ E2 τ2 ->
+     check S FS RS Γ (E_fanout E1 E2) (t_prod τ1 τ2)
+ | check_match_tt : forall (S:sorts) (FS:functions) (RS:relations) (Γ:environment) (c:command),
+     infer S FS RS Γ c ->
+     check S FS RS Γ (E_match_tt c) t_unit
+ | check_match_fanout : forall (S:sorts) (FS:functions) (RS:relations) (Γ:environment) (x y:var) (c:command) (τ1 τ2:type),
+     infer S FS RS  (cons ( y ,  τ2 )   (cons ( x ,  τ1 )  Γ )  )  c ->
+     check S FS RS Γ (E_match_fanout x y c) (t_prod τ1 τ2)
+ | check_dup : forall (S:sorts) (FS:functions) (RS:relations) (Γ:environment) (E:context) (τ:type),
+     check S FS RS Γ E τ ->
+     check S FS RS Γ (E_dup E) (t_prod τ τ)
+ | check_del : forall (S:sorts) (FS:functions) (RS:relations) (Γ:environment) (E:context) (τ:type),
+     check S FS RS Γ E τ ->
+     check S FS RS Γ (E_del E τ) t_unit.
 (** definitions *)
 
 (* defns pfind *)

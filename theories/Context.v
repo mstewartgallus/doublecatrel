@@ -111,7 +111,7 @@ Section Typecheck.
     end
       %list.
 
-  Function typecheck X Γ E τ: bool :=
+  Function typecheck (X: sorts) F R Γ E τ: bool :=
     match E, τ with
     | E_var x, _ =>
         if Assoc.find x Γ is Some τ'
@@ -121,41 +121,41 @@ Section Typecheck.
           false
 
     | E_function f E, t_var A =>
-        if Assoc.find f X is Some (g_function τ A')
+        if Assoc.find f F is Some (τ, A')
         then
           (if eq_var A A' then true else false)
-          && typecheck X Γ E τ
+          && typecheck X F R Γ E τ
         else
           false
 
     | E_tt, t_unit => true
-    | E_fanout E E', τ1 * τ2 => typecheck X Γ E τ1 && typecheck X Γ E' τ2
+    | E_fanout E E', τ1 * τ2 => typecheck X F R Γ E τ1 && typecheck X F R Γ E' τ2
 
-    | E_match_tt c, t_unit => typeinfer X Γ c
-    | E_match_fanout x y c, τ1 * τ2 => typeinfer X ((y, τ2) :: (x, τ1) :: Γ) c
+    | E_match_tt c, t_unit => typeinfer X F R Γ c
+    | E_match_fanout x y c, τ1 * τ2 => typeinfer X F R ((y, τ2) :: (x, τ1) :: Γ) c
 
     | E_dup E, τ * τ' =>
         (if eq_type τ τ' then true else false)
-        && typecheck X Γ E τ
+        && typecheck X F R Γ E τ
 
-    | E_del E τ, t_unit => typecheck X Γ E τ
+    | E_del E τ, t_unit => typecheck X F R Γ E τ
 
-    | E_epsilon x c, τ => typeinfer X ((x, τ) :: Γ) c
+    | E_epsilon x c, τ => typeinfer X F R ((x, τ) :: Γ) c
     | _, _ => false
     end %bool
-  with typeinfer X Γ c: bool :=
+  with typeinfer X F R Γ c: bool :=
     match c with
-    | c_relation R E =>
-        if Assoc.find R X is Some (g_relation τ)
+    | c_relation Rv E =>
+        if Assoc.find Rv R is Some τ
         then
-          typecheck X Γ E τ
+          typecheck X F R Γ E τ
         else
           false
 
-    | c_unify E E' τ => typecheck X Γ E τ && typecheck X Γ E' τ
+    | c_unify E E' τ => typecheck X F R Γ E τ && typecheck X F R Γ E' τ
 
     | c_false => true
-    | c_or c c' => typeinfer X Γ c && typeinfer X Γ c'
+    | c_or c c' => typeinfer X F R Γ c && typeinfer X F R Γ c'
     end
       %bool.
 End Typecheck.
@@ -258,16 +258,15 @@ Proof using.
       all: eauto.
 Qed.
 
-Fixpoint
-  typecheck_sound {E} {struct E}:
-  ∀ {X Γ τ}, Bool.Is_true (typecheck X Γ E τ) → check X Γ E τ
-    with
-  typeinfer_sound {c} {struct c}:
-  ∀ {X Γ}, Bool.Is_true (typeinfer X Γ c) → infer X Γ c.
+Fixpoint typecheck_sound {X F R Γ E τ} {struct E}:
+  Bool.Is_true (typecheck X F R Γ E τ) → check X F R Γ E τ
+with
+typeinfer_sound {X F R Γ c} {struct c}:
+  Bool.Is_true (typeinfer X F R Γ c) → infer X F R Γ c.
 Proof using.
   - destruct E.
     all: cbn.
-    all: intros ? ? ? p.
+    all: intros p.
     all: try contradiction.
     + destruct Assoc.find eqn:q1.
       2: contradiction.
@@ -280,8 +279,7 @@ Proof using.
       all: try contradiction.
       destruct Assoc.find eqn:q1 in p.
       all: try contradiction.
-      destruct g.
-      all: try contradiction.
+      destruct p0.
       destruct eq_var in p.
       2: contradiction.
       subst.
@@ -316,16 +314,14 @@ Proof using.
       subst.
       econstructor.
       eauto.
-    + destruct τ0.
+    + destruct τ.
       all: try contradiction.
       constructor.
       eauto.
   - destruct c.
     all: cbn.
-    all: intros ? ? p.
+    all: intros p.
     + destruct Assoc.find eqn:q1 in p.
-      all: try contradiction.
-      destruct g.
       all: try contradiction.
       econstructor.
       all: eauto.
@@ -389,31 +385,42 @@ Proof using.
     reflexivity.
 Qed.
 
-Fixpoint typecheck_complete {X Γ E τ} (p: check X Γ E τ):
-  typecheck X Γ E τ = true
-with typeinfer_complete {X Γ c} (p: infer X Γ c):
-  typeinfer X Γ c = true.
+Fixpoint typecheck_complete {X F R Γ E τ} (p: check X F R Γ E τ):
+  typecheck X F R Γ E τ = true
+with typeinfer_complete {X F R Γ c} (p: infer X F R Γ c):
+  typeinfer X F R Γ c = true.
 Proof using.
   - destruct p.
     all: cbn.
-    all: try rewrite (typecheck_complete _ _ _ _ p).
-    all: try rewrite (typecheck_complete _ _ _ _ p1).
-    all: try rewrite (typecheck_complete _ _ _ _ p2).
-    all: try rewrite (typeinfer_complete _ _ _ H).
+    all: try rewrite (typecheck_complete _ _ _ _ _ _ p).
+    all: try rewrite (typecheck_complete _ _ _ _ _ _ p1).
+    all: try rewrite (typecheck_complete _ _ _ _ _ _ p2).
+    all: try rewrite (typeinfer_complete _ _ _ _ _ H).
     all: try rewrite H.
     all: auto.
     all: try destruct eq_type.
     all: try destruct eq_var.
     all: eauto.
+    destruct Assoc.find.
+    2: discriminate.
+    inversion H.
+    subst.
+    destruct eq_var.
+    2: contradiction.
+    cbn.
+    eauto.
   - destruct p.
     all: cbn.
-    all: try rewrite (typeinfer_complete _ _ _ p).
-    all: try rewrite (typeinfer_complete _ _ _ p1).
-    all: try rewrite (typeinfer_complete _ _ _ p2).
-    all: try rewrite (typecheck_complete _ _ _ _ H).
-    all: try rewrite (typecheck_complete _ _ _ _ H0).
+    all: try rewrite (typeinfer_complete _ _ _ _ _ p).
+    all: try rewrite (typeinfer_complete _ _ _ _ _ p1).
+    all: try rewrite (typeinfer_complete _ _ _ _ _ p2).
+    all: try rewrite (typecheck_complete _ _ _ _ _ _ H).
+    all: try rewrite (typecheck_complete _ _ _ _ _ _ H0).
     all: auto.
-    rewrite H.
+    destruct Assoc.find.
+    2: discriminate.
+    inversion H.
+    subst.
     eauto.
 Qed.
 
@@ -764,8 +771,8 @@ Qed.
 
 Definition useonce Γ u: usage := List.map (λ '(x, t), (x, u)) Γ.
 
-Definition oftype X Γ t :=
-  { E |  Bool.Is_true (typecheck X Γ E t && if usecheck (useonce Γ u_unused) E is Some Δ
+Definition oftype X F R Γ t :=
+  { E |  Bool.Is_true (typecheck X F R Γ E t && if usecheck (useonce Γ u_unused) E is Some Δ
            then
              if eq_usage Δ (useonce Γ u_used) then true else false
            else

@@ -22,16 +22,17 @@ usage, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (Assoc.assoc use) }}
   | nil                  ::   :: nil {{ coq nil }}
   | D , x [ u ]          ::   :: cons {{ coq (cons ([[x]], [[u]]) [[D]]) }}
 
-global, g :: 'g_' ::=
-  | sort              ::   :: sort
-  | t -> A            ::   :: function
-  | rel t             ::   :: relation
+sorts, S :: 'S_' ::= {{ coq (Assoc.assoc unit) }}
+  | nil          ::   :: nil {{ coq nil }}
+  | S , A : sort ::   :: add {{ coq (cons ([[A]], tt) [[S]]) }}
 
-signature, S {{ tex \Sigma }} {{ coq Σ }} :: 'S_' ::= {{ coq (Assoc.assoc global) }}
+relations, RS {{ tex R^* }} :: 'RS_' ::= {{ coq (Assoc.assoc type) }}
+  | nil          ::   :: nil {{ coq nil }}
+  | RS , R : t    ::   :: add {{ coq (cons ([[R]], [[t]]) [[RS]]) }}
+
+functions, FS {{ tex f^* }} :: 'FS_' ::= {{ coq (Assoc.assoc (type * function)) }}
   | nil         ::   :: nil {{ coq nil }}
-  | S , A : g       ::   :: add_sort {{ coq (cons ([[A]], [[g]]) [[S]]) }}
-  | S , f : g       ::   :: add_function {{ coq (cons ([[f]], [[g]]) [[S]]) }}
-  | S , R : g       ::   :: add_relation {{ coq (cons ([[R]], [[g]]) [[S]]) }}
+  | FS , f : t -> A  ::   :: add_function {{ coq (cons ([[f]], ([[t]], [[A]])) [[FS]]) }}
 
 sequent, H :: 'H_' ::=
   | c => c' ::  :: seq
@@ -179,57 +180,57 @@ defns
 judge_term :: 'J' ::=
 
 defn
-S [ G ] |- V \infer t ::   :: V :: 'V_'
+S ; FS ; G |- V \infer t ::   :: V :: 'V_'
 by
 
 x: t \in G
 ----------------- :: var
-S[G] |- x \infer t
+S ; FS ; G |- x \infer t
 
-S[G] |- V \infer t1 * t2
+S ; FS ; G |- V \infer t1 * t2
 ------------------ :: fst
-S[G] |- fst V \infer t1
+S ; FS ; G |- fst V \infer t1
 
-S[G] |- V \infer t1 * t2
+S ; FS ; G |- V \infer t1 * t2
 ------------------ :: snd
-S[G] |- snd V \infer t2
+S ; FS ; G |- snd V \infer t2
 
 defn
-S [ G ] |- v \check t ::   :: v :: 'v_'
+S ; FS ; G |- v \check t ::   :: v :: 'v_'
 by
 
-{{ Assoc.find [[f]] [[S]] = Some [[t -> A]] }}
-S[G] |- v \check t
+{{ Assoc.find [[f]] [[FS]] = Some ([[t]], [[A]]) }}
+S ; FS ; G |- v \check t
 ------------------------------- :: function
-S[G] |- f v \check A
+S ; FS ; G |- f v \check A
 
 ----------------------- :: tt
-S[G] |- tt \check unit
+S ; FS ; G |- tt \check unit
 
-S[G] |- v1 \check t1
-S[G] |- v2 \check t2
+S ; FS ; G |- v1 \check t1
+S ; FS ; G |- v2 \check t2
 ------------------------------ :: fanout
-S[G] |- v1, v2 \check t1 * t2
+S ; FS ; G |- v1, v2 \check t1 * t2
 
-S[G] |- V \infer A
+S ; FS ; G |- V \infer A
 ----------------- :: neu
-S[G] |- neu ( V) \check A
+S ; FS ; G |- neu ( V) \check A
 
 defns
 
 judge_subst :: 'J' ::=
 
 defn
-S |- p : G -> G' ::   :: p :: 'p_'
+S ; FS |- p : G -> G' ::   :: p :: 'p_'
 by
 
---------------- :: bang
-S |- nil: G -> nil
+------------------------ :: bang
+S ; FS |- nil: G -> nil
 
-S[G1] |- v \check t
-S |- p : G1 -> G2
+S ; FS ; G1 |- v \check t
+S ; FS |- p : G1 -> G2
 ----------------------------------- :: cut
-S |- p, x := v : G1 -> G2, x: t
+S ; FS |- p, x := v : G1 -> G2, x: t
 
 defns
 
@@ -364,68 +365,68 @@ defns
 judge_context :: '' ::=
 
 defn
-S [ G ] |- c ::   :: infer :: 'infer_'
+S ; FS ; RS ; G |- c ::   :: infer :: 'infer_'
 by
 
-{{ Assoc.find [[R]] [[S]] = Some [[rel t]] }}
-S[G] |- E \check t
----------------------- :: relation
-S[G] |- R E
+{{ Assoc.find [[R]] [[RS]] = Some [[t]] }}
+S ; FS ; RS ; G |- E \check t
+------------------------------- :: relation
+S ; FS ; RS ; G |- R E
 
-S[G] |- E \check t
-S[G] |- E' \check t
--------------------- :: unify
-S[G] |- E = E' : t
+S ; FS ; RS ; G |- E \check t
+S ; FS ; RS ; G |- E' \check t
+----------------------------- :: unify
+S ; FS ; RS ; G |- E = E' : t
 
--------------- :: false
-S[G] |- false
+-------------------- :: false
+S ; FS ; RS ; G |- false
 
-S[G] |- c
-S[G] |- c'
+S ; FS ; RS ; G |- c
+S ; FS ; RS ; G |- c'
 --------------- :: or
-S[G] |- c \/ c'
+S ; FS ; RS ; G |- c \/ c'
 
 defn
-S [ G ] |- E \check t ::   :: check :: 'check_'
+S ; FS ; RS ; G |- E \check t ::   :: check :: 'check_'
 by
 
 {{ Assoc.find [[x]] [[G]] = Some [[t]] }}
 ----------------------- :: var
-S[G] |- x \check t
+S ; FS ; RS ; G |- x \check t
 
 
-{{ Assoc.find [[f]] [[S]] = Some [[t -> A]] }}
-S[G] |- E \check t
---------------------------- :: function
-S[G] |- f E \check A
+{{ Assoc.find [[f]] [[FS]] = Some ([[t]], [[A]]) }}
+S ; FS ; RS ; G |- E \check t
+------------------------------------ :: function
+S ; FS ; RS ; G |- f E \check A
 
-S[G, x: t] |- c
------------------------------------ :: epsilon
-S[G] |- epsilon x . c \check t
+S ; FS ; RS ; G, x: t |- c
+----------------------------------------- :: epsilon
+S ; FS ; RS ; G |- epsilon x . c \check t
 
 -------------------- :: tt
-S[G] |- tt \check unit
+S ; FS ; RS ; G |- tt \check unit
 
-S[G] |- E1 \check t1
-S[G] |- E2 \check t2
----------------------------- :: fanout
-S[G] |- E1, E2 \check t1 * t2
+S ; FS ; RS ; G |- E1 \check t1
+S ; FS ; RS ; G |- E2 \check t2
+----------------------------------------- :: fanout
+S ; FS ; RS ; G |- E1, E2 \check t1 * t2
 
-S[G] |- c
------------------------------- :: match_tt
-S[G] |- epsilon. c \check unit
+S ; FS ; RS ; G |- c
+----------------------------------------- :: match_tt
+S ; FS ; RS ; G |- epsilon. c \check unit
 
-S[G, x: t1, y: t2] |- c
-------------------------------------------------- :: match_fanout
-S[G] |- epsilon x , y . c \check t1 * t2
+S ; FS ; RS ; G, x: t1, y: t2 |- c
+------------------------------------------------------ :: match_fanout
+S ; FS ; RS ; G |- epsilon x , y . c \check t1 * t2
 
-S[G] |- E \check t
+S ; FS ; RS ; G |- E \check t
 ---------------------------- :: dup
-S[G] |- dup E \check t * t
+S ; FS ; RS ; G |- dup E \check t * t
 
-S[G] |- E \check t
+S ; FS ; RS ; G |- E \check t
 ---------------------------- :: del
-S[G] |- del E : t \check unit
+S ; FS ; RS ; G |- del E : t \check unit
 
 defns
 

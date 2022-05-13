@@ -25,15 +25,14 @@ Implicit Types x y: var.
 Implicit Type ρ: subst.
 
 Theorem η_preserve {t}:
-  ∀ {X Γ V},
-  X @ Γ ⊢ V ⇒ t →
-  X @ Γ ⊢ η t V ⇐ t.
+  ∀ {X F Γ V},
+  JV X F Γ V t →
+  Jv X F Γ (η t V) t.
 Proof.
   induction t.
   all: cbn.
-  all: intros ? ? q.
-  - intros.
-    constructor.
+  all: intros ? ? ? q.
+  - constructor.
     auto.
   - constructor.
   - constructor.
@@ -47,7 +46,7 @@ Qed.
 
 Function typeinfer Γ V :=
   match V with
-  | V_var x => find x Γ
+  | V_var x => Assoc.find x Γ
   | V_fst V =>
       do ' t0 * _ ← typeinfer Γ V ;
       Some t0
@@ -59,7 +58,7 @@ Function typeinfer Γ V :=
 Function typecheck X Γ v t: bool :=
   match v, t with
   | v_function f v, t_var B =>
-      if find f X is Some (g_function τ A)
+      if Assoc.find f X is Some (τ, A)
       then
         (if eq_var A B then true else false) &&
          typecheck X Γ v τ
@@ -75,7 +74,7 @@ Function typecheck X Γ v t: bool :=
   | _, _ => false
   end %bool.
 
-Fixpoint typeinfer_sound {X Γ V t}: typeinfer Γ V = Some t → X @ Γ ⊢ V ⇒ t.
+Fixpoint typeinfer_sound {X F Γ V t}: typeinfer Γ V = Some t → JV X F Γ V t.
 Proof using .
   - intros p.
     destruct V.
@@ -106,8 +105,8 @@ Proof using .
       eauto.
 Qed.
 
-Fixpoint typecheck_sound {X Γ v t}:
-  Bool.Is_true (typecheck X Γ v t) → X @ Γ ⊢ v ⇐ t.
+Fixpoint typecheck_sound {X F Γ v t}:
+  Bool.Is_true (typecheck F Γ v t) → Jv X F Γ v t.
   - intros p.
     destruct v.
     all: cbn.
@@ -116,8 +115,7 @@ Fixpoint typecheck_sound {X Γ v t}:
       all: try contradiction.
       destruct find eqn:r in p.
       2: contradiction.
-      destruct g eqn:s in p.
-      all: try contradiction.
+      destruct p0.
       destruct eq_var in p.
       2: contradiction.
       cbn in p.
@@ -154,7 +152,7 @@ Fixpoint typecheck_sound {X Γ v t}:
       auto.
 Qed.
 
-Definition typeinfer_complete {X Γ V t} (p: X @ Γ ⊢ V ⇒ t): typeinfer Γ V = Some t.
+Definition typeinfer_complete {X F Γ V t} (p: JV X F Γ V t): typeinfer Γ V = Some t.
 Proof using .
   induction p.
   all: cbn.
@@ -166,7 +164,7 @@ Proof using .
     auto.
 Qed.
 
-Definition typecheck_complete {X Γ v t} (p: X @ Γ ⊢ v ⇐ t): typecheck X Γ v t = true.
+Definition typecheck_complete {X F Γ v t} (p: Jv X F Γ v t): typecheck F Γ v t = true.
 Proof using .
   induction p.
   all: cbn in *.
@@ -175,7 +173,11 @@ Proof using .
   all: try rewrite IHp1.
   all: try rewrite IHp2.
   all: auto.
-  + rewrite H.
+  + destruct find.
+    2: discriminate.
+    destruct p0.
+    inversion H.
+    subst.
     destruct eq_var.
     2: contradiction.
     cbn.
@@ -204,11 +206,11 @@ Function eval ρ v :=
   | v_neu V => eval_elim ρ V
   end.
 
-Lemma eval_elim_preserves {X Γ V t}:
-  X @ Γ ⊢ V ⇒ t →
+Lemma eval_elim_preserves {X F Γ V t}:
+  JV X F Γ V t →
    ∀ {ρ Γ'},
-     Jp X ρ Γ' Γ →
-  X @ Γ' ⊢ eval_elim ρ V ⇐ t.
+     Jp X F ρ Γ' Γ →
+  Jv X F Γ' (eval_elim ρ V) t.
 Proof.
   intros p.
   induction p.
@@ -235,11 +237,11 @@ Proof.
     auto.
 Qed.
 
-Lemma eval_preserves {X Γ v t}:
-  X @ Γ ⊢ v ⇐ t →
+Lemma eval_preserves {X F Γ v t}:
+  Jv X F Γ v t →
    ∀ {ρ Γ'},
-     Jp X ρ Γ' Γ →
-  X @ Γ' ⊢ eval ρ v ⇐ t.
+     Jp X  F ρ Γ' Γ →
+  Jv X F Γ' (eval ρ v) t.
 Proof.
   intros p.
   induction p.

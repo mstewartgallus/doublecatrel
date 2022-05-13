@@ -52,22 +52,17 @@ Notation "∞" := infinity.
 
 Definition powerset := v_function powerset_ax.
 
-Infix "→" := g_function.
-
 Infix "⇒" := H_seq (at level 90).
 
-Definition IZF: signature := [
-    (mem_ax, g_relation (set * set)) ;
-
-    (empty_ax, t_unit → set_x) ;
-    (pair_ax, set * set → set_x) ;
-    (union_ax, set → set_x) ;
-    (infinity_ax, t_unit → set_x) ;
-    (powerset_ax, set → set_x)
+Definition IZF_sorts: sorts := [(set_x, tt)].
+Definition IZF_relations: relations := [(mem_ax, set * set)].
+Definition IZF_functions: functions := [
+    (empty_ax, (t_unit, set_x)) ;
+    (pair_ax, (set * set, set_x)) ;
+    (union_ax, (set, set_x)) ;
+    (infinity_ax, (t_unit, set_x)) ;
+    (powerset_ax, (set, set_x))
 ].
-
-(* Definition pair_inl_ax: axiom := 7. *)
-(* Definition pair_inr_ax: axiom := 8. *)
 
 (* fixme quantify over *)
 Definition X: var := 0.
@@ -92,9 +87,9 @@ Proof.
 Qed.
 
 Lemma mem_check {Γ E E'}:
-  check IZF Γ E set →
-  check IZF Γ E' set →
-  infer IZF Γ (E ∈ E').
+  check IZF_sorts IZF_functions IZF_relations Γ E set →
+  check IZF_sorts IZF_functions IZF_relations Γ E' set →
+  infer IZF_sorts IZF_functions IZF_relations Γ (E ∈ E').
 Proof.
   intros.
   econstructor.
@@ -103,7 +98,7 @@ Proof.
   all: eauto.
 Qed.
 
-Lemma empty_check {Γ}: IZF @ Γ ⊢ ∅ ⇐ set.
+Lemma empty_check {Γ}: Jv IZF_sorts IZF_functions Γ ∅ set.
 Proof.
   econstructor.
   1: reflexivity.
@@ -111,9 +106,9 @@ Proof.
 Qed.
 
 Lemma pair_check {Γ v v'}:
-    IZF @ Γ ⊢ v ⇐ set →
-    IZF @ Γ ⊢ v' ⇐ set →
-    IZF @ Γ ⊢ pair v v' ⇐ set.
+    Jv IZF_sorts IZF_functions Γ v set →
+    Jv IZF_sorts IZF_functions Γ v' set →
+    Jv IZF_sorts IZF_functions Γ (pair v v') set.
 Proof.
   intros.
   econstructor.
@@ -123,8 +118,8 @@ Proof.
 Qed.
 
 Lemma union_check {Γ v}:
-    IZF @ Γ ⊢ v ⇐ set →
-    IZF @ Γ ⊢ ⋃ v ⇐ set.
+    Jv IZF_sorts IZF_functions Γ v set →
+    Jv IZF_sorts IZF_functions Γ (⋃ v) set.
 Proof.
   intros.
   econstructor.
@@ -133,7 +128,7 @@ Proof.
 Qed.
 
 Lemma infinity_check {Γ}:
-    IZF @ Γ ⊢ ∞ ⇐ set.
+    Jv IZF_sorts IZF_functions Γ ∞ set.
 Proof.
   econstructor.
   1: reflexivity.
@@ -141,8 +136,8 @@ Proof.
 Qed.
 
 Lemma powerset_check {Γ v}:
-    IZF @ Γ ⊢ v ⇐ set →
-    IZF @ Γ ⊢ powerset v ⇐ set.
+    Jv IZF_sorts IZF_functions Γ v set →
+    Jv IZF_sorts IZF_functions Γ (powerset v) set.
 Proof.
   intros.
   econstructor.
