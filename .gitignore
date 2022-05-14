@@ -3,5 +3,6 @@
 *.vos
 *.vo
 *.aux
+*.log
 .CoqMakefile.d
 .lia.cache
