@@ -3,7 +3,6 @@ Require Import Blech.Spec.
 Bind Scope list_scope with environment.
 Bind Scope list_scope with subst.
 Bind Scope list_scope with usage.
-Bind Scope list_scope with spans.
 
 Infix "*" := t_prod.
 
@@ -16,8 +15,6 @@ Notation "'η'" := (eta) (at level 0).
 (* Notation "ρ ⊢ V ⇓ v'" := (bigv ρ V v') (at level 90). *)
 
 (* Notation "D ⊢ E ⊠ D'" := (sE D E D') (at level 90). *)
-
-Infix "|-" := P_with (at level 30).
 
 Module RelNotations.
   Declare Custom Entry rel.

@@ -14,40 +14,6 @@ type, t {{ tex \tau }} {{ coq τ }} :: 't_' ::= {{ coq-equality }}
   | t * t'       ::   :: prod
   | ( t )        :: S :: paren {{ coq ([[t]]) }}
 
-use, u :: 'u_' ::= {{ coq-equality }}
-  | used   ::  :: used
-  | unused ::  :: unused
-
-usage, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (Assoc.assoc use) }}
-  | nil                  ::   :: nil {{ coq nil }}
-  | D , x [ u ]          ::   :: cons {{ coq (cons ([[x]], [[u]]) [[D]]) }}
-
-sorts, S :: 'S_' ::= {{ coq (Assoc.assoc unit) }}
-  | nil          ::   :: nil {{ coq nil }}
-  | S , A : sort ::   :: add {{ coq (cons ([[A]], tt) [[S]]) }}
-
-relations, RS {{ tex R^* }} :: 'RS_' ::= {{ coq (Assoc.assoc type) }}
-  | nil          ::   :: nil {{ coq nil }}
-  | RS , R : t    ::   :: add {{ coq (cons ([[R]], [[t]]) [[RS]]) }}
-
-functions, FS {{ tex f^* }} :: 'FS_' ::= {{ coq (Assoc.assoc (type * function)) }}
-  | nil         ::   :: nil {{ coq nil }}
-  | FS , f : t -> A  ::   :: add_function {{ coq (cons ([[f]], ([[t]], [[A]])) [[FS]]) }}
-
-environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (Assoc.assoc type) }}
-  | nil         ::   :: nil {{ coq nil }}
-  | G , x : t   ::   :: add {{ coq (cons ([[x]], [[t]]) [[G]]) }}
-  | ( G )       :: S :: paren {{ coq ([[G]]) }}
-  | G ++ G'     :: M :: app {{ coq ([[G]] ++ [[G']]) }}
-
-% FIXME bind?
-sequent, H :: 'H_' ::=
-  | Pi G . c => c' ::  :: seq
-
-theory, T :: 'T_' ::= {{ coq (list sequent) }}
-  | nil         ::   :: nil {{ coq nil }}
-  | T , H       ::   :: add {{ coq (cons [[H]] [[T]]) }}
-
 elim, V :: 'V_' ::= {{ coq-equality }}
   | x              ::   :: var
   | fst V          ::   :: fst
@@ -63,18 +29,17 @@ intro, v :: 'v_' ::= {{ coq-equality }}
 context, E :: 'E_' ::=
   | x                        ::   :: var
   | f E                      ::   :: function
-  | epsilon x . c        ::   :: epsilon (+ bind x in c +)
+  | epsilon x . c            ::   :: epsilon (+ bind x in c +)
 
   | tt                       ::   :: tt
   | E , E'                   ::   :: fanout
 
-  | epsilon . c               ::   :: match_tt
-  | epsilon x , y . c          ::   :: match_fanout (+ bind x union y in c +)
+  | epsilon . c              ::   :: match_tt
+  | epsilon x , y . c        ::   :: match_fanout (+ bind x union y in c +)
 
   | dup E                    ::   :: dup
   | del E : t                ::   :: del
   | ( E )                    :: S :: paren {{ icho ([[E]]) }}
-
 command, c :: 'c_' ::=
   | R E                      ::   :: relation
   | E = E' : t               ::   :: unify
@@ -87,33 +52,57 @@ command, c :: 'c_' ::=
 
   | ( c )                    :: S :: paren {{ icho ([[c]]) }}
 
+
+use, u :: 'u_' ::= {{ coq-equality }}
+  | used   ::  :: used
+  | unused ::  :: unused
+
+usage, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (Assoc.assoc use) }}
+  | nil                  ::   :: nil {{ coq nil }}
+  | D , x [ u ]          ::   :: cons {{ coq (cons ([[x]], [[u]]) [[D]]) }}
+
+sorts, S :: 'S_' ::= {{ coq (Assoc.assoc unit) }}
+  | nil          ::   :: nil {{ coq nil }}
+  | S , A : sort ::   :: add {{ coq (cons ([[A]], tt) [[S]]) }}
+
+relations, RS {{ tex R^* }} :: 'RS_' ::= {{ coq (Assoc.assoc type) }}
+  | nil        ::   :: nil {{ coq nil }}
+  | RS , R : t ::   :: add {{ coq (cons ([[R]], [[t]]) [[RS]]) }}
+
+functions, FS {{ tex f^* }} :: 'FS_' ::= {{ coq (Assoc.assoc (type * function)) }}
+  | nil             ::   :: nil {{ coq nil }}
+  | FS , f : t -> A ::   :: add {{ coq (cons ([[f]], ([[t]], [[A]])) [[FS]]) }}
+
+environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (Assoc.assoc type) }}
+  | nil         ::   :: nil {{ coq nil }}
+  | G , x : t   ::   :: add {{ coq (cons ([[x]], [[t]]) [[G]]) }}
+  | ( G )       :: S :: paren {{ coq ([[G]]) }}
+
+% FIXME bind G?
+sequent, H :: 'H_' ::=
+  | Pi G . c => c' ::  :: seq
+
+theory, T :: 'T_' ::= {{ coq (list sequent) }}
+  | nil         ::   :: nil {{ coq nil }}
+  | T , H       ::   :: add {{ coq (cons [[H]] [[T]]) }}
+
 subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (Assoc.assoc intro) }}
   | nil                   :: M :: nil {{ coq nil }}
   | p , x := v            :: M :: add {{ coq (cons ([[x]], [[v]]) [[p]]) }}
   | ( p )                 :: S :: paren {{ coq ([[p]]) }}
 
-span, P :: 'P_' ::=
-  | p |- v  ::   :: with
-
-spans, Ps {{ tex P^* }} :: 'Ps_' ::= {{ coq (list span) }}
-  | nil          ::   :: nil {{ coq nil }}
-  | Ps , P       ::   :: cons {{ coq (cons [[P]] [[Ps]]) }}
-
 formula :: formula_ ::=  
  | judgement                        ::   :: judgement
  | x != y                           :: M :: neqx {{ icho ([[x]] <> [[y]]) }}
  | x = y                            :: M :: eqx {{ icho ([[x]] = [[y]]) }}
- | n = n'                           :: M :: eqn {{ icho ([[n]] = [[n']]) }}
 
 terminals :: 'terminals_' ::=
-  | :            ::   :: in     {{ tex \colon{} }}
-  | |-           ::   :: turnstile   {{ tex \vdash{} }}
+  | :            ::   :: oftype {{ tex \colon{} }}
+  | |-           ::   :: entails  {{ tex \vdash{} }}
   | :=           ::   :: update  {{ tex \mathbin{:=} }}
-  | ->           ::   :: to  {{ tex \rightarrow }}
+  | ->           ::   :: function  {{ tex \rightarrow }}
   | =>           ::   :: sequent  {{ tex \Rightarrow }}
   | Pi           ::   :: Pi  {{ tex \Pi }}
-  | &            ::   :: act  {{ tex \cdot }}
-  | @            ::   :: compose  {{ tex \circ }}
   | unit         ::   :: unit  {{ tex \textbf{I} }}
   | sort         ::   :: sort  {{ tex \Box }}
   | *            ::   :: prod  {{ tex \otimes{} }}
@@ -125,23 +114,20 @@ terminals :: 'terminals_' ::=
   | snd          ::   :: snd  {{ tex \pi{}_2 }}
   | true         ::   :: true  {{ tex \top }}
   | false        ::   :: false  {{ tex \bot }}
-  | /\          ::   :: and  {{ tex \wedge }}
+  | /\           ::   :: and  {{ tex \wedge }}
   | \/           ::   :: or  {{ tex \vee }}
   | lam          ::   :: lam  {{ tex \lambda{} }}
-  | epsilon           ::   :: epsilon  {{ tex \varepsilon{} }}
+  | epsilon      ::   :: epsilon  {{ tex \varepsilon{} }}
   | nil          ::   :: nil   {{ tex \bullet{} }}
   | let          ::   :: let  {{ tex \mathbin{\textbf{let} } }}
   | in           ::   :: letin  {{ tex \mathbin{\textbf{in} } }}
   | \in          ::   :: member  {{ tex \mathrel{\in} }}
   | \infer       ::   :: infer  {{ tex \Rightarrow }}
   | \check       ::   :: check  {{ tex \Leftarrow }}
-  | once         ::   :: once  {{ tex \mathrel{\in!} }}
-  | never        ::   :: never  {{ tex \mathrel{\notin} }}
-  | ++           ::   :: merge  {{ tex \mathrel{\cup} }}
   | !            ::   :: big     {{ tex \mathrel{\Downarrow} }}
   | !=           ::   :: ne     {{ tex \mathrel{\ne} }}
-  | ==           ::   :: equiv   {{ tex \mathrel{\sim} }}
 
+% FIXME get rid of ?
 funs
   eta_expand ::=
 fun
@@ -175,60 +161,60 @@ x: t \in G, x : t
 
 x != y
 x: t \in G
--------------------- :: ne
+------------------ :: ne
 x: t \in G, y : t'
 
 defns
 
-judge_type :: '' ::=
+judge_type :: 'J' ::=
 
 defn
-S |- t ::   :: wftype :: 'jt_'
+S |- t ::   :: t :: 't_'
 by
 
 {{ Assoc.find [[A]] [[S]] = Some tt }}
---------- :: var
+------- :: var
 S |- A
 
----------- :: unit
+--------- :: unit
 S |- unit
 
 S |- t
 S |- t'
-------------- :: prod
+----------- :: prod
 S |- t * t'
 
 defns
 
-wellformed_functions :: '' ::=
+judge_functions :: 'J' ::=
 
 defn
-S |- FS ::   :: wffunctions :: 'wf_'
+S |- FS ::   :: f :: 'f_'
 by
 
----------- :: nil
+--------- :: nil
 S |- nil
 
 {{ Assoc.find [[A]] [[S]] = Some tt }}
 S |- t
 S |- FS
---------------------- :: cons
+-------------------- :: cons
 S |- FS, f : t -> A
 
 defns
 
-wellformed_relations :: '' ::=
+judge_relations :: 'J' ::=
 
 defn
-S |- RS ::   :: wfrelations :: 'wr_'
+S |- RS ::   :: R :: 'R_'
 by
 
----------- :: nil
+-------- :: nil
 S |- nil
 
 S |- t
 S |- RS
----------------- :: cons
+--------------- :: cons
 S |- RS, R : t
 
 defns
@@ -257,19 +243,19 @@ by
 
 {{ Assoc.find [[f]] [[FS]] = Some ([[t]], [[A]]) }}
 S ; FS ; G |- v \check t
-------------------------------- :: function
+--------------------------- :: function
 S ; FS ; G |- f v \check A
 
------------------------ :: tt
+---------------------------- :: tt
 S ; FS ; G |- tt \check unit
 
 S ; FS ; G |- v1 \check t1
 S ; FS ; G |- v2 \check t2
------------------------------- :: fanout
+----------------------------------- :: fanout
 S ; FS ; G |- v1, v2 \check t1 * t2
 
 S ; FS ; G |- V \infer A
----------------------------------- :: neu
+-------------------------------- :: neu
 S ; FS ; G |- neu ( V ) \check A
 
 defns
@@ -285,7 +271,7 @@ S ; FS |- nil: G -> nil
 
 S ; FS ; G1 |- v \check t
 S ; FS |- p : G1 -> G2
----------------------------------------- :: cut
+------------------------------------- :: cut
 S ; FS |- p, x := v : G1 -> G2, x: t
 
 defns
@@ -297,7 +283,7 @@ p |- V ! v' ::   :: bigV :: 'bigV_'
 by
 
 {{ Assoc.find [[x]] [[p]] = Some [[v]] }}
------------------------------------------- :: var
+----------------------------------------- :: var
 p |- x ! v
 
 p |- V ! v1, v2
@@ -317,7 +303,7 @@ p |- v ! v' ::   :: bigv :: 'bigv_'
 by
 
 p |- v ! v'
------------------ :: function
+--------------- :: function
 p |- f v ! f v'
 
 ------------- :: tt
@@ -325,11 +311,11 @@ p |- tt ! tt
 
 p |- v1 ! v1'
 p |- v2 ! v2'
------------------------ :: fanout
+---------------------- :: fanout
 p |- v1, v2 ! v1', v2'
 
 p |- V ! v
--------------------- :: neu
+------------------ :: neu
 p |- neu( V ) ! v
 
 defns
@@ -345,7 +331,7 @@ x \in D, x [ unused ] # D, x [ used ]
 
 x != y
 x \in D # D'
--------------------------------- :: ne
+------------------------------ :: ne
 x \in D, y [ u ] # D', y [ u ]
 
 defns
@@ -357,12 +343,12 @@ defn
 by
 
 D |- E # D'
----------------------- :: relation
+------------- :: relation
 D |- R E # D'
 
 D1 |- E # D2
 D2 |- E' # D3
------------------------ :: unify
+--------------------- :: unify
 D1 |- E = E' : t # D3
 
 -------------- :: false
@@ -384,11 +370,11 @@ x \in D # D'
 D |- x # D'
 
 D |- E # D'
----------------------- :: function
+------------- :: function
 D |- f E # D'
 
-D, x[unused] |- c #  D', x[used]
----------------------------------- :: epsilon
+D, x[unused] |- c # D', x[used]
+-------------------------------- :: epsilon
 D |- epsilon x . c # D'
 
 ------------ :: tt
@@ -396,20 +382,20 @@ D |- tt # D
 
 D1 |- E1 # D2
 D2 |- E2 # D3
--------------------- :: fanout
+----------------- :: fanout
 D1 |- E1, E2 # D3
 
 D1 |- c # D2
------------------------ :: match_tt
+---------------------- :: match_tt
 D1 |- epsilon. c # D2
 
 D1, x [unused], y[unused] |- c # D2, x[used], y[used]
------------------------------------------------------- :: match_fanout
+----------------------------------------------------- :: match_fanout
 D1 |- epsilon x , y . c # D2
 
 
 D1 |- E # D2
--------------------- :: dup
+----------------- :: dup
 D1 |- dup E # D2
 
 D1 |- E # D2
@@ -450,7 +436,6 @@ by
 ----------------------------- :: var
 S ; FS ; RS ; G |- x \check t
 
-
 {{ Assoc.find [[f]] [[FS]] = Some ([[t]], [[A]]) }}
 S ; FS ; RS ; G |- E \check t
 ------------------------------------ :: function
@@ -466,7 +451,7 @@ S ; FS ; RS ; G |- tt \check unit
 
 S ; FS ; RS ; G |- E1 \check t1
 S ; FS ; RS ; G |- E2 \check t2
------------------------------------------ :: fanout
+---------------------------------------- :: fanout
 S ; FS ; RS ; G |- E1, E2 \check t1 * t2
 
 S ; FS ; RS ; G |- c
@@ -474,30 +459,30 @@ S ; FS ; RS ; G |- c
 S ; FS ; RS ; G |- epsilon. c \check unit
 
 S ; FS ; RS ; G, x: t1, y: t2 |- c
------------------------------------------------------- :: match_fanout
+--------------------------------------------------- :: match_fanout
 S ; FS ; RS ; G |- epsilon x , y . c \check t1 * t2
 
 S ; FS ; RS ; G |- E \check t
----------------------------- :: dup
+------------------------------------- :: dup
 S ; FS ; RS ; G |- dup E \check t * t
 
 S ; FS ; RS ; G |- E \check t
----------------------------- :: del
+---------------------------------------- :: del
 S ; FS ; RS ; G |- del E : t \check unit
 
 defns
 
-wellformed_sequent :: '' ::=
+judge_sequent :: 'J' ::=
 
 defn
-S ; FS ; RS |- H ::   :: wfsequent :: 'wH_'
+S ; FS ; RS |- H ::   :: H :: 'H_'
 by
 
 % FIXME check wellformed environment
 % FIXME check usage
 S ; FS ; RS ; G |- c
 S ; FS ; RS ; G |- c'
-------------------------------- :: wfseq
+----------------------------- :: sequent
 S ; FS ; RS |- Pi G . c => c'
 
 defns
@@ -543,11 +528,11 @@ defn
 by
 
 x := v \in p # p'
----------------------- :: var
+--------------------- :: var
 T ; p |- x [ v ] # p'
 
 T ; p |- E [v] # p'
---------------------------- :: function
+----------------------- :: function
 T ; p |- f E [f v] # p'
 
 --------------------- :: tt
@@ -559,22 +544,22 @@ T ; p2 |- E' [v'] # p3
 T ; p1 |- (E, E') [v, v'] # p3
 
 T ; p1 |- c # p2
----------------------------------- :: match_tt
+-------------------------------- :: match_tt
 T ; p1 |- epsilon. c [ tt ] # p2
 
 T ; p1, x := v0, y := v1 |- c # p2, x := v0', y := v1'
----------------------------------------------------------- :: match_fanout
+------------------------------------------------------ :: match_fanout
 T ; p1 |- epsilon x , y . c [ v0, v1 ] # p2
 
 T ; p1 |- E [v] # p2
-------------------------------- :: del
+----------------------------- :: del
 T ; p1 |- del E : t [tt] # p2
 
 T ; p1 |- E [v] # p2
-------------------------------- :: dup
+---------------------------- :: dup
 T ; p1 |- dup E [v, v] # p2
 
 T ; p1, x := v |- c # p2, x := v'
-------------------------------------------- :: epsilon
+------------------------------------- :: epsilon
 T ; p1 |- (epsilon x . c) [ v ] # p2
 
