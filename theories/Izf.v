@@ -16,7 +16,7 @@ Import IfNotations.
 Implicit Type Γ: environment.
 Implicit Type Δ: usage.
 Implicit Type E: context.
-Implicit Type t: type.
+Implicit Type τ: type.
 Implicit Types x y: var.
 Implicit Type ρ: subst.
 Implicit Type v: intro.
@@ -70,9 +70,10 @@ Definition Y: var := 1.
 Definition Z: var := 2.
 
 Definition IZF_axioms: theory := Eval cbn in [
-    E_var X ∈ inject ∅ ⇒ c_false ;
+    H_seq [(X, set)] (E_var X ∈ inject ∅) c_false ;
 
-    c_or (c_unify (E_var Y) (E_var X) set) (c_unify (E_var Z) (E_var X) set) ⇒ E_var X ∈ inject (pair (v_neu (V_var Y)) (v_neu (V_var Z)))
+    H_seq [(X, set)] (c_or (c_unify (E_var Y) (E_var X) set) (c_unify (E_var Z) (E_var X) set))
+          (E_var X ∈ inject (pair (v_neu (V_var Y)) (v_neu (V_var Z))))
 ].
 
 Lemma mem_use {Δ1 Δ2 Δ3 E E'}:

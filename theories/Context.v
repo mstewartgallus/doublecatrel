@@ -140,7 +140,9 @@ Section Typecheck.
 
     | E_del E τ, t_unit => typecheck X F R Γ E τ
 
-    | E_epsilon x c, τ => typeinfer X F R ((x, τ) :: Γ) c
+    | E_epsilon x c, t_var A =>
+        (if Assoc.find A X is Some tt then true else false)
+        && typeinfer X F R ((x, t_var A) :: Γ) c
     | _, _ => false
     end %bool
   with typeinfer X F R Γ c: bool :=
@@ -285,8 +287,13 @@ Proof using.
       subst.
       econstructor.
       all: eauto.
-    + constructor.
-      eauto.
+    + destruct τ.
+      all: try contradiction.
+      destruct Assoc.find eqn:q.
+      2: contradiction.
+      destruct u.
+      constructor.
+      all: eauto.
     + destruct τ.
       all: try contradiction.
       constructor.

@@ -65,21 +65,21 @@
 \ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{f^*  \ottsym{,}  \mathit{f}  \colon{}  \tau  \rightarrow  \mathit{A}}{}{}{}{}}
 
-\newcommand{\ottsequent}{
-\ottrulehead{\ottnt{sequent}  ,\ \ottnt{H}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\ottnt{c}  \ottsym{=>}  \ottnt{c'}}{}{}{}{}}
-
-\newcommand{\otttheory}{
-\ottrulehead{\ottnt{theory}  ,\ \ottnt{T}}{::=}{}\ottprodnewline
-\ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{T}  \ottsym{,}  \ottnt{H}}{}{}{}{}}
-
 \newcommand{\ottenvironment}{
 \ottrulehead{\ottnt{environment}  ,\ \Gamma}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\Gamma  \ottsym{,}  \mathit{x}  \colon{}  \tau}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottsym{(}  \Gamma  \ottsym{)}} {\textsf{S}}{}{}{}\ottprodnewline
 \ottprodline{|}{\Gamma  \mathrel{\cup}  \Gamma'} {\textsf{M}}{}{}{}}
+
+\newcommand{\ottsequent}{
+\ottrulehead{\ottnt{sequent}  ,\ \ottnt{H}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\Pi \, \Gamma  \ottsym{.}  \ottnt{c}  \Rightarrow  \ottnt{c'}}{}{}{}{}}
+
+\newcommand{\otttheory}{
+\ottrulehead{\ottnt{theory}  ,\ \ottnt{T}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\bullet{}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{T}  \ottsym{,}  \ottnt{H}}{}{}{}{}}
 
 \newcommand{\ottelim}{
 \ottrulehead{\ottnt{elim}  ,\ \ottnt{V}}{::=}{}\ottprodnewline
@@ -149,6 +149,8 @@
 \ottprodline{|}{ \vdash{} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \mathbin{:=} }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \rightarrow }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ \Rightarrow }{}{}{}{}\ottprodnewline
+\ottprodline{|}{ \Pi }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \cdot }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \circ }{}{}{}{}\ottprodnewline
 \ottprodline{|}{ \textbf{I} }{}{}{}{}\ottprodnewline
@@ -191,6 +193,18 @@
 \ottrulehead{\ottnt{find}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\mathit{x}  \colon{}  \tau  \mathrel{\in}  \Gamma}{}{}{}{}}
 
+\newcommand{\ottjudgeXXtype}{
+\ottrulehead{\ottnt{judge\_type}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\ottnt{S}  \vdash{}  \tau}{}{}{}{}}
+
+\newcommand{\ottwellformedXXfunctions}{
+\ottrulehead{\ottnt{wellformed\_functions}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\ottnt{S}  \vdash{}  f^*}{}{}{}{}}
+
+\newcommand{\ottwellformedXXrelations}{
+\ottrulehead{\ottnt{wellformed\_relations}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\ottnt{S}  \vdash{}  R^*}{}{}{}{}}
+
 \newcommand{\ottjudgeXXterm}{
 \ottrulehead{\ottnt{judge\_term}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottnt{S}  \ottsym{;}  f^*  \ottsym{;}  \Gamma  \vdash{}  \ottnt{V}  \Rightarrow  \tau}{}{}{}{}\ottprodnewline
@@ -222,6 +236,10 @@
 \ottfirstprodline{|}{\ottnt{S}  \ottsym{;}  f^*  \ottsym{;}  R^*  \ottsym{;}  \Gamma  \vdash{}  \ottnt{c}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{S}  \ottsym{;}  f^*  \ottsym{;}  R^*  \ottsym{;}  \Gamma  \vdash{}  \ottnt{E}  \Leftarrow  \tau}{}{}{}{}}
 
+\newcommand{\ottwellformedXXsequent}{
+\ottrulehead{\ottnt{wellformed\_sequent}}{::=}{}\ottprodnewline
+\ottfirstprodline{|}{\ottnt{S}  \ottsym{;}  f^*  \ottsym{;}  R^*  \vdash{}  \ottnt{H}}{}{}{}{}}
+
 \newcommand{\ottpfind}{
 \ottrulehead{\ottnt{pfind}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\mathit{x}  \mathbin{:=}  \ottnt{v}  \mathrel{\in}  \rho  \mathrel{\boxtimes}  \rho'}{}{}{}{}}
@@ -234,6 +252,9 @@
 \newcommand{\ottjudgement}{
 \ottrulehead{\ottnt{judgement}}{::=}{}\ottprodnewline
 \ottfirstprodline{|}{\ottnt{find}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{judge\_type}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{wellformed\_functions}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{wellformed\_relations}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{judge\_term}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{judge\_subst}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{bigV}}{}{}{}{}\ottprodnewline
@@ -241,6 +262,7 @@
 \ottprodline{|}{\ottnt{lfind}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{scope}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{judge\_context}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{wellformed\_sequent}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{pfind}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{sat}}{}{}{}{}}
 
@@ -256,9 +278,9 @@
 \ottprodline{|}{\ottnt{sorts}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{relations}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{functions}}{}{}{}{}\ottprodnewline
+\ottprodline{|}{\ottnt{environment}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{sequent}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{theory}}{}{}{}{}\ottprodnewline
-\ottprodline{|}{\ottnt{environment}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{elim}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{intro}}{}{}{}{}\ottprodnewline
 \ottprodline{|}{\ottnt{context}}{}{}{}{}\ottprodnewline
@@ -276,9 +298,9 @@
 \ottsorts\ottinterrule
 \ottrelations\ottinterrule
 \ottfunctions\ottinterrule
+\ottenvironment\ottinterrule
 \ottsequent\ottinterrule
 \otttheory\ottinterrule
-\ottenvironment\ottinterrule
 \ottelim\ottinterrule
 \ottintro\ottinterrule
 \ottcontext\ottinterrule
@@ -291,6 +313,9 @@
 \ottetaXXexpand\ottinterrule
 \ottinjectXXnf\ottinterrule
 \ottfind\ottinterrule
+\ottjudgeXXtype\ottinterrule
+\ottwellformedXXfunctions\ottinterrule
+\ottwellformedXXrelations\ottinterrule
 \ottjudgeXXterm\ottinterrule
 \ottjudgeXXsubst\ottinterrule
 \ottbigV\ottinterrule
@@ -298,6 +323,7 @@
 \ottlfind\ottinterrule
 \ottscope\ottinterrule
 \ottjudgeXXcontext\ottinterrule
+\ottwellformedXXsequent\ottinterrule
 \ottpfind\ottinterrule
 \ottsat\ottinterrule
 \ottjudgement\ottinterrule
@@ -358,6 +384,94 @@
 
 \newcommand{\ottdefnsfind}{
 \ottdefnmem{}}
+
+% defns judge_type
+%% defn wftype
+\newcommand{\ottdrulejtXXvar}[1]{\ottdrule[#1]{%
+\ottpremise{\texttt{Assoc.find }\mathit{A}\texttt{ }\ottnt{S}\texttt{ = Some tt }}%
+}{
+\ottnt{S}  \vdash{}  \mathit{A}}{%
+{\ottdrulename{jt\_var}}{}%
+}}
+
+
+\newcommand{\ottdrulejtXXunit}[1]{\ottdrule[#1]{%
+}{
+\ottnt{S}  \vdash{}  \textbf{I}}{%
+{\ottdrulename{jt\_unit}}{}%
+}}
+
+
+\newcommand{\ottdrulejtXXprod}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{S}  \vdash{}  \tau}%
+\ottpremise{\ottnt{S}  \vdash{}  \tau'}%
+}{
+\ottnt{S}  \vdash{}  \tau  \otimes{}  \tau'}{%
+{\ottdrulename{jt\_prod}}{}%
+}}
+
+\newcommand{\ottdefnwftype}[1]{\begin{ottdefnblock}[#1]{$\ottnt{S}  \vdash{}  \tau$}{}
+\ottusedrule{\ottdrulejtXXvar{}}
+\ottusedrule{\ottdrulejtXXunit{}}
+\ottusedrule{\ottdrulejtXXprod{}}
+\end{ottdefnblock}}
+
+
+\newcommand{\ottdefnsjudgeXXtype}{
+\ottdefnwftype{}}
+
+% defns wellformed_functions
+%% defn wffunctions
+\newcommand{\ottdrulewfXXnil}[1]{\ottdrule[#1]{%
+}{
+\ottnt{S}  \vdash{}  \bullet{}}{%
+{\ottdrulename{wf\_nil}}{}%
+}}
+
+
+\newcommand{\ottdrulewfXXcons}[1]{\ottdrule[#1]{%
+\ottpremise{\texttt{Assoc.find }\mathit{A}\texttt{ }\ottnt{S}\texttt{ = Some tt }}%
+\ottpremise{\ottnt{S}  \vdash{}  \tau}%
+\ottpremise{\ottnt{S}  \vdash{}  f^*}%
+}{
+\ottnt{S}  \vdash{}  f^*  \ottsym{,}  \mathit{f}  \colon{}  \tau  \rightarrow  \mathit{A}}{%
+{\ottdrulename{wf\_cons}}{}%
+}}
+
+\newcommand{\ottdefnwffunctions}[1]{\begin{ottdefnblock}[#1]{$\ottnt{S}  \vdash{}  f^*$}{}
+\ottusedrule{\ottdrulewfXXnil{}}
+\ottusedrule{\ottdrulewfXXcons{}}
+\end{ottdefnblock}}
+
+
+\newcommand{\ottdefnswellformedXXfunctions}{
+\ottdefnwffunctions{}}
+
+% defns wellformed_relations
+%% defn wfrelations
+\newcommand{\ottdrulewrXXnil}[1]{\ottdrule[#1]{%
+}{
+\ottnt{S}  \vdash{}  \bullet{}}{%
+{\ottdrulename{wr\_nil}}{}%
+}}
+
+
+\newcommand{\ottdrulewrXXcons}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{S}  \vdash{}  \tau}%
+\ottpremise{\ottnt{S}  \vdash{}  R^*}%
+}{
+\ottnt{S}  \vdash{}  R^*  \ottsym{,}  \mathit{R}  \colon{}  \tau}{%
+{\ottdrulename{wr\_cons}}{}%
+}}
+
+\newcommand{\ottdefnwfrelations}[1]{\begin{ottdefnblock}[#1]{$\ottnt{S}  \vdash{}  R^*$}{}
+\ottusedrule{\ottdrulewrXXnil{}}
+\ottusedrule{\ottdrulewrXXcons{}}
+\end{ottdefnblock}}
+
+
+\newcommand{\ottdefnswellformedXXrelations}{
+\ottdefnwfrelations{}}
 
 % defns judge_term
 %% defn V
@@ -755,9 +869,10 @@
 
 
 \newcommand{\ottdrulecheckXXepsilon}[1]{\ottdrule[#1]{%
-\ottpremise{\ottnt{S}  \ottsym{;}  f^*  \ottsym{;}  R^*  \ottsym{;}  \Gamma  \ottsym{,}  \mathit{x}  \colon{}  \tau  \vdash{}  \ottnt{c}}%
+\ottpremise{\texttt{Assoc.find }\mathit{A}\texttt{ }\ottnt{S}\texttt{ = Some tt }}%
+\ottpremise{\ottnt{S}  \ottsym{;}  f^*  \ottsym{;}  R^*  \ottsym{;}  \Gamma  \ottsym{,}  \mathit{x}  \colon{}  \mathit{A}  \vdash{}  \ottnt{c}}%
 }{
-\ottnt{S}  \ottsym{;}  f^*  \ottsym{;}  R^*  \ottsym{;}  \Gamma  \vdash{}  \varepsilon{} \, \mathit{x}  \ottsym{.}  \ottnt{c}  \Leftarrow  \tau}{%
+\ottnt{S}  \ottsym{;}  f^*  \ottsym{;}  R^*  \ottsym{;}  \Gamma  \vdash{}  \varepsilon{} \, \mathit{x}  \ottsym{.}  \ottnt{c}  \Leftarrow  \mathit{A}}{%
 {\ottdrulename{check\_epsilon}}{}%
 }}
 
@@ -824,6 +939,24 @@
 
 \newcommand{\ottdefnsjudgeXXcontext}{
 \ottdefninfer{}\ottdefncheck{}}
+
+% defns wellformed_sequent
+%% defn wfsequent
+\newcommand{\ottdrulewHXXwfseq}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{S}  \ottsym{;}  f^*  \ottsym{;}  R^*  \ottsym{;}  \Gamma  \vdash{}  \ottnt{c}}%
+\ottpremise{\ottnt{S}  \ottsym{;}  f^*  \ottsym{;}  R^*  \ottsym{;}  \Gamma  \vdash{}  \ottnt{c'}}%
+}{
+\ottnt{S}  \ottsym{;}  f^*  \ottsym{;}  R^*  \vdash{}  \Pi \, \Gamma  \ottsym{.}  \ottnt{c}  \Rightarrow  \ottnt{c'}}{%
+{\ottdrulename{wH\_wfseq}}{}%
+}}
+
+\newcommand{\ottdefnwfsequent}[1]{\begin{ottdefnblock}[#1]{$\ottnt{S}  \ottsym{;}  f^*  \ottsym{;}  R^*  \vdash{}  \ottnt{H}$}{}
+\ottusedrule{\ottdrulewHXXwfseq{}}
+\end{ottdefnblock}}
+
+
+\newcommand{\ottdefnswellformedXXsequent}{
+\ottdefnwfsequent{}}
 
 % defns pfind
 %% defn pmem
@@ -975,6 +1108,9 @@
 \ottfundefnsetaXXexpand
 \ottfundefnsinjectXXnf
 \ottdefnsfind
+\ottdefnsjudgeXXtype
+\ottdefnswellformedXXfunctions
+\ottdefnswellformedXXrelations
 \ottdefnsjudgeXXterm
 \ottdefnsjudgeXXsubst
 \ottdefnsbigV
@@ -982,6 +1118,7 @@
 \ottdefnslfind
 \ottdefnsscope
 \ottdefnsjudgeXXcontext
+\ottdefnswellformedXXsequent
 \ottdefnspfind
 \ottdefnssat
 }

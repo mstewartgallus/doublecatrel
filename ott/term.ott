@@ -34,18 +34,19 @@ functions, FS {{ tex f^* }} :: 'FS_' ::= {{ coq (Assoc.assoc (type * function)) 
   | nil         ::   :: nil {{ coq nil }}
   | FS , f : t -> A  ::   :: add_function {{ coq (cons ([[f]], ([[t]], [[A]])) [[FS]]) }}
 
-sequent, H :: 'H_' ::=
-  | c => c' ::  :: seq
-
-theory, T :: 'T_' ::= {{ coq (list sequent) }}
-  | nil         ::   :: nil {{ coq nil }}
-  | T , H       ::   :: add {{ coq (cons [[H]] [[T]]) }}
-
 environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (Assoc.assoc type) }}
   | nil         ::   :: nil {{ coq nil }}
   | G , x : t   ::   :: add {{ coq (cons ([[x]], [[t]]) [[G]]) }}
   | ( G )       :: S :: paren {{ coq ([[G]]) }}
   | G ++ G'     :: M :: app {{ coq ([[G]] ++ [[G']]) }}
+
+% FIXME bind?
+sequent, H :: 'H_' ::=
+  | Pi G . c => c' ::  :: seq
+
+theory, T :: 'T_' ::= {{ coq (list sequent) }}
+  | nil         ::   :: nil {{ coq nil }}
+  | T , H       ::   :: add {{ coq (cons [[H]] [[T]]) }}
 
 elim, V :: 'V_' ::= {{ coq-equality }}
   | x              ::   :: var
@@ -109,6 +110,8 @@ terminals :: 'terminals_' ::=
   | |-           ::   :: turnstile   {{ tex \vdash{} }}
   | :=           ::   :: update  {{ tex \mathbin{:=} }}
   | ->           ::   :: to  {{ tex \rightarrow }}
+  | =>           ::   :: sequent  {{ tex \Rightarrow }}
+  | Pi           ::   :: Pi  {{ tex \Pi }}
   | &            ::   :: act  {{ tex \cdot }}
   | @            ::   :: compose  {{ tex \circ }}
   | unit         ::   :: unit  {{ tex \textbf{I} }}
@@ -177,6 +180,59 @@ x: t \in G, y : t'
 
 defns
 
+judge_type :: '' ::=
+
+defn
+S |- t ::   :: wftype :: 'jt_'
+by
+
+{{ Assoc.find [[A]] [[S]] = Some tt }}
+--------- :: var
+S |- A
+
+---------- :: unit
+S |- unit
+
+S |- t
+S |- t'
+------------- :: prod
+S |- t * t'
+
+defns
+
+wellformed_functions :: '' ::=
+
+defn
+S |- FS ::   :: wffunctions :: 'wf_'
+by
+
+---------- :: nil
+S |- nil
+
+{{ Assoc.find [[A]] [[S]] = Some tt }}
+S |- t
+S |- FS
+--------------------- :: cons
+S |- FS, f : t -> A
+
+defns
+
+wellformed_relations :: '' ::=
+
+defn
+S |- RS ::   :: wfrelations :: 'wr_'
+by
+
+---------- :: nil
+S |- nil
+
+S |- t
+S |- RS
+---------------- :: cons
+S |- RS, R : t
+
+defns
+
 judge_term :: 'J' ::=
 
 defn
@@ -184,15 +240,15 @@ S ; FS ; G |- V \infer t ::   :: V :: 'V_'
 by
 
 x: t \in G
------------------ :: var
+------------------------ :: var
 S ; FS ; G |- x \infer t
 
 S ; FS ; G |- V \infer t1 * t2
------------------- :: fst
+------------------------------- :: fst
 S ; FS ; G |- fst V \infer t1
 
 S ; FS ; G |- V \infer t1 * t2
------------------- :: snd
+-------------------------------- :: snd
 S ; FS ; G |- snd V \infer t2
 
 defn
@@ -213,8 +269,8 @@ S ; FS ; G |- v2 \check t2
 S ; FS ; G |- v1, v2 \check t1 * t2
 
 S ; FS ; G |- V \infer A
------------------ :: neu
-S ; FS ; G |- neu ( V) \check A
+---------------------------------- :: neu
+S ; FS ; G |- neu ( V ) \check A
 
 defns
 
@@ -229,7 +285,7 @@ S ; FS |- nil: G -> nil
 
 S ; FS ; G1 |- v \check t
 S ; FS |- p : G1 -> G2
------------------------------------ :: cut
+---------------------------------------- :: cut
 S ; FS |- p, x := v : G1 -> G2, x: t
 
 defns
@@ -378,12 +434,12 @@ S ; FS ; RS ; G |- E' \check t
 ----------------------------- :: unify
 S ; FS ; RS ; G |- E = E' : t
 
--------------------- :: false
+------------------------- :: false
 S ; FS ; RS ; G |- false
 
 S ; FS ; RS ; G |- c
 S ; FS ; RS ; G |- c'
---------------- :: or
+---------------------------- :: or
 S ; FS ; RS ; G |- c \/ c'
 
 defn
@@ -391,7 +447,7 @@ S ; FS ; RS ; G |- E \check t ::   :: check :: 'check_'
 by
 
 {{ Assoc.find [[x]] [[G]] = Some [[t]] }}
------------------------ :: var
+----------------------------- :: var
 S ; FS ; RS ; G |- x \check t
 
 
@@ -400,11 +456,12 @@ S ; FS ; RS ; G |- E \check t
 ------------------------------------ :: function
 S ; FS ; RS ; G |- f E \check A
 
-S ; FS ; RS ; G, x: t |- c
+{{ Assoc.find [[A]] [[S]] = Some tt }}
+S ; FS ; RS ; G, x: A |- c
 ----------------------------------------- :: epsilon
-S ; FS ; RS ; G |- epsilon x . c \check t
+S ; FS ; RS ; G |- epsilon x . c \check A
 
--------------------- :: tt
+--------------------------------- :: tt
 S ; FS ; RS ; G |- tt \check unit
 
 S ; FS ; RS ; G |- E1 \check t1
@@ -427,6 +484,21 @@ S ; FS ; RS ; G |- dup E \check t * t
 S ; FS ; RS ; G |- E \check t
 ---------------------------- :: del
 S ; FS ; RS ; G |- del E : t \check unit
+
+defns
+
+wellformed_sequent :: '' ::=
+
+defn
+S ; FS ; RS |- H ::   :: wfsequent :: 'wH_'
+by
+
+% FIXME check wellformed environment
+% FIXME check usage
+S ; FS ; RS ; G |- c
+S ; FS ; RS ; G |- c'
+------------------------------- :: wfseq
+S ; FS ; RS |- Pi G . c => c'
 
 defns
 
