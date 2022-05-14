@@ -1,6 +1,5 @@
 Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
-Require Import Blech.Opaque.
 Require Blech.OptionNotations.
 Require Blech.Assoc.
 

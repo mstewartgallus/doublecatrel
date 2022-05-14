@@ -4,7 +4,6 @@
 
 theories/Assoc.v
 theories/OptionNotations.v
-theories/Opaque.v
 theories/Spec.v
 theories/SpecNotations.v
 theories/Environment.v

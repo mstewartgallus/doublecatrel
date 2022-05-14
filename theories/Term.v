@@ -1,6 +1,5 @@
 Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
-Require Import Blech.Opaque.
 Require Import Blech.OptionNotations.
 Require Import Blech.Assoc.
 Require Import Blech.Category.
@@ -20,26 +19,26 @@ Require Import FunInd.
 Implicit Type Γ: environment.
 Implicit Type v: intro.
 Implicit Type V: elim.
-Implicit Type t: type.
+Implicit Type τ: type.
 Implicit Types x y: var.
 Implicit Type ρ: subst.
 
-Theorem η_preserve {t}:
-  ∀ {X F Γ V},
-  JV X F Γ V t →
-  Jv X F Γ (η t V) t.
+Theorem η_preserve {τ}:
+  ∀ {S F Γ V},
+  JV S F Γ V τ →
+  Jv S F Γ (η τ V) τ.
 Proof.
-  induction t.
+  induction τ.
   all: cbn.
-  all: intros ? ? ? q.
+  all: intros.
   - constructor.
     auto.
   - constructor.
   - constructor.
-    + eapply IHt1.
+    + eapply IHτ1.
       econstructor.
       eauto.
-    + eapply IHt2.
+    + eapply IHτ2.
       econstructor.
       eauto.
 Qed.
@@ -48,33 +47,33 @@ Function typeinfer Γ V :=
   match V with
   | V_var x => Assoc.find x Γ
   | V_fst V =>
-      do ' t0 * _ ← typeinfer Γ V ;
-      Some t0
+      do ' τ0 * _ ← typeinfer Γ V ;
+      Some τ0
   | V_snd V =>
-      do ' _ * t1 ← typeinfer Γ V ;
-      Some t1
+      do ' _ * τ1 ← typeinfer Γ V ;
+      Some τ1
   end.
 
-Function typecheck X Γ v t: bool :=
-  match v, t with
+Function typecheck S Γ v τ: bool :=
+  match v, τ with
   | v_function f v, t_var B =>
-      if Assoc.find f X is Some (τ, A)
+      if Assoc.find f S is Some (τ, A)
       then
         (if eq_var A B then true else false) &&
-         typecheck X Γ v τ
+         typecheck S Γ v τ
       else
         false
   | v_tt, t_unit => true
   | v_fanout v0 v1, t1 * t2 =>
-      typecheck X Γ v0 t1 && typecheck X Γ v1 t2
-  | v_neu v, t_var _ =>
-      if typeinfer Γ v is Some t'
-      then if eq_type t t' then true else false
+      typecheck S Γ v0 t1 && typecheck S Γ v1 t2
+  | v_neu v, t_var A =>
+      if typeinfer Γ v is Some (t_var A')
+      then if eq_sort A A' then true else false
       else false
   | _, _ => false
   end %bool.
 
-Fixpoint typeinfer_sound {X F Γ V t}: typeinfer Γ V = Some t → JV X F Γ V t.
+Fixpoint typeinfer_sound {S F Γ V τ}: typeinfer Γ V = Some τ → JV S F Γ V τ.
 Proof using .
   - intros p.
     destruct V.
@@ -86,7 +85,7 @@ Proof using .
     + cbn in p.
       destruct typeinfer eqn:q.
       2: discriminate.
-      destruct t0.
+      destruct t.
       all: try discriminate.
       inversion p.
       subst.
@@ -96,7 +95,7 @@ Proof using .
     + cbn in p.
       destruct typeinfer eqn:q.
       2: discriminate.
-      destruct t0.
+      destruct t.
       all: try discriminate.
       inversion p.
       subst.
@@ -105,13 +104,13 @@ Proof using .
       eauto.
 Qed.
 
-Fixpoint typecheck_sound {X F Γ v t}:
-  Bool.Is_true (typecheck F Γ v t) → Jv X F Γ v t.
+Fixpoint typecheck_sound {S F Γ v τ}:
+  Bool.Is_true (typecheck F Γ v τ) → Jv S F Γ v τ.
   - intros p.
     destruct v.
     all: cbn.
     + cbn in *.
-      destruct t eqn:q in p.
+      destruct τ eqn:q in p.
       all: try contradiction.
       destruct find eqn:r in p.
       2: contradiction.
@@ -122,10 +121,10 @@ Fixpoint typecheck_sound {X F Γ v t}:
       subst.
       econstructor.
       all: eauto.
-    + destruct t.
+    + destruct τ.
       all: try contradiction.
       constructor.
-    + destruct t.
+    + destruct τ.
       all: try contradiction.
       cbn in p.
       destruct typecheck eqn:q1.
@@ -140,11 +139,13 @@ Fixpoint typecheck_sound {X F Γ v t}:
         rewrite q2.
         apply I.
     + cbn in p.
-      destruct t.
+      destruct τ.
       all: try contradiction.
       destruct typeinfer eqn:q.
       all: try contradiction.
-      destruct eq_type.
+      destruct t.
+      all: try contradiction.
+      destruct eq_sort.
       all: try contradiction.
       subst.
       constructor.
@@ -152,7 +153,7 @@ Fixpoint typecheck_sound {X F Γ v t}:
       auto.
 Qed.
 
-Definition typeinfer_complete {X F Γ V t} (p: JV X F Γ V t): typeinfer Γ V = Some t.
+Definition typeinfer_complete {S F Γ V τ} (p: JV S F Γ V τ): typeinfer Γ V = Some τ.
 Proof using .
   induction p.
   all: cbn.
@@ -164,7 +165,7 @@ Proof using .
     auto.
 Qed.
 
-Definition typecheck_complete {X F Γ v t} (p: Jv X F Γ v t): typecheck F Γ v t = true.
+Definition typecheck_complete {S F Γ v τ} (p: Jv S F Γ v τ): typecheck F Γ v τ = true.
 Proof using .
   induction p.
   all: cbn in *.
@@ -206,11 +207,11 @@ Function eval ρ v :=
   | v_neu V => eval_elim ρ V
   end.
 
-Lemma eval_elim_preserves {X F Γ V t}:
-  JV X F Γ V t →
+Lemma eval_elim_preserves {S F Γ V τ}:
+  JV S F Γ V τ →
    ∀ {ρ Γ'},
-     Jp X F ρ Γ' Γ →
-  Jv X F Γ' (eval_elim ρ V) t.
+     Jp S F ρ Γ' Γ →
+  Jv S F Γ' (eval_elim ρ V) τ.
 Proof.
   intros p.
   induction p.
@@ -237,11 +238,11 @@ Proof.
     auto.
 Qed.
 
-Lemma eval_preserves {X F Γ v t}:
-  Jv X F Γ v t →
+Lemma eval_preserves {S F Γ v τ}:
+  Jv S F Γ v τ →
    ∀ {ρ Γ'},
-     Jp X  F ρ Γ' Γ →
-  Jv X F Γ' (eval ρ v) t.
+     Jp S F ρ Γ' Γ →
+  Jv S F Γ' (eval ρ v) τ.
 Proof.
   intros p.
   induction p.
