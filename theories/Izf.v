@@ -20,10 +20,9 @@ Implicit Types x y: var.
 Implicit Type ρ: subst.
 Implicit Type v: intro.
 
-Definition c_true := c_unify E_tt E_tt t_unit.
-Definition c_and c c' := c_unify (E_match_tt c) (E_match_tt c') t_unit.
+Import RelNotations.
 
-Definition set_x: sort := 0.
+Definition set: sort := 0.
 
 Definition mem_ax: relation := 1.
 
@@ -33,56 +32,54 @@ Definition union_ax: function := 4.
 Definition infinity_ax: function := 5.
 Definition powerset_ax: function := 6.
 
-Definition set := t_var set_x.
-
 Definition mem E E' := c_relation mem_ax (E_fanout E E').
-Infix "∈" := mem (at level 30).
 
 Definition empty := v_function empty_ax v_tt.
-Notation "∅" := empty.
 
 Definition pair v v' := v_function pair_ax (v_fanout v v').
 
 Definition union := v_function union_ax.
-Notation "⋃" := union.
 
 Definition infinity := v_function infinity_ax v_tt.
-Notation "∞" := infinity.
 
 Definition powerset := v_function powerset_ax.
 
-Definition IZF_sorts: sorts := [(set_x, tt)].
-Definition IZF_relations: relations := [(mem_ax, set * set)].
+Infix "∈" := mem (in custom rel at level 30).
+Notation "∅" := empty (in custom rel).
+Notation "⋃" := union.
+Notation "∞" := infinity (in custom rel).
+
+Coercion inject: intro >-> context.
+
+Definition IZF_sorts: sorts := [(set, tt)].
+
+Definition IZF_relations: relations := [(mem_ax, <{ set ⊗ set }>)].
 Definition IZF_functions: functions := [
-    (empty_ax, (t_unit, set_x)) ;
-    (pair_ax, (set * set, set_x)) ;
-    (union_ax, (set, set_x)) ;
-    (infinity_ax, (t_unit, set_x)) ;
-    (powerset_ax, (set, set_x))
+    (empty_ax, (<{ I }>, set)) ;
+    (pair_ax, (<{ set ⊗ set }>, set)) ;
+    (union_ax, (set: type, set)) ;
+    (infinity_ax, (<{ I }>, set)) ;
+    (powerset_ax, (set: type, set))
 ].
 
-(* FIXME quantify over ? *)
-Definition X: var := 0.
-Definition Y: var := 1.
-Definition Z: var := 2.
-
 Definition IZF_axioms: theory := Eval cbn in [
-    H_seq [(X, set)] (E_var X ∈ inject ∅) (c_unify (E_del (E_var X) set) (E_match_tt c_false) t_unit)
-
-    (* H_seq [(X, set)] (c_or (c_unify (E_var Y) (E_var X) set) (c_unify (E_var Z) (E_var X) set)) *)
-    (*       (E_var X ∈ inject (pair (v_neu (V_var Y)) (v_neu (V_var Z)))) *)
+    H_seq [(X, set: type)] <{ X ∈ ∅ }> <{ E_del X set >> ⊥ }> ;
+    H_seq [(X, set: type); (Y, set:type); (Z, set:type)]
+      <{ (E_del Z set >> c_unify Y X set) ∨ (E_del Y set >> c_unify Z X set) }>
+      <{ X ∈ pair (v_neu Y) (v_neu Z) }>
 ].
 
 Lemma IZF_wellformed: JT IZF_sorts IZF_functions IZF_relations IZF_axioms.
 Proof.
   apply Theory.check_theory_sound.
+  cbv.
   constructor.
 Qed.
 
 Lemma mem_use {Δ1 Δ2 Δ3 E E'}:
   sE Δ1 E Δ2 →
   sE Δ2 E' Δ3 →
-  se Δ1 (E ∈ E') Δ3.
+  se Δ1 <{ E ∈ E' }> Δ3.
 Proof.
   intros.
   constructor.
@@ -93,7 +90,7 @@ Qed.
 Lemma mem_check {Γ E E'}:
   check IZF_sorts IZF_functions IZF_relations Γ E set →
   check IZF_sorts IZF_functions IZF_relations Γ E' set →
-  infer IZF_sorts IZF_functions IZF_relations Γ (E ∈ E').
+  infer IZF_sorts IZF_functions IZF_relations Γ <{ E ∈ E' }>.
 Proof.
   intros.
   econstructor.
@@ -102,7 +99,7 @@ Proof.
   all: eauto.
 Qed.
 
-Lemma empty_check {Γ}: Jv IZF_sorts IZF_functions Γ ∅ set.
+Lemma empty_check {Γ}: Jv IZF_sorts IZF_functions Γ <{ ∅ }> set.
 Proof.
   econstructor.
   1: reflexivity.
@@ -132,7 +129,7 @@ Proof.
 Qed.
 
 Lemma infinity_check {Γ}:
-    Jv IZF_sorts IZF_functions Γ ∞ set.
+    Jv IZF_sorts IZF_functions Γ <{ ∞ }> set.
 Proof.
   econstructor.
   1: reflexivity.
