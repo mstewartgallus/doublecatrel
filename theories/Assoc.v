@@ -7,10 +7,18 @@ Import IfNotations.
 
 Import Nat.
 
-Definition assoc (A: Set) := list (nat * A).
+Record MapsTo (K V: Set) := maps { key: K ; value: V ; }.
 
-Function find {A: Set} x (l: assoc A) :=
-  if l is ((y, t) :: T)%list
+Arguments maps {K V}.
+Arguments key {K V}.
+Arguments value {K V}.
+
+Infix "↦" := maps (at level 30).
+
+Definition assoc (K: Set) (V: Set) := list (MapsTo K V).
+
+Function find {A: Set} x (l: assoc nat A) :=
+  if l is (maps y t :: T)%list
   then
     if Nat.eq_dec x y
     then

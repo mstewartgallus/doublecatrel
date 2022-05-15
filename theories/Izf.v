@@ -1,5 +1,6 @@
 Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
+Require Import Blech.Assoc.
 Require Blech.Term.
 Require Blech.Context.
 Require Blech.Theory.
@@ -51,20 +52,20 @@ Notation "∞" := infinity (in custom rel).
 
 Coercion inject: intro >-> context.
 
-Definition IZF_sorts: sorts := [(set, tt)].
+Definition IZF_sorts: sorts := [set ↦ tt].
 
-Definition IZF_relations: relations := [(mem_ax, <{ set ⊗ set }>)].
+Definition IZF_relations: relations := [mem_ax ↦ <{ set ⊗ set }>].
 Definition IZF_functions: functions := [
-    (empty_ax, (<{ I }>, set)) ;
-    (pair_ax, (<{ set ⊗ set }>, set)) ;
-    (union_ax, (set: type, set)) ;
-    (infinity_ax, (<{ I }>, set)) ;
-    (powerset_ax, (set: type, set))
+    empty_ax ↦ (<{ I }>, set) ;
+    pair_ax ↦ (<{ set ⊗ set }>, set) ;
+    union_ax ↦ (set: type, set) ;
+    infinity_ax ↦ (<{ I }>, set) ;
+    powerset_ax ↦ (set: type, set)
 ].
 
 Definition IZF_axioms: theory := Eval cbn in [
-    <{ Π [(X, set: type)] , X ∈ ∅ ⇒ (c_unify (E_del X set) <{ ε, ⊥ }> <{ I }>) }> ;
-    <{ Π [(X, set: type); (Y, set:type); (Z, set:type)] ,
+    <{ Π [X ↦ (set: type)] , X ∈ ∅ ⇒ (c_unify (E_del X set) <{ ε, ⊥ }> <{ I }>) }> ;
+    <{ Π [X ↦ (set: type); Y ↦ (set:type); Z ↦ (set:type)] ,
         (E_del Z set >> c_unify Y X set) ∨ (E_del Y set >> c_unify Z X set) ⇒
         (X ∈ pair (v_neu Y) (v_neu Z)) }>
 ].

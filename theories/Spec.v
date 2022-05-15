@@ -54,7 +54,7 @@ with command : Set :=
  | c_false : command
  | c_or (c:command) (c':command).
 
-Definition environment : Set := (Assoc.assoc type).
+Definition environment : Set := (Assoc.assoc var type).
 
 Inductive sequent : Set := 
  | H_seq (Γ:environment) (c:command) (c':command).
@@ -68,22 +68,23 @@ Inductive elim : Set :=
  | V_fst (V:elim)
  | V_snd (V:elim).
 
-Definition sorts : Set := (Assoc.assoc unit).
+Definition sorts : Set := (Assoc.assoc var unit).
 
-Definition relations : Set := (Assoc.assoc type).
+Definition relations : Set := (Assoc.assoc relation type).
 
-Definition functions : Set := (Assoc.assoc (type * function)).
+Definition functions : Set := (Assoc.assoc function (type * sort)).
 
 Definition theory : Set := (list sequent).
 
-Definition usage : Set := (Assoc.assoc use).
+
+Definition usage : Set := (Assoc.assoc var use).
 
 Inductive intro : Set := 
  | v_function (f:function) (v:intro)
  | v_tt : intro
  | v_fanout (v:intro) (v':intro)
  | v_neu (V:elim).
-Definition subst : Set := (Assoc.assoc intro).
+Definition subst : Set := (Assoc.assoc var intro).
 Lemma eq_type: forall (x y : type), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -132,7 +133,7 @@ end.
 Fixpoint useall (x1:environment) : usage:=
   match x1 with
   |  nil  =>  nil 
-  |  (  (cons ( x ,  τ )  Γ )  )  =>  (cons ( x ,  u_used )   (useall Γ )  ) 
+  |  (  (cons (Assoc.maps  x   τ )  Γ )  )  =>  (cons (Assoc.maps  x   u_used )   (useall Γ )  ) 
 end.
 
 (** definitions *)
@@ -141,7 +142,7 @@ end.
 Fixpoint usenone (x1:environment) : usage:=
   match x1 with
   |  nil  =>  nil 
-  |  (  (cons ( x ,  τ )  Γ )  )  =>  (cons ( x ,  u_unused )   (usenone Γ )  ) 
+  |  (  (cons (Assoc.maps  x   τ )  Γ )  )  =>  (cons (Assoc.maps  x   u_unused )   (usenone Γ )  ) 
 end.
 
 (** definitions *)
@@ -149,11 +150,11 @@ end.
 (* defns find *)
 Inductive mem : var -> type -> environment -> Prop :=    (* defn mem *)
  | mem_eq : forall (x:var) (τ:type) (Γ:environment),
-     mem x τ  (cons ( x ,  τ )  Γ ) 
+     mem x τ  (cons (Assoc.maps  x   τ )  Γ ) 
  | mem_ne : forall (x:var) (τ:type) (Γ:environment) (y:var) (τ':type),
       ( x  <>  y )  ->
      mem x τ Γ ->
-     mem x τ  (cons ( y ,  τ' )  Γ ) .
+     mem x τ  (cons (Assoc.maps  y   τ' )  Γ ) .
 (** definitions *)
 
 (* defns judge_type *)
@@ -177,7 +178,7 @@ Inductive Jf : sorts -> functions -> Prop :=    (* defn f *)
      Assoc.find A S = Some tt  ->
      Jt S τ ->
      Jf S FS ->
-     Jf S  (cons ( f , ( τ ,  A ))  FS ) .
+     Jf S  (cons (Assoc.maps  f  ( τ ,  A ))  FS ) .
 (** definitions *)
 
 (* defns judge_relations *)
@@ -187,7 +188,7 @@ Inductive JR : sorts -> relations -> Prop :=    (* defn R *)
  | JR_cons : forall (S:sorts) (RS:relations) (R:relation) (τ:type),
      Jt S τ ->
      JR S RS ->
-     JR S  (cons ( R ,  τ )  RS ) .
+     JR S  (cons (Assoc.maps  R   τ )  RS ) .
 (** definitions *)
 
 (* defns judge_term *)
@@ -224,7 +225,7 @@ Inductive Jp : sorts -> functions -> subst -> environment -> environment -> Prop
  | Jp_cut : forall (S:sorts) (FS:functions) (ρ:subst) (x:var) (v:intro) (Γ1 Γ2:environment) (τ:type),
      Jv S FS Γ1 v τ ->
      Jp S FS ρ Γ1 Γ2 ->
-     Jp S FS  (cons ( x ,  v )  ρ )  Γ1  (cons ( x ,  τ )  Γ2 ) .
+     Jp S FS  (cons (Assoc.maps  x   v )  ρ )  Γ1  (cons (Assoc.maps  x   τ )  Γ2 ) .
 (** definitions *)
 
 (* defns bigV *)
@@ -259,11 +260,11 @@ Inductive bigv : subst -> intro -> intro -> Prop :=    (* defn bigv *)
 (* defns lfind *)
 Inductive lmem : var -> usage -> usage -> Prop :=    (* defn lmem *)
  | lmem_eq : forall (x:var) (Δ:usage),
-     lmem x  (cons ( x ,  u_unused )  Δ )   (cons ( x ,  u_used )  Δ ) 
+     lmem x  (cons (Assoc.maps  x   u_unused )  Δ )   (cons (Assoc.maps  x   u_used )  Δ ) 
  | lmem_ne : forall (x:var) (Δ:usage) (y:var) (u:use) (Δ':usage),
       ( x  <>  y )  ->
      lmem x Δ Δ' ->
-     lmem x  (cons ( y ,  u )  Δ )   (cons ( y ,  u )  Δ' ) .
+     lmem x  (cons (Assoc.maps  y   u )  Δ )   (cons (Assoc.maps  y   u )  Δ' ) .
 (** definitions *)
 
 (* defns scope *)
@@ -289,7 +290,7 @@ with sE : usage -> context -> usage -> Prop :=    (* defn sE *)
      sE Δ E Δ' ->
      sE Δ (E_function f E) Δ'
  | sE_epsilon : forall (Δ:usage) (x:var) (c:command) (Δ':usage),
-     se  (cons ( x ,  u_unused )  Δ )  c  (cons ( x ,  u_used )  Δ' )  ->
+     se  (cons (Assoc.maps  x   u_unused )  Δ )  c  (cons (Assoc.maps  x   u_used )  Δ' )  ->
      sE Δ (E_epsilon x c) Δ'
  | sE_tt : forall (Δ:usage),
      sE Δ E_tt Δ
@@ -301,7 +302,7 @@ with sE : usage -> context -> usage -> Prop :=    (* defn sE *)
      se Δ1 c Δ2 ->
      sE Δ1 (E_match_tt c) Δ2
  | sE_match_fanout : forall (Δ1:usage) (x y:var) (c:command) (Δ2:usage),
-     se  (cons ( y ,  u_unused )   (cons ( x ,  u_unused )  Δ1 )  )  c  (cons ( y ,  u_used )   (cons ( x ,  u_used )  Δ2 )  )  ->
+     se  (cons (Assoc.maps  y   u_unused )   (cons (Assoc.maps  x   u_unused )  Δ1 )  )  c  (cons (Assoc.maps  y   u_used )   (cons (Assoc.maps  x   u_used )  Δ2 )  )  ->
      sE Δ1 (E_match_fanout x y c) Δ2
  | sE_dup : forall (Δ1:usage) (E:context) (Δ2:usage),
      sE Δ1 E Δ2 ->
@@ -337,7 +338,7 @@ with check : sorts -> functions -> relations -> environment -> context -> type -
      check S FS RS Γ (E_function f E) (t_var A)
  | check_epsilon : forall (S:sorts) (FS:functions) (RS:relations) (Γ:environment) (x:var) (c:command) (A:sort),
      Assoc.find A S = Some tt  ->
-     infer S FS RS  (cons ( x ,  (t_var A) )  Γ )  c ->
+     infer S FS RS  (cons (Assoc.maps  x   (t_var A) )  Γ )  c ->
      check S FS RS Γ (E_epsilon x c) (t_var A)
  | check_tt : forall (S:sorts) (FS:functions) (RS:relations) (Γ:environment),
      check S FS RS Γ E_tt t_unit
@@ -349,7 +350,7 @@ with check : sorts -> functions -> relations -> environment -> context -> type -
      infer S FS RS Γ c ->
      check S FS RS Γ (E_match_tt c) t_unit
  | check_match_fanout : forall (S:sorts) (FS:functions) (RS:relations) (Γ:environment) (x y:var) (c:command) (τ1 τ2:type),
-     infer S FS RS  (cons ( y ,  τ2 )   (cons ( x ,  τ1 )  Γ )  )  c ->
+     infer S FS RS  (cons (Assoc.maps  y   τ2 )   (cons (Assoc.maps  x   τ1 )  Γ )  )  c ->
      check S FS RS Γ (E_match_fanout x y c) (t_prod τ1 τ2)
  | check_dup : forall (S:sorts) (FS:functions) (RS:relations) (Γ:environment) (E:context) (τ:type),
      check S FS RS Γ E τ ->
@@ -382,11 +383,11 @@ Inductive JT : sorts -> functions -> relations -> theory -> Prop :=    (* defn T
 (* defns pfind *)
 Inductive pmem : var -> intro -> subst -> subst -> Prop :=    (* defn pmem *)
  | pmem_eq : forall (x:var) (v:intro) (ρ:subst),
-     pmem x v  (cons ( x ,  v )  ρ )   (cons ( x ,  v_tt )  ρ ) 
+     pmem x v  (cons (Assoc.maps  x   v )  ρ )   (cons (Assoc.maps  x   v_tt )  ρ ) 
  | pmem_ne : forall (x:var) (v:intro) (ρ:subst) (y:var) (v':intro) (ρ':subst),
       ( x  <>  y )  ->
      pmem x v ρ ρ' ->
-     pmem x v  (cons ( y ,  v' )  ρ )   (cons ( y ,  v' )  ρ' ) .
+     pmem x v  (cons (Assoc.maps  y   v' )  ρ )   (cons (Assoc.maps  y   v' )  ρ' ) .
 (** definitions *)
 
 (* defns sat *)
@@ -418,7 +419,7 @@ with accepts : theory -> subst -> context -> intro -> subst -> Prop :=    (* def
      produces T ρ1 c ρ2 ->
      accepts T ρ1 (E_match_tt c) v_tt ρ2
  | accepts_match_fanout : forall (T:theory) (ρ1:subst) (x y:var) (c:command) (v0 v1:intro) (ρ2:subst) (v0' v1':intro),
-     produces T  (cons ( y ,  v1 )   (cons ( x ,  v0 )  ρ1 )  )  c  (cons ( y ,  v1' )   (cons ( x ,  v0' )  ρ2 )  )  ->
+     produces T  (cons (Assoc.maps  y   v1 )   (cons (Assoc.maps  x   v0 )  ρ1 )  )  c  (cons (Assoc.maps  y   v1' )   (cons (Assoc.maps  x   v0' )  ρ2 )  )  ->
      accepts T ρ1 (E_match_fanout x y c) (v_fanout v0 v1) ρ2
  | accepts_del : forall (T:theory) (ρ1:subst) (E:context) (τ:type) (ρ2:subst) (v:intro),
      accepts T ρ1 E v ρ2 ->
@@ -427,7 +428,7 @@ with accepts : theory -> subst -> context -> intro -> subst -> Prop :=    (* def
      accepts T ρ1 E v ρ2 ->
      accepts T ρ1 (E_dup E) (v_fanout v v) ρ2
  | accepts_epsilon : forall (T:theory) (ρ1:subst) (x:var) (c:command) (v:intro) (ρ2:subst) (v':intro),
-     produces T  (cons ( x ,  v )  ρ1 )  c  (cons ( x ,  v' )  ρ2 )  ->
+     produces T  (cons (Assoc.maps  x   v )  ρ1 )  c  (cons (Assoc.maps  x   v' )  ρ2 )  ->
      accepts T ρ1  ( (E_epsilon x c) )  v ρ2.
 
 

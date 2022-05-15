@@ -57,25 +57,25 @@ use, u :: 'u_' ::= {{ coq-equality }}
   | used   ::  :: used
   | unused ::  :: unused
 
-usage, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (Assoc.assoc use) }}
+usage, D {{ tex \Delta }} {{ coq Δ }} :: 'D_' ::= {{ coq (Assoc.assoc var use) }}
   | nil                  ::   :: nil {{ coq nil }}
-  | D , x [ u ]          ::   :: cons {{ coq (cons ([[x]], [[u]]) [[D]]) }}
+  | D , x [ u ]          ::   :: cons {{ coq (cons (Assoc.maps [[x]] [[u]]) [[D]]) }}
 
-sorts, S :: 'S_' ::= {{ coq (Assoc.assoc unit) }}
+sorts, S :: 'S_' ::= {{ coq (Assoc.assoc var unit) }}
   | nil          ::   :: nil {{ coq nil }}
-  | S , A : sort ::   :: add {{ coq (cons ([[A]], tt) [[S]]) }}
+  | S , A : sort ::   :: add {{ coq (cons (Assoc.maps [[A]] tt) [[S]]) }}
 
-relations, RS {{ tex R^* }} :: 'RS_' ::= {{ coq (Assoc.assoc type) }}
+relations, RS {{ tex R^* }} :: 'RS_' ::= {{ coq (Assoc.assoc relation type) }}
   | nil        ::   :: nil {{ coq nil }}
-  | RS , R : t ::   :: add {{ coq (cons ([[R]], [[t]]) [[RS]]) }}
+  | RS , R : t ::   :: add {{ coq (cons (Assoc.maps [[R]] [[t]]) [[RS]]) }}
 
-functions, FS {{ tex f^* }} :: 'FS_' ::= {{ coq (Assoc.assoc (type * function)) }}
+functions, FS {{ tex f^* }} :: 'FS_' ::= {{ coq (Assoc.assoc function (type * sort)) }}
   | nil             ::   :: nil {{ coq nil }}
-  | FS , f : t -> A ::   :: add {{ coq (cons ([[f]], ([[t]], [[A]])) [[FS]]) }}
+  | FS , f : t -> A ::   :: add {{ coq (cons (Assoc.maps [[f]] ([[t]], [[A]])) [[FS]]) }}
 
-environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (Assoc.assoc type) }}
+environment, G {{ tex \Gamma }} {{ coq Γ }} :: 'G_' ::= {{ coq (Assoc.assoc var type) }}
   | nil         ::   :: nil {{ coq nil }}
-  | G , x : t   ::   :: add {{ coq (cons ([[x]], [[t]]) [[G]]) }}
+  | G , x : t   ::   :: add {{ coq (cons (Assoc.maps [[x]] [[t]]) [[G]]) }}
   | ( G )       :: S :: paren {{ coq ([[G]]) }}
 
 % FIXME bind G?
@@ -86,9 +86,9 @@ theory, T :: 'T_' ::= {{ coq (list sequent) }}
   | nil         ::   :: nil {{ coq nil }}
   | T , H       ::   :: add {{ coq (cons [[H]] [[T]]) }}
 
-subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (Assoc.assoc intro) }}
+subst, p {{ tex \rho }} {{ coq ρ }} :: 'p_'  ::= {{ coq (Assoc.assoc var intro) }}
   | nil                   :: M :: nil {{ coq nil }}
-  | p , x := v            :: M :: add {{ coq (cons ([[x]], [[v]]) [[p]]) }}
+  | p , x := v            :: M :: add {{ coq (cons (Assoc.maps [[x]] [[v]]) [[p]]) }}
   | ( p )                 :: S :: paren {{ coq ([[p]]) }}
 
 formula :: formula_ ::=  

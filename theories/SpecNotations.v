@@ -17,7 +17,7 @@ Notation "'η'" := (eta) (at level 0).
 Definition eq_usage (Δ Δ': usage): {Δ = Δ'} + {Δ ≠ Δ'}.
 Proof.
   decide equality.
-  destruct a as [x u], p as [y u'].
+  destruct a as [x u], m as [y u'].
   destruct (eq_var x y), (eq_use u u').
   all: subst.
   all: auto.

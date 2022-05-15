@@ -2,6 +2,7 @@ Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
 Require Import Blech.Environment.
 Require Import Blech.Category.
+Require Import Blech.Assoc.
 Require Blech.Term.
 Require Blech.OptionNotations.
 
@@ -28,18 +29,18 @@ Section Typecheck.
   Import OptionNotations.
 
   Function lookup x Δ :=
-    if Δ is cons (y, u) Δ'
+    if Δ is cons (y ↦ u) Δ'
     then
         if eq_var x y
         then
           if u is u_unused
           then
-             Some (cons (y, u_used) Δ')
+             Some (cons (y ↦ u_used) Δ')
           else
             None
         else
           do Δ'' ← lookup x Δ' ;
-          Some (cons (y, u) Δ'')
+          Some (cons (y ↦ u) Δ'')
   else
     None.
 
@@ -50,7 +51,7 @@ Section Typecheck.
     | E_function _ E => usecheck Δ E
 
     | E_epsilon x c =>
-        do ' ((y, u_used) :: Δ') ← useinfer ((x, u_unused) :: Δ) c ;
+        do ' ((y ↦ u_used) :: Δ') ← useinfer ((x ↦ u_unused) :: Δ) c ;
         if eq_var x y
         then
           Some Δ'
@@ -66,7 +67,7 @@ Section Typecheck.
     | E_match_tt c => useinfer Δ c
 
     | E_match_fanout x y c =>
-        do ' ((y', u_used) :: (x', u_used) :: Δ') ← useinfer ((y, u_unused) :: (x, u_unused) :: Δ) c ;
+        do ' ((y' ↦ u_used) :: (x' ↦ u_used) :: Δ') ← useinfer ((y ↦ u_unused) :: (x ↦ u_unused) :: Δ) c ;
         match eq_var x x', eq_var y y' with
         | left _, left _ => Some Δ'
         | _, _ => None
@@ -118,7 +119,7 @@ Section Typecheck.
     | E_fanout E E', τ1 * τ2 => typecheck X F R Γ E τ1 && typecheck X F R Γ E' τ2
 
     | E_match_tt c, t_unit => typeinfer X F R Γ c
-    | E_match_fanout x y c, τ1 * τ2 => typeinfer X F R ((y, τ2) :: (x, τ1) :: Γ) c
+    | E_match_fanout x y c, τ1 * τ2 => typeinfer X F R (y ↦ τ2 :: x ↦ τ1 :: Γ) c
 
     | E_dup E, τ * τ' =>
         (if eq_type τ τ' then true else false)
@@ -128,7 +129,7 @@ Section Typecheck.
 
     | E_epsilon x c, t_var A =>
         (if Assoc.find A X is Some tt then true else false)
-        && typeinfer X F R ((x, t_var A) :: Γ) c
+        && typeinfer X F R (x ↦ t_var A :: Γ) c
     | _, _ => false
     end %bool
   with typeinfer X F R Γ c: bool :=
@@ -178,8 +179,8 @@ Proof using.
       2: discriminate.
       destruct u eqn:q'.
       all: try discriminate.
-      destruct p.
-      destruct u1.
+      destruct m.
+      destruct value.
       all: try discriminate.
       destruct eq_var.
       2: discriminate.
@@ -197,13 +198,13 @@ Proof using.
       2: discriminate.
       destruct u.
       1: discriminate.
-      destruct p.
-      destruct u0.
+      destruct m.
+      destruct value.
       2: discriminate.
       destruct u.
       1: discriminate.
-      destruct p.
-      destruct u0.
+      destruct m.
+      destruct value.
       2: discriminate.
       destruct eq_var.
       2: discriminate.
@@ -432,15 +433,15 @@ Fixpoint generate t: list intro :=
   end%list.
 
 Function take x ρ :=
-  if ρ is cons (y, v) ρ'
+  if ρ is cons (y ↦ v) ρ'
   then
     if eq_var x y
     then
-      Some (v, cons (y, v_tt) ρ')
+      Some (v, cons (y ↦ v_tt) ρ')
     else
       if take x ρ' is Some (v', ρ'')
       then
-        Some (v', cons (y, v) ρ'')
+        Some (v', cons (y ↦ v) ρ'')
       else
         None
   else
@@ -486,8 +487,8 @@ with search T ρ E v: list subst :=
   | E_match_tt c, v_tt => verify T ρ c
 
   | E_match_fanout x y c, v_fanout v1 v2 =>
-      do ρ2 ← verify T ((y, v2) :: (x , v1) :: ρ) c ;
-      if ρ2 is (y', _) :: (x', _) :: ρ2'
+      do ρ2 ← verify T (y ↦ v2 :: x ↦ v1 :: ρ) c ;
+      if ρ2 is y' ↦ _ :: x' ↦ _ :: ρ2'
       then
         match eq_var x x', eq_var y y' with
         | left _, left _ => [ρ2']
@@ -508,8 +509,8 @@ with search T ρ E v: list subst :=
       search T ρ E v
 
   | E_epsilon x c, v =>
-      do ρ1 ← verify T ((x, v) :: ρ) c ;
-      if ρ1 is (x', _) :: ρ1'
+      do ρ1 ← verify T (x ↦ v :: ρ) c ;
+      if ρ1 is (x' ↦ _) :: ρ1'
       then
         if eq_var x x'
         then
@@ -672,7 +673,7 @@ Proof using.
       all: eauto.
       constructor.
       eauto.
-    + induction (verify_sound T ((x, v) :: ρ) c).
+    + induction (verify_sound T (x ↦ v :: ρ) c).
       1: left.
       cbn.
       apply Forall_mon.
@@ -680,7 +681,7 @@ Proof using.
       destruct x0.
       all: cbn.
       1: left.
-      destruct p.
+      destruct m.
       destruct eq_var.
       2: left.
       constructor.
@@ -714,7 +715,7 @@ Proof using.
       auto.
     + destruct v.
       all: try left.
-      induction (verify_sound T ((y, v2) :: (x, v1) :: ρ) c).
+      induction (verify_sound T (y ↦ v2 :: x ↦ v1 :: ρ) c).
       all: cbn.
       all: try left.
       apply Forall_mon.
@@ -722,10 +723,10 @@ Proof using.
       clear IHf.
       destruct x0.
       1: left.
-      destruct p.
+      destruct m.
       destruct x0.
       1: left.
-      destruct p.
+      destruct m.
       destruct eq_var.
       2: left.
       destruct eq_var.
@@ -762,7 +763,7 @@ Proof using.
       eauto.
 Qed.
 
-Definition useonce Γ u: usage := List.map (λ '(x, t), (x, u)) Γ.
+Definition useonce Γ u: usage := List.map (λ '(x ↦ t), x ↦ u) Γ.
 
 Definition oftype X F R Γ t :=
   { E |  Bool.Is_true (typecheck X F R Γ E t && if usecheck (useonce Γ u_unused) E is Some Δ

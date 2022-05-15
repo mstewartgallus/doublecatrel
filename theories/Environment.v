@@ -1,7 +1,7 @@
 Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
 Require Blech.OptionNotations.
-Require Blech.Assoc.
+Require Import Blech.Assoc.
 
 Require Import Coq.Unicode.Utf8.
 Require Coq.Bool.Bool.
@@ -21,7 +21,7 @@ Implicit Types x y: var.
 Definition eq_environment Γ Γ': {Γ = Γ'} + {Γ ≠ Γ'}.
 Proof.
   decide equality.
-  destruct a as [v t], p as [v' t'].
+  destruct a as [v t], m as [v' t'].
   destruct (eq_var v v'), (eq_type t t').
   all: subst.
   - left.
@@ -68,8 +68,8 @@ Qed.
 
 Lemma unshadow {y t0 t1 Γ}:
   ∀ x t,
-  mem x t ((y, t0) :: (y, t1) :: Γ) →
-  mem x t ((y, t0) :: Γ).
+  mem x t (y ↦ t0 :: y ↦ t1 :: Γ) →
+  mem x t (y ↦ t0 :: Γ).
 Proof using.
   intros ? ? p.
   inversion p.
@@ -85,8 +85,8 @@ Qed.
 
 Lemma shadow {y t0 t1 Γ}:
   ∀ x t,
-  mem x t ((y, t0) :: Γ) →
-  mem x t ((y, t0) :: (y, t1) :: Γ).
+  mem x t (y ↦ t0 :: Γ) →
+  mem x t (y ↦ t0 :: y ↦ t1 :: Γ).
 Proof using.
   intros ? ? p.
   inversion p.
@@ -116,7 +116,7 @@ Qed.
 
 Lemma swap {Γ y y' t0 t1}:
   y ≠ y' →
-  ∀ x t, mem x t ((y, t0) :: (y', t1) :: Γ) → mem x t ((y', t1) :: (y, t0) :: Γ).
+  ∀ x t, mem x t (y ↦ t0 :: y' ↦ t1 :: Γ) → mem x t (y' ↦ t1 :: y ↦ t0 :: Γ).
 Proof using.
   intros ? ? ? p.
   inversion p.
