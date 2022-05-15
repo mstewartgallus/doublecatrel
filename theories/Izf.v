@@ -1,9 +1,8 @@
 Require Import Blech.Spec.
 Require Import Blech.SpecNotations.
-Require Import Blech.Environment.
-Require Import Blech.Category.
-Require Import Blech.Term.
-Require Import Blech.Context.
+Require Blech.Term.
+Require Blech.Context.
+Require Blech.Theory.
 
 Require Import Coq.Unicode.Utf8.
 Require Import Coq.Classes.SetoidClass.
@@ -52,8 +51,6 @@ Notation "∞" := infinity.
 
 Definition powerset := v_function powerset_ax.
 
-Infix "⇒" := H_seq (at level 90).
-
 Definition IZF_sorts: sorts := [(set_x, tt)].
 Definition IZF_relations: relations := [(mem_ax, set * set)].
 Definition IZF_functions: functions := [
@@ -64,22 +61,28 @@ Definition IZF_functions: functions := [
     (powerset_ax, (set, set_x))
 ].
 
-(* fixme quantify over *)
+(* FIXME quantify over ? *)
 Definition X: var := 0.
 Definition Y: var := 1.
 Definition Z: var := 2.
 
 Definition IZF_axioms: theory := Eval cbn in [
-    H_seq [(X, set)] (E_var X ∈ inject ∅) c_false ;
+    H_seq [(X, set)] (E_var X ∈ inject ∅) (c_unify (E_del (E_var X) set) (E_match_tt c_false) t_unit)
 
-    H_seq [(X, set)] (c_or (c_unify (E_var Y) (E_var X) set) (c_unify (E_var Z) (E_var X) set))
-          (E_var X ∈ inject (pair (v_neu (V_var Y)) (v_neu (V_var Z))))
+    (* H_seq [(X, set)] (c_or (c_unify (E_var Y) (E_var X) set) (c_unify (E_var Z) (E_var X) set)) *)
+    (*       (E_var X ∈ inject (pair (v_neu (V_var Y)) (v_neu (V_var Z)))) *)
 ].
 
+Lemma IZF_wellformed: JT IZF_sorts IZF_functions IZF_relations IZF_axioms.
+Proof.
+  apply Theory.check_theory_sound.
+  constructor.
+Qed.
+
 Lemma mem_use {Δ1 Δ2 Δ3 E E'}:
-    sE Δ1 E Δ2 →
-    sE Δ2 E' Δ3 →
-    se Δ1 (E ∈ E') Δ3.
+  sE Δ1 E Δ2 →
+  sE Δ2 E' Δ3 →
+  se Δ1 (E ∈ E') Δ3.
 Proof.
   intros.
   constructor.

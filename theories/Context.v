@@ -24,19 +24,6 @@ Implicit Types x y: var.
 Implicit Type ρ: subst.
 Implicit Type v: intro.
 
-Definition eq_usage Δ Δ': {Δ = Δ'} + {Δ ≠ Δ'}.
-Proof.
-  decide equality.
-  destruct a as [x u], p as [y u'].
-  destruct (eq_var x y), (eq_use u u').
-  all: subst.
-  all: auto.
-  all: right.
-  all: intro p.
-  all: inversion p.
-  all: auto.
-Defined.
-
 Section Typecheck.
   Import OptionNotations.
 

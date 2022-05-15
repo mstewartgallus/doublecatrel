@@ -56,50 +56,49 @@ with command : Set :=
 
 Definition environment : Set := (Assoc.assoc type).
 
-Inductive elim : Set := 
- | V_var (x:var)
- | V_fst (V:elim)
- | V_snd (V:elim).
+Inductive sequent : Set := 
+ | H_seq (Γ:environment) (c:command) (c':command).
 
 Inductive use : Set := 
  | u_used : use
  | u_unused : use.
 
-Inductive sequent : Set := 
- | H_seq (Γ:environment) (c:command) (c':command).
+Inductive elim : Set := 
+ | V_var (x:var)
+ | V_fst (V:elim)
+ | V_snd (V:elim).
 
 Definition sorts : Set := (Assoc.assoc unit).
 
 Definition relations : Set := (Assoc.assoc type).
+
+Definition functions : Set := (Assoc.assoc (type * function)).
+
+Definition theory : Set := (list sequent).
+
+Definition usage : Set := (Assoc.assoc use).
 
 Inductive intro : Set := 
  | v_function (f:function) (v:intro)
  | v_tt : intro
  | v_fanout (v:intro) (v':intro)
  | v_neu (V:elim).
-
 Definition subst : Set := (Assoc.assoc intro).
-
-Definition functions : Set := (Assoc.assoc (type * function)).
-
-Definition usage : Set := (Assoc.assoc use).
-
-Definition theory : Set := (list sequent).
 Lemma eq_type: forall (x y : type), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_type : ott_coq_equality.
-Lemma eq_elim: forall (x y : elim), {x = y} + {x <> y}.
-Proof.
-  decide equality; auto with ott_coq_equality arith.
-Defined.
-Hint Resolve eq_elim : ott_coq_equality.
 Lemma eq_use: forall (x y : use), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
 Defined.
 Hint Resolve eq_use : ott_coq_equality.
+Lemma eq_elim: forall (x y : elim), {x = y} + {x <> y}.
+Proof.
+  decide equality; auto with ott_coq_equality arith.
+Defined.
+Hint Resolve eq_elim : ott_coq_equality.
 Lemma eq_intro: forall (x y : intro), {x = y} + {x <> y}.
 Proof.
   decide equality; auto with ott_coq_equality arith.
@@ -125,6 +124,24 @@ Fixpoint inject (x1:intro) : context:=
   | (v_fanout v v') => (E_fanout  (inject v )   (inject v' ) )
   | (v_function f v) => (E_function f  (inject v ) )
   | v => E_tt
+end.
+
+(** definitions *)
+
+(** funs useallof *)
+Fixpoint useall (x1:environment) : usage:=
+  match x1 with
+  |  nil  =>  nil 
+  |  (  (cons ( x ,  τ )  Γ )  )  =>  (cons ( x ,  u_used )   (useall Γ )  ) 
+end.
+
+(** definitions *)
+
+(** funs usenoneof *)
+Fixpoint usenone (x1:environment) : usage:=
+  match x1 with
+  |  nil  =>  nil 
+  |  (  (cons ( x ,  τ )  Γ )  )  =>  (cons ( x ,  u_unused )   (usenone Γ )  ) 
 end.
 
 (** definitions *)
@@ -347,7 +364,19 @@ Inductive JH : sorts -> functions -> relations -> sequent -> Prop :=    (* defn 
  | JH_sequent : forall (S:sorts) (FS:functions) (RS:relations) (Γ:environment) (c c':command),
      infer S FS RS Γ c ->
      infer S FS RS Γ c' ->
+     se  (usenone Γ )  c  (useall Γ )  ->
+     se  (usenone Γ )  c'  (useall Γ )  ->
      JH S FS RS (H_seq Γ c c').
+(** definitions *)
+
+(* defns judge_theory *)
+Inductive JT : sorts -> functions -> relations -> theory -> Prop :=    (* defn T *)
+ | JT_nil : forall (S:sorts) (FS:functions) (RS:relations),
+     JT S FS RS  nil 
+ | JT_cons : forall (S:sorts) (FS:functions) (RS:relations) (T:theory) (H:sequent),
+     JH S FS RS H ->
+     JT S FS RS T ->
+     JT S FS RS  (cons  H   T ) .
 (** definitions *)
 
 (* defns pfind *)

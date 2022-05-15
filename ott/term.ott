@@ -148,6 +148,22 @@ by
   [ f v ] === f [v]
   [ v ] === tt
 
+funs
+  useallof ::=
+fun
+  useall G :: D :: useall
+by
+  useall nil === nil
+  useall (G , x: t) === useall G , x [used]
+
+funs
+  usenoneof ::=
+fun
+  usenone G :: D :: usenone
+by
+  usenone nil === nil
+  usenone (G , x: t) === usenone G , x [unused]
+
 defns
 
 find :: '' ::=
@@ -478,12 +494,29 @@ defn
 S ; FS ; RS |- H ::   :: H :: 'H_'
 by
 
-% FIXME check wellformed environment
-% FIXME check usage
+% FIXME check wellformed environment ?
 S ; FS ; RS ; G |- c
 S ; FS ; RS ; G |- c'
+usenone G |- c # useall G
+usenone G |- c' # useall G
 ----------------------------- :: sequent
 S ; FS ; RS |- Pi G . c => c'
+
+defns
+
+judge_theory :: 'J' ::=
+
+defn
+S ; FS ; RS |- T ::   :: T :: 'T_'
+by
+
+------------------ :: nil
+S ; FS ; RS |- nil
+
+S ; FS ; RS |- H
+S ; FS ; RS |- T
+-------------------- :: cons
+S ; FS ; RS |- T, H
 
 defns
 

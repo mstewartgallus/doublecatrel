@@ -10,5 +10,6 @@ theories/Environment.v
 theories/Category.v
 theories/Term.v
 theories/Context.v
+theories/Theory.v
 theories/Categories.v
 theories/IZf.v
