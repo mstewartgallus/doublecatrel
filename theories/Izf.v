@@ -63,10 +63,10 @@ Definition IZF_functions: functions := [
 ].
 
 Definition IZF_axioms: theory := Eval cbn in [
-    H_seq [(X, set: type)] <{ X ∈ ∅ }> <{ E_del X set >> ⊥ }> ;
-    H_seq [(X, set: type); (Y, set:type); (Z, set:type)]
-      <{ (E_del Z set >> c_unify Y X set) ∨ (E_del Y set >> c_unify Z X set) }>
-      <{ X ∈ pair (v_neu Y) (v_neu Z) }>
+    <{ Π [(X, set: type)] , X ∈ ∅ ⇒ (c_unify (E_del X set) <{ ε, ⊥ }> <{ I }>) }> ;
+    <{ Π [(X, set: type); (Y, set:type); (Z, set:type)] ,
+        (E_del Z set >> c_unify Y X set) ∨ (E_del Y set >> c_unify Z X set) ⇒
+        (X ∈ pair (v_neu Y) (v_neu Z)) }>
 ].
 
 Lemma IZF_wellformed: JT IZF_sorts IZF_functions IZF_relations IZF_axioms.

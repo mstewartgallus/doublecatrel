@@ -73,23 +73,25 @@ Module RelNotations.
 
   (* Notation "'del'" := E_del (in custom rel). *)
   (* Notation "'dup'" := E_dup (in custom rel). *)
-  (* Notation "'unify'" := c_unify (in custom rel). *)
+  (* Notation "E ~ E' ∈ τ" := (c_unify E E' τ) (in custom rel at level 90). *)
 
   Notation "E '>>' c" := (c_unify E (E_match_tt c) t_unit) (in custom rel at level 30, right associativity).
 
-  (* Notation "'ε' . c" := (E_match_tt c) *)
-  (*                         (in custom rel at level 200, c custom rel at level 99, *)
-  (*                             left associativity). *)
-  (* Notation "'ε' X , Y . c" := (E_match_fanout X Y c) *)
-  (*                               (in custom rel at level 200, *)
-  (*                                   X constr at level 99, *)
-  (*                                   Y constr at level 99, *)
-  (*                                   c custom rel at level 99, *)
-  (*                                   left associativity). *)
+  Notation "'ε' , c" := (E_match_tt c)
+                          (in custom rel at level 200, c custom rel at level 99,
+                              left associativity).
+  Notation "'ε' X Y , c" := (E_match_fanout X Y c)
+                                (in custom rel at level 200,
+                                    X constr at level 99,
+                                    Y constr at level 99,
+                                    c custom rel at level 99,
+                                    left associativity).
 
-  (* Notation "'ε' X . c" := (E_epsilon X c) *)
-  (*                           (in custom rel at level 200, *)
-  (*                               X constr at level 99, *)
-  (*                               c custom rel at level 99, *)
-  (*                               left associativity). *)
+  Notation "'ε' X , c" := (E_epsilon X c)
+                            (in custom rel at level 200,
+                                X constr at level 99,
+                                c custom rel at level 99,
+                                left associativity).
+
+  Notation "'Π' Γ , c ⇒ c'" := (H_seq Γ c c') (in custom rel at level 200, Γ constr).
 End RelNotations.
